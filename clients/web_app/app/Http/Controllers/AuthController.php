@@ -9,26 +9,32 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
-        // kirim ke microservice auth
-        $response = Http::post('http://localhost:8001/api/login', [
-            'email' => $request->email,
-            'password' => $request->password,
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+            'g-recaptcha-response' => 'required'
         ]);
 
-        // cek response
+        $response = Http::post(
+            'http://localhost:8001/api/login',
+            [
+                'email' => $request->email,
+                'password' => $request->password,
+                'g-recaptcha-response' => $request->input('g-recaptcha-response')
+            ]
+        );
+
         if ($response->successful()) {
 
-            $token = $response->json()['token'];
-
-            // simpan token ke session (frontend client)
-            session(['token' => $token]);
+            session([
+                'token' => $response->json()['token']
+            ]);
 
             return redirect('/');
-
         }
 
         return back()->withErrors([
-            'login' => 'Email atau password salah'
+            'login' => 'Login gagal'
         ]);
     }
 

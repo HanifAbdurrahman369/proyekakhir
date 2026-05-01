@@ -8,10 +8,13 @@ use Illuminate\Support\Facades\Http;
 use App\Models\User;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+use App\Http\Controllers\AuthController;
 
 $jwtSecret = env('JWT_SECRET', 'your-secret-key-here');
 
-Route::post('/login', function (Request $request) {
+Route::post('/login', [AuthController::class, 'login']);
+
+/*Route::post('/login', function (Request $request) {
     try {
         $validated = $request->validate([
             'email' => 'required|email',
@@ -71,7 +74,7 @@ Route::post('/login', function (Request $request) {
             'error' => $e->getMessage()
         ], 500);
     }
-});
+});*/
 
 
 Route::middleware('jwt')->get('/profile', function (Request $request) {

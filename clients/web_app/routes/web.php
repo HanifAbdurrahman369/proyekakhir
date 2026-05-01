@@ -22,3 +22,6 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::get('/forgot-password', function () {
     return view('auth.forgot-password');
 });
+
+Route::get('/profile', [AuthController::class, 'profile'])
+    ->middleware('jwt');
