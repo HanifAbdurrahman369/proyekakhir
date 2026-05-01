@@ -26,18 +26,77 @@ class AuthController extends Controller
 
         if ($response->successful()) {
 
+            $data = $response->json();
+
+            /*
+            =====================================
+            PASTIKAN ROLE_ID ADA
+            =====================================
+            */
+
+            if (!isset($data['user']['role_id'])) {
+                return back()->withErrors([
+                    'login' => 'Role user tidak ditemukan'
+                ]);
+            }
+
+            /*
+            =====================================
+            SIMPAN SESSION
+            =====================================
+            */
+
             session([
-                'token' => $response->json()['token']
+                'token' => $data['token'],
+                'user' => $data['user'],
+                'role_id' => $data['user']['role_id']
             ]);
 
-            return redirect('/');
+            /*
+            =====================================
+            REDIRECT BERDASARKAN ROLE
+            =====================================
+            */
+
+            switch ($data['user']['role_id']) {
+                case 1:
+                    return redirect('/dashboard-petani');
+
+                case 2:
+                    return redirect('/dashboard-petugas');
+
+                case 3:
+                    return redirect('/dashboard-pejabat');
+
+                case 4:
+                    return redirect('/dashboard-admin');
+
+                default:
+                    return redirect('/');
+            }
         }
 
         return back()->withErrors([
-            'login' => 'Login gagal'
+            'login' => 'Login gagal, email atau password salah'
         ]);
     }
 
+    public function logout()
+{
+    session()->forget([
+        'token',
+        'user',
+        'role_id'
+    ]);
+
+    session()->flush();
+
+    return redirect('/login')->with(
+        'success',
+        'Logout berhasil'
+    );
+}
+    
     public function register(Request $request)
     {
         $response = Http::post('http://localhost:8001/api/register', [

@@ -19,9 +19,28 @@ Route::get('/register', function () {
 
 Route::post('/register', [AuthController::class, 'register']);
 
+Route::get('/logout', [AuthController::class, 'logout'])
+    ->name('logout');
+
 Route::get('/forgot-password', function () {
     return view('auth.forgot-password');
 });
+
+Route::get('/dashboard-petani', function () {
+    return view('dashboard.petani');
+})->middleware('role:1');
+
+Route::get('/dashboard-petugas', function () {
+    return view('dashboard.petugas');
+})->middleware('role:2');
+
+Route::get('/dashboard-pejabat', function () {
+    return view('dashboard.pejabat');
+})->middleware('role:3');
+
+Route::get('/dashboard-admin', function () {
+    return view('dashboard.admin');
+})->middleware('role:4');
 
 Route::get('/profile', [AuthController::class, 'profile'])
     ->middleware('jwt');

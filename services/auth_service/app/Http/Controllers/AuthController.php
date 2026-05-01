@@ -104,7 +104,8 @@ public function login(Request $request)
             'user' => [
                 'id' => $user['id'],
                 'nama_lengkap' => $user['nama_lengkap'],
-                'email' => $user['email']
+                'email' => $user['email'],
+                'role_id' => $user['role_id']
             ]
         ]);
     }
