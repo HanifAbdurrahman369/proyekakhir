@@ -25,3 +25,7 @@ Route::get('/forgot-password', function () {
 
 Route::get('/profile', [AuthController::class, 'profile'])
     ->middleware('jwt');
+
+Route::get('/map', function () {
+    return view('fullmap');
+})->name('map.full');
