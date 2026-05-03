@@ -19,16 +19,21 @@
 <body class="bg-white font-['Poppins']">
 
     <!-- NAVBAR -->
-    <nav class="flex items-center justify-between px-8 py-4 border-b border-gray-100 shadow-sm">
+    <nav class="flex items-center justify-between px-8 py-4 border-b border-gray-100 shadow-sm fixed top-0 w-full bg-white/90 backdrop-blur-md z-[2000]">
+        <!-- Catatan: Saya tambahkan 'fixed top-0 w-full z-[2000]' agar navbar tetap melayang di atas saat di-scroll -->
         <div class="flex items-center gap-6">
             <img src="{{ asset('storage/logo.png') }}" alt="Logo SIG-PALA" class="w-15 h-14">
             <p class="text-slate-800 font-bold text-3xl tracking-wide">SIG-PALA</p>
         </div>
 
         <div class="flex justify-end items-center gap-12 font-medium">
-            <a href="{{ url('/') }}" class="text-slate-600 hover:text-primary-600 transition-colors">DATA STATISTIK</a>
+            <!-- Tautan untuk kembali ke Dashboard (Beranda) -->
+            <a href="{{ url('/') }}" class="text-slate-600 hover:text-primary-600 transition-colors">BERANDA</a>
+
+            <!-- PERUBAHAN: Tautan DATA STATISTIK sekarang mengarah ke rute baru -->
+            <a href="{{ url('/data-statistik') }}" class="text-slate-600 hover:text-primary-600 transition-colors">DATA STATISTIK</a>
             
-            <!-- PERUBAHAN: Tautan MAP mengarah ke halaman Full Map -->
+            <!-- Tautan MAP mengarah ke halaman Full Map -->
             <a href="{{ route('map.full') }}" class="text-slate-600 hover:text-primary-600 transition-colors">MAP</a>
             
             <a href="/login" class="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2.5 rounded-lg shadow-sm transition-all hover:shadow">
@@ -38,7 +43,8 @@
     </nav>
 
     <!-- CONTENT -->
-    <main>
+    <!-- Menambahkan padding top (pt-24) agar konten tidak tertutup oleh navbar yang fixed -->
+    <main class="pt-20">
         @yield('content')
     </main>
 

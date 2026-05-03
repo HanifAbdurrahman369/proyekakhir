@@ -2,13 +2,12 @@
 
 @section('content')
 
+<!-- ============================================== -->
+<!-- 1. HERO SECTION -->
+<!-- ============================================== -->
 <div class="relative w-full h-screen">
-    <img src="{{ asset('storage/bg.png') }}"
-         class="absolute inset-0 w-full h-full object-cover"
-         alt="bg">
-
+    <img src="{{ asset('storage/bg.png') }}" class="absolute inset-0 w-full h-full object-cover" alt="bg">
     <div class="absolute inset-0 bg-gradient-to-b from-black/60 to-black/70"></div>
-
     <div class="relative z-10 flex h-full flex-col items-center justify-center text-center px-6">
         <p class="text-white text-2xl tracking-wide">SELAMAT DATANG DI</p>
         <p class="text-white text-5xl font-extrabold tracking-wide drop-shadow-lg">SIG-PALA</p>
@@ -18,6 +17,9 @@
     </div>
 </div>
 
+<!-- ============================================== -->
+<!-- 2. LAYANAN INFORMASI PUBLIK -->
+<!-- ============================================== -->
 <div class="flex w-full py-20 px-4 justify-center bg-slate-50/50">
     <div class="max-w-6xl w-full grid md:grid-cols-2 gap-12 items-center">
         <div class="space-y-6">
@@ -56,6 +58,9 @@
     </div>
 </div>
 
+<!-- ============================================== -->
+<!-- 3. MAP INTERAKTIF SECTION -->
+<!-- ============================================== -->
 <div class="flex w-full py-12 px-4 flex-col items-center gap-8">
     <p class="text-slate-800 text-3xl text-center font-semibold tracking-wide">MAP INTERAKTIF</p>
 
@@ -81,82 +86,13 @@
     </div>
 </div>
 
-<div class="flex w-full py-10 px-4 flex-col items-center gap-10">
-    <p class="text-slate-800 text-3xl text-center font-semibold">DATA STATISTIK</p>
+<!-- ============================================== -->
+<!-- 4. DATA STATISTIK & VISUALISASI SECTION -->
+<!-- Di-load dari file partials terpisah -->
+<!-- ============================================== -->
+@include('statistik', ['showTable' => false])
 
-    <div class="grid md:grid-cols-4 gap-4 w-full max-w-6xl">
-        <div class="bg-white p-5 rounded-2xl shadow border border-gray-100 hover:shadow-lg transition text-center">
-            <p class="text-gray-500 text-xs font-medium uppercase tracking-wider">Total Kecamatan</p>
-            <p class="text-2xl font-bold text-primary-700 mt-1" id="stat-kecamatan">...</p>
-        </div>
-
-        <div class="bg-white p-5 rounded-2xl shadow border border-gray-100 hover:shadow-lg transition text-center">
-            <p class="text-gray-500 text-xs font-medium uppercase tracking-wider">Total Kelurahan</p>
-            <p class="text-2xl font-bold text-primary-700 mt-1" id="stat-kelurahan">...</p>
-        </div>
-
-        <div class="bg-white p-5 rounded-2xl shadow border border-gray-100 hover:shadow-lg transition text-center">
-            <p class="text-gray-500 text-xs font-medium uppercase tracking-wider">Total Lahan Sawah</p>
-            <p class="text-2xl font-bold text-primary-700 mt-1" id="stat-total-lahan">...</p>
-        </div>
-
-        <div class="bg-white p-5 rounded-2xl shadow border border-gray-100 hover:shadow-lg transition text-center">
-            <p class="text-gray-500 text-xs font-medium uppercase tracking-wider">Total Luas Lahan</p>
-            <p class="text-2xl font-bold text-primary-700 mt-1" id="stat-total-luas">...</p>
-        </div>
-    </div>
-
-    <div class="w-full max-w-6xl bg-white rounded-2xl shadow border border-gray-100 overflow-hidden">
-        <table class="w-full text-left text-sm">
-            <thead class="bg-primary-600 text-white">
-                <tr>
-                    <th class="p-4">Kecamatan</th>
-                    <th class="p-4">Kelurahan</th>
-                    <th class="p-4">Hasil Panen (Ton)</th>
-                </tr>
-            </thead>
-            <tbody class="text-gray-700">
-                <tr class="border-b hover:bg-gray-50"><td class="p-4">Alalak</td><td class="p-4">Handil Bakti</td><td class="p-4">5.200</td></tr>
-                <tr class="border-b hover:bg-gray-50"><td class="p-4">Anjir Muara</td><td class="p-4">Anjir Pasar</td><td class="p-4">6.100</td></tr>
-                <tr class="border-b hover:bg-gray-50"><td class="p-4">Mandastana</td><td class="p-4">Tabing Rimbah</td><td class="p-4">4.850</td></tr>
-                <tr class="border-b hover:bg-gray-50"><td class="p-4">Marabahan</td><td class="p-4">Ulu Benteng</td><td class="p-4">7.300</td></tr>
-                <tr class="border-b hover:bg-gray-50"><td class="p-4">Tabukan</td><td class="p-4">Karya Maju</td><td class="p-4">3.950</td></tr>
-            </tbody>
-        </table>
-    </div>
-</div>
-
-
-<!-- MAP INTERAKTIF -->
-
-<style>
-/* CONTROL LAYER MODERN */
-.leaflet-control-layers {
-    border-radius: 14px !important;
-    background: rgba(255,255,255,0.92) !important;
-    backdrop-filter: blur(8px);
-    padding: 12px !important;
-    border: 1px solid rgba(0,0,0,0.06) !important;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.12) !important;
-}
-
-.leaflet-control-layers-list label {
-    font-size: 13px;
-    font-weight: 500;
-    color: #334155;
-    margin: 6px 0;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: 0.2s;
-}
-
-.leaflet-control-layers-list label:hover {
-    background: #f8fafc;
-    border-radius: 6px;
-    padding-left: 4px;
-}
-</style>
-
+<!-- Panggil Script Map -->
 <script src="{{ asset('js/map-sigpala.js') }}"></script>
+
 @endsection

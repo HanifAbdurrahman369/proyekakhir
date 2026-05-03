@@ -48,3 +48,6 @@ Route::get('/profile', [AuthController::class, 'profile'])
 Route::get('/map', function () {
     return view('fullmap');
 })->name('map.full');
+Route::get('/data-statistik', function () {
+    return view('statistik_halaman');
+});
