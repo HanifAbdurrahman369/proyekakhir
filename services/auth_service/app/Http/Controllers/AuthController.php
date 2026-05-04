@@ -9,20 +9,13 @@ use Firebase\JWT\JWT;
 
 class AuthController extends Controller
 {
-public function login(Request $request)
+    public function login(Request $request)
     {
-        // VALIDASI TERMASUK CAPTCHA
         $validated = $request->validate([
             'email' => 'required|email',
             'password' => 'required|string',
             'g-recaptcha-response' => 'required'
         ]);
-
-        /*
-        ===================================
-        VERIFIKASI CAPTCHA KE GOOGLE
-        ===================================
-        */
 
         $captcha = Http::asForm()->post(
             env('CAPTCHA_VERIFY_URL'),
@@ -56,7 +49,7 @@ public function login(Request $request)
 
         if ($response->failed()) {
             return response()->json([
-                'message' => 'User tidak ditemukan'
+                'message' => 'Email Salah'
             ], 404);
         }
 
@@ -73,7 +66,7 @@ public function login(Request $request)
             $user['password']
         )) {
             return response()->json([
-                'message' => 'Email atau password salah'
+                'message' => 'Password salah'
             ], 401);
         }
 
@@ -110,40 +103,11 @@ public function login(Request $request)
         ]);
     }
 
-    public function register(Request $request)
-    {
-        $response = Http::post('http://localhost:8001/api/register', [
-            'nama_lengkap' => $request->nama_lengkap,
-            'email' => $request->email,
-            'password' => $request->password,
-            'password_confirmation' => $request->password_confirmation,
-            'no_hp' => $request->nomor_handphone,
-            'alamat' => $request->alamat,
-        ]);
+public function forgotPassword(Request $request)
+{
+    //
+}
 
-        if ($response->successful()) {
-
-            return redirect('/login')->with('success', 'Registrasi berhasil, silakan login');
-
-        }
-
-        return back()->withErrors([
-            'register' => 'Gagal melakukan registrasi'
-        ]);
-    }
-
-        public function logout()
-    {
-        session()->forget([
-            'token',
-            'user'
-        ]);
-
-        return redirect('/login')->with(
-            'success',
-            'Logout berhasil'
-        );
-    }
 }
 
 

@@ -28,35 +28,17 @@ class AuthController extends Controller
 
             $data = $response->json();
 
-            /*
-            =====================================
-            PASTIKAN ROLE_ID ADA
-            =====================================
-            */
-
             if (!isset($data['user']['role_id'])) {
                 return back()->withErrors([
                     'login' => 'Role user tidak ditemukan'
                 ]);
             }
 
-            /*
-            =====================================
-            SIMPAN SESSION
-            =====================================
-            */
-
             session([
                 'token' => $data['token'],
                 'user' => $data['user'],
                 'role_id' => $data['user']['role_id']
             ]);
-
-            /*
-            =====================================
-            REDIRECT BERDASARKAN ROLE
-            =====================================
-            */
 
             switch ($data['user']['role_id']) {
                 case 1:
@@ -76,26 +58,31 @@ class AuthController extends Controller
             }
         }
 
-        return back()->withErrors([
-            'login' => 'Login gagal, email atau password salah'
-        ]);
+        if (!$response->successful()) {
+
+            $error = $response->json();
+
+            return back()->withErrors([
+                'login' => $error['message'] ?? 'Login gagal'
+            ])->withInput();
+        }
     }
 
     public function logout()
-{
-    session()->forget([
-        'token',
-        'user',
-        'role_id'
-    ]);
+    {
+        session()->forget([
+            'token',
+            'user',
+            'role_id'
+        ]);
 
-    session()->flush();
+        session()->flush();
 
-    return redirect('/login')->with(
-        'success',
-        'Logout berhasil'
-    );
-}
+        return redirect('/')->with(
+            'success',
+            'Logout berhasil'
+        );
+    }
     
     public function register(Request $request)
     {
@@ -118,6 +105,33 @@ class AuthController extends Controller
             'register' => 'Gagal melakukan registrasi'
         ]);
     }
+
+public function forgotPassword()
+{
+    return view('auth.forgot-password');
+}
+
+public function sendResetLink(Request $request)
+{
+    $request->validate([
+        'email' => 'required|email'
+    ]);
+
+    $response = Http::post(
+        'http://localhost:8001/api/forgot-password',
+        [
+            'email' => $request->email
+        ]
+    );
+
+    if ($response->successful()) {
+        return back()->with('status', 'Link reset password dikirim ke email');
+    }
+
+    return back()->withErrors([
+        'email' => 'Email tidak ditemukan'
+    ]);
+}
 }
 
 
