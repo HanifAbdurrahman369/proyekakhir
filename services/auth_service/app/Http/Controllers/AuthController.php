@@ -103,10 +103,20 @@ class AuthController extends Controller
         ]);
     }
 
-public function forgotPassword(Request $request)
-{
-    //
-}
+    public function forgotPassword(Request $request)
+    {
+        $response = Http::post(
+            'http://localhost:8002/api/forgot-password',
+            [
+                'email' => $request->email
+            ]
+        );
+
+        return response()->json(
+            $response->json(),
+            $response->status()
+        );
+    }
 
 }
 

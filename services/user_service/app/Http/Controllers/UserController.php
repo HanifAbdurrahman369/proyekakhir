@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use App\Models\User;
 
 class UserController extends Controller
@@ -147,4 +148,26 @@ class UserController extends Controller
             ], 500);
         }
     }
+}
+
+public function forgotPassword(Request $request)
+{
+    $request->validate([
+        'email' => 'required|email'
+    ]);
+
+    $status = Password::sendResetLink(
+        $request->only('email')
+    );
+
+    if ($status === Password::RESET_LINK_SENT) {
+
+        return response()->json([
+            'message' => 'Link reset password berhasil dikirim'
+        ]);
+    }
+
+    return response()->json([
+        'message' => 'Email tidak ditemukan'
+    ], 404);
 }

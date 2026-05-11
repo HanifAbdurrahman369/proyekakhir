@@ -106,32 +106,32 @@ class AuthController extends Controller
         ]);
     }
 
-public function forgotPassword()
-{
-    return view('auth.forgot-password');
-}
-
-public function sendResetLink(Request $request)
-{
-    $request->validate([
-        'email' => 'required|email'
-    ]);
-
-    $response = Http::post(
-        'http://localhost:8001/api/forgot-password',
-        [
-            'email' => $request->email
-        ]
-    );
-
-    if ($response->successful()) {
-        return back()->with('status', 'Link reset password dikirim ke email');
+    public function forgotPassword()
+    {
+        return view('auth.forgot-password');
     }
 
-    return back()->withErrors([
-        'email' => 'Email tidak ditemukan'
-    ]);
-}
+    public function sendResetLink(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email'
+        ]);
+
+        $response = Http::post(
+            'http://localhost:8001/api/forgot-password',
+            [
+                'email' => $request->email
+            ]
+        );
+
+        if ($response->successful()) {
+            return back()->with('status', 'Link reset password dikirim ke email');
+        }
+
+        return back()->withErrors([
+            'email' => 'Email tidak ditemukan'
+        ]);
+    }
 }
 
 

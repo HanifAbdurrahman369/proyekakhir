@@ -23,3 +23,8 @@ Route::post(
     '/register',
     [UserController::class, 'register']
 );
+
+Route::post(
+    '/forgot-password',
+    [UserController::class, 'forgotPassword']
+);

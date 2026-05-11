@@ -1,50 +1,58 @@
 <?php
 
-namespace App\Models;
+namespace App\Http\Controllers;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+use Illuminate\Http\Request;
+use App\Models\User;
+use Illuminate\Support\Facades\Password;
 
-class User extends Authenticatable
+class UserController extends Controller
 {
-    use HasFactory, Notifiable;
+    /*
+    =====================================
+    FORGOT PASSWORD
+    =====================================
+    */
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
-    protected $fillable = [
-        'role_id',
-        'nama_lengkap',
-        'email',
-        'password',
-        'no_hp',
-        'alamat',
-    ];
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    public function forgotPassword(Request $request)
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        $request->validate([
+            'email' => 'required|email'
+        ]);
+
+        /*
+        =====================================
+        CEK EMAIL USER
+        =====================================
+        */
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Email tidak ditemukan'
+            ], 404);
+        }
+
+        /*
+        =====================================
+        KIRIM LINK RESET PASSWORD
+        =====================================
+        */
+
+        $status = Password::sendResetLink([
+            'email' => $request->email
+        ]);
+
+        if ($status === Password::RESET_LINK_SENT) {
+
+            return response()->json([
+                'message' => 'Link reset password berhasil dikirim'
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Gagal mengirim link reset password'
+        ], 500);
     }
 }
