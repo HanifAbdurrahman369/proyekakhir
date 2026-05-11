@@ -148,13 +148,12 @@ class UserController extends Controller
             ], 500);
         }
     }
-}
 
-public function forgotPassword(Request $request)
-{
-    $request->validate([
-        'email' => 'required|email'
-    ]);
+    public function forgotPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email'
+        ]);
 
     $status = Password::sendResetLink(
         $request->only('email')
