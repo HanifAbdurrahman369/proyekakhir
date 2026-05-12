@@ -14,8 +14,7 @@
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
-    <!-- TAG STYLE SUDAH DIHAPUS KARENA DI-INJECT OLEH JAVASCRIPT -->
-</head>
+    </head>
 
 <body class="bg-slate-100 relative font-['Poppins']">
 
@@ -43,10 +42,7 @@
         </div>
     </div>
 
-    <a href="{{ url('/') }}" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-[9999] bg-slate-900/90 backdrop-blur text-white px-6 py-3.5 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.3)] border border-slate-700 flex items-center gap-2 hover:bg-blue-600 hover:-translate-y-1 transition-all duration-300 font-semibold text-sm group">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
+    <a href="{{ url('/') }}" class="absolute top-6 left-24 z-[9999] bg-white/95 backdrop-blur-md text-slate-700 px-7 py-3 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-slate-100 font-medium text-base hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all duration-300 font-['Poppins']">
         Kembali ke Dashboard
     </a>
 

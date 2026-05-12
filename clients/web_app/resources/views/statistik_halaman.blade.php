@@ -1,7 +1,6 @@
 @extends('layouts.public')
 
 @section('content')
-    <!-- Margin top ditambahkan agar tidak tertutup Navbar -->
     <div class="pt-24 pb-12 min-h-screen bg-slate-50">
         
         <!-- Panggil file komponen statistik dan tampilkan tabel -->
