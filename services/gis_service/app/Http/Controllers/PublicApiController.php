@@ -44,18 +44,23 @@ class PublicApiController extends Controller
             ->groupBy('kecamatan.nama_kecamatan')
             ->get();
 
-        // 6. Data Tabel Rekapitulasi (Kecamatan, Kelurahan, Jumlah Lahan, Total Panen)
+        // 6. Data Tabel Rekapitulasi (Kecamatan, Kelurahan, Jumlah Lahan, tabelTotal Panen)
             $tabelRekap = DB::table('lahan_sawah')
             ->join('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
             ->leftJoin('kelurahan', 'lahan_sawah.kelurahan_id', '=', 'kelurahan.id')
             ->select(
                 'kecamatan.nama_kecamatan',
                 'kelurahan.nama_kelurahan',
+                'lahan_sawah.tahun_lbs', // Ambil data tahun LBS
                 DB::raw('COUNT(lahan_sawah.id) as jumlah_lahan'),
-                DB::raw('SUM(lahan_sawah.luas_lahan_hektar) as total_luas'), // Kolom Baru: Total Luas
-                DB::raw('SUM(lahan_sawah.hasil_panen_ton) as total_panen')
+                DB::raw('SUM(lahan_sawah.luas_lahan_hektar) as total_luas'),
+                DB::raw('SUM(lahan_sawah.hasil_panen_ton) as total_panen'),
+                DB::raw('SUM(CASE WHEN tipe_lahan_id = 1 THEN luas_lahan_hektar ELSE 0 END) as luas_a'),
+                DB::raw('SUM(CASE WHEN tipe_lahan_id = 2 THEN luas_lahan_hektar ELSE 0 END) as luas_b'),
+                DB::raw('SUM(CASE WHEN tipe_lahan_id = 3 THEN luas_lahan_hektar ELSE 0 END) as luas_c'),
+                DB::raw('SUM(CASE WHEN tipe_lahan_id = 4 THEN luas_lahan_hektar ELSE 0 END) as luas_d')
             )
-            ->groupBy('kecamatan.nama_kecamatan', 'kelurahan.nama_kelurahan')
+            ->groupBy('kecamatan.nama_kecamatan', 'kelurahan.nama_kelurahan', 'lahan_sawah.tahun_lbs')
             ->orderBy('kecamatan.nama_kecamatan')
             ->get();
 

@@ -32,18 +32,72 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         /* ============================================
+           MODIFIKASI TOMBOL ZOOM (+ / -) MODERN
+        ============================================ */
+        .leaflet-bar {
+            border: none !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+            border-radius: 16px !important;
+            overflow: hidden;
+            margin-top: 24px !important;
+            margin-left: 24px !important;
+        }
+        
+        .leaflet-bar a {
+            background-color: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px);
+            color: var(--slate-600) !important;
+            border-bottom: 1px solid var(--slate-100) !important;
+            transition: all 0.2s ease !important;
+            width: 44px !important;
+            height: 44px !important;
+            line-height: 44px !important;
+            font-weight: 500 !important;
+            font-family: 'Poppins', sans-serif !important;
+            font-size: 18px !important;
+        }
+
+        .leaflet-bar a:last-child {
+            border-bottom: none !important;
+        }
+
+        .leaflet-bar a:hover {
+            background-color: var(--green-600) !important;
+            color: #ffffff !important;
+        }
+
+        /* ============================================
            KONTROL LAYER — CLEAN MODERN REDESIGN
         ============================================ */
+        /* Tombol Utama (Wadah Icon Default) */
+        .leaflet-control-layers-toggle {
+            background-color: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px) !important;
+            border-radius: 16px !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+            border: none !important;
+            width: 44px !important;
+            height: 44px !important;
+            transition: all 0.2s ease !important;
+        }
+        
+        .leaflet-control-layers-toggle:hover {
+            background-color: var(--slate-50) !important;
+        }
+
+        /* Wadah Menu Terbuka */
         .leaflet-control-layers {
-            border-radius: 14px !important;
-            background: rgba(255, 255, 255, 0.97) !important;
-            backdrop-filter: blur(16px) !important;
+            border-radius: 16px !important;
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px) !important;
             padding: 0 !important;
-            border: 1px solid var(--green-200) !important;
-            box-shadow: 0 8px 32px rgba(22, 163, 74, 0.12), 0 2px 8px rgba(0,0,0,0.06) !important;
+            border: 1px solid var(--slate-100) !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08) !important;
             font-family: 'Poppins', sans-serif !important;
             min-width: 210px;
             overflow: hidden;
+            margin-top: 24px !important;
+            margin-right: 24px !important;
         }
 
         .leaflet-control-layers-list {
@@ -57,42 +111,41 @@ document.addEventListener("DOMContentLoaded", function () {
             font-weight: 700;
             font-size: 10px;
             letter-spacing: 1.5px;
-            color: var(--green-600);
-            background: var(--green-50);
+            color: var(--slate-400);
             text-align: center;
             padding: 8px 0;
             margin: -14px -16px 12px -16px;
-            border-bottom: 1px solid var(--green-100);
+            border-bottom: 1px solid var(--slate-100);
         }
 
         .leaflet-control-layers-separator {
             height: 1px;
-            background: linear-gradient(90deg, transparent, var(--green-200), transparent);
+            background: var(--slate-100);
             margin: 8px 0 !important;
             border: none !important;
         }
 
         .leaflet-control-layers-list label {
             font-family: 'Poppins', sans-serif !important;
-            font-size: 13px !important;
+            font-size: 14px !important;
             font-weight: 500;
-            color: var(--slate-600);
+            color: var(--slate-700);
             margin: 2px 0 !important;
             display: flex !important;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             cursor: pointer;
             padding: 7px 10px !important;
             border-radius: 8px;
-            transition: background 0.18s, color 0.18s, transform 0.15s;
+            transition: background 0.18s, color 0.18s;
         }
 
         .leaflet-control-layers-list label:hover {
-            background: var(--green-50);
-            color: var(--green-700);
-            transform: translateX(3px);
+            background: var(--slate-50);
+            color: var(--green-600);
         }
 
+        /* RADIO BUTTON TETAP TIDAK DIUBAH DARI FILE ANDA */
         .leaflet-control-layers-selector {
             appearance: none !important;
             -webkit-appearance: none !important;
@@ -126,17 +179,8 @@ document.addEventListener("DOMContentLoaded", function () {
             border-radius: 50%;
         }
 
-        .leaflet-control-layers-toggle {
-            background-color: white !important;
-            border-radius: 12px !important;
-            box-shadow: 0 4px 16px rgba(22, 163, 74, 0.18) !important;
-            border: 1.5px solid var(--green-200) !important;
-            width: 44px !important;
-            height: 44px !important;
-        }
-
         /* ============================================
-           POPUP LAHAN SAWAH — CLEAN CARD REDESIGN
+           POPUP LAHAN SAWAH — TIDAK DISENTUH
         ============================================ */
         .leaflet-popup-content-wrapper {
             font-family: 'Poppins', sans-serif !important;
