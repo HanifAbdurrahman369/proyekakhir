@@ -106,32 +106,63 @@ class AuthController extends Controller
         ]);
     }
 
-public function forgotPassword()
-{
-    return view('auth.forgot-password');
-}
-
-public function sendResetLink(Request $request)
-{
-    $request->validate([
-        'email' => 'required|email'
-    ]);
-
-    $response = Http::post(
-        'http://localhost:8001/api/forgot-password',
-        [
-            'email' => $request->email
-        ]
-    );
-
-    if ($response->successful()) {
-        return back()->with('status', 'Link reset password dikirim ke email');
+    public function forgotPassword()
+    {
+        return view('auth.forgot-password');
     }
 
-    return back()->withErrors([
-        'email' => 'Email tidak ditemukan'
-    ]);
-}
+    public function sendResetLink(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email'
+        ]);
+
+        $response = Http::post(
+            'http://localhost:8002/api/forgot-password',
+            [
+                'email' => $request->email
+            ]
+        );
+
+        if ($response->successful()) {
+            return back()->with('status', 'Link reset password dikirim ke email');
+        }
+
+        return back()->withErrors([
+            'email' => 'Email tidak ditemukan'
+        ]);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => 'required|min:6|confirmed'
+        ]);
+
+        $response = Http::post(
+            'http://localhost:8002/api/forget-password',
+            [
+                'token' => $request->token,
+                'email' => $request->email,
+                'password' => $request->password,
+                'password_confirmation' => $request->password_confirmation
+            ]
+        );
+
+        if ($response->successful()) {
+
+            return redirect('/login')->with(
+                'success',
+                'Password berhasil direset'
+            );
+        }
+
+        return back()->withErrors([
+            'reset' => 'Reset password gagal'
+        ]);
+    }
 }
 
 

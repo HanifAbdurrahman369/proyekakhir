@@ -22,16 +22,21 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::get('/logout', [AuthController::class, 'logout'])
     ->name('logout');
 
-Route::get('/forgot-password', function () {
-    return view('auth.forgot-password');
-});
-
-
 Route::get('/forgot-password', [AuthController::class, 'forgotPassword'])
     ->name('password.request');
 
 Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])
     ->name('password.email');
+
+Route::get('/reset-password/{token}', function ($token) {
+    return view('auth.reset-password', [
+        'token' => $token
+    ]);
+})->name('password.reset');
+
+Route::post('/reset-password', [AuthController::class, 'resetPassword'])
+    ->name('password.update');
+
 
 Route::get('/dashboard-petani', function () {
     return view('dashboard.petani');
