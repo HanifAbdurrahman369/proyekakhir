@@ -1,58 +1,44 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Models;
 
-use Illuminate\Http\Request;
-use App\Models\User;
-use Illuminate\Support\Facades\Password;
+use App\Notifications\ResetPasswordNotification;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
-class UserController extends Controller
+class User extends Authenticatable
 {
-    /*
-    =====================================
-    FORGOT PASSWORD
-    =====================================
-    */
+    use HasFactory, Notifiable;
 
-    public function forgotPassword(Request $request)
+    protected $fillable = [
+        'role_id',
+        'nama_lengkap',
+        'email',
+        'password',
+        'no_hp',
+        'alamat',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    protected function casts(): array
     {
-        $request->validate([
-            'email' => 'required|email'
-        ]);
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
+    }
 
-        /*
-        =====================================
-        CEK EMAIL USER
-        =====================================
-        */
+    public function sendPasswordResetNotification($token)
+    {
+        $url = 'http://localhost:8002/forgot-password/' . $token;
 
-        $user = User::where('email', $request->email)->first();
-
-        if (!$user) {
-            return response()->json([
-                'message' => 'Email tidak ditemukan'
-            ], 404);
-        }
-
-        /*
-        =====================================
-        KIRIM LINK RESET PASSWORD
-        =====================================
-        */
-
-        $status = Password::sendResetLink([
-            'email' => $request->email
-        ]);
-
-        if ($status === Password::RESET_LINK_SENT) {
-
-            return response()->json([
-                'message' => 'Link reset password berhasil dikirim'
-            ]);
-        }
-
-        return response()->json([
-            'message' => 'Gagal mengirim link reset password'
-        ], 500);
+        $this->notify(
+            new ResetPasswordNotification($url)
+        );
     }
 }

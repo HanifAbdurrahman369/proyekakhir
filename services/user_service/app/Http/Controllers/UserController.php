@@ -170,3 +170,39 @@ class UserController extends Controller
         'message' => 'Email tidak ditemukan'
     ], 404);
 }
+
+public function resetPassword(Request $request)
+{
+    $request->validate([
+        'token' => 'required',
+        'email' => 'required|email',
+        'password' => 'required|min:6|confirmed',
+    ]);
+
+    $status = Password::reset(
+        $request->only(
+            'email',
+            'password',
+            'password_confirmation',
+            'token'
+        ),
+        function ($user, $password) {
+
+            $user->password = Hash::make($password);
+
+            $user->save();
+        }
+    );
+
+    if ($status == Password::PASSWORD_RESET) {
+
+        return response()->json([
+            'message' => 'Password berhasil direset'
+        ]);
+    }
+
+    return response()->json([
+        'message' => 'Token tidak valid'
+    ], 400);
+}
+}

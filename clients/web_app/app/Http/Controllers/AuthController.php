@@ -118,7 +118,7 @@ class AuthController extends Controller
         ]);
 
         $response = Http::post(
-            'http://localhost:8001/api/forgot-password',
+            'http://localhost:8002/api/forgot-password',
             [
                 'email' => $request->email
             ]
@@ -130,6 +130,37 @@ class AuthController extends Controller
 
         return back()->withErrors([
             'email' => 'Email tidak ditemukan'
+        ]);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => 'required|min:6|confirmed'
+        ]);
+
+        $response = Http::post(
+            'http://localhost:8002/api/forget-password',
+            [
+                'token' => $request->token,
+                'email' => $request->email,
+                'password' => $request->password,
+                'password_confirmation' => $request->password_confirmation
+            ]
+        );
+
+        if ($response->successful()) {
+
+            return redirect('/login')->with(
+                'success',
+                'Password berhasil direset'
+            );
+        }
+
+        return back()->withErrors([
+            'reset' => 'Reset password gagal'
         ]);
     }
 }
