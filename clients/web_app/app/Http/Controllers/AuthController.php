@@ -86,7 +86,7 @@ class AuthController extends Controller
     
     public function register(Request $request)
     {
-        $response = Http::post('http://localhost:8001/api/register', [
+        $response = Http::post('http://localhost:8002/api/register', [
             'nama_lengkap' => $request->nama_lengkap,
             'email' => $request->email,
             'password' => $request->password,
