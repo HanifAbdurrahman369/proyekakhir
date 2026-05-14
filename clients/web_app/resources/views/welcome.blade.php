@@ -15,7 +15,7 @@
         </div>
 
         <h1 class="text-6xl sm:text-7xl md:text-9xl font-black tracking-tight mb-4">
-            <span class="text-white drop-shadow-lg">SIG</span><span class="text-emerald-400 drop-shadow-[0_0_20px_rgba(52,211,153,0.4)]">-PALA</span>
+            <span class="text-white drop-shadow-lg">SIG</span><span class="text-emerald-400 drop-shadow-[0_0_20px_rgba(52,211,153,0.4)]"> - PALA</span>
         </h1>
         
         <div class="w-24 h-1.5 bg-emerald-500 rounded-full mb-8 shadow-[0_0_15px_rgba(16,185,129,0.5)]"></div>

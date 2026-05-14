@@ -13,10 +13,13 @@ class AuthController extends Controller
             'email' => 'required|email',
             'password' => 'required',
             'g-recaptcha-response' => 'required'
+        ], [
+            'g-recaptcha-response.required' => 'Mohon centang verifikasi reCAPTCHA.'
         ]);
 
-        $response = Http::post(
-            'http://localhost:8001/api/login',
+        // Mencegah block jaringan lokal dengan withoutVerifying()
+        $response = Http::withoutVerifying()->post(
+            'http://127.0.0.1:8001/api/login',
             [
                 'email' => $request->email,
                 'password' => $request->password,
@@ -25,13 +28,10 @@ class AuthController extends Controller
         );
 
         if ($response->successful()) {
-
             $data = $response->json();
 
             if (!isset($data['user']['role_id'])) {
-                return back()->withErrors([
-                    'login' => 'Role user tidak ditemukan'
-                ]);
+                return back()->withErrors(['login' => 'Role user tidak terdeteksi di sistem'])->withInput();
             }
 
             session([
@@ -41,51 +41,40 @@ class AuthController extends Controller
             ]);
 
             switch ($data['user']['role_id']) {
-                case 1:
-                    return redirect('/dashboard-petani');
-
-                case 2:
-                    return redirect('/dashboard-petugas');
-
-                case 3:
-                    return redirect('/dashboard-pejabat');
-
-                case 4:
-                    return redirect('/dashboard-admin');
-
-                default:
-                    return redirect('/');
+                case 1: return redirect('/dashboard-petani');
+                case 2: return redirect('/dashboard-petugas');
+                case 3: return redirect('/dashboard-pejabat');
+                case 4: return redirect('/dashboard-admin');
+                default: return redirect('/');
             }
         }
 
-        if (!$response->successful()) {
+        // TRANSPARENT ERROR CATCHING (Menangkap pesan asli dari backend)
+        $responseData = $response->json();
+        $errorMsg = 'Koneksi ke backend terputus.'; // Default
 
-            $error = $response->json();
-
-            return back()->withErrors([
-                'login' => $error['message'] ?? 'Login gagal'
-            ])->withInput();
+        if (isset($responseData['message'])) {
+            $errorMsg = $responseData['message']; // Mengambil pesan "Password salah", "Email salah", dll
+        } elseif ($response->serverError()) {
+            $errorMsg = 'Terjadi kesalahan fatal (Error 500) di Auth Service.';
         }
+
+        return back()->withErrors([
+            'login' => $errorMsg
+        ])->withInput();
     }
 
     public function logout()
     {
-        session()->forget([
-            'token',
-            'user',
-            'role_id'
-        ]);
-
+        session()->forget(['token', 'user', 'role_id']);
         session()->flush();
-
-        return redirect('/')->with(
-            'success',
-            'Logout berhasil'
-        );
+        return redirect('/')->with('success', 'Logout berhasil');
     }
-    
+
+    // Fitur registrasi dan reset password tetap menggunakan format bypass
     public function register(Request $request)
     {
+<<<<<<< HEAD
         $response = Http::post('http://localhost:8002/api/register', [
             'nama_lengkap' => $request->nama_lengkap,
             'email' => $request->email,
@@ -104,65 +93,28 @@ class AuthController extends Controller
         return back()->withErrors([
             'register' => 'Gagal melakukan registrasi'
         ]);
+=======
+        $response = Http::withoutVerifying()->post('http://127.0.0.1:8001/api/register', $request->all());
+        if ($response->successful()) return redirect('/login')->with('success', 'Registrasi berhasil, silakan login');
+        return back()->withErrors(['register' => 'Gagal melakukan registrasi']);
+>>>>>>> 73104fffd14c91efdb86a01b4aaaa8d665e9abe5
     }
 
-    public function forgotPassword()
-    {
-        return view('auth.forgot-password');
-    }
+    public function forgotPassword() { return view('auth.forgot-password'); }
 
     public function sendResetLink(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email'
-        ]);
-
-        $response = Http::post(
-            'http://localhost:8002/api/forgot-password',
-            [
-                'email' => $request->email
-            ]
-        );
-
-        if ($response->successful()) {
-            return back()->with('status', 'Link reset password dikirim ke email');
-        }
-
-        return back()->withErrors([
-            'email' => 'Email tidak ditemukan'
-        ]);
+        $request->validate(['email' => 'required|email']);
+        $response = Http::withoutVerifying()->post('http://127.0.0.1:8002/api/forgot-password', ['email' => $request->email]);
+        if ($response->successful()) return back()->with('status', 'Link reset password dikirim ke email');
+        return back()->withErrors(['email' => 'Email tidak ditemukan']);
     }
 
     public function resetPassword(Request $request)
     {
-        $request->validate([
-            'token' => 'required',
-            'email' => 'required|email',
-            'password' => 'required|min:6|confirmed'
-        ]);
-
-        $response = Http::post(
-            'http://localhost:8002/api/forget-password',
-            [
-                'token' => $request->token,
-                'email' => $request->email,
-                'password' => $request->password,
-                'password_confirmation' => $request->password_confirmation
-            ]
-        );
-
-        if ($response->successful()) {
-
-            return redirect('/login')->with(
-                'success',
-                'Password berhasil direset'
-            );
-        }
-
-        return back()->withErrors([
-            'reset' => 'Reset password gagal'
-        ]);
+        $request->validate(['token' => 'required', 'email' => 'required|email', 'password' => 'required|min:6|confirmed']);
+        $response = Http::withoutVerifying()->post('http://127.0.0.1:8002/api/forget-password', $request->all());
+        if ($response->successful()) return redirect('/login')->with('success', 'Password berhasil direset');
+        return back()->withErrors(['reset' => 'Reset password gagal']);
     }
 }
-
-
