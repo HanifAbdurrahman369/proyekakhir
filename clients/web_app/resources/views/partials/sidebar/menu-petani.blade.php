@@ -12,7 +12,7 @@
 
 <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-2 py-1 mt-3">Aktivitas</p>
 
-<a href="/input-panen" class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium transition text-gray-600 hover:bg-primary-50 hover:text-primary-700">
+<a href="{{ route('input.panen') }}" class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium transition text-gray-600 hover:bg-primary-50 hover:text-primary-700">
     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 0 0 8 20C19 20 22 3 22 3c-1 2-8 2-8 2s4-4-3 1C7 9 7 15 7 15s0-3 3-5.31C13.77 7.73 17 8 17 8Z"/></svg>
     Input Hasil Panen
 </a>

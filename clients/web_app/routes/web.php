@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\SiklusTanamController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -41,7 +42,7 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword'])
 Route::get('/dashboard-petani', function () {
     return view('dashboard.petani');
 })->middleware('role:1');
-
+    
 Route::get('/dashboard-petugas', function () {
     return view('dashboard.petugas');
 })->middleware('role:2');
@@ -63,3 +64,9 @@ Route::get('/map', function () {
 Route::get('/data-statistik', function () {
     return view('statistik_halaman');
 });
+
+Route::get('/input-panen', [SiklusTanamController::class, 'create'])
+        ->name('input.panen');
+
+Route::post('/input-panen', [SiklusTanamController::class, 'store'])
+        ->name('input.panen.store');

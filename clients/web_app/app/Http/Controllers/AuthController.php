@@ -74,7 +74,6 @@ class AuthController extends Controller
     // Fitur registrasi dan reset password tetap menggunakan format bypass
     public function register(Request $request)
     {
-<<<<<<< HEAD
         $response = Http::post('http://localhost:8002/api/register', [
             'nama_lengkap' => $request->nama_lengkap,
             'email' => $request->email,
@@ -93,11 +92,6 @@ class AuthController extends Controller
         return back()->withErrors([
             'register' => 'Gagal melakukan registrasi'
         ]);
-=======
-        $response = Http::withoutVerifying()->post('http://127.0.0.1:8001/api/register', $request->all());
-        if ($response->successful()) return redirect('/login')->with('success', 'Registrasi berhasil, silakan login');
-        return back()->withErrors(['register' => 'Gagal melakukan registrasi']);
->>>>>>> 73104fffd14c91efdb86a01b4aaaa8d665e9abe5
     }
 
     public function forgotPassword() { return view('auth.forgot-password'); }

@@ -10,7 +10,7 @@
         <h1 class="text-lg font-bold text-primary-900">Dashboard Petani</h1>
         <p class="text-xs text-gray-400 mt-0.5">Kelola lahan dan hasil panen Anda</p>
     </div>
-    <a href="/input-panen"
+    <a href="{{ route('input.panen') }}"
        class="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
         Lapor Hasil Panen
     </a>
