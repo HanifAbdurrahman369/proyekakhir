@@ -82,5 +82,19 @@ Route::middleware('jwt')->get('/profile', function (Request $request) {
         'message' => 'Profile berhasil diakses',
         'user' => $request->attributes->get('user')
     ]);
+
+    /*
+=====================================
+API AUTH SERVICE
+=====================================
+*/
+
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+
+// ROUTE BARU: Digunakan oleh API Gateway, User Service, atau Master Service untuk validasi token
+Route::post('/verify', [AuthController::class, 'verifyToken']);
 });
+Route::post('/verify', [AuthController::class, 'verifyToken']);
 
