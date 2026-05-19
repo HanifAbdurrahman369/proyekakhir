@@ -38,7 +38,14 @@ public function store(Request $request)
     ]);
 
     // 🔥 AMBIL USER DARI FIREBASE JWT MIDDLEWARE
-      $user = $request->attributes->get('auth');
+    $user = $request->attributes->get('auth');
+
+    if (!$user || !isset($user->sub)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'User tidak ditemukan dari token JWT'
+        ], 401);
+    }
 
     $data = SiklusTanam::create([
         'lahan_id' => $request->lahan_id,

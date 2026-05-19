@@ -2,6 +2,8 @@
 // 0. INJEKSI CSS DINAMIS UNTUK MAP & CONTROL LAYER
 // ========================================================
 document.addEventListener("DOMContentLoaded", function () {
+    const gatewayUrl = window.GATEWAY_URL || '';
+    const apiBase = gatewayUrl ? `${gatewayUrl}/api` : '/api';
     const isFullMap = window.location.pathname.includes('/map');
 
     let baseStyles = `
@@ -287,7 +289,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }).addTo(map);
 
     // 4. Ambil Batas Kabupaten Barito Kuala
-    fetch('http://127.0.0.1:8000/api/batas-wilayah')
+    fetch(`${apiBase}/batas-wilayah`)
         .then(res => res.json())
         .then(geojsonData => {
             const layerBatas = L.geoJSON(geojsonData, {
@@ -302,7 +304,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // 5. Ambil Lahan Sawah
   // 5. Ambil Lahan Sawah
-    fetch('http://127.0.0.1:8000/api/map-lahan')
+    fetch(`${apiBase}/map-lahan`)
         .then(res => res.json())
         .then(data => {
             L.geoJSON(data, {

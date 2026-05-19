@@ -7,6 +7,11 @@ use Illuminate\Support\Facades\Http;
 
 class AuthController extends Controller
 {
+    protected function gatewayUrl(): string
+    {
+        return env('GATEWAY_URL', 'http://127.0.0.1:8000');
+    }
+
     public function login(Request $request)
     {
         $request->validate([
@@ -17,9 +22,8 @@ class AuthController extends Controller
             'g-recaptcha-response.required' => 'Mohon centang verifikasi reCAPTCHA.'
         ]);
 
-        // Mencegah block jaringan lokal dengan withoutVerifying()
         $response = Http::withoutVerifying()->post(
-            'http://127.0.0.1:8001/api/login',
+            $this->gatewayUrl() . '/api/login',
             [
                 'email' => $request->email,
                 'password' => $request->password,
@@ -74,7 +78,7 @@ class AuthController extends Controller
     // Fitur registrasi dan reset password tetap menggunakan format bypass
     public function register(Request $request)
     {
-        $response = Http::post('http://localhost:8002/api/register', [
+        $response = Http::post($this->gatewayUrl() . '/api/register', [
             'nama_lengkap' => $request->nama_lengkap,
             'email' => $request->email,
             'password' => $request->password,
@@ -99,7 +103,7 @@ class AuthController extends Controller
     public function sendResetLink(Request $request)
     {
         $request->validate(['email' => 'required|email']);
-        $response = Http::withoutVerifying()->post('http://127.0.0.1:8002/api/forgot-password', ['email' => $request->email]);
+        $response = Http::withoutVerifying()->post($this->gatewayUrl() . '/api/forgot-password', ['email' => $request->email]);
         if ($response->successful()) return back()->with('status', 'Link reset password dikirim ke email');
         return back()->withErrors(['email' => 'Email tidak ditemukan']);
     }
@@ -107,7 +111,7 @@ class AuthController extends Controller
     public function resetPassword(Request $request)
     {
         $request->validate(['token' => 'required', 'email' => 'required|email', 'password' => 'required|min:6|confirmed']);
-        $response = Http::withoutVerifying()->post('http://127.0.0.1:8002/api/forget-password', $request->all());
+        $response = Http::withoutVerifying()->post($this->gatewayUrl() . '/api/forget-password', $request->all());
         if ($response->successful()) return redirect('/login')->with('success', 'Password berhasil direset');
         return back()->withErrors(['reset' => 'Reset password gagal']);
     }

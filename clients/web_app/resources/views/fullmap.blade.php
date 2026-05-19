@@ -46,6 +46,9 @@
         Kembali ke Dashboard
     </a>
 
+    <script>
+        window.GATEWAY_URL = "{{ env('GATEWAY_URL', 'http://127.0.0.1:8000') }}";
+    </script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="{{ asset('js/map-sigpala.js') }}"></script>
 </body>

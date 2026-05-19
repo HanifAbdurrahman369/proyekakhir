@@ -157,7 +157,9 @@
 
 @include('statistik', ['showTable' => false])
 
-
-<script src="{{ asset('js/map-sigpala.js') }}"></script>
+    <script>
+        window.GATEWAY_URL = "{{ env('GATEWAY_URL', 'http://127.0.0.1:8000') }}";
+    </script>
+    <script src="{{ asset('js/map-sigpala.js') }}"></script>
 
 @endsection

@@ -162,7 +162,9 @@
     const rowsPerPage = 7;
 
     document.addEventListener("DOMContentLoaded", function () {
-        fetch("http://127.0.0.1:8000/api/statistik")
+        const gatewayBase = window.GATEWAY_URL || "{{ env('GATEWAY_URL', 'http://127.0.0.1:8000') }}";
+
+        fetch(`${gatewayBase}/api/statistik`)
             .then(res => res.json())
             .then(res => {
                 if (res.status === 'success') {

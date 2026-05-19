@@ -11,6 +11,11 @@ use App\Models\LahanSawah;
 
 class SiklusTanamController extends Controller
 {
+    protected function gatewayUrl(): string
+    {
+        return env('GATEWAY_URL', 'http://127.0.0.1:8000');
+    }
+
     /**
      * FORM INPUT AKTIVITAS TANAM
      */
@@ -26,9 +31,9 @@ class SiklusTanamController extends Controller
         }
 
         $lahanResponse = Http::acceptJson()
-            ->get('http://127.0.0.1:8005/api/lahan');
+            ->get($this->gatewayUrl() . '/api/lahan');
         $bibitResponse = Http::acceptJson()
-        ->get('http://127.0.0.1:8005/api/bibit');
+        ->get($this->gatewayUrl() . '/api/bibit');
 
         $bibit = [];
 
@@ -79,7 +84,7 @@ class SiklusTanamController extends Controller
          * KIRIM KE MICROSERVICE DENGAN BEARER TOKEN
          */
         $response = Http::withToken($token)
-            ->post('http://127.0.0.1:8005/api/activities', [
+            ->post($this->gatewayUrl() . '/api/activities', [
                 'lahan_id' => $request->lahan_id,
                 'bibit_id' => $request->bibit_id,
                 'tanggal_tanam' => $request->tanggal_tanam,
