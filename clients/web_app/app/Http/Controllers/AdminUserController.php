@@ -9,7 +9,7 @@ class AdminUserController extends Controller
 {
     protected function gatewayUrl(): string
     {
-        return env('GATEWAY_URL', 'http://127.0.0.1:8000');
+        return env('GATEWAY_URL', 'http://127.0.0.1:8005');
     }
 
     private function api()
