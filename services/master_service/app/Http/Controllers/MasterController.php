@@ -6,35 +6,78 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Collection;
 
 class MasterController extends Controller
 {
-    // 1. Ambil semua daftar tabel di database
+    // 1. Ambil semua daftar tabel (Kecuali migrations & password_reset_tokens) + Kolomnya
     public function getTables() {
         $tables = DB::select('SHOW TABLES');
-        return response()->json($tables);
+        $result = [];
+        
+        foreach ($tables as $table) {
+            $tableName = array_values((array)$table)[0];
+            // REVISI 2 & 3: Saring agar tidak menampilkan tabel sistem internal
+            if (!in_array($tableName, ['migrations', 'password_reset_tokens'])) {
+                $result[] = [
+                    'table_name' => $tableName,
+                    'columns' => Schema::getColumnListing($tableName)
+                ];
+            }
+        }
+        return response()->json($result);
     }
 
-    // 2. Ambil semua kolom dan data dari tabel tertentu
+    // 2. Ambil semua kolom dan data dari tabel tertentu (Guest-Safe & Spatial-Safe)
     public function getTableData($tableName) {
         if (!Schema::hasTable($tableName)) {
             return response()->json(['message' => 'Tabel tidak ditemukan'], 404);
         }
+        
         $columns = Schema::getColumnListing($tableName);
-        $data = DB::table($tableName)->get();
+        
+        // REVISI 1: Proteksi data spasial/binary agar tidak merusak encoding JSON
+        $data = DB::table($tableName)->get()->map(function($row) {
+            $rowArray = (array)$row;
+            foreach ($rowArray as $key => $value) {
+                if (is_string($value) && !mb_check_encoding($value, 'UTF-8')) {
+                    $rowArray[$key] = '[Data Geometri/Spasial]';
+                }
+            }
+            return $rowArray;
+        });
+
         return response()->json(['columns' => $columns, 'rows' => $data]);
     }
 
     // 3. Generic CRUD: Insert Data
     public function storeData(Request $request, $tableName) {
-        DB::table($tableName)->insert($request->all());
+        // REVISI 4: Filter hanya kolom yang sah di database & ubah string kosong ke null
+        $columns = Schema::getColumnListing($tableName);
+        $data = array_intersect_key($request->all(), array_flip($columns));
+        
+        foreach ($data as $key => $value) {
+            if ($value === '') {
+                $data[$key] = null;
+            }
+        }
+
+        DB::table($tableName)->insert($data);
         return response()->json(['message' => "Data berhasil ditambah ke $tableName"]);
     }
 
     // 4. Generic CRUD: Update Data
     public function updateData(Request $request, $tableName, $id) {
-        DB::table($tableName)->where('id', $id)->update($request->all());
+        // REVISI 4: Proteksi field ekstra dan reset nilai kosong menjadi null
+        $columns = Schema::getColumnListing($tableName);
+        $data = array_intersect_key($request->all(), array_flip($columns));
+        
+        foreach ($data as $key => $value) {
+            if ($value === '') {
+                $data[$key] = null;
+            }
+        }
+
+        DB::table($tableName)->where('id', $id)->update($data);
         return response()->json(['message' => "Data di $tableName berhasil diupdate"]);
     }
 
@@ -44,7 +87,7 @@ class MasterController extends Controller
         return response()->json(['message' => "Data di $tableName berhasil dihapus"]);
     }
 
-    // 6. Manipulasi Skema: Eksekusi Kode SQL Mentah (Import SQL)
+    // 6. Manipulasi Skema: Eksekusi Kode SQL Mentah
     public function executeRawSql(Request $request) {
         $request->validate(['sql' => 'required']);
         try {
@@ -54,29 +97,30 @@ class MasterController extends Controller
             return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
         }
     }
-    // 7. EXPORT SQL (phpMyAdmin Compatible)
+
+    // 7. EXPORT SQL
     public function exportSql($tableName = null)
     {
-        // Jika tableName null, ambil semua tabel, jika ada ambil tabel spesifik
-        $tables = $tableName ? [$tableName] : DB::connection()->getDoctrineSchemaManager()->listTableNames();
-        $output = "-- SIG-PALA Database Export\n-- Generated: " . now() . "\n\n";
-        $output .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
+        $tables = $tableName ? [$tableName] : array_map(function($t) {
+            return array_values((array)$t)[0];
+        }, DB::select('SHOW TABLES'));
+
+        $output = "-- SIG-PALA Database Export\n-- Generated: " . now() . "\n\nSET FOREIGN_KEY_CHECKS=0;\n\n";
 
         foreach ($tables as $table) {
-            // Drop table if exists
+            if (in_array($table, ['migrations', 'password_reset_tokens'])) continue;
+
             $output .= "DROP TABLE IF EXISTS `$table`;\n";
-            
-            // Create table structure
             $createTable = DB::select("SHOW CREATE TABLE `$table`")[0];
             $output .= $createTable->{'Create Table'} . ";\n\n";
 
-            // Get Data
             $rows = DB::table($table)->get();
             foreach ($rows as $row) {
                 $rowArray = (array)$row;
                 $columns = "`" . implode("`, `", array_keys($rowArray)) . "`";
                 $values = array_map(function($value) {
                     if (is_null($value)) return "NULL";
+                    if (is_string($value) && !mb_check_encoding($value, 'UTF-8')) return "geomfromtext('POINT(0 0)')"; // Fallback data spasial
                     return "'" . addslashes($value) . "'";
                 }, array_values($rowArray));
                 
@@ -93,25 +137,37 @@ class MasterController extends Controller
             ->header('Content-Disposition', "attachment; filename=\"$filename\"");
     }
 
-    // 8. EXPORT EXCEL (Dynamic Table)
+    // 8. EXPORT EXCEL
     public function exportExcel($tableName)
     {
         if (!Schema::hasTable($tableName)) {
             return response()->json(['message' => 'Tabel tidak ditemukan'], 404);
         }
 
-        $data = DB::table($tableName)->get();
+        $columns = Schema::getColumnListing($tableName);
+        
+        // REVISI 5: Konversi objek data mentah secara eksplisit menjadi array berpasangan agar Excel tidak kosong
+        $data = DB::table($tableName)->get()->map(function($item) {
+            $array = (array)$item;
+            foreach ($array as $key => $value) {
+                if (is_string($value) && !mb_check_encoding($value, 'UTF-8')) {
+                    $array[$key] = '[Data Geometri/Spasial]';
+                }
+            }
+            return $array;
+        });
+
         $filename = $tableName . "_" . date('Ymd_His') . ".xlsx";
 
-        // Menggunakan library Excel untuk membuat file secara dinamis dari Collection
-        return Excel::download(new class($data) implements \Maatwebsite\Excel\Concerns\FromCollection, \Maatwebsite\Excel\Concerns\WithHeadings {
+        return Excel::download(new class($data, $columns) implements \Maatwebsite\Excel\Concerns\FromCollection, \Maatwebsite\Excel\Concerns\WithHeadings {
             private $data;
-            public function __construct($data) { $this->data = $data; }
-            public function collection() { return $this->data; }
-            public function headings(): array {
-                return count($this->data) > 0 ? array_keys((array)$this->data[0]) : [];
+            private $columns;
+            public function __construct($data, $columns) { 
+                $this->data = $data; 
+                $this->columns = $columns;
             }
+            public function collection() { return $this->data; }
+            public function headings(): array { return $this->columns; }
         }, $filename);
     }
-
 }

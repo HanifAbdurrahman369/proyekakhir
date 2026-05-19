@@ -2,7 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\AdminUserController; // Import Controller Admin yang baru
+use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\MasterDataController;
 
 /*
 |--------------------------------------------------------------------------
@@ -80,6 +81,18 @@ Route::middleware(['role:4'])->group(function () {
     // Jalur kosong untuk integrasi master_service berikutnya (Tahap 4)
     Route::get('/admin/master', function () {
         return "Halaman data master siap dibangun pada Tahap 4";
+    });
+    // JALUR DATA MASTER DINAMIS
+    Route::prefix('admin/master')->group(function () {
+        Route::get('/', [MasterDataController::class, 'index']);
+        Route::post('/execute-sql', [MasterDataController::class, 'executeSql']);
+        Route::get('/export/sql/{tableName?}', [MasterDataController::class, 'exportSql']);
+        Route::get('/export/excel/{tableName}', [MasterDataController::class, 'exportExcel']);
+        
+        // CRUD Dinamis (Berdasarkan Nama Tabel)
+        Route::post('/{tableName}', [MasterDataController::class, 'store']);
+        Route::put('/{tableName}/{id}', [MasterDataController::class, 'update']);
+        Route::delete('/{tableName}/{id}', [MasterDataController::class, 'destroy']);
     });
 });
 
