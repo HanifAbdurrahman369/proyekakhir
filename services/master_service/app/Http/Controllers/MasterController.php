@@ -65,20 +65,34 @@ class MasterController extends Controller
         return response()->json(['message' => "Data berhasil ditambah ke $tableName"]);
     }
 
-    // 4. Generic CRUD: Update Data
+    // 4. Generic CRUD: Update Data (Spatial & ID Protected)
     public function updateData(Request $request, $tableName, $id) {
-        // REVISI 4: Proteksi field ekstra dan reset nilai kosong menjadi null
         $columns = Schema::getColumnListing($tableName);
         $data = array_intersect_key($request->all(), array_flip($columns));
         
+        // Proteksi 1: Keluarkan ID dari data yang akan di-update agar tidak bentrok dengan Primary Key
+        unset($data['id']);
+
         foreach ($data as $key => $value) {
+            // Mengubah string kosong menjadi null
             if ($value === '') {
                 $data[$key] = null;
             }
+            
+            // Proteksi 2: Jika kolom berisi penanda geometri bawaan frontend, 
+            // keluarkan dari antrean update agar data spasial asli di database tidak rusak/corrupt
+            if ($value === '[Data Geometri/Spasial]') {
+                unset($data[$key]);
+            }
         }
 
-        DB::table($tableName)->where('id', $id)->update($data);
-        return response()->json(['message' => "Data di $tableName berhasil diupdate"]);
+        try {
+            // Eksekusi update data ke database secara otomatis
+            DB::table($tableName)->where('id', $id)->update($data);
+            return response()->json(['message' => "Data di tabel $tableName berhasil diperbarui secara otomatis."]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Gagal menyimpan perubahan ke database: ' . $e->getMessage()], 500);
+        }
     }
 
     // 5. Generic CRUD: Delete Data
@@ -137,37 +151,73 @@ class MasterController extends Controller
             ->header('Content-Disposition', "attachment; filename=\"$filename\"");
     }
 
-    // 8. EXPORT EXCEL
-    public function exportExcel($tableName)
+   // 8. EXPORT EXCEL (Mendukung Single Table & Full Database Multi-Sheets)
+    public function exportExcel($tableName = null)
     {
-        if (!Schema::hasTable($tableName)) {
-            return response()->json(['message' => 'Tabel tidak ditemukan'], 404);
+        // Jika ada nama tabel, export satu tabel saja
+        if ($tableName) {
+            if (!Schema::hasTable($tableName)) {
+                return response()->json(['message' => 'Tabel tidak ditemukan'], 404);
+            }
+
+            $columns = Schema::getColumnListing($tableName);
+            $data = DB::table($tableName)->get()->map(function($item) {
+                $array = (array)$item;
+                foreach ($array as $key => $value) {
+                    if (is_string($value) && !mb_check_encoding($value, 'UTF-8')) {
+                        $array[$key] = '[Data Geometri/Spasial]';
+                    }
+                }
+                return $array;
+            });
+
+            $filename = $tableName . "_" . date('Ymd_His') . ".xlsx";
+            return Excel::download(new class($data, $columns) implements \Maatwebsite\Excel\Concerns\FromCollection, \Maatwebsite\Excel\Concerns\WithHeadings {
+                private $data; private $columns;
+                public function __construct($data, $columns) { $this->data = $data; $this->columns = $columns; }
+                public function collection() { return $this->data; }
+                public function headings(): array { return $this->columns; }
+            }, $filename);
         }
 
-        $columns = Schema::getColumnListing($tableName);
-        
-        // REVISI 5: Konversi objek data mentah secara eksplisit menjadi array berpasangan agar Excel tidak kosong
-        $data = DB::table($tableName)->get()->map(function($item) {
-            $array = (array)$item;
-            foreach ($array as $key => $value) {
-                if (is_string($value) && !mb_check_encoding($value, 'UTF-8')) {
-                    $array[$key] = '[Data Geometri/Spasial]';
+        // JIKA TABEL KOSONG: Export semua tabel ke dalam 1 File Excel (Multi-Sheets)
+        $tables = array_map(function($t) {
+            return array_values((array)$t)[0];
+        }, DB::select('SHOW TABLES'));
+
+        $filename = "Full_Database_" . date('Ymd_His') . ".xlsx";
+
+        return Excel::download(new class($tables) implements \Maatwebsite\Excel\Concerns\WithMultipleSheets {
+            private $tables;
+            public function __construct($tables) { $this->tables = $tables; }
+            
+            public function sheets(): array {
+                $sheets = [];
+                foreach ($this->tables as $table) {
+                    if (in_array($table, ['migrations', 'password_reset_tokens'])) continue;
+
+                    $columns = Schema::getColumnListing($table);
+                    $data = DB::table($table)->get()->map(function($item) {
+                        $array = (array)$item;
+                        foreach ($array as $key => $value) {
+                            if (is_string($value) && !mb_check_encoding($value, 'UTF-8')) {
+                                $array[$key] = '[Data Geometri/Spasial]';
+                            }
+                        }
+                        return $array;
+                    });
+
+                    // Class anonim untuk menghandle sheet per tabel
+                    $sheets[] = new class($data, $columns, $table) implements \Maatwebsite\Excel\Concerns\FromCollection, \Maatwebsite\Excel\Concerns\WithHeadings, \Maatwebsite\Excel\Concerns\WithTitle {
+                        private $data; private $columns; private $title;
+                        public function __construct($data, $columns, $title) { $this->data = $data; $this->columns = $columns; $this->title = $title; }
+                        public function collection() { return $this->data; }
+                        public function headings(): array { return $this->columns; }
+                        public function title(): string { return substr($this->title, 0, 31); } // Batasan limit nama sheet excel 31 karakter
+                    };
                 }
+                return $sheets;
             }
-            return $array;
-        });
-
-        $filename = $tableName . "_" . date('Ymd_His') . ".xlsx";
-
-        return Excel::download(new class($data, $columns) implements \Maatwebsite\Excel\Concerns\FromCollection, \Maatwebsite\Excel\Concerns\WithHeadings {
-            private $data;
-            private $columns;
-            public function __construct($data, $columns) { 
-                $this->data = $data; 
-                $this->columns = $columns;
-            }
-            public function collection() { return $this->data; }
-            public function headings(): array { return $this->columns; }
         }, $filename);
     }
 }

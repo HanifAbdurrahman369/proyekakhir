@@ -61,8 +61,13 @@ class MasterDataController extends Controller
         $data = $request->except(['_token', '_method']);
         $res = $this->api()->put($this->apiUrl . "/tables/$tableName/$id", $data);
         
-        if ($res->successful()) return redirect("/admin/master?table=$tableName")->with('success', "Data di tabel $tableName berhasil diperbarui.");
-        return back()->with('error', 'Gagal memperbarui data.');
+        if ($res->successful()) {
+            return redirect("/admin/master?table=$tableName")->with('success', "Data di tabel $tableName berhasil diperbarui.");
+        }
+        
+        // Menampilkan pesan error spesifik yang dikirim dari master_service
+        $error = $res->json('message') ?? 'Gagal memperbarui data pengguna.';
+        return back()->with('error', $error)->withInput();
     }
 
     // 4. Delete Data Dinamis
@@ -90,8 +95,10 @@ class MasterDataController extends Controller
         return redirect($url);
     }
 
-    public function exportExcel($tableName)
+public function exportExcel($tableName = null)
     {
-        return redirect("http://127.0.0.1:8004/api/export/excel/$tableName");
+        // Meneruskan request ke master_service, jika $tableName null maka mengarah ke full database excel
+        $url = "http://127.0.0.1:8004/api/export/excel" . ($tableName ? "/$tableName" : "");
+        return redirect($url);
     }
 }

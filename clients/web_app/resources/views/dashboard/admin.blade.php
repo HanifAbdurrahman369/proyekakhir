@@ -28,13 +28,29 @@
             <h1 class="text-lg font-bold text-primary-900">Manajemen Data Master (DBA)</h1>
             <p class="text-xs text-gray-400 mt-0.5">Kendali penuh struktur tabel, kolom, dan isi basis data secara real-time</p>
         </div>
+        
+        {{-- AKSI DINAMIS HEADER DATA MASTER --}}
         <div class="flex gap-2">
-            <button onclick="switchSection('sql-section')" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow-sm">
-                &#9881; Eksekusi SQL / Import
-            </button>
-            <a href="/admin/master/export/sql" class="bg-primary-500 hover:bg-primary-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow-sm">
-                &#8681; Export Full Database (SQL)
-            </a>
+            @if(!$tableName)
+                {{-- JIKA DI HALAMAN UTAMA (ALL TABLES): Sediakan tombol export masal seluruh database --}}
+                <a href="/admin/master/export/excel" class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow-sm flex items-center gap-1.5">
+                    💾 Export Semua Tabel (Excel)
+                </a>
+                <a href="/admin/master/export/sql" class="bg-primary-500 hover:bg-primary-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow-sm flex items-center gap-1.5">
+                    📄 Export Semua Tabel (SQL)
+                </a>
+                <button onclick="switchSection('sql-section')" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow-sm">
+                    &#9881; Eksekusi SQL / Import
+                </button>
+            @else
+                {{-- JIKA SEDANG MASUK DI SALAH SATU TABEL: Tampilkan tombol aksi normal bawaan tabel tersebut --}}
+                <button onclick="switchSection('sql-section')" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow-sm">
+                    &#9881; Eksekusi SQL / Import
+                </button>
+                <a href="/admin/master/export/sql" class="bg-primary-500 hover:bg-primary-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow-sm">
+                    &#8681; Export Full Database (SQL)
+                </a>
+            @endif
         </div>
     @endif
 </div>
@@ -232,7 +248,7 @@
         <div class="flex gap-2">
             <a href="/admin/master/export/excel/{{ $tableName }}" class="px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs font-semibold hover:bg-green-200 transition">💾 Export Excel</a>
             <a href="/admin/master/export/sql/{{ $tableName }}" class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-200 transition">📄 Export SQL Tabel</a>
-            <button onclick="switchSection('master-create-section')" class="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold hover:bg-blue-200 transition">➕ Tambah Baris Data</button>
+            {{-- REVISI: Tombol Tambah Baris Data Telah Dihapus --}}
         </div>
         @endif
     </div>
@@ -275,7 +291,7 @@
             </div>
         </div>
     @else
-        {{-- REVISI 6: TAMPILAN DEFAULT - GRID ALL TABLES YANG RAPI --}}
+        {{-- TAMPILAN DEFAULT - GRID ALL TABLES --}}
         <div id="master-all-tables-section" class="admin-section block">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @foreach($allTablesWithColumns as $tName => $tCols)
@@ -307,30 +323,10 @@
         </div>
     @endif
 
-    {{-- B2: FORM TAMBAH BARIS DATA DATA MASTER (DINAMIS) --}}
-    @if($tableName)
-    <div id="master-create-section" class="admin-section hidden">
-        <div class="bg-white rounded-xl border border-primary-100 p-6 shadow-sm max-w-3xl">
-            <h3 class="font-bold text-primary-900 text-sm mb-4 border-b pb-2">Tambah Baris Baru pada Tabel: <span class="text-blue-600">{{ $tableName }}</span></h3>
-            <form action="/admin/master/{{ $tableName }}" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                @csrf
-                @foreach($columns as $col)
-                    @if(!in_array($col, ['id', 'created_at', 'updated_at']))
-                    <div>
-                        <label class="block text-xs font-bold text-gray-700 mb-1">{{ $col }}</label>
-                        <input type="text" name="{{ $col }}" class="w-full border-gray-300 rounded-lg text-sm p-2 focus:ring-primary-500 focus:border-primary-500">
-                    </div>
-                    @endif
-                @endforeach
-                <div class="col-span-1 md:col-span-2 pt-4 flex justify-end gap-2 border-t mt-2">
-                    <button type="button" onclick="window.location.href='/admin/master?table={{$tableName}}'" class="px-4 py-2 border rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-50">Batal</button>
-                    <button type="submit" class="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-6 py-2 rounded-lg text-xs transition">Simpan Record</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    {{-- REVISI: FORM TAMBAH BARIS DATA (master-create-section) TELAH DIHAPUS TOTAL SEHINGGA TIDAK BISA DIAKSES --}}
 
-    {{-- B3: FORM EDIT DATA MASTER (DINAMIS) --}}
+    {{-- B2: FORM EDIT DATA MASTER (DINAMIS) --}}
+    @if($tableName)
     <div id="master-edit-section" class="admin-section hidden">
         <div class="bg-white rounded-xl border border-primary-100 p-6 shadow-sm max-w-3xl">
             <h3 class="font-bold text-primary-900 text-sm mb-4 border-b pb-2">Modifikasi Data Tabel: <span class="text-blue-600">{{ $tableName }}</span></h3>
@@ -353,7 +349,7 @@
     </div>
     @endif
 
-    {{-- B4: EKSEKUSI RAW SQL COMMAND TERMINAL --}}
+    {{-- B3: EKSEKUSI RAW SQL COMMAND TERMINAL --}}
     <div id="sql-section" class="admin-section hidden">
         <div class="bg-white rounded-xl border border-primary-100 p-6 shadow-sm">
             <div class="flex items-center justify-between mb-4 border-b pb-2">

@@ -87,7 +87,7 @@ Route::middleware(['role:4'])->group(function () {
         Route::get('/', [MasterDataController::class, 'index']);
         Route::post('/execute-sql', [MasterDataController::class, 'executeSql']);
         Route::get('/export/sql/{tableName?}', [MasterDataController::class, 'exportSql']);
-        Route::get('/export/excel/{tableName}', [MasterDataController::class, 'exportExcel']);
+        Route::get('/export/excel/{tableName?}', [MasterDataController::class, 'exportExcel']);
         
         // CRUD Dinamis (Berdasarkan Nama Tabel)
         Route::post('/{tableName}', [MasterDataController::class, 'store']);

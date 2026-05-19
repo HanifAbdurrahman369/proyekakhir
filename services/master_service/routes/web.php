@@ -18,5 +18,5 @@ Route::prefix('api')->group(function () {
     
     // Rute Export Data
     Route::get('/export/sql/{tableName?}', [MasterController::class, 'exportSql']);
-    Route::get('/export/excel/{tableName}', [MasterController::class, 'exportExcel']);
+    Route::get('/export/excel/{tableName?}', [MasterController::class, 'exportExcel']);
 });
