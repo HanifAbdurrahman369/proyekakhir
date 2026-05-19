@@ -11,6 +11,9 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
+    /**
+     * Atribut yang dapat diisi secara massal (Mass Assignment).
+     */
     protected $fillable = [
         'role_id',
         'nama_lengkap',
@@ -20,11 +23,17 @@ class User extends Authenticatable
         'alamat',
     ];
 
+    /**
+     * Atribut yang harus disembunyikan saat serialisasi (JSON).
+     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
+    /**
+     * Konversi tipe data otomatis.
+     */
     protected function casts(): array
     {
         return [
@@ -33,9 +42,13 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * Kustomisasi pengiriman email reset password.
+     */
     public function sendPasswordResetNotification($token)
     {
-        $url = 'http://localhost:8002/forgot-password/' . $token;
+        // Menggunakan 127.0.0.1 agar lebih stabil antar-servis di Laragon
+        $url = 'http://127.0.0.1:8002/forgot-password/' . $token;
 
         $this->notify(
             new ResetPasswordNotification($url)

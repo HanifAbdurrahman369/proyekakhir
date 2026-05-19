@@ -29,13 +29,12 @@
 
         {{-- Logout --}}
         <a href="/logout"
-           class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition text-white/80 hover:text-white"
-           style="background:rgba(0,0,0,.25); border:1px solid rgba(0,0,0,.2)">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+           class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition text-white/80 hover:text-white hover:bg-white/10"
+           style="border: 1px solid rgba(255,255,255,0.1)">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
-            Logout
+            Keluar
         </a>
     </div>
-
 </nav>

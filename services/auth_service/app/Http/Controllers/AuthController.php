@@ -17,8 +17,13 @@ class AuthController extends Controller
             'g-recaptcha-response' => 'required'
         ]);
 
-        $captcha = Http::asForm()->post(
-            env('CAPTCHA_VERIFY_URL'),
+        /*
+        ===================================
+        1. BYPASS SSL LOCAL UNTUK GOOGLE CAPTCHA
+        ===================================
+        */
+        $captcha = Http::withoutVerifying()->asForm()->post(
+            env('CAPTCHA_VERIFY_URL', 'https://www.google.com/recaptcha/api/siteverify'),
             [
                 'secret' => env('CAPTCHA_SECRET_KEY'),
                 'response' => $request->input('g-recaptcha-response'),
@@ -28,19 +33,18 @@ class AuthController extends Controller
 
         $captchaResult = $captcha->json();
 
-        if (!$captchaResult['success']) {
+        if (!$captchaResult || !isset($captchaResult['success']) || !$captchaResult['success']) {
             return response()->json([
-                'message' => 'Captcha tidak valid'
+                'message' => 'Validasi Captcha gagal dari server Google'
             ], 422);
         }
 
         /*
         ===================================
-        CEK USER KE USER SERVICE
+        2. BYPASS SSL LOCAL UNTUK USER SERVICE
         ===================================
         */
-
-        $response = Http::post(
+        $response = Http::withoutVerifying()->post(
             'http://127.0.0.1:8002/api/find-user',
             [
                 'email' => $validated['email']
@@ -49,7 +53,7 @@ class AuthController extends Controller
 
         if ($response->failed()) {
             return response()->json([
-                'message' => 'Email Salah'
+                'message' => 'Email tidak ditemukan di sistem'
             ], 404);
         }
 
@@ -60,13 +64,9 @@ class AuthController extends Controller
         CEK PASSWORD
         ===================================
         */
-
-        if (!Hash::check(
-            $validated['password'],
-            $user['password']
-        )) {
+        if (!Hash::check($validated['password'], $user['password'])) {
             return response()->json([
-                'message' => 'Password salah'
+                'message' => 'Password yang Anda masukkan salah'
             ], 401);
         }
 
@@ -75,7 +75,6 @@ class AuthController extends Controller
         GENERATE JWT
         ===================================
         */
-
         $payload = [
             'iss' => 'auth-service',
             'sub' => $user['id'],
@@ -87,7 +86,7 @@ class AuthController extends Controller
 
         $token = JWT::encode(
             $payload,
-            env('JWT_SECRET'),
+            env('JWT_SECRET', 'secret-key-sementara-untuk-lokal'),
             'HS256'
         );
 
@@ -105,19 +104,55 @@ class AuthController extends Controller
 
     public function forgotPassword(Request $request)
     {
-        $response = Http::post(
-            'http://localhost:8002/api/forgot-password',
-            [
-                'email' => $request->email
-            ]
+        $response = Http::withoutVerifying()->post(
+            'http://127.0.0.1:8002/api/forgot-password',
+            ['email' => $request->email]
         );
 
-        return response()->json(
-            $response->json(),
-            $response->status()
-        );
+        return response()->json($response->json(), $response->status());
     }
+    
+    
+    // 3. ENDPOINT BARU: VERIFIKASI TOKEN JWT UNTUK SERVIS LAIN
+    // ===================================================================
+    // */
+    public function verifyToken(Request $request)
+    {
+        // Mengambil token dari input body atau dari Header Bearer Token
+        $token = $request->input('token') ?? $request->bearerToken();
 
+        if (!$token) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Token tidak disediakan atau kosong'
+            ], 400);
+        }
+
+        try {
+            // Ambil secret key yang sama dengan yang digunakan saat login
+            $secret = env('JWT_SECRET', 'secret-key-sementara-untuk-lokal');
+            
+            // Lakukan decode token JWT
+            $decoded = \Firebase\JWT\JWT::decode($token, new \Firebase\JWT\Key($secret, 'HS256'));
+
+            // Jika berhasil decode, kembalikan data payload token (id, email, role_id)
+            return response()->json([
+                'valid' => true,
+                'message' => 'Token sah dan aktif',
+                'data' => $decoded
+            ], 200);
+
+        } catch (\Firebase\JWT\ExpiredException $e) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Token telah kedaluwarsa (Expired)'
+            ], 401);
+        } catch (\Exception $e) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Token tidak sah atau telah dimanipulasi',
+                'error' => $e->getMessage()
+            ], 401);
+        }
+    }
 }
-
-

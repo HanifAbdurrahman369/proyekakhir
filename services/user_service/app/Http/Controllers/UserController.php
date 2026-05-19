@@ -205,4 +205,74 @@ public function resetPassword(Request $request)
         'message' => 'Token tidak valid'
     ], 400);
 }
+/*
+    =====================================
+    FULL CRUD MANAJEMEN PENGGUNA (ADMIN)
+    =====================================
+    */
+
+    // 1. Tampilkan Semua User
+    public function index()
+    {
+        // Mengambil semua user dan mengurutkan dari yang terbaru
+        $users = DB::table('users')->orderBy('id', 'desc')->get();
+        return response()->json(['data' => $users]);
+    }
+
+    public function store(Request $request)
+    {
+        // Cek manual jika email sudah ada agar errornya jelas
+        $exists = DB::table('users')->where('email', $request->email)->first();
+        if ($exists) {
+            return response()->json(['message' => 'Email ini sudah digunakan oleh pengguna lain.'], 422);
+        }
+
+        DB::table('users')->insert([
+            'nama_lengkap' => $request->nama_lengkap,
+            'email' => $request->email,
+            'password' => Hash::make($request->password), // Wajib hash password
+            'role_id' => $request->role_id,
+            'no_hp' => $request->no_hp ?? null,
+            'alamat' => $request->alamat ?? null,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+
+        return response()->json(['message' => 'User berhasil dibuat'], 201);
+    }
+
+    public function show($id)
+    {
+        $user = DB::table('users')->where('id', $id)->first();
+        if (!$user) return response()->json(['message' => 'User tidak ditemukan'], 404);
+        
+        return response()->json(['data' => $user]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $data = [
+            'nama_lengkap' => $request->nama_lengkap,
+            'email' => $request->email,
+            'role_id' => $request->role_id,
+            'no_hp' => $request->no_hp ?? null,
+            'alamat' => $request->alamat ?? null,
+            'updated_at' => now()
+        ];
+
+        // Jika form password diisi, ubah passwordnya
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
+        }
+
+        DB::table('users')->where('id', $id)->update($data);
+
+        return response()->json(['message' => 'User berhasil diupdate']);
+    }
+
+    public function destroy($id)
+    {
+        DB::table('users')->where('id', $id)->delete();
+        return response()->json(['message' => 'User berhasil dihapus']);
+    }
 }
