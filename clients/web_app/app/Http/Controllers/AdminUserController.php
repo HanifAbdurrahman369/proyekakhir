@@ -7,17 +7,20 @@ use Illuminate\Support\Facades\Http;
 
 class AdminUserController extends Controller
 {
-    private $apiUrl = 'http://127.0.0.1:8002/api/users';
+    protected function gatewayUrl(): string
+    {
+        return env('GATEWAY_URL', 'http://127.0.0.1:8000');
+    }
 
     private function api()
     {
-        // TAMBAHAN KRUSIAL: acceptJson() memaksa backend merespon JSON, bukan Redirect HTML
+        // acceptJson() memaksa backend merespon JSON, bukan redirect HTML
         return Http::withToken(session('token'))->acceptJson()->withoutVerifying();
     }
 
     public function index()
     {
-        $response = $this->api()->get($this->apiUrl);
+        $response = $this->api()->get($this->gatewayUrl() . '/api/users');
         $data = $response->json();
         
         // Membaca format data secara fleksibel, baik itu di dalam ['data'] atau array langsung
@@ -28,7 +31,7 @@ class AdminUserController extends Controller
 
     public function store(Request $request)
     {
-        $response = $this->api()->post($this->apiUrl, $request->all());
+        $response = $this->api()->post($this->gatewayUrl() . '/api/users', $request->all());
 
         if ($response->successful()) {
             return redirect('/dashboard-admin')->with('success', 'Pengguna berhasil ditambahkan.');
@@ -41,7 +44,7 @@ class AdminUserController extends Controller
 
     public function update(Request $request, $id)
     {
-        $response = $this->api()->put($this->apiUrl . '/' . $id, $request->all());
+        $response = $this->api()->put($this->gatewayUrl() . '/api/users/' . $id, $request->all());
 
         if ($response->successful()) {
             return redirect('/dashboard-admin')->with('success', 'Data pengguna berhasil diperbarui.');
@@ -53,7 +56,7 @@ class AdminUserController extends Controller
 
     public function destroy($id)
     {
-        $response = $this->api()->delete($this->apiUrl . '/' . $id);
+        $response = $this->api()->delete($this->gatewayUrl() . '/api/users/' . $id);
         return redirect('/dashboard-admin')->with('success', 'Pengguna berhasil dihapus.');
     }
 }

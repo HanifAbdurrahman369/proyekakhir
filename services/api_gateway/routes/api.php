@@ -72,6 +72,11 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/lahan/{any?
     return proxyRequest($request, $serviceMap['farming'], $path);
 })->where('any', '.*');
 
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/users/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    $path = trim('users/' . $any, '/');
+    return proxyRequest($request, $serviceMap['user'], $path);
+})->where('any', '.*');
+
 Route::any('/{service}/{any}', function (Request $request, $service, $any) use ($serviceMap) {
     if (!isset($serviceMap[$service])) {
         abort(404, 'Service not registered in API gateway');
