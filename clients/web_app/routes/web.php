@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\MasterDataController;
+use App\Http\Controllers\SiklusTanamController;
 
 /*
 |--------------------------------------------------------------------------
@@ -59,6 +60,18 @@ Route::get('/dashboard-petugas', function () {
 Route::get('/dashboard-pejabat', function () {
     return view('dashboard.pejabat');
 })->middleware('role:3');
+
+/*
+===================================================================
+2.1 JALUR INPUT DATA PETANI (ROLE: 1 - PETANI)
+===================================================================
+*/
+Route::middleware(['role:1'])->group(function () {
+Route::get('/input-panen', [SiklusTanamController::class, 'create']) ->name('input.panen');
+Route::get('/riwayat-panen', [SiklusTanamController::class, 'riwayatPanen']) ->name('riwayat.panen');
+Route::post('/input-panen', [SiklusTanamController::class, 'store']) ->name('input.panen.store');
+
+});
 
 /*
 ===================================================================

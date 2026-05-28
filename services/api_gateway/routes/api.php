@@ -8,7 +8,7 @@ $serviceMap = [
     'auth' => env('AUTH_SERVICE_URL', 'http://127.0.0.1:8001'),
     'user' => env('USER_SERVICE_URL', 'http://127.0.0.1:8002'),
     'farming' => env('FARMING_SERVICE_URL', 'http://127.0.0.1:8005'),
-    'gis' => env('GIS_SERVICE_URL', 'http://127.0.0.1:8004'),
+    'gis' => env('GIS_SERVICE_URL', 'http://127.0.0.1:8000'),
 ];
 
 function proxyRequest(Request $request, string $serviceUrl, string $path)
@@ -56,6 +56,8 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/reset-passw
 Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/statistik', fn (Request $request) => proxyRequest($request, $serviceMap['gis'], 'statistik'));
 Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/map-lahan', fn (Request $request) => proxyRequest($request, $serviceMap['gis'], 'map-lahan'));
 Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/batas-wilayah', fn (Request $request) => proxyRequest($request, $serviceMap['gis'], 'batas-wilayah'));
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/riwayat-panen', fn (Request $request) => proxyRequest($request, $serviceMap['farming'], 'riwayat-panen'));
 
 Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/activities/{any?}', function (Request $request, $any = '') use ($serviceMap) {
     $path = trim('activities/' . $any, '/');
