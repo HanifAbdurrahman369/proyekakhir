@@ -117,5 +117,9 @@ Route::middleware(['role:4'])->group(function () {
 Route::get('/profile', [AuthController::class, 'profile'])->middleware('jwt');
 
 Route::get('/map', function () {
-    return view('map'); 
+    return view('fullmap');
 })->name('map.full');
+
+Route::get('/map.pejabat', function () {
+    return view('sebaran-lahan');
+})->name('map.pejabat');

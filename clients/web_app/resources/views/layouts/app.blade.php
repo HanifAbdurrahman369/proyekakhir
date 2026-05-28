@@ -8,25 +8,29 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+          rel="stylesheet">
 
     @vite('resources/css/app.css')
 </head>
 
-<body class="font-sans bg-primary-50/40 min-h-screen">
+<body class="font-sans bg-primary-50/40">
 
-    {{-- 1. Panggil Navbar Global --}}
+    {{-- NAVBAR --}}
     @include('partials.navbar')
 
-    {{-- Layout: Sidebar + Main --}}
-    <div class="flex min-h-[calc(100vh-56px)]">
+    {{-- WRAPPER --}}
+    <div class="flex">
 
-        {{-- 2. Panggil Pengatur Sidebar --}}
+        {{-- SIDEBAR --}}
         @include('partials.sidebar.index')
 
-        {{-- 3. Main Content --}}
-        <main class="flex-1 p-6 overflow-y-auto">
+        {{-- MAIN CONTENT --}}
+        <main class="flex-1 p-6 min-h-screen">
+
             @yield('content')
+
         </main>
 
     </div>
