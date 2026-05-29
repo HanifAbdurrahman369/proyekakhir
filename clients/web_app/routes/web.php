@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\MasterDataController;
-
+use App\Http\Controllers\PetugasController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes - Frontend web_app (Port 8080)
@@ -96,13 +96,14 @@ Route::middleware(['role:4'])->group(function () {
     });
 });
 
-/*
-===================================================================
-4. FITUR TAMBAHAN LAINNYA
-===================================================================
-*/
 Route::get('/profile', [AuthController::class, 'profile'])->middleware('jwt');
 
 Route::get('/map', function () {
-    return view('map'); 
+    return view('fullmap'); 
 })->name('map.full');
+Route::prefix('petugas')->group(function () {
+    Route::get('/dashboard', [PetugasController::class, 'index']);
+    Route::post('/spasial/simpan', [PetugasController::class, 'storeSpasial']);
+    Route::put('/spasial/ubah/{id}', [PetugasController::class, 'updateSpasial']);
+    Route::delete('/spasial/hapus/{id}', [PetugasController::class, 'destroySpasial']);
+});
