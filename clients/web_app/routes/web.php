@@ -52,9 +52,7 @@ Route::get('/dashboard-petani', function () {
     return view('dashboard.petani');
 })->middleware('role:1');
 
-Route::get('/dashboard-petugas', function () {
-    return view('dashboard.petugas');
-})->middleware('role:2');
+Route::get('/dashboard-petugas', [PetugasController::class, 'index'])->middleware('role:2');
 
 Route::get('/dashboard-pejabat', function () {
     return view('dashboard.pejabat');

@@ -69,7 +69,7 @@ class PetugasController extends Controller
         $response = Http::withToken($token)->post($this->gatewayUrl . '/spasial-lahan', $request->all());
 
         if ($response->successful()) {
-            return redirect('/petugas/dashboard')->with('success', 'Data poligon lahan sawah baru berhasil dipetakan.');
+            return redirect('/dashboard-petugas')->with('success', 'Data poligon lahan sawah baru berhasil dipetakan.');
         }
 
         $errorMsg = $response->json('message') ?? 'Gagal menyimpan data spasial lahan.';
