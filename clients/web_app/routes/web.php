@@ -5,6 +5,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\PetugasController;
+use App\Http\Controllers\SiklusTanamController;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes - Frontend web_app (Port 8080)
@@ -23,13 +25,11 @@ Route::get('/', function () {
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
-
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::get('/register', function () {
     return view('auth.register');
 })->name('register');
-
 Route::post('/register', [AuthController::class, 'register']);
 
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -40,8 +40,8 @@ Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name(
 Route::get('/reset-password/{token}', function ($token) {
     return view('auth.reset-password', ['token' => $token]);
 })->name('password.reset');
-
 Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
+
 
 /*
 ===================================================================
@@ -59,6 +59,19 @@ Route::get('/dashboard-petugas', function () {
 Route::get('/dashboard-pejabat', function () {
     return view('dashboard.pejabat');
 })->middleware('role:3');
+
+
+/*
+===================================================================
+2.1 JALUR INPUT DATA PETANI (ROLE: 1 - PETANI)
+===================================================================
+*/
+Route::middleware(['role:1'])->group(function () {
+    Route::get('/input-panen', [SiklusTanamController::class, 'create'])->name('input.panen');
+    Route::get('/riwayat-panen', [SiklusTanamController::class, 'riwayatPanen'])->name('riwayat.panen');
+    Route::post('/input-panen', [SiklusTanamController::class, 'store'])->name('input.panen.store');
+});
+
 
 /*
 ===================================================================
@@ -78,10 +91,6 @@ Route::middleware(['role:4'])->group(function () {
         Route::delete('/{id}', [AdminUserController::class, 'destroy']); // Aksi Hapus User
     });
 
-    // Jalur kosong untuk integrasi master_service berikutnya (Tahap 4)
-    Route::get('/admin/master', function () {
-        return "Halaman data master siap dibangun pada Tahap 4";
-    });
     // JALUR DATA MASTER DINAMIS
     Route::prefix('admin/master')->group(function () {
         Route::get('/', [MasterDataController::class, 'index']);
@@ -96,11 +105,22 @@ Route::middleware(['role:4'])->group(function () {
     });
 });
 
+
+/*
+===================================================================
+4. JALUR LAINNYA (PROFILE, MAP, & PETUGAS)
+===================================================================
+*/
 Route::get('/profile', [AuthController::class, 'profile'])->middleware('jwt');
 
 Route::get('/map', function () {
     return view('fullmap'); 
 })->name('map.full');
+
+Route::get('/map.pejabat', function () {
+    return view('sebaran-lahan');
+})->name('map.pejabat');
+
 Route::prefix('petugas')->group(function () {
     Route::get('/dashboard', [PetugasController::class, 'index']);
     Route::post('/spasial/simpan', [PetugasController::class, 'storeSpasial']);

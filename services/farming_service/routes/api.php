@@ -24,7 +24,7 @@ Route::middleware(\App\Http\Middleware\JwtMiddleware::class)->group(function () 
     Route::get('/activities/{id}', [SiklusTanamController::class, 'show']);
     Route::put('/activities/{id}', [SiklusTanamController::class, 'update']);
     Route::delete('/activities/{id}', [SiklusTanamController::class, 'destroy']);
-
+    
     /*
     |--------------------------------------------------------------------------
     | APPROVAL PETUGAS
@@ -34,6 +34,7 @@ Route::middleware(\App\Http\Middleware\JwtMiddleware::class)->group(function () 
     Route::post('/activities/{id}/approve', [SiklusTanamController::class, 'approve']);
     Route::post('/activities/{id}/reject', [SiklusTanamController::class, 'reject']);
 
+ 
     /*
     |--------------------------------------------------------------------------
     | JENIS BIBIT
@@ -42,6 +43,7 @@ Route::middleware(\App\Http\Middleware\JwtMiddleware::class)->group(function () 
 
  
 });
+    Route::get('/riwayat-panen',[SiklusTanamController::class, 'riwayatPanen']);
 
    Route::get('/bibit', [JenisBibitController::class, 'index']);
     Route::get('/bibit/{id}', [JenisBibitController::class, 'show']);

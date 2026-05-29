@@ -13,7 +13,7 @@ class SiklusTanamController extends Controller
 {
     protected function gatewayUrl(): string
     {
-        return env('GATEWAY_URL', 'http://127.0.0.1:8005');
+        return env('GATEWAY_URL', 'http://127.0.0.1:8003');
     }
 
     /**
@@ -105,4 +105,33 @@ class SiklusTanamController extends Controller
             ->back()
             ->with('error', 'Gagal menyimpan data aktivitas tanam');
     }
+
+ public function riwayatPanen(Request $request)
+{
+    $token = session('token');
+
+    if (!$token) {
+        return redirect('/login')->with(
+            'error',
+            'Silakan login terlebih dahulu'
+        );
+    }
+
+    $response = Http::withToken($token)
+        ->acceptJson()
+        ->get($this->gatewayUrl() . '/api/riwayat-panen', [
+            'limit' => 5
+        ]);
+
+    if ($response->successful()) {
+        $riwayat = $response->json();
+    } else {
+        $riwayat = ['data' => []];
+        session()->flash('error', 'Gagal mengambil data riwayat panen.');
+    }
+
+    return view('partials.sidebar.riwayat-panen', compact('riwayat'));
+}
+
+
 }

@@ -4,7 +4,7 @@
 document.addEventListener("DOMContentLoaded", function () {
     const gatewayUrl = window.GATEWAY_URL || '';
     const apiBase = gatewayUrl ? `${gatewayUrl}/api` : '/api';
-    const isFullMap = window.location.pathname.includes('/map');
+    const isFullMap = window.location.pathname === '/map';
 
     let baseStyles = `
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
