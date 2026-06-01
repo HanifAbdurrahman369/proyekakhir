@@ -64,6 +64,25 @@ public function store(Request $request)
         'message' => 'Aktivitas berhasil disimpan',
         'data' => $data
     ], 201);
+
+    try {
+        $namaPetani = auth()->user()->name ?? 'Seorang Petani';
+        $namaLahan = \Illuminate\Support\Facades\DB::table('lahan_sawah')
+                        ->where('id', $request->lahan_id)->value('nama_lahan') ?? 'Tidak diketahui';
+
+        \Illuminate\Support\Facades\DB::table('notifikasi')->insert([
+            'role_id_penerima' => 2, // 2 = Mengarah ke semua Petugas
+            'user_id_penerima' => null, // Broadcast
+            'judul' => 'Laporan Panen Baru',
+            'pesan' => "Petani {$namaPetani} mengirimkan laporan panen untuk lahan {$namaLahan}. Segera lakukan verifikasi.",
+            'is_read' => 0,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+    } catch (\Exception $e) {
+        // Abaikan error notifikasi agar tidak mengganggu proses simpan utama petani
+        \Illuminate\Support\Facades\Log::error('Gagal membuat notifikasi: ' . $e->getMessage());
+    }
 }
   /**
      * DETAIL DATA
@@ -308,6 +327,22 @@ public function store(Request $request)
         return response()->json([
             'success' => true,
             'message' => 'Data berhasil dihapus'
+        ], 200);
+    }
+    public function getPendingVerifications()
+    {
+        // Menarik data siklus tanam yang statusnya belum DITERIMA atau DITOLAK
+        // Memuat relasi data tabel bibit dan lahan sawah agar detailnya terlihat oleh Petugas
+        $pendingData = SiklusTanam::with(['bibit', 'lahan'])
+            ->where('status_verifikasi', 'PENDING')
+            ->orWhereNull('status_verifikasi') // Antisipasi jika default database kosong
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Berhasil mengambil antrean verifikasi tanam',
+            'data' => $pendingData
         ], 200);
     }
 }

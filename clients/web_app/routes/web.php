@@ -80,12 +80,16 @@ Route::get('/dashboard-pejabat', function () { return view('dashboard.pejabat');
 4. OPERASIONAL PETUGAS (ROLE: 2) - Manajemen Spasial
 ===================================================================
 */
-Route::prefix('petugas')->group(function () {
-    Route::post('/spasial/simpan', [PetugasController::class, 'storeSpasial']);
-    Route::put('/spasial/ubah/{id}', [PetugasController::class, 'updateSpasial']);
-    Route::delete('/spasial/hapus/{id}', [PetugasController::class, 'destroySpasial']);
+Route::middleware(['role:2'])->group(function () {
+    // Tampilan Halaman
+    Route::get('/dashboard-petugas', [PetugasController::class, 'index']);
+    Route::get('/peta-lahan', [PetugasController::class, 'petaLahan']);
+    Route::get('/verifikasi-panen', [PetugasController::class, 'verifikasiPanen']);
+    
+    // Aksi Pemrosesan Formulir (Server-Side)
+    Route::post('/petugas/spasial/simpan', [PetugasController::class, 'storeSpasial']);
+    Route::post('/petugas/verifikasi/{id}/{aksi}', [PetugasController::class, 'aksiVerifikasi']);
 });
-
 
 /*
 ===================================================================

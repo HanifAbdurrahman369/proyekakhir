@@ -8,28 +8,23 @@ use Illuminate\Support\Facades\DB;
 class LahanSawahController extends Controller
 {
     /**
-     * 1. AMBIL DATA REFERENSI (Untuk Pilihan Dropdown di Web & Mobile)
+     * AMBIL DATA REFERENSI (Untuk Dropdown Form Petugas)
      */
     public function getReferensiData()
     {
-        $petani = DB::table('users')->where('role_id', 1)->select('id', 'name')->get();
-        $kecamatan = DB::table('kecamatan')->select('id', 'nama_kecamatan')->get();
-        $kelurahan = DB::table('kelurahan')->select('id', 'kecamatan_id', 'nama_kelurahan')->get();
-        $tipeLahan = DB::table('tipe_lahan')->select('id', 'nama_tipe')->get();
-
         return response()->json([
             'success' => true,
             'data' => [
-                'petani' => $petani,
-                'kecamatan' => $kecamatan,
-                'kelurahan' => $kelurahan,
-                'tipe_lahan' => $tipeLahan
+                'petani' => DB::table('users')->where('role_id', 1)->select('id', 'name')->get(),
+                'kecamatan' => DB::table('kecamatan')->select('id', 'nama_kecamatan')->get(),
+                'kelurahan' => DB::table('kelurahan')->select('id', 'kecamatan_id', 'nama_kelurahan')->get(),
+                'tipe_lahan' => DB::table('tipe_lahan')->select('id', 'nama_tipe')->get()
             ]
         ], 200);
     }
 
     /**
-     * 2. BACA DATA: Mengambil Semua Poligon (Format GeoJSON)
+     * BACA DATA SPASIAL: Tarik Semua Poligon (Format GeoJSON)
      */
     public function index()
     {
@@ -42,8 +37,7 @@ class LahanSawahController extends Controller
                 lahan_sawah.latitude, lahan_sawah.longitude,
                 kecamatan.nama_kecamatan, kelurahan.nama_kelurahan,
                 ST_AsGeoJSON(lahan_sawah.polygon_area) as geojson_polygon
-            ")
-            ->get();
+            ")->get();
 
         $features = [];
         foreach ($lahan as $item) {
@@ -59,22 +53,16 @@ class LahanSawahController extends Controller
                     'alamat_detail' => $item->alamat_detail,
                     'kecamatan' => $item->nama_kecamatan,
                     'kelurahan' => $item->nama_kelurahan,
-                    'center' => [
-                        'latitude' => $item->latitude,
-                        'longitude' => $item->longitude
-                    ]
+                    'center' => ['latitude' => $item->latitude, 'longitude' => $item->longitude]
                 ]
             ];
         }
 
-        return response()->json([
-            'type' => 'FeatureCollection',
-            'features' => $features
-        ], 200);
+        return response()->json(['type' => 'FeatureCollection', 'features' => $features], 200);
     }
 
     /**
-     * 3. TAMBAH DATA: Simpan Poligon & Informasi Sawah Baru
+     * TAMBAH DATA: Simpan Poligon Lahan Baru via Fungsi Spasial MySQL
      */
     public function store(Request $request)
     {
@@ -83,8 +71,8 @@ class LahanSawahController extends Controller
             'kecamatan_id' => 'required|integer',
             'kelurahan_id' => 'required|integer',
             'tipe_lahan_id' => 'required|integer',
-            'nama_lahan' => 'required|string|max:255',
-            'pemilik_lahan' => 'required|string|max:255',
+            'nama_lahan' => 'required|string',
+            'pemilik_lahan' => 'required|string',
             'luas_lahan_hektar' => 'required|numeric',
             'geojson' => 'required|string'
         ]);
@@ -106,15 +94,14 @@ class LahanSawahController extends Controller
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
-
-            return response()->json(['success' => true, 'message' => 'Lahan sawah berhasil disimpan.'], 201);
+            return response()->json(['success' => true, 'message' => 'Lahan berhasil dipetakan.'], 201);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Gagal menyimpan data spasial: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Gagal menyimpan: ' . $e->getMessage()], 500);
         }
     }
 
     /**
-     * 4. UBAH DATA: Perbarui Informasi Atribut & Koordinat Peta
+     * UBAH DATA: Perbarui Informasi / Gambar Poligon Ulang
      */
     public function update(Request $request, $id)
     {
@@ -127,18 +114,18 @@ class LahanSawahController extends Controller
 
         try {
             DB::table('lahan_sawah')->where('id', $id)->update($updateData);
-            return response()->json(['success' => true, 'message' => 'Data spasial lahan sawah berhasil diperbarui.'], 200);
+            return response()->json(['success' => true, 'message' => 'Data spasial diperbarui.'], 200);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Gagal memperbarui data spasial: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Gagal memperbarui: ' . $e->getMessage()], 500);
         }
     }
 
     /**
-     * 5. HAPUS DATA: Hapus Record Lahan Sawah
+     * HAPUS DATA: Hapus Lahan beserta Poligonnya
      */
     public function destroy($id)
     {
         DB::table('lahan_sawah')->where('id', $id)->delete();
-        return response()->json(['success' => true, 'message' => 'Lahan sawah berhasil dihapus dari sistem.'], 200);
+        return response()->json(['success' => true, 'message' => 'Lahan berhasil dihapus.'], 200);
     }
 }

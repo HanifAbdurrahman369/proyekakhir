@@ -86,7 +86,7 @@ Route::any('/{service}/{any}', function (Request $request, $service, $any) use (
 
     return proxyRequest($request, $serviceMap[$service], $any);
 })->where('any', '.*');
-Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/spasial-lahan/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/spasial-lahan/{any?}', function (Illuminate\Http\Request $request, $any = '') use ($serviceMap) {
     $path = trim('spasial-lahan/' . $any, '/');
     return proxyRequest($request, $serviceMap['gis'], $path);
 })->where('any', '.*');
