@@ -81,12 +81,10 @@ Route::get('/dashboard-pejabat', function () { return view('dashboard.pejabat');
 ===================================================================
 */
 Route::middleware(['role:2'])->group(function () {
-    // Tampilan Halaman
     Route::get('/dashboard-petugas', [PetugasController::class, 'index']);
-    Route::get('/peta-lahan', [PetugasController::class, 'petaLahan']);
-    Route::get('/verifikasi-panen', [PetugasController::class, 'verifikasiPanen']);
-    
-    // Aksi Pemrosesan Formulir (Server-Side)
+    Route::get('/manajemen-data-spasial', [PetugasController::class, 'manajemenDataSpasial']);
+    Route::get('/input-parameter-lingkungan', [PetugasController::class, 'inputParameterLingkungan']);
+    Route::get('/verifikasi-data-petani', [PetugasController::class, 'verifikasiDataPetani']);  
     Route::post('/petugas/spasial/simpan', [PetugasController::class, 'storeSpasial']);
     Route::post('/petugas/verifikasi/{id}/{aksi}', [PetugasController::class, 'aksiVerifikasi']);
 });
