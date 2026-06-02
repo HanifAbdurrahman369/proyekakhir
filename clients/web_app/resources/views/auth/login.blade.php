@@ -121,7 +121,6 @@
                 <input type="number"
                        name="math_captcha_answer"
                        value=""
-                       placeholder="Jawaban"
                        autocomplete="off"
                        class="auth-input w-full sm:w-32 px-4 py-3 border border-slate-200 rounded-2xl text-sm bg-white outline-none transition placeholder-slate-300 text-center font-bold @error('math_captcha_answer') border-red-400 @enderror"
                        required>
