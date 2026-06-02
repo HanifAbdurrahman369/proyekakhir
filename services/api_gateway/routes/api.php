@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Route;
 $serviceMap = [
     'auth'    => 'http://127.0.0.1:8001',
     'user'    => 'http://127.0.0.1:8002',
+    'master'  => 'http://127.0.0.1:8004',
     'farming' => 'http://127.0.0.1:8005',
     'gis'     => 'http://127.0.0.1:8000',
 ];
@@ -178,6 +179,9 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/batas-wilay
     return proxyRequest($request, $serviceMap['gis'], trim('batas-wilayah/' . $any, '/'));
 })->where('any', '.*');
 
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/master/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    return proxyRequest($request, $serviceMap['master'], $any);
+})->where('any', '.*');
 
 /*
 |--------------------------------------------------------------------------

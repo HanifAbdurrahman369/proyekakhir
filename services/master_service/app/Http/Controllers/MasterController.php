@@ -5,219 +5,577 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Str;
 
 class MasterController extends Controller
 {
-    // 1. Ambil semua daftar tabel (Kecuali migrations & password_reset_tokens) + Kolomnya
-    public function getTables() {
+    private array $hiddenTables = [];
+
+    private function databaseName(): string
+    {
+        return DB::getDatabaseName();
+    }
+
+    private function tableExists(string $tableName): bool
+    {
+        return Schema::hasTable($tableName);
+    }
+
+    private function getPrimaryKey(string $tableName): string
+    {
+        $database = $this->databaseName();
+
+        $row = DB::table('information_schema.KEY_COLUMN_USAGE')
+            ->where('TABLE_SCHEMA', $database)
+            ->where('TABLE_NAME', $tableName)
+            ->where('CONSTRAINT_NAME', 'PRIMARY')
+            ->orderBy('ORDINAL_POSITION')
+            ->first();
+
+        return $row->COLUMN_NAME ?? 'id';
+    }
+
+    private function getColumnMeta(string $tableName): array
+    {
+        $database = $this->databaseName();
+
+        return DB::table('information_schema.COLUMNS')
+            ->where('TABLE_SCHEMA', $database)
+            ->where('TABLE_NAME', $tableName)
+            ->orderBy('ORDINAL_POSITION')
+            ->get()
+            ->map(function ($col) {
+                return [
+                    'name' => $col->COLUMN_NAME,
+                    'type' => $col->COLUMN_TYPE,
+                    'data_type' => strtolower($col->DATA_TYPE),
+                    'nullable' => $col->IS_NULLABLE === 'YES',
+                    'default' => $col->COLUMN_DEFAULT,
+                    'extra' => strtolower($col->EXTRA ?? ''),
+                    'key' => $col->COLUMN_KEY,
+                ];
+            })
+            ->toArray();
+    }
+
+    private function isGeometryColumn(array $meta): bool
+    {
+        return in_array(strtolower($meta['data_type']), [
+            'geometry',
+            'point',
+            'linestring',
+            'polygon',
+            'multipoint',
+            'multilinestring',
+            'multipolygon',
+            'geometrycollection',
+        ]);
+    }
+
+    private function safeTableName(string $tableName): string
+    {
+        return str_replace('`', '', $tableName);
+    }
+
+    private function safeColumnName(string $columnName): string
+    {
+        return str_replace('`', '', $columnName);
+    }
+
+    private function quotedIdentifier(string $identifier): string
+    {
+        return '`' . str_replace('`', '``', $identifier) . '`';
+    }
+
+    private function prepareDataForWrite(string $tableName, Request $request, bool $isUpdate = false): array
+    {
+        $metas = $this->getColumnMeta($tableName);
+        $input = $request->all();
+
+        unset($input['_token'], $input['_method']);
+
+        $normalData = [];
+        $geometryData = [];
+
+        foreach ($metas as $meta) {
+            $column = $meta['name'];
+
+            if (!array_key_exists($column, $input)) {
+                continue;
+            }
+
+            if (str_contains($meta['extra'], 'auto_increment')) {
+                continue;
+            }
+
+            $value = $input[$column];
+
+            if ($value === '' || $value === '[NULL]') {
+                $value = null;
+            }
+
+            if ($isUpdate && $value === '[Data Geometri/Spasial]') {
+                continue;
+            }
+
+            if ($this->isGeometryColumn($meta)) {
+                if ($value === null || $value === '[Data Geometri/Spasial]') {
+                    continue;
+                }
+
+                $geometryData[$column] = $value;
+                continue;
+            }
+
+            $normalData[$column] = $value;
+        }
+
+        return [
+            'normal' => $normalData,
+            'geometry' => $geometryData,
+        ];
+    }
+
+    private function geometrySqlValue(string $value): string
+    {
+        $trimmed = trim($value);
+        $quoted = DB::getPdo()->quote($trimmed);
+
+        if (Str::startsWith($trimmed, ['{', '['])) {
+            return "ST_GeomFromGeoJSON($quoted)";
+        }
+
+        return "ST_GeomFromText($quoted)";
+    }
+
+    public function getTables()
+    {
         $tables = DB::select('SHOW TABLES');
         $result = [];
-        
+
         foreach ($tables as $table) {
-            $tableName = array_values((array)$table)[0];
-            // REVISI 2 & 3: Saring agar tidak menampilkan tabel sistem internal
-            if (!in_array($tableName, ['migrations', 'password_reset_tokens'])) {
-                $result[] = [
-                    'table_name' => $tableName,
-                    'columns' => Schema::getColumnListing($tableName)
-                ];
+            $tableName = array_values((array) $table)[0];
+
+            if (in_array($tableName, $this->hiddenTables)) {
+                continue;
             }
+
+            $result[] = [
+                'table_name' => $tableName,
+                'primary_key' => $this->getPrimaryKey($tableName),
+                'columns' => Schema::getColumnListing($tableName),
+                'column_meta' => $this->getColumnMeta($tableName),
+            ];
         }
+
         return response()->json($result);
     }
 
-    // 2. Ambil semua kolom dan data dari tabel tertentu (Guest-Safe & Spatial-Safe)
-    public function getTableData($tableName) {
-        if (!Schema::hasTable($tableName)) {
-            return response()->json(['message' => 'Tabel tidak ditemukan'], 404);
+    public function getTableData($tableName)
+    {
+        $tableName = $this->safeTableName($tableName);
+
+        if (!$this->tableExists($tableName)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tabel tidak ditemukan: ' . $tableName
+            ], 404);
         }
-        
-        $columns = Schema::getColumnListing($tableName);
-        
-        // REVISI 1: Proteksi data spasial/binary agar tidak merusak encoding JSON
-        $data = DB::table($tableName)->get()->map(function($row) {
-            $rowArray = (array)$row;
-            foreach ($rowArray as $key => $value) {
-                if (is_string($value) && !mb_check_encoding($value, 'UTF-8')) {
-                    $rowArray[$key] = '[Data Geometri/Spasial]';
+
+        try {
+            $primaryKey = $this->getPrimaryKey($tableName);
+            $metas = $this->getColumnMeta($tableName);
+
+            $selects = [];
+
+            foreach ($metas as $meta) {
+                $column = $this->safeColumnName($meta['name']);
+
+                if ($this->isGeometryColumn($meta)) {
+                    $selects[] = DB::raw("ST_AsText(" . $this->quotedIdentifier($column) . ") as " . $this->quotedIdentifier($column));
+                } else {
+                    // Penting: jangan pakai backtick manual di string biasa.
+                    // Laravel Query Builder akan mengamankan nama kolom secara otomatis.
+                    $selects[] = $column;
                 }
             }
-            return $rowArray;
-        });
 
-        return response()->json(['columns' => $columns, 'rows' => $data]);
+            $rows = DB::table($tableName)
+                ->select($selects)
+                ->limit(500)
+                ->get()
+                ->map(function ($row) {
+                    $array = (array) $row;
+
+                    foreach ($array as $key => $value) {
+                        if (is_resource($value)) {
+                            $array[$key] = '[Data Binary/Resource]';
+                        }
+
+                        if (is_string($value) && !mb_check_encoding($value, 'UTF-8')) {
+                            $array[$key] = '[Data Binary/Spasial]';
+                        }
+                    }
+
+                    return $array;
+                });
+
+            return response()->json([
+                'success' => true,
+                'table_name' => $tableName,
+                'primary_key' => $primaryKey,
+                'columns' => Schema::getColumnListing($tableName),
+                'column_meta' => $metas,
+                'rows' => $rows,
+            ]);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data tabel: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
-    // 3. Generic CRUD: Insert Data
-    public function storeData(Request $request, $tableName) {
-        // REVISI 4: Filter hanya kolom yang sah di database & ubah string kosong ke null
-        $columns = Schema::getColumnListing($tableName);
-        $data = array_intersect_key($request->all(), array_flip($columns));
-        
-        foreach ($data as $key => $value) {
-            if ($value === '') {
-                $data[$key] = null;
-            }
+    public function storeData(Request $request, $tableName)
+    {
+        $tableName = $this->safeTableName($tableName);
+
+        if (!$this->tableExists($tableName)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tabel tidak ditemukan: ' . $tableName
+            ], 404);
         }
 
-        DB::table($tableName)->insert($data);
-        return response()->json(['message' => "Data berhasil ditambah ke $tableName"]);
-    }
-
-    // 4. Generic CRUD: Update Data (Spatial & ID Protected)
-    public function updateData(Request $request, $tableName, $id) {
-        $columns = Schema::getColumnListing($tableName);
-        $data = array_intersect_key($request->all(), array_flip($columns));
-        
-        // Proteksi 1: Keluarkan ID dari data yang akan di-update agar tidak bentrok dengan Primary Key
-        unset($data['id']);
-
-        foreach ($data as $key => $value) {
-            // Mengubah string kosong menjadi null
-            if ($value === '') {
-                $data[$key] = null;
-            }
-            
-            // Proteksi 2: Jika kolom berisi penanda geometri bawaan frontend, 
-            // keluarkan dari antrean update agar data spasial asli di database tidak rusak/corrupt
-            if ($value === '[Data Geometri/Spasial]') {
-                unset($data[$key]);
-            }
-        }
+        $prepared = $this->prepareDataForWrite($tableName, $request, false);
 
         try {
-            // Eksekusi update data ke database secara otomatis
-            DB::table($tableName)->where('id', $id)->update($data);
-            return response()->json(['message' => "Data di tabel $tableName berhasil diperbarui secara otomatis."]);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Gagal menyimpan perubahan ke database: ' . $e->getMessage()], 500);
-        }
-    }
-
-    // 5. Generic CRUD: Delete Data
-    public function deleteData($tableName, $id) {
-        DB::table($tableName)->where('id', $id)->delete();
-        return response()->json(['message' => "Data di $tableName berhasil dihapus"]);
-    }
-
-    // 6. Manipulasi Skema: Eksekusi Kode SQL Mentah
-    public function executeRawSql(Request $request) {
-        $request->validate(['sql' => 'required']);
-        try {
-            DB::unprepared($request->sql);
-            return response()->json(['message' => 'Query SQL berhasil dieksekusi']);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
-        }
-    }
-
-    // 7. EXPORT SQL
-    public function exportSql($tableName = null)
-    {
-        $tables = $tableName ? [$tableName] : array_map(function($t) {
-            return array_values((array)$t)[0];
-        }, DB::select('SHOW TABLES'));
-
-        $output = "-- SIG-PALA Database Export\n-- Generated: " . now() . "\n\nSET FOREIGN_KEY_CHECKS=0;\n\n";
-
-        foreach ($tables as $table) {
-            if (in_array($table, ['migrations', 'password_reset_tokens'])) continue;
-
-            $output .= "DROP TABLE IF EXISTS `$table`;\n";
-            $createTable = DB::select("SHOW CREATE TABLE `$table`")[0];
-            $output .= $createTable->{'Create Table'} . ";\n\n";
-
-            $rows = DB::table($table)->get();
-            foreach ($rows as $row) {
-                $rowArray = (array)$row;
-                $columns = "`" . implode("`, `", array_keys($rowArray)) . "`";
-                $values = array_map(function($value) {
-                    if (is_null($value)) return "NULL";
-                    if (is_string($value) && !mb_check_encoding($value, 'UTF-8')) return "geomfromtext('POINT(0 0)')"; // Fallback data spasial
-                    return "'" . addslashes($value) . "'";
-                }, array_values($rowArray));
-                
-                $output .= "INSERT INTO `$table` ($columns) VALUES (" . implode(", ", $values) . ");\n";
-            }
-            $output .= "\n";
-        }
-
-        $output .= "SET FOREIGN_KEY_CHECKS=1;";
-        $filename = ($tableName ?? 'full_database') . "_" . date('Ymd_His') . ".sql";
-
-        return response($output)
-            ->header('Content-Type', 'application/sql')
-            ->header('Content-Disposition', "attachment; filename=\"$filename\"");
-    }
-
-   // 8. EXPORT EXCEL (Mendukung Single Table & Full Database Multi-Sheets)
-    public function exportExcel($tableName = null)
-    {
-        // Jika ada nama tabel, export satu tabel saja
-        if ($tableName) {
-            if (!Schema::hasTable($tableName)) {
-                return response()->json(['message' => 'Tabel tidak ditemukan'], 404);
+            if (empty($prepared['normal']) && empty($prepared['geometry'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak ada data yang dikirim.'
+                ], 422);
             }
 
-            $columns = Schema::getColumnListing($tableName);
-            $data = DB::table($tableName)->get()->map(function($item) {
-                $array = (array)$item;
-                foreach ($array as $key => $value) {
-                    if (is_string($value) && !mb_check_encoding($value, 'UTF-8')) {
-                        $array[$key] = '[Data Geometri/Spasial]';
+            if (empty($prepared['geometry'])) {
+                DB::table($tableName)->insert($prepared['normal']);
+            } else {
+                $columns = [];
+                $values = [];
+
+                foreach ($prepared['normal'] as $column => $value) {
+                    $columns[] = $this->quotedIdentifier($column);
+
+                    if ($value === null) {
+                        $values[] = 'NULL';
+                    } else {
+                        $values[] = DB::getPdo()->quote($value);
                     }
                 }
-                return $array;
-            });
 
-            $filename = $tableName . "_" . date('Ymd_His') . ".xlsx";
-            return Excel::download(new class($data, $columns) implements \Maatwebsite\Excel\Concerns\FromCollection, \Maatwebsite\Excel\Concerns\WithHeadings {
-                private $data; private $columns;
-                public function __construct($data, $columns) { $this->data = $data; $this->columns = $columns; }
-                public function collection() { return $this->data; }
-                public function headings(): array { return $this->columns; }
-            }, $filename);
+                foreach ($prepared['geometry'] as $column => $value) {
+                    $columns[] = $this->quotedIdentifier($column);
+                    $values[] = $this->geometrySqlValue($value);
+                }
+
+                $sql = "INSERT INTO " . $this->quotedIdentifier($tableName) .
+                    " (" . implode(', ', $columns) . ") VALUES (" . implode(', ', $values) . ")";
+
+                DB::statement($sql);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "Data berhasil ditambahkan ke tabel $tableName"
+            ]);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menambahkan data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updateData(Request $request, $tableName, $id)
+    {
+        $tableName = $this->safeTableName($tableName);
+
+        if (!$this->tableExists($tableName)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tabel tidak ditemukan: ' . $tableName
+            ], 404);
         }
 
-        // JIKA TABEL KOSONG: Export semua tabel ke dalam 1 File Excel (Multi-Sheets)
-        $tables = array_map(function($t) {
-            return array_values((array)$t)[0];
-        }, DB::select('SHOW TABLES'));
+        $primaryKey = $this->getPrimaryKey($tableName);
+        $prepared = $this->prepareDataForWrite($tableName, $request, true);
 
-        $filename = "Full_Database_" . date('Ymd_His') . ".xlsx";
+        unset($prepared['normal'][$primaryKey]);
 
-        return Excel::download(new class($tables) implements \Maatwebsite\Excel\Concerns\WithMultipleSheets {
-            private $tables;
-            public function __construct($tables) { $this->tables = $tables; }
-            
-            public function sheets(): array {
-                $sheets = [];
-                foreach ($this->tables as $table) {
-                    if (in_array($table, ['migrations', 'password_reset_tokens'])) continue;
-
-                    $columns = Schema::getColumnListing($table);
-                    $data = DB::table($table)->get()->map(function($item) {
-                        $array = (array)$item;
-                        foreach ($array as $key => $value) {
-                            if (is_string($value) && !mb_check_encoding($value, 'UTF-8')) {
-                                $array[$key] = '[Data Geometri/Spasial]';
-                            }
-                        }
-                        return $array;
-                    });
-
-                    // Class anonim untuk menghandle sheet per tabel
-                    $sheets[] = new class($data, $columns, $table) implements \Maatwebsite\Excel\Concerns\FromCollection, \Maatwebsite\Excel\Concerns\WithHeadings, \Maatwebsite\Excel\Concerns\WithTitle {
-                        private $data; private $columns; private $title;
-                        public function __construct($data, $columns, $title) { $this->data = $data; $this->columns = $columns; $this->title = $title; }
-                        public function collection() { return $this->data; }
-                        public function headings(): array { return $this->columns; }
-                        public function title(): string { return substr($this->title, 0, 31); } // Batasan limit nama sheet excel 31 karakter
-                    };
-                }
-                return $sheets;
+        try {
+            if (!empty($prepared['normal'])) {
+                DB::table($tableName)
+                    ->where($primaryKey, $id)
+                    ->update($prepared['normal']);
             }
-        }, $filename);
+
+            foreach ($prepared['geometry'] as $column => $geometryValue) {
+                $sql = "UPDATE " . $this->quotedIdentifier($tableName) .
+                    " SET " . $this->quotedIdentifier($column) . " = " . $this->geometrySqlValue($geometryValue) .
+                    " WHERE " . $this->quotedIdentifier($primaryKey) . " = " . DB::getPdo()->quote($id);
+
+                DB::statement($sql);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "Data tabel $tableName berhasil diperbarui."
+            ]);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function deleteData($tableName, $id)
+    {
+        $tableName = $this->safeTableName($tableName);
+
+        if (!$this->tableExists($tableName)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tabel tidak ditemukan: ' . $tableName
+            ], 404);
+        }
+
+        $primaryKey = $this->getPrimaryKey($tableName);
+
+        try {
+            DB::table($tableName)
+                ->where($primaryKey, $id)
+                ->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Data di tabel $tableName berhasil dihapus."
+            ]);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function executeRawSql(Request $request)
+    {
+        $request->validate([
+            'sql' => 'required|string'
+        ]);
+
+        try {
+            DB::unprepared($request->sql);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Query SQL berhasil dieksekusi.'
+            ]);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error SQL: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function exportSql($tableName = null)
+    {
+        try {
+            $tables = $tableName
+                ? [$this->safeTableName($tableName)]
+                : collect(DB::select('SHOW TABLES'))
+                    ->map(fn ($t) => array_values((array) $t)[0])
+                    ->values()
+                    ->toArray();
+
+            $output = "-- SIG-PALA Database Export\n";
+            $output .= "-- Database: " . $this->databaseName() . "\n";
+            $output .= "-- Generated: " . now() . "\n\n";
+            $output .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
+
+            foreach ($tables as $table) {
+                if (!$this->tableExists($table)) {
+                    continue;
+                }
+
+                $output .= "DROP TABLE IF EXISTS " . $this->quotedIdentifier($table) . ";\n";
+
+                $create = DB::select("SHOW CREATE TABLE " . $this->quotedIdentifier($table))[0];
+                $output .= $create->{'Create Table'} . ";\n\n";
+
+                $metas = $this->getColumnMeta($table);
+                $selects = [];
+                $geometryColumns = [];
+
+                foreach ($metas as $meta) {
+                    $column = $this->safeColumnName($meta['name']);
+
+                    if ($this->isGeometryColumn($meta)) {
+                        $geometryColumns[] = $column;
+                        $selects[] = DB::raw("ST_AsText(" . $this->quotedIdentifier($column) . ") as " . $this->quotedIdentifier($column));
+                    } else {
+                        // Penting: jangan pakai "`$column`"
+                        $selects[] = $column;
+                    }
+                }
+
+                $rows = DB::table($table)->select($selects)->get();
+
+                foreach ($rows as $row) {
+                    $rowArray = (array) $row;
+
+                    $columns = [];
+                    $values = [];
+
+                    foreach ($rowArray as $column => $value) {
+                        $columns[] = $this->quotedIdentifier($column);
+
+                        if ($value === null) {
+                            $values[] = 'NULL';
+                            continue;
+                        }
+
+                        if (in_array($column, $geometryColumns)) {
+                            $values[] = "ST_GeomFromText(" . DB::getPdo()->quote($value) . ")";
+                            continue;
+                        }
+
+                        $values[] = DB::getPdo()->quote($value);
+                    }
+
+                    $output .= "INSERT INTO " . $this->quotedIdentifier($table) .
+                        " (" . implode(', ', $columns) . ") VALUES (" . implode(', ', $values) . ");\n";
+                }
+
+                $output .= "\n";
+            }
+
+            $output .= "SET FOREIGN_KEY_CHECKS=1;\n";
+
+            $filename = ($tableName ?? 'full_database') . '_' . date('Ymd_His') . '.sql';
+
+            return response($output)
+                ->header('Content-Type', 'application/sql')
+                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal export SQL: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function exportExcel($tableName = null)
+    {
+        try {
+            $tables = $tableName
+                ? [$this->safeTableName($tableName)]
+                : collect(DB::select('SHOW TABLES'))
+                    ->map(fn ($t) => array_values((array) $t)[0])
+                    ->values()
+                    ->toArray();
+
+            $html = '<html>';
+            $html .= '<head>';
+            $html .= '<meta charset="UTF-8">';
+            $html .= '<style>';
+            $html .= 'body{font-family:Arial,sans-serif;font-size:12px;}';
+            $html .= 'table{border-collapse:collapse;margin-bottom:30px;width:100%;}';
+            $html .= 'th{background:#3E7D00;color:#ffffff;font-weight:bold;}';
+            $html .= 'th,td{border:1px solid #999;padding:6px;mso-number-format:"\@";}';
+            $html .= 'h2{color:#3E7D00;}';
+            $html .= '</style>';
+            $html .= '</head>';
+            $html .= '<body>';
+
+            $html .= '<h1>Export Data Master SIG-PALA</h1>';
+            $html .= '<p>Database: ' . e($this->databaseName()) . '</p>';
+            $html .= '<p>Generated: ' . e((string) now()) . '</p>';
+
+            foreach ($tables as $table) {
+                if (!$this->tableExists($table)) {
+                    continue;
+                }
+
+                $metas = $this->getColumnMeta($table);
+                $selects = [];
+
+                foreach ($metas as $meta) {
+                    $column = $this->safeColumnName($meta['name']);
+
+                    if ($this->isGeometryColumn($meta)) {
+                        $selects[] = DB::raw("ST_AsText(" . $this->quotedIdentifier($column) . ") as " . $this->quotedIdentifier($column));
+                    } else {
+                        $selects[] = $column;
+                    }
+                }
+
+                $rows = DB::table($table)->select($selects)->get();
+
+                $html .= '<h2>Tabel: ' . e($table) . '</h2>';
+                $html .= '<table>';
+
+                $html .= '<tr>';
+                foreach ($metas as $meta) {
+                    $html .= '<th>' . e($meta['name']) . '</th>';
+                }
+                $html .= '</tr>';
+
+                foreach ($rows as $row) {
+                    $rowArray = (array) $row;
+
+                    $html .= '<tr>';
+                    foreach ($metas as $meta) {
+                        $column = $meta['name'];
+                        $value = $rowArray[$column] ?? '';
+
+                        if (is_resource($value)) {
+                            $value = '[Data Binary/Resource]';
+                        }
+
+                        if (is_string($value) && !mb_check_encoding($value, 'UTF-8')) {
+                            $value = '[Data Binary/Spasial]';
+                        }
+
+                        $html .= '<td>' . e((string) $value) . '</td>';
+                    }
+                    $html .= '</tr>';
+                }
+
+                $html .= '</table>';
+            }
+
+            $html .= '</body></html>';
+
+            $filename = ($tableName ?? 'semua_tabel') . '_' . date('Ymd_His') . '.xls';
+
+            return response($html)
+                ->header('Content-Type', 'application/vnd.ms-excel; charset=UTF-8')
+                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal export Excel: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
