@@ -2,9 +2,19 @@
 
 @section('title', 'Login')
 @section('page-heading', 'Masuk Akun')
-@section('page-subheading', 'Akses dashboard sesuai peran Anda untuk mengelola data pertanian.')
-
 @section('content')
+
+<div class="flex items-center justify-between mb-6">
+    <a href="/"
+       class="inline-flex items-center gap-2 text-sm font-semibold text-[#3E7D00] hover:text-[#2f5c12] transition">
+
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+        </svg>
+
+        Kembali ke Dashboard Publik
+    </a>
+</div>
 
 @if ($errors->has('login'))
 <div class="flex items-start gap-3 bg-red-50 border border-red-200 text-red-600 px-4 py-3 mb-5 rounded-2xl text-sm">
