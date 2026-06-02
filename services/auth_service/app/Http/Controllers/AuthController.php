@@ -11,34 +11,10 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
-        $validated = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|string',
-            'g-recaptcha-response' => 'required'
-        ]);
-
-        /*
-        ===================================
-        1. BYPASS SSL LOCAL UNTUK GOOGLE CAPTCHA
-        ===================================
-        */
-        $captcha = Http::withoutVerifying()->asForm()->post(
-            env('CAPTCHA_VERIFY_URL', 'https://www.google.com/recaptcha/api/siteverify'),
-            [
-                'secret' => env('CAPTCHA_SECRET_KEY'),
-                'response' => $request->input('g-recaptcha-response'),
-                'remoteip' => $request->ip()
-            ]
-        );
-
-        $captchaResult = $captcha->json();
-
-        if (!$captchaResult || !isset($captchaResult['success']) || !$captchaResult['success']) {
-            return response()->json([
-                'message' => 'Validasi Captcha gagal dari server Google'
-            ], 422);
-        }
-
+$validated = $request->validate([
+    'email' => 'required|email',
+    'password' => 'required|string',
+]);
         /*
         ===================================
         2. BYPASS SSL LOCAL UNTUK USER SERVICE

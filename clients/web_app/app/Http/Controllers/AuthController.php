@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
@@ -12,70 +13,186 @@ class AuthController extends Controller
         return env('GATEWAY_URL', 'http://127.0.0.1:8003');
     }
 
+    private function generateMathCaptcha(Request $request): void
+    {
+        $angkaPertama = random_int(1, 20);
+        $angkaKedua = random_int(1, 20);
+
+        $request->session()->put('math_captcha_question', "{$angkaPertama} + {$angkaKedua}");
+        $request->session()->put('math_captcha_answer', $angkaPertama + $angkaKedua);
+    }
+
+    public function showLogin(Request $request)
+    {
+        /*
+        |--------------------------------------------------------------------------
+        | Captcha selalu diperbarui ketika halaman login dibuka / refresh
+        |--------------------------------------------------------------------------
+        */
+        $this->generateMathCaptcha($request);
+
+        return view('auth.login');
+    }
+
     public function login(Request $request)
     {
-        $request->validate([
+        /*
+        |--------------------------------------------------------------------------
+        | Validasi input dasar login
+        |--------------------------------------------------------------------------
+        */
+        $validator = Validator::make($request->all(), [
             'email' => 'required|email',
-            'password' => 'required',
-            'g-recaptcha-response' => 'required'
+            'password' => 'required|string',
+            'math_captcha_answer' => 'required|numeric',
         ], [
-            'g-recaptcha-response.required' => 'Mohon centang verifikasi reCAPTCHA.'
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'password.required' => 'Password wajib diisi.',
+            'math_captcha_answer.required' => 'Jawaban verifikasi penjumlahan wajib diisi.',
+            'math_captcha_answer.numeric' => 'Jawaban verifikasi harus berupa angka.',
         ]);
 
-        $response = Http::withoutVerifying()->post(
-            $this->gatewayUrl() . '/api/login',
-            [
-                'email' => $request->email,
-                'password' => $request->password,
-                'g-recaptcha-response' => $request->input('g-recaptcha-response')
-            ]
-        );
+        if ($validator->fails()) {
+            $this->generateMathCaptcha($request);
 
+            return back()
+                ->withErrors($validator)
+                ->withInput($request->except(['password', 'math_captcha_answer']));
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Validasi captcha penjumlahan
+        |--------------------------------------------------------------------------
+        | Jika salah, captcha langsung diganti otomatis.
+        |--------------------------------------------------------------------------
+        */
+        $jawabanBenar = (int) $request->session()->get('math_captcha_answer');
+        $jawabanUser = (int) $request->input('math_captcha_answer');
+
+        if ($jawabanUser !== $jawabanBenar) {
+            $this->generateMathCaptcha($request);
+
+            return back()
+                ->withErrors([
+                    'login' => 'Jawaban verifikasi penjumlahan salah. Silakan jawab pertanyaan baru.'
+                ])
+                ->withInput($request->except(['password', 'math_captcha_answer']));
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Kirim login ke backend melalui API Gateway
+        |--------------------------------------------------------------------------
+        | Tidak lagi mengirim g-recaptcha-response.
+        |--------------------------------------------------------------------------
+        */
+        try {
+            $response = Http::withoutVerifying()
+                ->timeout(10)
+                ->post($this->gatewayUrl() . '/api/login', [
+                    'email' => $request->email,
+                    'password' => $request->password,
+                ]);
+
+        } catch (\Throwable $e) {
+            $this->generateMathCaptcha($request);
+
+            return back()
+                ->withErrors([
+                    'login' => 'Koneksi ke backend terputus: ' . $e->getMessage()
+                ])
+                ->withInput($request->except(['password', 'math_captcha_answer']));
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Jika login berhasil
+        |--------------------------------------------------------------------------
+        */
         if ($response->successful()) {
             $data = $response->json();
 
             if (!isset($data['user']['role_id'])) {
-                return back()->withErrors(['login' => 'Role user tidak terdeteksi di sistem'])->withInput();
+                $this->generateMathCaptcha($request);
+
+                return back()
+                    ->withErrors([
+                        'login' => 'Role user tidak terdeteksi di sistem.'
+                    ])
+                    ->withInput($request->except(['password', 'math_captcha_answer']));
             }
 
             session([
                 'token' => $data['token'],
                 'user' => $data['user'],
-                'role_id' => $data['user']['role_id']
+                'role_id' => $data['user']['role_id'],
             ]);
 
-            switch ($data['user']['role_id']) {
-                case 1: return redirect('/dashboard-petani');
-                case 2: return redirect('/dashboard-petugas');
-                case 3: return redirect('/dashboard-pejabat');
-                case 4: return redirect('/dashboard-admin');
-                default: return redirect('/');
+            /*
+            |--------------------------------------------------------------------------
+            | Captcha dihapus setelah login berhasil
+            |--------------------------------------------------------------------------
+            */
+            $request->session()->forget([
+                'math_captcha_question',
+                'math_captcha_answer',
+            ]);
+
+            switch ((int) $data['user']['role_id']) {
+                case 1:
+                    return redirect('/dashboard-petani');
+                case 2:
+                    return redirect('/dashboard-petugas');
+                case 3:
+                    return redirect('/dashboard-pejabat');
+                case 4:
+                    return redirect('/dashboard-admin');
+                default:
+                    return redirect('/');
             }
         }
 
-        // TRANSPARENT ERROR CATCHING (Menangkap pesan asli dari backend)
+        /*
+        |--------------------------------------------------------------------------
+        | Jika email salah, password salah, atau backend menolak login
+        | Captcha wajib diganti otomatis.
+        |--------------------------------------------------------------------------
+        */
+        $this->generateMathCaptcha($request);
+
         $responseData = $response->json();
-        $errorMsg = 'Koneksi ke backend terputus.'; // Default
+        $errorMsg = 'Koneksi ke backend terputus.';
 
         if (isset($responseData['message'])) {
-            $errorMsg = $responseData['message']; // Mengambil pesan "Password salah", "Email salah", dll
+            $errorMsg = $responseData['message'];
         } elseif ($response->serverError()) {
-            $errorMsg = 'Terjadi kesalahan fatal (Error 500) di Auth Service.';
+            $errorMsg = 'Terjadi kesalahan fatal di Auth Service.';
         }
 
-        return back()->withErrors([
-            'login' => $errorMsg
-        ])->withInput();
+        return back()
+            ->withErrors([
+                'login' => $errorMsg
+            ])
+            ->withInput($request->except(['password', 'math_captcha_answer']));
     }
 
     public function logout()
     {
-        session()->forget(['token', 'user', 'role_id']);
+        session()->forget([
+            'token',
+            'user',
+            'role_id',
+            'math_captcha_question',
+            'math_captcha_answer',
+        ]);
+
         session()->flush();
+
         return redirect('/')->with('success', 'Logout berhasil');
     }
 
-    // Fitur registrasi dan reset password tetap menggunakan format bypass
     public function register(Request $request)
     {
         $response = Http::post($this->gatewayUrl() . '/api/register', [
@@ -88,9 +205,7 @@ class AuthController extends Controller
         ]);
 
         if ($response->successful()) {
-
             return redirect('/login')->with('success', 'Registrasi berhasil, silakan login');
-
         }
 
         return back()->withErrors([
@@ -98,21 +213,48 @@ class AuthController extends Controller
         ]);
     }
 
-    public function forgotPassword() { return view('auth.forgot-password'); }
+    public function forgotPassword()
+    {
+        return view('auth.forgot-password');
+    }
 
     public function sendResetLink(Request $request)
     {
-        $request->validate(['email' => 'required|email']);
-        $response = Http::withoutVerifying()->post($this->gatewayUrl() . '/api/forgot-password', ['email' => $request->email]);
-        if ($response->successful()) return back()->with('status', 'Link reset password dikirim ke email');
-        return back()->withErrors(['email' => 'Email tidak ditemukan']);
+        $request->validate([
+            'email' => 'required|email'
+        ]);
+
+        $response = Http::withoutVerifying()
+            ->post($this->gatewayUrl() . '/api/forgot-password', [
+                'email' => $request->email
+            ]);
+
+        if ($response->successful()) {
+            return back()->with('status', 'Link reset password dikirim ke email');
+        }
+
+        return back()->withErrors([
+            'email' => 'Email tidak ditemukan'
+        ]);
     }
 
     public function resetPassword(Request $request)
     {
-        $request->validate(['token' => 'required', 'email' => 'required|email', 'password' => 'required|min:6|confirmed']);
-        $response = Http::withoutVerifying()->post($this->gatewayUrl() . '/api/forget-password', $request->all());
-        if ($response->successful()) return redirect('/login')->with('success', 'Password berhasil direset');
-        return back()->withErrors(['reset' => 'Reset password gagal']);
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => 'required|min:6|confirmed'
+        ]);
+
+        $response = Http::withoutVerifying()
+            ->post($this->gatewayUrl() . '/api/forget-password', $request->all());
+
+        if ($response->successful()) {
+            return redirect('/login')->with('success', 'Password berhasil direset');
+        }
+
+        return back()->withErrors([
+            'reset' => 'Reset password gagal'
+        ]);
     }
 }

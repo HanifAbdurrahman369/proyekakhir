@@ -1,25 +1,38 @@
-<p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-2 py-1 mt-1">Menu Petugas</p>
+@php
+    $menuBase = 'group flex items-center gap-3 px-3.5 py-3 rounded-2xl text-[13px] font-semibold transition-all duration-200';
+    $menuActive = 'bg-[#edf8dc] text-[#203c10] shadow-sm ring-1 ring-[#dfeccc]';
+    $menuIdle = 'text-slate-600 hover:bg-[#f7fced] hover:text-[#2f5c12]';
+    $iconBase = 'w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition';
+    $iconActive = 'bg-[#3E7D00] text-white';
+    $iconIdle = 'bg-slate-100 text-slate-500 group-hover:bg-[#edf8dc] group-hover:text-[#3E7D00]';
+@endphp
 
-<!-- BERANDA (Opsional untuk halaman awal setelah login) -->
-<a href="/dashboard-petugas" class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium transition {{ request()->is('dashboard-petugas') ? 'bg-primary-100 text-primary-800' : 'text-gray-600 hover:bg-primary-50 hover:text-primary-700' }}">
-    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-    Beranda Petugas
+<p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-[.18em] px-3 py-2 mt-1">Operasional Petugas</p>
+
+<a href="/dashboard-petugas" class="{{ $menuBase }} {{ request()->is('dashboard-petugas') ? $menuActive : $menuIdle }}">
+    <span class="{{ $iconBase }} {{ request()->is('dashboard-petugas') ? $iconActive : $iconIdle }}">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+    </span>
+    <span>Beranda Petugas</span>
 </a>
 
-<!-- USE CASE 1 -->
-<a href="/manajemen-data-spasial" class="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-medium transition {{ request()->is('manajemen-data-spasial') ? 'bg-primary-100 text-primary-800' : 'text-gray-600 hover:bg-primary-50 hover:text-primary-700' }}">
-    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-    Manajemen Data Spasial
+<a href="/manajemen-data-spasial" class="{{ $menuBase }} {{ request()->is('manajemen-data-spasial') ? $menuActive : $menuIdle }}">
+    <span class="{{ $iconBase }} {{ request()->is('manajemen-data-spasial') ? $iconActive : $iconIdle }}">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+    </span>
+    <span>Manajemen Data Spasial</span>
 </a>
 
-<!-- USE CASE 2 -->
-<a href="/input-parameter-lingkungan" class="flex items-center gap-2.5 px-2.5 py-2 mt-1 rounded-lg text-xs font-medium transition {{ request()->is('input-parameter-lingkungan') ? 'bg-primary-100 text-primary-800' : 'text-gray-600 hover:bg-primary-50 hover:text-primary-700' }}">
-    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm0 16c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7zm1-11h-2v3H8v2h3v3h2v-3h3v-2h-3V8z"/></svg>
-    Input Parameter Lingkungan
+<a href="/input-parameter-lingkungan" class="{{ $menuBase }} {{ request()->is('input-parameter-lingkungan') ? $menuActive : $menuIdle }}">
+    <span class="{{ $iconBase }} {{ request()->is('input-parameter-lingkungan') ? $iconActive : $iconIdle }}">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm1 13h-2v-3H8v-2h3V8h2v3h3v2h-3v3z"/></svg>
+    </span>
+    <span>Input Parameter Lingkungan</span>
 </a>
 
-<!-- USE CASE 3 -->
-<a href="/verifikasi-data-petani" class="flex items-center gap-2.5 px-2.5 py-2 mt-1 rounded-lg text-xs font-medium transition {{ request()->is('verifikasi-data-petani') ? 'bg-primary-100 text-primary-800' : 'text-gray-600 hover:bg-primary-50 hover:text-primary-700' }}">
-    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
-    Verifikasi Data Petani
+<a href="/verifikasi-data-petani" class="{{ $menuBase }} {{ request()->is('verifikasi-data-petani') ? $menuActive : $menuIdle }}">
+    <span class="{{ $iconBase }} {{ request()->is('verifikasi-data-petani') ? $iconActive : $iconIdle }}">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>
+    </span>
+    <span>Verifikasi Data Petani</span>
 </a>
