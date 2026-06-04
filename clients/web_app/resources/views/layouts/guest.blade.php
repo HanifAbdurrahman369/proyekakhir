@@ -7,99 +7,70 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     @vite('resources/css/app.css')
 
     <style>
-        .auth-right::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
+        * { font-family: 'Poppins', sans-serif; }
+
+        body {
+            background:
+                radial-gradient(circle at top left, rgba(187, 244, 81, .22), transparent 34%),
+                radial-gradient(circle at bottom right, rgba(62, 125, 0, .18), transparent 36%),
+                linear-gradient(135deg, #f7fbf2 0%, #edf7e6 48%, #f9fcf7 100%);
+        }
+
+        .auth-grid {
             background-image:
-                linear-gradient(rgba(94,165,0,.06) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(94,165,0,.06) 1px, transparent 1px);
-            background-size: 24px 24px;
+                linear-gradient(rgba(72, 125, 0, .055) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(72, 125, 0, .055) 1px, transparent 1px);
+            background-size: 28px 28px;
         }
-        .auth-left::before {
-            content: '';
-            position: absolute;
-            top: -60px; left: -60px;
-            width: 220px; height: 220px;
-            border-radius: 50%;
-            background: rgba(255,255,255,.06);
-            pointer-events: none;
+
+        .auth-card {
+            box-shadow: 0 24px 70px rgba(53, 83, 14, .15);
         }
-        .auth-left::after {
-            content: '';
-            position: absolute;
-            bottom: -80px; right: -50px;
-            width: 260px; height: 260px;
-            border-radius: 50%;
-            background: rgba(0,0,0,.12);
-            pointer-events: none;
+
+        .auth-input:focus {
+            border-color: #66A80F;
+            box-shadow: 0 0 0 4px rgba(102, 168, 15, .13);
         }
     </style>
 </head>
 
-<body class="font-sans min-h-screen bg-gray-50">
-
-    <div class="min-h-screen flex">
-
-        {{-- LEFT: Branding Panel --}}
-        <div class="auth-left hidden lg:flex flex-col justify-between flex-1 relative overflow-hidden px-10 py-10"
-             style="background: linear-gradient(160deg, #497D00 0%, #35530E 100%);">
-
-            <div class="relative z-10">
-                {{-- Logo --}}
-                <div class="flex items-center gap-3 mb-12">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(255,255,255,.18);">
-                        <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 0 0 8 20C19 20 22 3 22 3c-1 2-8 2-8 2s4-4-3 1C7 9 7 15 7 15s0-3 3-5.31C13.77 7.73 17 8 17 8Z"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-xs font-medium" style="color:rgba(255,255,255,.6)">Sistem Informasi</p>
-                        <p class="text-sm font-bold text-white">Dinas Pertanian</p>
-                    </div>
+<body class="min-h-screen text-slate-800">
+    <main class="auth-grid min-h-screen flex items-center justify-center px-5 py-10">
+        <section class="w-full max-w-[460px]">
+            <div class="text-center mb-7">
+                <div class="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
+                     style="background: linear-gradient(135deg, #5EA500, #35530E); box-shadow: 0 14px 34px rgba(94,165,0,.28);">
+                    <svg class="w-7 h-7 text-white" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 0 0 8 20C19 20 22 3 22 3c-1 2-8 2-8 2s4-4-3 1C7 9 7 15 7 15s0-3 3-5.31C13.77 7.73 17 8 17 8Z"/>
+                    </svg>
                 </div>
 
-                {{-- Per-page headline & features --}}
-                @yield('left-heading')
-            </div>
-
-            <p class="relative z-10 text-xs" style="color:rgba(255,255,255,.35)">
-                &copy; {{ date('Y') }} Dinas Pertanian &mdash; All rights reserved.
-            </p>
-        </div>
-
-        {{-- RIGHT: Form Panel --}}
-        <div class="auth-right relative w-full lg:w-auto lg:flex-none lg:min-w-[340px] xl:min-w-[380px] flex items-center justify-center px-8 py-12 bg-gray-50">
-            <div class="relative z-10 w-full max-w-sm">
-
-                {{-- Mobile logo --}}
-                <div class="flex items-center gap-2.5 mb-8 lg:hidden">
-                    <div class="w-9 h-9 rounded-lg bg-primary-600 flex items-center justify-center shadow">
-                        <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 0 0 8 20C19 20 22 3 22 3c-1 2-8 2-8 2s4-4-3 1C7 9 7 15 7 15s0-3 3-5.31C13.77 7.73 17 8 17 8Z"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-xs text-primary-700 font-medium leading-none">Sistem Informasi</p>
-                        <p class="text-sm font-bold text-primary-900 leading-tight">Dinas Pertanian</p>
-                    </div>
-                </div>
-
-                @yield('content')
-
-                <p class="text-center text-xs text-primary-700/50 mt-8 font-medium">
-                    🌾 Sistem Informasi Dinas Pertanian
+                <p class="text-sm font-semibold tracking-wide" style="color:#497D00;">
+                    Sistem Informasi Dinas Pertanian
+                </p>
+                <h1 class="text-2xl font-bold text-slate-900 mt-1">
+                    @yield('page-heading', 'Selamat Datang')
+                </h1>
+                <p class="text-sm text-slate-500 mt-2 leading-relaxed">
+                    @yield('page-subheading', 'Kelola data pertanian secara lebih aman, rapi, dan terintegrasi.')
                 </p>
             </div>
-        </div>
 
-    </div>
+            <div class="auth-card bg-white/90 backdrop-blur-xl border border-white rounded-[28px] px-6 sm:px-8 py-7 sm:py-8">
+                @yield('content')
+            </div>
 
+            <p class="text-center text-xs mt-6 font-medium" style="color:#497D00;">
+                🌾 {{ date('Y') }} — SIG-PALA
+            </p>
+        </section>
+    </main>
+
+    @stack('scripts')
 </body>
 </html>

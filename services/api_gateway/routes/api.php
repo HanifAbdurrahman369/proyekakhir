@@ -1,14 +1,24 @@
 <?php
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 
+/*
+|--------------------------------------------------------------------------
+| API Gateway Routes - Port 8003
+|--------------------------------------------------------------------------
+| Semua request dari web_app wajib masuk melalui API Gateway terlebih dahulu.
+| Target service menggunakan 127.0.0.1 agar tidak terkena bug resolusi IPv6
+| dari localhost.
+|--------------------------------------------------------------------------
+*/
+
 $serviceMap = [
-    'auth' => env('AUTH_SERVICE_URL', 'http://127.0.0.1:8001'),
-    'user' => env('USER_SERVICE_URL', 'http://127.0.0.1:8002'),
-    'farming' => env('FARMING_SERVICE_URL', 'http://127.0.0.1:8005'),
-    'gis' => env('GIS_SERVICE_URL', 'http://127.0.0.1:8000'),
+    'auth'    => 'http://127.0.0.1:8001',
+    'user'    => 'http://127.0.0.1:8002',
+    'master'  => 'http://127.0.0.1:8004',
+    'farming' => 'http://127.0.0.1:8005',
+    'gis'     => 'http://127.0.0.1:8000',
 ];
 
 function proxyRequest(Request $request, string $serviceUrl, string $path)
@@ -20,7 +30,6 @@ function proxyRequest(Request $request, string $serviceUrl, string $path)
         ->mapWithKeys(fn ($value, $key) => [$key => implode(',', $value)])
         ->toArray();
 
-    // Pastikan Authorization header tetap diteruskan ke service target.
     if ($authHeader = $request->header('Authorization')) {
         $headers['Authorization'] = $authHeader;
     }
@@ -31,33 +40,111 @@ function proxyRequest(Request $request, string $serviceUrl, string $path)
 
     $options = [
         'headers' => $headers,
-        'query' => $request->query(),
+        'query'   => $request->query(),
+        'timeout' => 5,
     ];
 
-    if (!in_array($request->method(), ['GET', 'HEAD'], true)) {
-        $options['json'] = $request->all();
+    if (!in_array($request->method(), ['GET', 'HEAD'])) {
+        $options['body'] = $request->getContent();
     }
 
-    $response = Http::withOptions(['verify' => false])->send($request->method(), $url, $options);
+    try {
+        $client = new \GuzzleHttp\Client();
+        $response = $client->request($request->method(), $url, $options);
 
-    return response($response->body(), $response->status())
-        ->withHeaders($response->headers());
+        return response($response->getBody()->getContents(), $response->getStatusCode())
+            ->withHeaders($response->getHeaders());
+
+    } catch (\GuzzleHttp\Exception\RequestException $e) {
+        if ($e->hasResponse()) {
+            $response = $e->getResponse();
+
+            return response($response->getBody()->getContents(), $response->getStatusCode())
+                ->withHeaders($response->getHeaders());
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'GATEWAY_ERROR: Koneksi terputus ke ' . $url,
+        ], 502);
+
+    } catch (\Throwable $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'GATEWAY_FATAL: ' . $e->getMessage(),
+        ], 500);
+    }
 }
 
-Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/login', fn (Request $request) => proxyRequest($request, $serviceMap['auth'], 'login'));
-Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/profile', fn (Request $request) => proxyRequest($request, $serviceMap['auth'], 'profile'));
+/*
+|--------------------------------------------------------------------------
+| 1. AUTH COMPATIBILITY ROUTES
+|--------------------------------------------------------------------------
+| web_app AuthController saat ini memanggil:
+| /api/login
+| /api/register
+| /api/forgot-password
+| /api/forget-password
+|
+| Maka route ini wajib ada di API Gateway agar request login tidak 404.
+|--------------------------------------------------------------------------
+*/
 
-Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/register', fn (Request $request) => proxyRequest($request, $serviceMap['user'], 'register'));
-Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/find-user', fn (Request $request) => proxyRequest($request, $serviceMap['user'], 'find-user'));
-Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/forgot-password', fn (Request $request) => proxyRequest($request, $serviceMap['user'], 'forgot-password'));
-Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/forget-password', fn (Request $request) => proxyRequest($request, $serviceMap['user'], 'forget-password'));
-Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/reset-password', fn (Request $request) => proxyRequest($request, $serviceMap['user'], 'reset-password'));
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/login', function (Request $request) use ($serviceMap) {
+    return proxyRequest($request, $serviceMap['auth'], 'login');
+});
 
-Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/statistik', fn (Request $request) => proxyRequest($request, $serviceMap['gis'], 'statistik'));
-Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/map-lahan', fn (Request $request) => proxyRequest($request, $serviceMap['gis'], 'map-lahan'));
-Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/batas-wilayah', fn (Request $request) => proxyRequest($request, $serviceMap['gis'], 'batas-wilayah'));
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/register', function (Request $request) use ($serviceMap) {
+    return proxyRequest($request, $serviceMap['auth'], 'register');
+});
 
-Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/riwayat-panen', fn (Request $request) => proxyRequest($request, $serviceMap['farming'], 'riwayat-panen'));
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/forgot-password', function (Request $request) use ($serviceMap) {
+    return proxyRequest($request, $serviceMap['auth'], 'forgot-password');
+});
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/forget-password', function (Request $request) use ($serviceMap) {
+    return proxyRequest($request, $serviceMap['auth'], 'forget-password');
+});
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/reset-password', function (Request $request) use ($serviceMap) {
+    return proxyRequest($request, $serviceMap['auth'], 'reset-password');
+});
+
+/*
+|--------------------------------------------------------------------------
+| 2. AUTH PREFIX ROUTES
+|--------------------------------------------------------------------------
+| Mendukung format baru:
+| /api/auth/login
+| /api/auth/register
+|--------------------------------------------------------------------------
+*/
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/auth/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    return proxyRequest($request, $serviceMap['auth'], $any);
+})->where('any', '.*');
+
+/*
+|--------------------------------------------------------------------------
+| 3. ROLE PETUGAS - Manajemen Data Spasial
+|--------------------------------------------------------------------------
+*/
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/spasial-lahan/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    $path = trim('spasial-lahan/' . $any, '/');
+    return proxyRequest($request, $serviceMap['gis'], $path);
+})->where('any', '.*');
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/notifikasi/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    $path = trim('notifikasi/' . $any, '/');
+    return proxyRequest($request, $serviceMap['farming'], $path);
+})->where('any', '.*');
+
+/*
+|--------------------------------------------------------------------------
+| 4. RUTE LAMA - Dipertahankan
+|--------------------------------------------------------------------------
+*/
 
 Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/activities/{any?}', function (Request $request, $any = '') use ($serviceMap) {
     $path = trim('activities/' . $any, '/');
@@ -79,14 +166,41 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/users/{any?
     return proxyRequest($request, $serviceMap['user'], $path);
 })->where('any', '.*');
 
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/map-lahan/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    return proxyRequest($request, $serviceMap['gis'], trim('map-lahan/' . $any, '/'));
+})->where('any', '.*');
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/statistik/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    return proxyRequest($request, $serviceMap['gis'], trim('statistik/' . $any, '/'));
+})->where('any', '.*');
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/batas-wilayah/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    return proxyRequest($request, $serviceMap['gis'], trim('batas-wilayah/' . $any, '/'));
+})->where('any', '.*');
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/master/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    return proxyRequest($request, $serviceMap['master'], $any);
+})->where('any', '.*');
+
+/*
+|--------------------------------------------------------------------------
+| 5. DYNAMIC SERVICE ROUTE
+|--------------------------------------------------------------------------
+| Contoh:
+| /api/auth/login
+| /api/gis/spasial-lahan
+| /api/farming/activities
+|--------------------------------------------------------------------------
+*/
+
 Route::any('/{service}/{any}', function (Request $request, $service, $any) use ($serviceMap) {
     if (!isset($serviceMap[$service])) {
-        abort(404, 'Service not registered in API gateway');
+        return response()->json([
+            'success' => false,
+            'message' => 'Service not registered in API Gateway: ' . $service,
+        ], 404);
     }
 
     return proxyRequest($request, $serviceMap[$service], $any);
-})->where('any', '.*');
-Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/spasial-lahan/{any?}', function (Illuminate\Http\Request $request, $any = '') use ($serviceMap) {
-    $path = trim('spasial-lahan/' . $any, '/');
-    return proxyRequest($request, $serviceMap['gis'], $path);
 })->where('any', '.*');

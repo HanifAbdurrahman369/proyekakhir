@@ -1,91 +1,28 @@
 @extends('layouts.guest')
 
 @section('title', 'Daftar Akun')
-
-@section('left-heading')
-<h2 class="text-2xl font-bold text-white leading-snug mb-3">
-    Bergabung &<br>Mulai Kelola Data
-</h2>
-
-<p class="text-sm mb-8" style="color:rgba(255,255,255,.6); line-height:1.7">
-    Daftarkan akun Anda untuk mengakses seluruh fitur sistem informasi pertanian daerah.
-</p>
-
-<div class="flex flex-col gap-4">
-
-    <div class="flex items-start gap-3">
-        <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-             style="background:rgba(255,255,255,.12)">
-
-            <svg class="w-4 h-4"
-                 style="fill:#BBF451"
-                 viewBox="0 0 24 24">
-
-                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
-            </svg>
-        </div>
-
-        <div>
-            <p class="text-sm font-semibold text-white">
-                Akun Aman & Terverifikasi
-            </p>
-
-            <p class="text-xs"
-               style="color:rgba(255,255,255,.55)">
-                Data dilindungi dengan enkripsi
-            </p>
-        </div>
-    </div>
-
-    <div class="flex items-start gap-3">
-        <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-             style="background:rgba(255,255,255,.12)">
-
-            <svg class="w-4 h-4"
-                 style="fill:#BBF451"
-                 viewBox="0 0 24 24">
-
-                <path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/>
-            </svg>
-        </div>
-
-        <div>
-            <p class="text-sm font-semibold text-white">
-                Akses Penuh Fitur
-            </p>
-
-            <p class="text-xs"
-               style="color:rgba(255,255,255,.55)">
-                Semua modul tersedia setelah verifikasi
-            </p>
-        </div>
-    </div>
-
-</div>
-@endsection
-
+@section('page-heading', 'Buat Akun Baru')
 @section('content')
 
-<h1 class="text-xl font-bold text-gray-800 mb-1">
-    Buat Akun Baru
-</h1>
+<div class="flex items-center justify-between mb-6">
+    <a href="/"
+       class="inline-flex items-center gap-2 text-sm font-semibold text-[#3E7D00] hover:text-[#2f5c12] transition">
 
-<p class="text-sm text-gray-400 mb-6">
-    Isi data diri Anda dengan lengkap
-</p>
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+        </svg>
+
+        Kembali ke Dashboard Publik
+    </a>
+</div>
 
 @if ($errors->any())
-<div class="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 px-3 py-2.5 mb-4 rounded-lg text-xs">
-
-    <svg class="w-4 h-4 mt-0.5 shrink-0"
-         viewBox="0 0 24 24"
-         fill="currentColor">
-
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10
-        10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+<div class="flex items-start gap-3 bg-red-50 border border-red-200 text-red-600 px-4 py-3 mb-5 rounded-2xl text-sm">
+    <svg class="w-5 h-5 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
     </svg>
 
-    <ul class="list-disc list-inside space-y-0.5">
+    <ul class="list-disc list-inside space-y-1">
         @foreach ($errors->all() as $error)
             <li>{{ $error }}</li>
         @endforeach
@@ -93,188 +30,124 @@
 </div>
 @endif
 
-<form action="{{ route('register') }}"
-      method="POST"
-      class="space-y-4">
-
+<form action="{{ route('register') }}" method="POST" class="space-y-4">
     @csrf
 
-    <div class="space-y-1.5">
-
-        <label class="block text-xs font-medium text-gray-600">
-            Nama Lengkap
-        </label>
-
-        <div class="relative">
-
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-
-                <svg class="w-4 h-4"
-                     viewBox="0 0 24 24"
-                     fill="currentColor">
-
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                </svg>
-            </span>
-
-            <input type="text"
-                   name="nama_lengkap"
-                   value="{{ old('nama_lengkap') }}"
-                   placeholder="Nama lengkap Anda"
-                   class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition placeholder-gray-300 @error('nama_lengkap') border-red-400 @enderror"
-                   required>
-        </div>
+    <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">Nama Lengkap</label>
+        <input type="text"
+               name="nama_lengkap"
+               value="{{ old('nama_lengkap') }}"
+               placeholder="Nama lengkap Anda"
+               class="auth-input w-full px-4 py-3.5 border border-slate-200 rounded-2xl text-sm bg-white outline-none transition placeholder-slate-300 @error('nama_lengkap') border-red-400 @enderror"
+               required>
     </div>
 
-    <div class="space-y-1.5">
-
-        <label class="block text-xs font-medium text-gray-600">
-            Email
-        </label>
-
-        <div class="relative">
-
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-
-                <svg class="w-4 h-4"
-                     viewBox="0 0 24 24"
-                     fill="currentColor">
-
-                    <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-                </svg>
-            </span>
-
-            <input type="email"
-                   name="email"
-                   value="{{ old('email') }}"
-                   placeholder="nama@email.com"
-                   class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition placeholder-gray-300 @error('email') border-red-400 @enderror"
-                   required>
-        </div>
+    <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">Email</label>
+        <input type="email"
+               name="email"
+               value="{{ old('email') }}"
+               placeholder="nama@email.com"
+               class="auth-input w-full px-4 py-3.5 border border-slate-200 rounded-2xl text-sm bg-white outline-none transition placeholder-slate-300 @error('email') border-red-400 @enderror"
+               required>
     </div>
 
-    <div class="space-y-1.5">
-
-        <label class="block text-xs font-medium text-gray-600">
-            Nomor Handphone
-        </label>
-
-        <div class="relative">
-
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-
-                <svg class="w-4 h-4"
-                     viewBox="0 0 24 24"
-                     fill="currentColor">
-
-                    <path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1C10.07 21 3 13.93 3 5c0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.24.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
-                </svg>
-            </span>
-
-            <input type="text"
-                   name="nomor_handphone"
-                   value="{{ old('nomor_handphone') }}"
-                   placeholder="08xxxxxxxxxx"
-                   class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition placeholder-gray-300 @error('nomor_handphone') border-red-400 @enderror"
-                   required>
-        </div>
+    <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">Nomor Handphone</label>
+        <input type="text"
+               name="nomor_handphone"
+               value="{{ old('nomor_handphone') }}"
+               placeholder="08xxxxxxxxxx"
+               class="auth-input w-full px-4 py-3.5 border border-slate-200 rounded-2xl text-sm bg-white outline-none transition placeholder-slate-300 @error('nomor_handphone') border-red-400 @enderror"
+               required>
     </div>
 
-    <div class="space-y-1.5">
-
-        <label class="block text-xs font-medium text-gray-600">
-            Alamat
-        </label>
-
-        <div class="relative">
-
-            <span class="absolute left-3 top-3 text-gray-400">
-
-                <svg class="w-4 h-4"
-                     viewBox="0 0 24 24"
-                     fill="currentColor">
-
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                </svg>
-            </span>
-
-            <textarea name="alamat"
-                      rows="3"
-                      placeholder="Masukkan alamat lengkap"
-                      class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition placeholder-gray-300 @error('alamat') border-red-400 @enderror"
-                      required>{{ old('alamat') }}</textarea>
-        </div>
+    <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">Alamat</label>
+        <textarea name="alamat"
+                  rows="3"
+                  placeholder="Masukkan alamat lengkap"
+                  class="auth-input w-full px-4 py-3.5 border border-slate-200 rounded-2xl text-sm bg-white outline-none transition placeholder-slate-300 resize-none @error('alamat') border-red-400 @enderror"
+                  required>{{ old('alamat') }}</textarea>
     </div>
 
-    <div class="space-y-1.5">
-
-        <label class="block text-xs font-medium text-gray-600">
-            Password
-        </label>
-
+    <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">Password</label>
         <div class="relative">
-
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-
-                <svg class="w-4 h-4"
-                     viewBox="0 0 24 24"
-                     fill="currentColor">
-
-                    <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
-                </svg>
-            </span>
-
-            <input type="password"
+            <input id="registerPassword"
+                   type="password"
                    name="password"
                    placeholder="Min. 8 karakter"
-                   class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition placeholder-gray-300 @error('password') border-red-400 @enderror"
+                   class="auth-input w-full px-4 pr-12 py-3.5 border border-slate-200 rounded-2xl text-sm bg-white outline-none transition placeholder-slate-300 @error('password') border-red-400 @enderror"
                    required>
+
+            <button type="button"
+                    onclick="togglePassword('registerPassword', 'registerEyeOpen', 'registerEyeClosed')"
+                    class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition"
+                    aria-label="Lihat password">
+                <svg id="registerEyeOpen" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12.5a5 5 0 110-10 5 5 0 010 10zm0-2a3 3 0 100-6 3 3 0 000 6z"/>
+                </svg>
+                <svg id="registerEyeClosed" class="w-5 h-5 hidden" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M2.1 3.51L3.51 2.1 21.9 20.49l-1.41 1.41-3.04-3.04A12.7 12.7 0 0112 19.5C7 19.5 2.73 16.39 1 12a13.7 13.7 0 013.11-4.56L2.1 3.51zM12 4.5c5 0 9.27 3.11 11 7.5a13.4 13.4 0 01-3.02 4.46l-3.12-3.12A5 5 0 0010.66 7.14L8.35 4.83A12.8 12.8 0 0112 4.5z"/>
+                </svg>
+            </button>
         </div>
     </div>
 
-    <div class="space-y-1.5">
-
-        <label class="block text-xs font-medium text-gray-600">
-            Konfirmasi Password
-        </label>
-
+    <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">Konfirmasi Password</label>
         <div class="relative">
-
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-
-                <svg class="w-4 h-4"
-                     viewBox="0 0 24 24"
-                     fill="currentColor">
-
-                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
-                </svg>
-            </span>
-
-            <input type="password"
+            <input id="registerPasswordConfirmation"
+                   type="password"
                    name="password_confirmation"
                    placeholder="Ulangi password Anda"
-                   class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition placeholder-gray-300"
+                   class="auth-input w-full px-4 pr-12 py-3.5 border border-slate-200 rounded-2xl text-sm bg-white outline-none transition placeholder-slate-300"
                    required>
+
+            <button type="button"
+                    onclick="togglePassword('registerPasswordConfirmation', 'registerConfirmEyeOpen', 'registerConfirmEyeClosed')"
+                    class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition"
+                    aria-label="Lihat konfirmasi password">
+                <svg id="registerConfirmEyeOpen" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12.5a5 5 0 110-10 5 5 0 010 10zm0-2a3 3 0 100-6 3 3 0 000 6z"/>
+                </svg>
+                <svg id="registerConfirmEyeClosed" class="w-5 h-5 hidden" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M2.1 3.51L3.51 2.1 21.9 20.49l-1.41 1.41-3.04-3.04A12.7 12.7 0 0112 19.5C7 19.5 2.73 16.39 1 12a13.7 13.7 0 013.11-4.56L2.1 3.51zM12 4.5c5 0 9.27 3.11 11 7.5a13.4 13.4 0 01-3.02 4.46l-3.12-3.12A5 5 0 0010.66 7.14L8.35 4.83A12.8 12.8 0 0112 4.5z"/>
+                </svg>
+            </button>
         </div>
     </div>
 
     <button type="submit"
-            class="w-full bg-primary-500 hover:bg-primary-600 active:bg-primary-700 text-white font-semibold py-2.5 rounded-lg transition text-sm shadow-sm shadow-primary-200">
-
+            class="w-full text-white font-bold py-3.5 rounded-2xl transition text-sm mt-2"
+            style="background: linear-gradient(135deg, #5EA500, #3E7D00); box-shadow: 0 14px 30px rgba(94,165,0,.25);">
         Daftar Sekarang
     </button>
-
 </form>
 
-<p class="text-center text-xs text-gray-400 mt-5">
-
+<p class="text-center text-sm text-slate-500 mt-6">
     Sudah punya akun?
-
-    <a href="{{ route('login') }}"
-       class="text-primary-600 font-semibold hover:text-primary-800">
-
+    <a href="{{ route('login') }}" class="font-bold hover:underline" style="color:#497D00;">
         Masuk di sini
     </a>
 </p>
+
+@push('scripts')
+<script>
+    function togglePassword(inputId, eyeOpenId, eyeClosedId) {
+        const input = document.getElementById(inputId);
+        const eyeOpen = document.getElementById(eyeOpenId);
+        const eyeClosed = document.getElementById(eyeClosedId);
+
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+
+        eyeOpen.classList.toggle('hidden', isPassword);
+        eyeClosed.classList.toggle('hidden', !isPassword);
+    }
+</script>
+@endpush
 
 @endsection

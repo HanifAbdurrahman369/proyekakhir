@@ -29,7 +29,7 @@ Route::get('/', function () {
 1. JALUR AUTENTIKASI GLOBAL (AUTH)
 ===================================================================
 */
-Route::get('/login', function () { return view('auth.login'); })->name('login');
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::get('/register', function () { return view('auth.register'); })->name('register');
@@ -94,12 +94,10 @@ Route::middleware(['role:3'])->group(function () {
     Route::get('/laporan-produksi/export-pdf', [ProduksiDaerahController::class, 'exportPdf'])->name('laporan.produksi.pdf');
 });
 Route::middleware(['role:2'])->group(function () {
-    // Tampilan Halaman
     Route::get('/dashboard-petugas', [PetugasController::class, 'index']);
-    Route::get('/peta-lahan', [PetugasController::class, 'petaLahan']);
-    Route::get('/verifikasi-panen', [PetugasController::class, 'verifikasiPanen']);
-    
-    // Aksi Pemrosesan Formulir (Server-Side)
+    Route::get('/manajemen-data-spasial', [PetugasController::class, 'manajemenDataSpasial']);
+    Route::get('/input-parameter-lingkungan', [PetugasController::class, 'inputParameterLingkungan']);
+    Route::get('/verifikasi-data-petani', [PetugasController::class, 'verifikasiDataPetani']);  
     Route::post('/petugas/spasial/simpan', [PetugasController::class, 'storeSpasial']);
     Route::post('/petugas/verifikasi/{id}/{aksi}', [PetugasController::class, 'aksiVerifikasi']);
 });
@@ -113,6 +111,7 @@ Route::middleware(['role:1'])->group(function () {
     Route::get('/input-panen', [SiklusTanamController::class, 'create'])->name('input.panen');
     Route::get('/riwayat-panen', [SiklusTanamController::class, 'riwayatPanen'])->name('riwayat.panen');
     Route::post('/input-panen', [SiklusTanamController::class, 'store'])->name('input.panen.store');
+    Route::get('/tambah-lahan', function () { return view('partials.sidebar.tambah-lahan'); })->name('tambah.lahan');
 });
 
 

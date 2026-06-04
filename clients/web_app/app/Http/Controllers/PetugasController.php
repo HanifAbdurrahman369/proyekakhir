@@ -7,78 +7,105 @@ use Illuminate\Support\Facades\Http;
 
 class PetugasController extends Controller
 {
-    private function gatewayUrl() {
-        return env('GATEWAY_URL', 'http://127.0.0.1:8003') . '/api';
+    private $gatewayUrl = 'http://127.0.0.1:8003/api';
+
+    private function getBearerToken()
+    {
+        return session('token') ?? session('jwt_token') ?? '';
     }
 
-    private function getToken() {
-        return session('token') ?? session('jwt_token');
-    }
-
-    // HALAMAN 1: DASHBOARD
+    // ---------------------------------------------------------
+    // RENDER HALAMAN BERANDA
+    // ---------------------------------------------------------
     public function index()
     {
         return view('dashboard.petugas', ['page' => 'dashboard']);
     }
 
-    // HALAMAN 2: MAPPING WILAYAH
-    public function petaLahan()
+    // ---------------------------------------------------------
+    // RENDER HALAMAN MANAJEMEN DATA SPASIAL
+    // ---------------------------------------------------------
+    public function manajemenDataSpasial()
     {
-        $token = $this->getToken();
+        $token = $this->getBearerToken();
         $referensi = ['petani' => [], 'kecamatan' => [], 'kelurahan' => [], 'tipe_lahan' => []];
         $koleksiLahan = ['type' => 'FeatureCollection', 'features' => []];
 
-        if ($token) {
-            $resRef = Http::withToken($token)->get($this->gatewayUrl() . '/spasial-lahan/referensi');
-            if ($resRef->successful()) $referensi = $resRef->json('data');
+        if (!empty($token)) {
+            try {
+                $resRef = Http::withToken($token)->timeout(5)->get($this->gatewayUrl . '/spasial-lahan/referensi');
+                if ($resRef->successful()) $referensi = $resRef->json('data') ?? $referensi;
 
-            $resLahan = Http::withToken($token)->get($this->gatewayUrl() . '/spasial-lahan');
-            if ($resLahan->successful()) $koleksiLahan = $resLahan->json();
+                $resLahan = Http::withToken($token)->timeout(5)->get($this->gatewayUrl . '/spasial-lahan');
+                if ($resLahan->successful()) $koleksiLahan = $resLahan->json() ?? $koleksiLahan;
+            } catch (\Exception $e) {}
         }
 
         return view('dashboard.petugas', [
-            'page' => 'peta',
+            'page' => 'manajemen-data-spasial',
             'referensi' => $referensi,
             'koleksiLahan' => $koleksiLahan
         ]);
     }
 
-    // HALAMAN 3: VERIFIKASI DATA
-    public function verifikasiPanen()
+    // ---------------------------------------------------------
+    // RENDER HALAMAN INPUT PARAMETER LINGKUNGAN
+    // ---------------------------------------------------------
+    public function inputParameterLingkungan()
     {
-        $token = $this->getToken();
+        return view('dashboard.petugas', ['page' => 'input-parameter-lingkungan']);
+    }
+
+    // ---------------------------------------------------------
+    // RENDER HALAMAN VERIFIKASI DATA PETANI
+    // ---------------------------------------------------------
+    public function verifikasiDataPetani()
+    {
+        $token = $this->getBearerToken();
         $antrean = [];
 
-        if ($token) {
-            $response = Http::withToken($token)->get($this->gatewayUrl() . '/activities/pending');
-            if ($response->successful()) $antrean = $response->json('data') ?? [];
+        if (!empty($token)) {
+            try {
+                $response = Http::withToken($token)->timeout(5)->get($this->gatewayUrl . '/activities/pending');
+                if ($response->successful()) $antrean = $response->json('data') ?? [];
+            } catch (\Exception $e) {}
         }
-
-        return view('dashboard.petugas', ['page' => 'verifikasi', 'antrean' => $antrean]);
+        return view('dashboard.petugas', ['page' => 'verifikasi-data-petani', 'antrean' => $antrean]);
     }
 
-    // AKSI 1: SIMPAN PETA (Form Submit Tradisional)
+    // ---------------------------------------------------------
+    // AKSI CRUD SPASIAL (TIDAK ADA YANG DIKURANGI)
+    // ---------------------------------------------------------
     public function storeSpasial(Request $request)
     {
-        $token = $this->getToken();
-        $response = Http::withToken($token)->post($this->gatewayUrl() . '/spasial-lahan', $request->all());
+        $token = $this->getBearerToken();
+        $response = Http::withToken($token)->post($this->gatewayUrl . '/spasial-lahan', $request->all());
 
         if ($response->successful()) {
-            return redirect('/peta-lahan')->with('success', 'Data poligon lahan sawah berhasil dipetakan.');
+            return redirect('/manajemen-data-spasial')->with('success', 'Data poligon lahan sawah baru berhasil dipetakan.');
         }
-        return back()->with('error', $response->json('message') ?? 'Gagal menyimpan data spasial.')->withInput();
+        return back()->with('error', $response->json('message') ?? 'Gagal menyimpan data spasial lahan.')->withInput();
     }
 
-    // AKSI 2: SETUJUI / TOLAK DATA (Form Submit Tradisional)
-    public function aksiVerifikasi($id, $aksi)
+    public function updateSpasial(Request $request, $id)
     {
-        $token = $this->getToken();
-        $response = Http::withToken($token)->post($this->gatewayUrl() . "/activities/{$id}/{$aksi}");
+        $token = $this->getBearerToken();
+        $response = Http::withToken($token)->put($this->gatewayUrl . "/spasial-lahan/$id", $request->all());
 
         if ($response->successful()) {
-            $msg = $aksi == 'approve' ? 'Data berhasil disetujui' : 'Data berhasil ditolak';
-            return redirect('/verifikasi-panen')->with('success', $msg);
+            return redirect('/manajemen-data-spasial')->with('success', 'Perubahan spasial lahan berhasil diperbarui.');
         }
-        return back()->with('error', 'Gagal memproses validasi data.');
+        return back()->with('error', $response->json('message') ?? 'Gagal memperbarui data spasial.')->withInput();
+    }
+
+    public function destroySpasial($id)
+    {
+        $token = $this->getBearerToken();
+        $response = Http::withToken($token)->delete($this->gatewayUrl . "/spasial-lahan/$id");
+
+        if ($response->successful()) {
+            return redirect('/manajemen-data-spasial')->with('success', 'Data spasial lahan berhasil dihapus.');
+        }
+        return back()->with('error', 'Gagal menghapus data spasial lahan.');
     }
 }
