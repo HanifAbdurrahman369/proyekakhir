@@ -6,6 +6,8 @@ use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\PetugasController;
 use App\Http\Controllers\SiklusTanamController;
+use App\Http\Controllers\ProduksiDaerahController;
+use App\Http\Controllers\Api\ProduksiDaerahApiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -46,6 +48,13 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('
 // Profil Pengguna (Wajib Login JWT)
 Route::get('/profile', [AuthController::class, 'profile'])->middleware('jwt');
 
+/*
+===================================================================
+1B. API ENDPOINTS untuk AJAX/Fetch dari Browser
+===================================================================
+*/
+Route::get('/api/produksi-daerah', [ProduksiDaerahApiController::class, 'index'])->middleware('jwt');
+
 
 /*
 ===================================================================
@@ -74,12 +83,16 @@ Route::get('/dashboard-petugas', [PetugasController::class, 'index'])->middlewar
 
 Route::get('/dashboard-pejabat', function () { return view('dashboard.pejabat'); })->middleware('role:3');
 
-
 /*
 ===================================================================
-4. OPERASIONAL PETUGAS (ROLE: 2) - Manajemen Spasial
+3B. OPERASIONAL PEJABAT (ROLE: 3) - Analisis Data Daerah
 ===================================================================
 */
+Route::middleware(['role:3'])->group(function () {
+    Route::get('/laporan-produksi', [ProduksiDaerahController::class, 'index'])->name('laporan.produksi');
+    Route::get('/laporan-produksi/export-excel', [ProduksiDaerahController::class, 'export'])->name('laporan.produksi.export');
+    Route::get('/laporan-produksi/export-pdf', [ProduksiDaerahController::class, 'exportPdf'])->name('laporan.produksi.pdf');
+});
 Route::middleware(['role:2'])->group(function () {
     Route::get('/dashboard-petugas', [PetugasController::class, 'index']);
     Route::get('/manajemen-data-spasial', [PetugasController::class, 'manajemenDataSpasial']);
@@ -98,6 +111,7 @@ Route::middleware(['role:1'])->group(function () {
     Route::get('/input-panen', [SiklusTanamController::class, 'create'])->name('input.panen');
     Route::get('/riwayat-panen', [SiklusTanamController::class, 'riwayatPanen'])->name('riwayat.panen');
     Route::post('/input-panen', [SiklusTanamController::class, 'store'])->name('input.panen.store');
+    Route::get('/tambah-lahan', function () { return view('partials.sidebar.tambah-lahan'); })->name('tambah.lahan');
 });
 
 

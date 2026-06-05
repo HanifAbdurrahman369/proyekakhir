@@ -10,6 +10,11 @@
         <p class="text-sm text-slate-500 mt-1">Pantau data lahan, riwayat produksi, dan pelaporan hasil panen Anda.</p>
     </div>
 
+    <a href="{{ route('tambah.lahan') }}"
+        class="btn-green inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold transition">
+        <span>🌾</span> Tambah Lahan
+    </a>
+
     <a href="{{ route('input.panen') }}"
        class="btn-green inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold transition">
         <span>🌾</span> Lapor Hasil Panen
