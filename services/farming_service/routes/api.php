@@ -5,6 +5,11 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SiklusTanamController;
 use App\Http\Controllers\JenisBibitController;
 use App\Http\Controllers\LahanSawahController;
+use App\Http\Controllers\NotifikasiController;
+use App\Http\Controllers\RiwayatPanenController;
+use App\Http\Controllers\KecamatanController;
+use App\Http\Controllers\KelurahanController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -38,15 +43,14 @@ Route::middleware(\App\Http\Middleware\JwtMiddleware::class)->group(function () 
 
     Route::post('/activities/{id}/approve', [SiklusTanamController::class, 'approve']);
     Route::post('/activities/{id}/reject', [SiklusTanamController::class, 'reject']);
-});
 
+    Route::get('/riwayat-panen', [RiwayatPanenController::class, 'index']);
+    
     /*
     |--------------------------------------------------------------------------
     | JENIS BIBIT
     |--------------------------------------------------------------------------
     */
-    Route::get('/riwayat-panen',[SiklusTanamController::class, 'riwayatPanen']);
-
     Route::get('/bibit', [JenisBibitController::class, 'index']);
     Route::get('/bibit/{id}', [JenisBibitController::class, 'show']);
 
@@ -59,3 +63,23 @@ Route::middleware(\App\Http\Middleware\JwtMiddleware::class)->group(function () 
     Route::get('/lahan', [LahanSawahController::class, 'index']);
     Route::post('/lahan', [LahanSawahController::class, 'store']);
     Route::get('/lahan/{id}', [LahanSawahController::class, 'show']); 
+});
+
+        /*
+    |--------------------------------------------------------------------------
+    | KECAMATAN
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/kecamatan', [KecamatanController::class, 'index']);
+    Route::get('/kecamatan/{id}', [KecamatanController::class, 'show']);
+
+    /*
+    |--------------------------------------------------------------------------
+    | KELURAHAN
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/kelurahan', [KelurahanController::class, 'index']);
+    Route::get('/kelurahan/{id}', [KelurahanController::class, 'show']);
+
+
+ 

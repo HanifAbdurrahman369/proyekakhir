@@ -8,6 +8,7 @@ use App\Http\Controllers\PetugasController;
 use App\Http\Controllers\SiklusTanamController;
 use App\Http\Controllers\ProduksiDaerahController;
 use App\Http\Controllers\Api\ProduksiDaerahApiController;
+use App\Http\Controllers\LahanSawahController;
 
 /*
 |--------------------------------------------------------------------------
@@ -111,7 +112,10 @@ Route::middleware(['role:1'])->group(function () {
     Route::get('/input-panen', [SiklusTanamController::class, 'create'])->name('input.panen');
     Route::get('/riwayat-panen', [SiklusTanamController::class, 'riwayatPanen'])->name('riwayat.panen');
     Route::post('/input-panen', [SiklusTanamController::class, 'store'])->name('input.panen.store');
-    Route::get('/tambah-lahan', function () { return view('partials.sidebar.tambah-lahan'); })->name('tambah.lahan');
+
+    Route::get('/lahan/create', [LahanSawahController::class, 'create'])->name('tambah.lahan');
+    Route::post('/lahan/store', [LahanSawahController::class, 'storeLahan'])->name('lahan.store');
+
 });
 
 

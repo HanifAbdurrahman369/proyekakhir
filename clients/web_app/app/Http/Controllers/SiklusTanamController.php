@@ -22,42 +22,36 @@ class SiklusTanamController extends Controller
     public function create()
     {
         $token = session('token');
+        
 
         if (!$token) {
-                    return redirect('/login')->with(
-                'error',
-                'Session login habis, silakan login kembali.'
-                    );
+            return redirect('/login')
+                ->with('error', 'Session login habis, silakan login kembali.');
         }
 
-        $lahanResponse = Http::acceptJson()
+        $lahanResponse = Http::withToken($token)
+            ->acceptJson()
             ->get($this->gatewayUrl() . '/api/lahan');
-        $bibitResponse = Http::acceptJson()
-        ->get($this->gatewayUrl() . '/api/bibit');
 
-        $bibit = [];
-
-        if ($bibitResponse->successful()) {
-
-            $bibit = $bibitResponse->json()['data'] ?? [];
-
-        }
+        $bibitResponse = Http::withToken($token)
+            ->acceptJson()
+            ->get($this->gatewayUrl() . '/api/bibit');
 
         $lahan = [];
+        $bibit = [];
 
         if ($lahanResponse->successful()) {
-
             $lahan = $lahanResponse->json()['data'] ?? [];
-
         }
 
-        return view('partials.sidebar.input-petani', [
+        if ($bibitResponse->successful()) {
+            $bibit = $bibitResponse->json()['data'] ?? [];
+        }
 
-            'bibit' => $bibit,
-
-            'lahan' => $lahan
-
-        ]);
+        return view('partials.sidebar.input-petani', compact(
+            'lahan',
+            'bibit'
+        ));
     }
     
     public function store(Request $request)
@@ -106,32 +100,33 @@ class SiklusTanamController extends Controller
             ->with('error', 'Gagal menyimpan data aktivitas tanam');
     }
 
- public function riwayatPanen(Request $request)
-{
-    $token = session('token');
+    public function riwayatPanen(Request $request)
+    {
+        $token = session('token');
 
-    if (!$token) {
-        return redirect('/login')->with(
-            'error',
-            'Silakan login terlebih dahulu'
-        );
+        if (!$token) {
+            return redirect('/login')->with(
+                'error',
+                'Silakan login terlebih dahulu'
+            );
+        }
+
+        $response = Http::withToken($token)
+            ->acceptJson()
+            ->get($this->gatewayUrl() . '/api/riwayat-panen', [
+                'limit' => 5
+            ]);
+            
+
+        if ($response->successful()) {
+            $riwayat = $response->json();
+        } else {
+            $riwayat = ['data' => []];
+            session()->flash('error', 'Gagal mengambil data riwayat panen.');
+        }
+
+        return view('partials.sidebar.riwayat-panen', compact('riwayat'));
     }
-
-    $response = Http::withToken($token)
-        ->acceptJson()
-        ->get($this->gatewayUrl() . '/api/riwayat-panen', [
-            'limit' => 5
-        ]);
-
-    if ($response->successful()) {
-        $riwayat = $response->json();
-    } else {
-        $riwayat = ['data' => []];
-        session()->flash('error', 'Gagal mengambil data riwayat panen.');
-    }
-
-    return view('partials.sidebar.riwayat-panen', compact('riwayat'));
-}
 
 
 }
