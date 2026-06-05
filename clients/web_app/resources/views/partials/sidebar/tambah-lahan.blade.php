@@ -29,10 +29,24 @@
 
         {{-- FORM --}}
         <div class="p-5 sm:p-6">
+                {{-- Alert Success --}}
+                @if(session('success'))
+                    <div class="mb-5 p-4 rounded-xl bg-green-100 border border-green-300 text-green-700">
+                        {{ session('success') }}
+                    </div>
+                @endif
 
-            <form>
+                {{-- Alert Error --}}
+                @if(session('error'))
+                    <div class="mb-5 p-4 rounded-xl bg-red-100 border border-red-300 text-red-700">
+                        {{ session('error') }}
+                    </div>
+                @endif
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <form method="POST" action="{{ url('/lahan/store') }}">
+            @csrf
+
+                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
                     {{-- Nama Lahan --}}
                     <div>
@@ -41,8 +55,10 @@
                         </label>
 
                         <input type="text"
-                               placeholder="Masukkan nama lahan"
-                               class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            name="nama_lahan"
+                            placeholder="Masukkan nama lahan"
+                            class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                            required>
                     </div>
 
                     {{-- Kecamatan --}}
@@ -51,8 +67,16 @@
                             Kecamatan
                         </label>
 
-                        <select class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500">
-                            <option>Pilih Kecamatan</option>
+                        <select name="kecamatan_id"
+                                class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                required>
+                            <option value="">Pilih Kecamatan</option>
+
+                            @foreach($kecamatan as $item)
+                                <option value="{{ $item['id'] }}">
+                                    {{ $item['nama_kecamatan'] ?? $item['nama'] }}
+                                </option>
+                            @endforeach
                         </select>
                     </div>
 
@@ -62,8 +86,16 @@
                             Kelurahan
                         </label>
 
-                        <select class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500">
-                            <option>Pilih Kelurahan</option>
+                        <select name="kelurahan_id"
+                                class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                required>
+                            <option value="">Pilih Kelurahan</option>
+
+                            @foreach($kelurahan as $item)
+                                <option value="{{ $item['id'] }}">
+                                    {{ $item['nama_kelurahan'] ?? $item['nama'] }}
+                                </option>
+                            @endforeach
                         </select>
                     </div>
 
@@ -74,9 +106,9 @@
                         </label>
 
                         <input type="text"
-                               value="Menunggu Persetujuan"
-                               readonly
-                               class="w-full bg-yellow-50 border border-yellow-300 rounded-xl px-4 py-3 text-yellow-700">
+                            value="Menunggu Persetujuan"
+                            readonly
+                            class="w-full bg-yellow-50 border border-yellow-300 rounded-xl px-4 py-3 text-yellow-700">
                     </div>
 
                 </div>
@@ -87,9 +119,11 @@
                         Alamat Lengkap
                     </label>
 
-                    <textarea rows="5"
-                              placeholder="Masukkan alamat lengkap lahan"
-                              class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"></textarea>
+                    <textarea name="alamat_detail"
+                            rows="5"
+                            placeholder="Masukkan alamat lengkap lahan"
+                            class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                            required></textarea>
                 </div>
 
                 {{-- Informasi --}}

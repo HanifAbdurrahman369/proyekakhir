@@ -72,35 +72,46 @@
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-                    {{-- PILIH LAHAN --}}
-                    <div>
+                   {{-- PILIH LAHAN --}}
+<div>
 
-                        <label class="block mb-2 font-medium text-gray-700">
-                            Pilih Lahan
-                        </label>
+    <label class="block mb-2 font-medium text-gray-700">
+        Pilih Lahan
+    </label>
 
-                        <select name="lahan_id"
-                                class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                                required>
+    <select name="lahan_id"
+            class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            required>
 
-                            <option value="">
-                                -- Pilih Lahan --
-                            </option>
+        <option value="">
+            -- Pilih Lahan Sawah --
+        </option>
 
-                            @foreach($lahan as $item)
+        @forelse($lahan as $item)
 
-                                <option value="{{ $item['id'] }}">
+            <option value="{{ $item['id'] }}">
 
-                                    {{ $item['nama_lahan'] }}
-                                    ({{ $item['luas_lahan_hektar'] ?? '-' }} Ha)
+                {{ $item['nama_lahan'] }}
+                | {{ $item['kecamatan'] ?? '-' }}
+                | {{ $item['luas_lahan_hektar'] ?? 0 }} Ha
 
-                                </option>
+            </option>
 
-                            @endforeach
+        @empty
 
-                        </select>
+            <option disabled>
+                Belum memiliki lahan terdaftar
+            </option>
 
-                    </div>
+        @endforelse
+
+    </select>
+
+    <p class="mt-2 text-xs text-gray-500">
+        Hanya menampilkan lahan milik akun yang sedang login.
+    </p>
+
+</div>
 
                     {{-- JENIS BIBIT --}}
                     <div>

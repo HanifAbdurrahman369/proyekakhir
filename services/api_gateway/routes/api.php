@@ -146,6 +146,11 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/notifikasi/
 |--------------------------------------------------------------------------
 */
 
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/riwayat-panen/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    $path = trim('riwayat-panen/' . $any, '/');
+    return proxyRequest($request, $serviceMap['farming'], $path);
+})->where('any', '.*');
+
 Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/activities/{any?}', function (Request $request, $any = '') use ($serviceMap) {
     $path = trim('activities/' . $any, '/');
     return proxyRequest($request, $serviceMap['farming'], $path);
@@ -158,6 +163,16 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/bibit/{any?
 
 Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/lahan/{any?}', function (Request $request, $any = '') use ($serviceMap) {
     $path = trim('lahan/' . $any, '/');
+    return proxyRequest($request, $serviceMap['farming'], $path);
+})->where('any', '.*');
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/kecamatan/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    $path = trim('kecamatan/' . $any, '/');
+    return proxyRequest($request, $serviceMap['farming'], $path);
+})->where('any', '.*');
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/kelurahan/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    $path = trim('kelurahan/' . $any, '/');
     return proxyRequest($request, $serviceMap['farming'], $path);
 })->where('any', '.*');
 

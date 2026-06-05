@@ -40,11 +40,16 @@ public function store(Request $request)
     // 🔥 AMBIL USER DARI FIREBASE JWT MIDDLEWARE
     $user = $request->attributes->get('auth');
 
-    if (!$user || !isset($user->sub)) {
+    $lahan = LahanSawah::where('id', $request->lahan_id)
+                ->where('user_id', $user->sub)
+                ->where('status_verifikasi', 'DITERIMA')
+                ->first();
+
+    if (!$lahan) {
         return response()->json([
             'success' => false,
-            'message' => 'User tidak ditemukan dari token JWT'
-        ], 401);
+            'message' => 'Lahan tidak valid atau belum diverifikasi.'
+        ], 403);
     }
 
     $data = SiklusTanam::create([
@@ -108,49 +113,7 @@ public function store(Request $request)
         ], 200);
     }
 
-    public function riwayatPanen(Request $request)
-    {
-        $limit = $request->get('limit', 5);
-
-        $data = SiklusTanam::with([
-                'lahan:id,nama_lahan,luas_lahan_hektar',
-                'bibit:id,nama_bibit'
-            ])
-            ->latest()
-            ->take($limit)
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'id' => $item->id,
-                    'lahan_id' => $item->lahan_id,
-                    'bibit_id' => $item->bibit_id,
-                    'tanggal_tanam' => $item->tanggal_tanam,
-                    'tanggal_panen' => $item->tanggal_panen,
-                    'estimasi_panen' => $item->estimasi_panen,
-                    'hasil_panen' => $item->hasil_panen,
-                    'status_aktif' => $item->status_aktif,
-                    'status_verifikasi' => $item->status_verifikasi,
-                    'created_by' => $item->created_by,
-                    'lahan' => $item->lahan ? [
-                        'id' => $item->lahan->id,
-                        'nama_lahan' => $item->lahan->nama_lahan,
-                        'luas_lahan_hektar' => $item->lahan->luas_lahan_hektar,
-                    ] : null,
-                    'bibit' => $item->bibit ? [
-                        'id' => $item->bibit->id,
-                        'nama_bibit' => $item->bibit->nama_bibit,
-                    ] : null,
-                ];
-            })
-            ->values()
-            ->toArray();
-
-        return response()->json([
-            'success' => true,
-            'data' => $data
-        ]);
-    }
-
+   
     /**
      * UPDATE DATA AKTIVITAS TANAM
      */
