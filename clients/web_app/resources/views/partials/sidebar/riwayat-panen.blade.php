@@ -18,29 +18,6 @@
                 Daftar aktivitas tanam dan hasil panen petani.
             </p>
         </div>
-
-        {{-- FILTER --}}
-        <form method="GET" action="{{ route('riwayat.panen') }}">
-
-            <div class="flex gap-3">
-
-                <input type="text"
-                       name="search"
-                       value="{{ request('search') }}"
-                       placeholder="Cari lahan atau bibit..."
-                       class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:outline-none">
-
-                <button type="submit"
-                        class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg transition">
-
-                    Cari
-
-                </button>
-
-            </div>
-
-        </form>
-
     </div>
 
     {{-- ALERT SUCCESS --}}
@@ -106,158 +83,142 @@
 
             </thead>
 
-            <tbody>
+<tbody>
 
-                @forelse($riwayat['data'] ?? [] as $index => $item)
+    @forelse(($riwayat['data'] ?? []) as $item)
 
-                    <tr class="hover:bg-gray-50 transition">
+        <tr class="hover:bg-gray-50 transition">
 
-                        <td class="p-4 border-b text-sm text-gray-700">
+            <td class="p-4 border-b text-sm text-gray-700">
+                {{ (($riwayat['current_page'] ?? 1) - 1) * ($riwayat['per_page'] ?? 5) + $loop->iteration }}
+            </td>
 
-                            {{ $index + 1 }}
+            <td class="p-4 border-b">
 
-                        </td>
+                <div class="font-medium text-gray-800">
+                    {{ $item['lahan']['nama_lahan'] ?? '-' }}
+                </div>
 
-                        <td class="p-4 border-b">
+                <div class="text-xs text-gray-500">
+                    {{ $item['lahan']['luas_lahan_hektar'] ?? '-' }} Ha
+                </div>
 
-                            <div class="font-medium text-gray-800">
+            </td>
 
-                                {{ $item['lahan']['nama_lahan'] ?? '-' }}
+            <td class="p-4 border-b text-gray-700">
+                {{ $item['bibit']['nama_bibit'] ?? '-' }}
+            </td>
 
-                            </div>
+            <td class="p-4 border-b text-gray-700">
+                {{ !empty($item['tanggal_tanam'])
+                    ? \Carbon\Carbon::parse($item['tanggal_tanam'])->format('d M Y')
+                    : '-' }}
+            </td>
 
-                            <div class="text-xs text-gray-500">
+            <td class="p-4 border-b text-gray-700">
+                {{ !empty($item['tanggal_panen'])
+                    ? \Carbon\Carbon::parse($item['tanggal_panen'])->format('d M Y')
+                    : '-' }}
+            </td>
 
-                                {{ $item['lahan']['luas_lahan_hektar'] ?? '-' }} Ha
+            <td class="p-4 border-b">
+                <span class="font-semibold text-green-700">
+                    {{ $item['hasil_panen'] ?? 0 }} Ton
+                </span>
+            </td>
 
-                            </div>
+            <td class="p-4 border-b">
 
-                        </td>
+                @if(($item['status_verifikasi'] ?? '') === 'DITERIMA')
 
-                        <td class="p-4 border-b text-gray-700">
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                        DITERIMA
+                    </span>
 
-                            {{ $item['bibit']['nama_bibit'] ?? '-' }}
+                @elseif(($item['status_verifikasi'] ?? '') === 'DITOLAK')
 
-                        </td>
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                        DITOLAK
+                    </span>
 
-                        <td class="p-4 border-b text-gray-700">
+                @else
 
-                            {{ \Carbon\Carbon::parse($item['tanggal_tanam'])->format('d M Y') }}
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">
+                        PENDING
+                    </span>
 
-                        </td>
+                @endif
 
-                        <td class="p-4 border-b text-gray-700">
+            </td>
 
-                            @if($item['tanggal_panen'])
+        </tr>
 
-                                {{ \Carbon\Carbon::parse($item['tanggal_panen'])->format('d M Y') }}
+    @empty
 
-                            @else
+        <tr>
+            <td colspan="7" class="p-6 text-center text-gray-500">
+                Belum ada riwayat panen yang diinput.
+            </td>
+        </tr>
 
-                                -
+    @endforelse
 
-                            @endif
-
-                        </td>
-
-                        <td class="p-4 border-b">
-
-                            <span class="font-semibold text-green-700">
-
-                                {{ $item['hasil_panen'] ?? 0 }} Ton
-
-                            </span>
-
-                        </td>
-
-                        <td class="p-4 border-b">
-
-                            @php
-
-                                $status = $item['status_verifikasi'];
-
-                            @endphp
-
-                            @if($status == 'DITERIMA')
-
-                                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-
-                                    DITERIMA
-
-                                </span>
-
-                            @elseif($status == 'DITOLAK')
-
-                                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
-
-                                    DITOLAK
-
-                                </span>
-
-                            @else
-
-                                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">
-
-                                    PENDING
-
-                                </span>
-
-                            @endif
-
-                        </td>
-
-                    </tr>
-
-                @empty
-
-                    <tr>
-
-                        <td colspan="7"
-                            class="p-6 text-center text-gray-500">
-
-                            Data riwayat panen belum tersedia.
-
-                        </td>
-
-                    </tr>
-
-                @endforelse
-
-            </tbody>
+</tbody>
 
         </table>
 
     </div>
 
-    {{-- PAGINATION --}}
-    @if(isset($riwayat['links']))
+ @if(!empty($riwayat) && isset($riwayat['current_page']))
 
-        <div class="mt-6 flex justify-center">
+<div class="flex justify-between items-center mt-6">
 
-            <div class="flex gap-2">
+    {{-- Tombol Sebelumnya --}}
+    @if($riwayat['current_page'] > 1)
 
-                @foreach($riwayat['links'] as $link)
+        <a href="{{ route('riwayat.panen', [
+            'page' => $riwayat['current_page'] - 1,
+            'search' => request('search')
+        ]) }}"
+           class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300">
 
-                    @if($link['url'])
+            ← Sebelumnya
 
-                        <a href="{{ $link['url'] }}"
-                           class="px-4 py-2 rounded-lg border text-sm
-                           {{ $link['active'] ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' }}">
+        </a>
 
-                            {!! $link['label'] !!}
+    @else
 
-                        </a>
+        <div></div>
 
-                    @endif
+    @endif
 
-                @endforeach
+    {{-- Informasi Halaman --}}
+    <span class="text-sm text-gray-500">
+        Halaman {{ $riwayat['current_page'] }}
+        dari {{ $riwayat['last_page'] }}
+    </span>
 
-            </div>
+    {{-- Tombol Selanjutnya --}}
+    @if($riwayat['current_page'] < $riwayat['last_page'])
 
-        </div>
+        <a href="{{ route('riwayat.panen', [
+            'page' => $riwayat['current_page'] + 1,
+            'search' => request('search')
+        ]) }}"
+           class="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700">
+
+            Selanjutnya →
+
+        </a>
+
+    @else
+
+        <div></div>
 
     @endif
 
 </div>
+
+@endif
 
 @endsection

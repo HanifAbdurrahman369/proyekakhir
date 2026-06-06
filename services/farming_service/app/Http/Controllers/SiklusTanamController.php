@@ -175,6 +175,27 @@ public function store(Request $request)
         ], 200);
     }
 
+
+public function totalProduksi(Request $request)
+{
+    $user = $request->attributes->get('auth');
+
+    $tahun = Carbon::now()->year;
+
+    $total = SiklusTanam::where('created_by', $user->sub)
+        ->where('status_verifikasi', 'DITERIMA')
+        ->whereYear('tanggal_panen', $tahun)
+        ->sum('hasil_panen');
+
+    return response()->json([
+        'success' => true,
+        'data' => [
+            'tahun' => $tahun,
+            'total_produksi' => $total
+        ]
+    ]);
+}
+
     /**
      * APPROVE OLEH PETUGAS
      */
