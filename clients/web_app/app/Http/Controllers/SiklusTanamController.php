@@ -31,7 +31,7 @@ class SiklusTanamController extends Controller
 
         $lahanResponse = Http::withToken($token)
             ->acceptJson()
-            ->get($this->gatewayUrl() . '/api/lahan');
+            ->get($this->gatewayUrl() . '/api/lahan/dropdown');
 
         $bibitResponse = Http::withToken($token)
             ->acceptJson()
@@ -53,6 +53,7 @@ class SiklusTanamController extends Controller
             'bibit'
         ));
     }
+
     
     public function store(Request $request)
     {
@@ -118,12 +119,12 @@ class SiklusTanamController extends Controller
             ]);
             
 
-        if ($response->successful()) {
-            $riwayat = $response->json();
-        } else {
-            $riwayat = ['data' => []];
-            session()->flash('error', 'Gagal mengambil data riwayat panen.');
-        }
+if ($response->successful()) {
+    $riwayat = $response->json()['data'] ?? [];
+} else {
+    $riwayat = [];
+    session()->flash('error', 'Gagal mengambil data riwayat panen.');
+}
 
         return view('partials.sidebar.riwayat-panen', compact('riwayat'));
     }

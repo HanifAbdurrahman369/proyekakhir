@@ -8,6 +8,7 @@ use App\Http\Controllers\PetugasController;
 use App\Http\Controllers\SiklusTanamController;
 use App\Http\Controllers\ProduksiDaerahController;
 use App\Http\Controllers\Api\ProduksiDaerahApiController;
+use App\Http\Controllers\PetaniController;
 use App\Http\Controllers\LahanSawahController;
 
 /*
@@ -77,7 +78,7 @@ Route::get('/statistik', function () {
 3. PENGALIHAN DASHBOARD MULTI-ROLE (Dipanggil Setelah Login)
 ===================================================================
 */
-Route::get('/dashboard-petani', function () { return view('dashboard.petani'); })->middleware('role:1');
+Route::get('/dashboard-petani', [PetaniController::class, 'index'])->middleware('role:1');
 
 // Memastikan "case 2: return redirect('/dashboard-petugas');" bekerja sempurna dan memuat data peta
 Route::get('/dashboard-petugas', [PetugasController::class, 'index'])->middleware('role:2');

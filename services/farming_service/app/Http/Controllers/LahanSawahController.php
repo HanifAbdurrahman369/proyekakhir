@@ -13,24 +13,46 @@ class LahanSawahController extends Controller
      * Menampilkan semua data lahan sawah
      * termasuk polygon GIS dalam format GeoJSON
      */
- public function index(Request $request)
-{
-    $user = $request->attributes->get('auth');
+    public function index(Request $request)
+    {
+        $user = $request->attributes->get('auth');
 
-    $data = LahanSawah::where('user_id', $user->sub)
-            ->where('status_verifikasi', 'DITERIMA')
+        $data = LahanSawah::where('user_id', $user->sub)
             ->select(
                 'id',
-                'nama_lahan'
+                'nama_lahan',
+                'pemilik_lahan',
+                'luas_lahan_hektar',
+                'alamat_detail',
+                'status_verifikasi'
             )
-            ->get();
+            ->paginate(2);
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Data lahan berhasil diambil',
-        'data' => $data
-    ]);
-}
+        return response()->json([
+            'success' => true,
+            'message' => 'Data lahan berhasil diambil',
+            'data' => $data
+        ]);
+    }
+
+    public function dropdown(Request $request)
+    {
+        $user = $request->attributes->get('auth');
+
+        $data = LahanSawah::where('user_id', $user->sub)
+                ->where('status_verifikasi', 'DITERIMA')
+                ->select(
+                    'id',
+                    'nama_lahan'
+                )
+                ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data lahan berhasil diambil',
+            'data' => $data
+        ]);
+    }
 
     /**
      * Menampilkan detail lahan sawah
