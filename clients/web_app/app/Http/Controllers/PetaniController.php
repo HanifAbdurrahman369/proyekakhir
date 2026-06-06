@@ -32,7 +32,7 @@ class PetaniController extends Controller
     $riwayatResponse = Http::withToken($token)
         ->acceptJson()
         ->get($this->gatewayUrl . '/api/riwayat-panen', [
-            'page' => $request->riwayat_page ?? 1,
+            'riwayat_page' => $request->riwayat_page ?? 1,
             'per_page' => 3,
         ]);
 
