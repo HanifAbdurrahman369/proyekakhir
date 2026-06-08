@@ -146,6 +146,36 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/notifikasi/
 |--------------------------------------------------------------------------
 */
 
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/produksi-pejabat/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    $path = trim('produksi-pejabat/' . $any, '/');
+    return proxyRequest($request, $serviceMap['farming'], $path);
+})->where('any', '.*');
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/total-lahan/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    $path = trim('total-lahan/' . $any, '/');
+    return proxyRequest($request, $serviceMap['farming'], $path);
+})->where('any', '.*');
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/produksi-kecamatan/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    $path = trim('produksi-kecamatan/' . $any, '/');
+    return proxyRequest($request, $serviceMap['farming'], $path);
+})->where('any', '.*');
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/lahan-kecamatan/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    $path = trim('lahan-kecamatan/' . $any, '/');
+    return proxyRequest($request, $serviceMap['farming'], $path);
+})->where('any', '.*');
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/produksi-bulanan/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    $path = trim('produksi-bulanan/' . $any, '/');
+    return proxyRequest($request, $serviceMap['farming'], $path);
+})->where('any', '.*');
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/top-kecamatan/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    $path = trim('top-kecamatan/' . $any, '/');
+    return proxyRequest($request, $serviceMap['farming'], $path);
+})->where('any', '.*');
+
 Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/riwayat-panen/{any?}', function (Request $request, $any = '') use ($serviceMap) {
     $path = trim('riwayat-panen/' . $any, '/');
     return proxyRequest($request, $serviceMap['farming'], $path);

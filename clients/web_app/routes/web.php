@@ -7,7 +7,7 @@ use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\PetugasController;
 use App\Http\Controllers\SiklusTanamController;
 use App\Http\Controllers\ProduksiDaerahController;
-use App\Http\Controllers\Api\ProduksiDaerahApiController;
+use App\Http\Controllers\PejabatController;
 use App\Http\Controllers\PetaniController;
 use App\Http\Controllers\LahanSawahController;
 
@@ -55,7 +55,7 @@ Route::get('/profile', [AuthController::class, 'profile'])->middleware('jwt');
 1B. API ENDPOINTS untuk AJAX/Fetch dari Browser
 ===================================================================
 */
-Route::get('/api/produksi-daerah', [ProduksiDaerahApiController::class, 'index'])->middleware('jwt');
+
 
 
 /*
@@ -83,7 +83,7 @@ Route::get('/dashboard-petani', [PetaniController::class, 'index'])->middleware(
 // Memastikan "case 2: return redirect('/dashboard-petugas');" bekerja sempurna dan memuat data peta
 Route::get('/dashboard-petugas', [PetugasController::class, 'index'])->middleware('role:2');
 
-Route::get('/dashboard-pejabat', function () { return view('dashboard.pejabat'); })->middleware('role:3');
+Route::get('/dashboard-pejabat',  [PejabatController::class, 'index'])->middleware('role:3');
 
 /*
 ===================================================================
@@ -94,6 +94,9 @@ Route::middleware(['role:3'])->group(function () {
     Route::get('/laporan-produksi', [ProduksiDaerahController::class, 'index'])->name('laporan.produksi');
     Route::get('/laporan-produksi/export-excel', [ProduksiDaerahController::class, 'export'])->name('laporan.produksi.export');
     Route::get('/laporan-produksi/export-pdf', [ProduksiDaerahController::class, 'exportPdf'])->name('laporan.produksi.pdf');
+    Route::get('/produksi-kecamatan', [PejabatController::class, 'produksiKecamatan'])->name('produksi.kecamatan');
+    Route::get('/lahan-kecamatan', [PejabatController::class, 'lahanKecamatan'])->name('lahan.kecamatan');
+
 });
 Route::middleware(['role:2'])->group(function () {
     Route::get('/dashboard-petugas', [PetugasController::class, 'index']);

@@ -16,6 +16,8 @@
         4 => 'AD',
         default => 'US',
     };
+
+    $namaLengkap = session('user.nama_lengkap', 'Pengguna');
 @endphp
 
 <nav class="sticky top-0 z-50 h-16 lg:h-[72px] border-b border-white/20"
@@ -170,11 +172,11 @@
                 </div>
 
                 <div class="leading-tight min-w-0">
-                    <p class="text-[10px] text-white/55 font-medium">
-                        Role Aktif
+                    <p class="text-xs font-bold text-white max-w-[180px] truncate">
+                        {{ $namaLengkap }}
                     </p>
 
-                    <p class="text-xs font-bold text-white max-w-[150px] truncate">
+                    <p class="text-[10px] text-white/55 font-medium">
                         {{ $roleLabel }}
                     </p>
                 </div>

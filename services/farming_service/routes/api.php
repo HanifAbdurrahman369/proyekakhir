@@ -5,10 +5,12 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SiklusTanamController;
 use App\Http\Controllers\JenisBibitController;
 use App\Http\Controllers\LahanSawahController;
+use App\Http\Controllers\StatistikController;
 use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\RiwayatPanenController;
 use App\Http\Controllers\KecamatanController;
 use App\Http\Controllers\KelurahanController;
+
 
 
 /*
@@ -23,6 +25,15 @@ use App\Http\Controllers\KelurahanController;
 |--------------------------------------------------------------------------
 */
 Route::middleware(\App\Http\Middleware\JwtMiddleware::class)->group(function () {
+
+    //pejabat
+    Route::get('/produksi-pejabat',[StatistikController::class, 'produksiPejabat']);
+    Route::get('/total-lahan', [StatistikController::class, 'totalLahan']);
+    Route::get('/produksi-kecamatan', [StatistikController::class, 'produksiPerKecamatan']);
+    Route::get('/lahan-kecamatan', [StatistikController::class, 'lahanPerKecamatan']);
+    Route::get('/produksi-bulanan', [StatistikController::class, 'produksiBulanan']);
+    Route::get('/top-kecamatan', [StatistikController::class, 'topKecamatan']);
+
     //petugas
     Route::get('/notifikasi/petugas', [NotifikasiController::class, 'getNotifikasiPetugas']);
     Route::put('/notifikasi/{id}/read', [NotifikasiController::class, 'markAsRead']);
@@ -65,6 +76,8 @@ Route::middleware(\App\Http\Middleware\JwtMiddleware::class)->group(function () 
     Route::get('/lahan/dropdown', [LahanSawahController::class, 'dropdown']);
     Route::post('/lahan', [LahanSawahController::class, 'store']);
     Route::get('/lahan/{id}', [LahanSawahController::class, 'show']); 
+
+
 
 });
 
