@@ -99,8 +99,27 @@
                         </select>
                     </div>
 
-                    {{-- Status --}}
+                    {{-- Tipe Lahan --}}
                     <div>
+                        <label class="block mb-2 font-medium text-gray-700">
+                            Tipe Lahan
+                        </label>
+
+                        <select name="tipe_lahan_id"
+                                class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                required>
+                            <option value="">Pilih Tipe Lahan</option>
+
+                            @foreach($tipeLahan as $item)
+                                <option value="{{ $item['id'] }}">
+                                    {{ $item['nama_tipe'] ?? $item['nama'] }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- Status --}}
+                    <div class="lg:col-span-2">
                         <label class="block mb-2 font-medium text-gray-700">
                             Status Pengajuan
                         </label>

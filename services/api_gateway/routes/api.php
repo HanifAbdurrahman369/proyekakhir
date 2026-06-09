@@ -216,6 +216,11 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/kelurahan/{
     return proxyRequest($request, $serviceMap['farming'], $path);
 })->where('any', '.*');
 
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/tipe-lahan/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    $path = trim('tipe-lahan/' . $any, '/');
+    return proxyRequest($request, $serviceMap['farming'], $path);
+})->where('any', '.*');
+
 Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/users/{any?}', function (Request $request, $any = '') use ($serviceMap) {
     $path = trim('users/' . $any, '/');
     return proxyRequest($request, $serviceMap['user'], $path);
