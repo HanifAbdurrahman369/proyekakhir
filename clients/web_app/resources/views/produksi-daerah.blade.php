@@ -4,29 +4,41 @@
 
 @section('content')
 
-<div class="flex w-full py-16 px-4 flex-col items-center gap-12 bg-slate-50 font-['Poppins']">
+<div class="relative flex w-full py-16 px-4 flex-col items-center gap-12
+            bg-gradient-to-b from-[#f7fced] via-white to-[#f4faed]
+            rounded-[2rem] font-['Poppins'] overflow-hidden">
     <div class="text-center space-y-3">
-        <p class="text-emerald-600 font-semibold tracking-[0.3em] text-base uppercase">Analisis Data Pertanian</p>
+       <p class="text-[#4f9a00] font-semibold tracking-[0.3em] text-base uppercase">Analisis Data Pertanian</p>
         <h2 class="text-slate-900 text-4xl md:text-5xl font-extrabold tracking-tight">PRODUKSI DAERAH</h2>
-        <div class="h-1.5 w-24 bg-emerald-500 mx-auto rounded-full mt-4 shadow-sm"></div>
+       <div class="h-1.5 w-24 bg-[#65bd00] mx-auto rounded-full mt-4 shadow-sm"></div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 w-full max-w-7xl">
-        <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 text-center flex flex-col justify-center group">
-            <p class="text-slate-400 text-sm font-bold uppercase tracking-widest mb-4 group-hover:text-emerald-500 transition-colors">Total Kecamatan</p>
-            <p class="text-5xl font-black text-slate-800" id="stat-kecamatan">...</p>
+        <div class="bg-white/95 p-8 rounded-[2rem] shadow-sm border border-[#e7efd8] hover:shadow-xl hover:-translate-y-1 transition-all duration-500 text-center flex flex-col justify-center group">
+            <p class="text-[#7d8799] text-sm font-bold uppercase tracking-widest mb-4 group-hover:text-[#4f9a00] transition-colors">
+                Total Kecamatan
+            </p>
+            <p class="text-5xl font-black text-[#203c10]" id="stat-kecamatan">...</p>
         </div>
-        <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 text-center flex flex-col justify-center group">
-            <p class="text-slate-400 text-sm font-bold uppercase tracking-widest mb-4 group-hover:text-emerald-500 transition-colors">Total Kelurahan</p>
-            <p class="text-5xl font-black text-slate-800" id="stat-kelurahan">...</p>
+        <div class="bg-white/95 p-8 rounded-[2rem] shadow-sm border border-[#e7efd8] hover:shadow-xl hover:-translate-y-1 transition-all duration-500 text-center flex flex-col justify-center group">
+            <p class="text-[#7d8799] text-sm font-bold uppercase tracking-widest mb-4 group-hover:text-[#4f9a00] transition-colors">
+                Total Kelurahan
+            </p>
+            <p class="text-5xl font-black text-[#203c10]" id="stat-kelurahan">...</p>
         </div>
-        <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 text-center flex flex-col justify-center group">
-            <p class="text-emerald-500 text-sm font-bold uppercase tracking-widest mb-4">Total Lahan Sawah</p>
-            <p class="text-5xl font-black text-emerald-500" id="stat-total-lahan">...</p>
+        <div class="bg-white/95 p-8 rounded-[2rem] shadow-sm border border-[#e7efd8] hover:shadow-xl hover:-translate-y-1 transition-all duration-500 text-center flex flex-col justify-center group">
+            <p class="text-[#4f9a00] text-sm font-bold uppercase tracking-widest mb-4">
+                Total Lahan Sawah
+            </p>
+            <p class="text-5xl font-black text-[#4f9a00]" id="stat-total-lahan">...</p>
         </div>
-        <div class="bg-emerald-500 p-8 rounded-[2rem] shadow-lg shadow-emerald-200/50 hover:shadow-emerald-400 transition-all duration-500 text-center flex flex-col justify-center group">
-            <p class="text-emerald-50 text-sm font-bold uppercase tracking-widest mb-4">Total Luas Lahan</p>
-            <p class="text-5xl font-black text-white" id="stat-total-luas">...</p>
+        <div class="glass-card rounded-[2rem] p-8 border border-[#e7efd8] hover:-translate-y-1 transition-all duration-300 text-center">
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-[#7d8799]">
+                Total Luas Lahan
+            </p>
+            <p class="mt-3 text-5xl font-extrabold text-[#2f5c12]" id="stat-total-luas">
+                ...
+            </p>
         </div>
     </div>
 

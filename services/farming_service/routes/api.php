@@ -5,11 +5,12 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SiklusTanamController;
 use App\Http\Controllers\JenisBibitController;
 use App\Http\Controllers\LahanSawahController;
-use App\Http\Controllers\StatistikController;
 use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\RiwayatPanenController;
 use App\Http\Controllers\KecamatanController;
 use App\Http\Controllers\KelurahanController;
+use App\Http\Controllers\TipeLahanController;
+use App\Http\Controllers\StatistikController;
 
 
 
@@ -81,6 +82,7 @@ Route::middleware(\App\Http\Middleware\JwtMiddleware::class)->group(function () 
 
 });
 
+
         /*
     |--------------------------------------------------------------------------
     | KECAMATAN
@@ -96,6 +98,14 @@ Route::middleware(\App\Http\Middleware\JwtMiddleware::class)->group(function () 
     */
     Route::get('/kelurahan', [KelurahanController::class, 'index']);
     Route::get('/kelurahan/{id}', [KelurahanController::class, 'show']);
+
+            /*
+    |--------------------------------------------------------------------------
+    | TIPE LAHAN
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/tipe-lahan', [TipeLahanController::class, 'index']);
+    Route::get('/tipe-lahan/{id}', [TipeLahanController::class, 'show']);
 
 
  

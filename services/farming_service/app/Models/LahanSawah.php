@@ -48,4 +48,9 @@ class LahanSawah extends Model
     {
         return $this->belongsTo(Kelurahan::class, 'kelurahan_id');
     }
+
+    public function tipeLahan()
+    {
+        return $this->belongsTo(TipeLahan::class, 'tipe_lahan_id');
+    }
 }

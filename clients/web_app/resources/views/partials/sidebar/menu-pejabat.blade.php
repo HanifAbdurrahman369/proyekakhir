@@ -32,9 +32,3 @@
     <span>Produksi Daerah</span>
 </a>
 
-<a href="/ekspor" class="{{ $menuBase }} {{ request()->is('ekspor*') ? $menuActive : $menuIdle }}">
-    <span class="{{ $iconBase }} {{ request()->is('ekspor*') ? $iconActive : $iconIdle }}">
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-    </span>
-    <span>Ekspor PDF / Excel</span>
-</a>

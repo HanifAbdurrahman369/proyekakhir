@@ -103,7 +103,7 @@
 
             <div class="min-w-10 flex-1 flex flex-col items-center gap-2">
                 <div class="w-full rounded-t-2xl transition hover:opacity-80 flex items-start justify-center text-white text-[10px] font-bold pt-1"
-                    style="height: {{ $height }}px; background:linear-gradient(180deg,#65bd00,#3E7D00);">
+                    style="height:{{ $height }}px; background:linear-gradient(180deg,#65bd00,#3E7D00);">
 
                     {{ number_format($total, 0) }}
                 </div>

@@ -90,6 +90,7 @@ class LahanSawahController extends Controller
         $request->validate([
             'kecamatan_id' => 'required',
             'kelurahan_id' => 'required',
+            'tipe_lahan_id' => 'required',
             'nama_lahan' => 'required',
             'alamat_detail' => 'required',
         ]);
@@ -100,6 +101,7 @@ class LahanSawahController extends Controller
             // dari petani
             'kecamatan_id' => $request->kecamatan_id,
             'kelurahan_id' => $request->kelurahan_id,
+            'tipe_lahan_id' => $request->tipe_lahan_id,
             'nama_lahan' => $request->nama_lahan,
             'alamat_detail' => $request->alamat_detail,
 

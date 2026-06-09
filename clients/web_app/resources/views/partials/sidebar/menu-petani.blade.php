@@ -16,13 +16,6 @@
     <span>Lahan Saya</span>
 </a>
 
-<a href="{{ route('map.pejabat') }}"class="{{ $menuBase }} {{ request()->is('peta-lahan') ? $menuActive : $menuIdle }}">
-    <span class="{{ $iconBase }} {{ request()->is('peta-lahan') ? $iconActive : $iconIdle }}">
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5z"/></svg>
-    </span>
-    <span>Peta Lahan</span>
-</a>
-
 <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-[.18em] px-3 py-2 mt-4">Aktivitas</p>
 
 <a href="{{ route('input.panen') }}" class="{{ $menuBase }} {{ request()->is('input-panen*') ? $menuActive : $menuIdle }}">

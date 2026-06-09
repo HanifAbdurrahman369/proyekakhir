@@ -26,9 +26,13 @@ class LahanSawahController extends Controller
             $this->gatewayUrl() . '/api/kelurahan'
         )->json()['data'] ?? [];
 
+        $tipeLahan = Http::get(
+            $this->gatewayUrl() . '/api/tipe-lahan'
+        )->json()['data'] ?? [];
+
         return view(
             'partials.sidebar.tambah-lahan',
-            compact('kecamatan', 'kelurahan')
+            compact('kecamatan', 'kelurahan', 'tipeLahan')
         );
     }
 
@@ -48,6 +52,7 @@ class LahanSawahController extends Controller
                 'nama_lahan' => $request->nama_lahan,
                 'kecamatan_id' => $request->kecamatan_id,
                 'kelurahan_id' => $request->kelurahan_id,
+                'tipe_lahan_id' => $request->tipe_lahan_id,
                 'alamat_detail' => $request->alamat_detail,
             ]);
 
