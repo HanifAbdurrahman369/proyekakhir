@@ -17,7 +17,7 @@ start "USER SERVICE - 8002" cmd /k "cd /d C:\laragon\www\proyekakhir\services\us
 
 timeout /t 2 >nul
 
-start "API GATEWAY - 8003" cmd /k "cd /d C:\laragon\www\proyekakhir\services\api_gateway && php artisan serve --host=127.0.0.1 --port=8003"
+start "API GATEWAY - 8003" cmd /k "cd /d C:\laragon\www\proyekakhir\services\api_gateway && php artisan serve --host=0.0.0.0 --port=8003"
 
 timeout /t 2 >nul
 
