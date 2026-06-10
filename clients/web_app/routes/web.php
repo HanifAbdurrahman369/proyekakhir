@@ -99,12 +99,22 @@ Route::middleware(['role:3'])->group(function () {
 
 });
 Route::middleware(['role:2'])->group(function () {
-    Route::get('/dashboard-petugas', [PetugasController::class, 'index']);
-    Route::get('/manajemen-data-spasial', [PetugasController::class, 'manajemenDataSpasial']);
-    Route::get('/input-parameter-lingkungan', [PetugasController::class, 'inputParameterLingkungan']);
-    Route::get('/verifikasi-data-petani', [PetugasController::class, 'verifikasiDataPetani']);  
-    Route::post('/petugas/spasial/simpan', [PetugasController::class, 'storeSpasial']);
-    Route::post('/petugas/verifikasi/{id}/{aksi}', [PetugasController::class, 'aksiVerifikasi']);
+    Route::get('/dashboard-petugas', [PetugasController::class, 'index'])->name('petugas.dashboard');
+
+    Route::get('/manajemen-data-spasial', [PetugasController::class, 'manajemenDataSpasial'])->name('petugas.spasial');
+    Route::post('/petugas/spasial/simpan', [PetugasController::class, 'storeSpasial'])->name('petugas.spasial.store');
+    Route::put('/petugas/spasial/{id}', [PetugasController::class, 'updateSpasial'])->name('petugas.spasial.update');
+    Route::delete('/petugas/spasial/{id}', [PetugasController::class, 'destroySpasial'])->name('petugas.spasial.destroy');
+
+    Route::get('/input-parameter-lingkungan', [PetugasController::class, 'inputParameterLingkungan'])->name('petugas.monitoring');
+    Route::post('/petugas/monitoring/simpan', [PetugasController::class, 'storeParameterLingkungan'])->name('petugas.monitoring.store');
+
+    Route::get('/verifikasi-data-petani', [PetugasController::class, 'verifikasiDataPetani'])->name('petugas.verifikasi');
+
+    Route::post('/petugas/verifikasi/lahan/{id}/{aksi}', [PetugasController::class, 'aksiVerifikasiLahan'])->name('petugas.verifikasi.lahan');
+    Route::post('/petugas/verifikasi/panen/{id}/{aksi}', [PetugasController::class, 'aksiVerifikasiPanen'])->name('petugas.verifikasi.panen');
+
+    Route::post('/petugas/verifikasi/{id}/{aksi}', [PetugasController::class, 'aksiVerifikasi'])->name('petugas.verifikasi.legacy');
 });
 
 /*

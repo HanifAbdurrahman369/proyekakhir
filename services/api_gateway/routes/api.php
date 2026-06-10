@@ -140,6 +140,11 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/notifikasi/
     return proxyRequest($request, $serviceMap['farming'], $path);
 })->where('any', '.*');
 
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/monitoring/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    $path = trim('monitoring/' . $any, '/');
+    return proxyRequest($request, $serviceMap['farming'], $path);
+})->where('any', '.*');
+
 /*
 |--------------------------------------------------------------------------
 | 4. RUTE LAMA - Dipertahankan

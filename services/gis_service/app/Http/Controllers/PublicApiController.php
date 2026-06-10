@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
 
 class PublicApiController extends Controller
 {
@@ -179,7 +180,7 @@ class PublicApiController extends Controller
         }
 
         $rawJson = trim($kabupaten->polygon_baritokuala);
-        $rawJson = preg_replace('/^[\xef\xbb\xbf]+/', '', $rawJson);
+        $rawJson = preg_replace('/^[\xEF\xBB\xBF]+/', '', $rawJson);
 
         return response($rawJson, 200)->header('Content-Type', 'application/json');
     }

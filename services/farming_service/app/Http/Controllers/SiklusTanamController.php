@@ -6,101 +6,74 @@ use App\Http\Controllers\Controller;
 use App\Models\SiklusTanam;
 use App\Models\LahanSawah;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Http;
-use Firebase\JWT\JWT;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class SiklusTanamController extends Controller
 {
-    /**
-     * LIST DATA
-     */
     public function index()
     {
         return response()->json([
             'success' => true,
-            'data' => SiklusTanam::all()
+            'data' => SiklusTanam::with(['bibit', 'lahan'])->orderByDesc('id')->get()
         ]);
     }
 
-    /**
-     * INPUT OLEH PETANI
-     */
-public function store(Request $request)
-{
-    $request->validate([
-        'lahan_id' => 'required|integer',
-        'bibit_id' => 'required|integer',
-        'tanggal_tanam' => 'required|date',
-        'tanggal_panen' => 'required|date',
-        'hasil_panen' => 'required|numeric',
-    ]);
+    public function store(Request $request)
+    {
+        $request->validate([
+            'lahan_id' => 'required|integer',
+            'bibit_id' => 'required|integer',
+            'tanggal_tanam' => 'required|date',
+            'estimasi_panen' => 'nullable',
+            'tanggal_panen' => 'required|date',
+            'hasil_panen' => 'required|numeric|min:0',
+        ]);
 
-    // 🔥 AMBIL USER DARI FIREBASE JWT MIDDLEWARE
-    $user = $request->attributes->get('auth');
+        $user = $request->attributes->get('auth');
 
-    $lahan = LahanSawah::where('id', $request->lahan_id)
-                ->where('user_id', $user->sub)
-                ->where('status_verifikasi', 'DITERIMA')
-                ->first();
+        $lahan = LahanSawah::where('id', $request->lahan_id)
+            ->where('user_id', $user->sub)
+            ->where('status_verifikasi', 'DITERIMA')
+            ->first();
 
-    if (!$lahan) {
+        if (!$lahan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lahan tidak valid atau belum diverifikasi petugas.'
+            ], 403);
+        }
+
+        $data = SiklusTanam::create([
+            'lahan_id' => $request->lahan_id,
+            'bibit_id' => $request->bibit_id,
+            'tanggal_tanam' => $request->tanggal_tanam,
+            'estimasi_panen' => $request->estimasi_panen,
+            'tanggal_panen' => $request->tanggal_panen,
+            'hasil_panen' => $request->hasil_panen,
+            'status_aktif' => 'AKTIF',
+            'status_verifikasi' => 'PENDING',
+            'created_by' => $user->sub,
+        ]);
+
+        $this->buatNotifikasiPetugas(
+            'Laporan Hasil Panen Baru',
+            'Petani mengirim laporan panen untuk lahan ' . $lahan->nama_lahan . '. Segera lakukan verifikasi.'
+        );
+
         return response()->json([
-            'success' => false,
-            'message' => 'Lahan tidak valid atau belum diverifikasi.'
-        ], 403);
+            'success' => true,
+            'message' => 'Laporan hasil panen berhasil dikirim dan menunggu verifikasi petugas',
+            'data' => $data
+        ], 201);
     }
 
-    $data = SiklusTanam::create([
-        'lahan_id' => $request->lahan_id,
-        'bibit_id' => $request->bibit_id,
-        'tanggal_tanam' => $request->tanggal_tanam,
-        'estimasi_panen' => $request->estimasi_panen,
-        'tanggal_panen' => $request->tanggal_panen,
-        'hasil_panen' => $request->hasil_panen,
-        'status_aktif' => 'AKTIF',
-        'status_verifikasi' => 'PENDING',
-        'created_by' => $user->sub, // 🔥 dari JWT payload
-    ]);
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Aktivitas berhasil disimpan',
-        'data' => $data
-    ], 201);
-
-    try {
-        $namaPetani = auth()->user()->name ?? 'Seorang Petani';
-        $namaLahan = \Illuminate\Support\Facades\DB::table('lahan_sawah')
-                        ->where('id', $request->lahan_id)->value('nama_lahan') ?? 'Tidak diketahui';
-
-        \Illuminate\Support\Facades\DB::table('notifikasi')->insert([
-            'role_id_penerima' => 2, // 2 = Mengarah ke semua Petugas
-            'user_id_penerima' => null, // Broadcast
-            'judul' => 'Laporan Panen Baru',
-            'pesan' => "Petani {$namaPetani} mengirimkan laporan panen untuk lahan {$namaLahan}. Segera lakukan verifikasi.",
-            'is_read' => 0,
-            'created_at' => now(),
-            'updated_at' => now()
-        ]);
-    } catch (\Exception $e) {
-        // Abaikan error notifikasi agar tidak mengganggu proses simpan utama petani
-        \Illuminate\Support\Facades\Log::error('Gagal membuat notifikasi: ' . $e->getMessage());
-    }
-}
-  /**
-     * DETAIL DATA
-     */
     public function show($id)
     {
-        $data = SiklusTanam::with([
-            'bibit',
-            'lahan'
-        ])->find($id);
+        $data = SiklusTanam::with(['bibit', 'lahan'])->find($id);
 
         if (!$data) {
-
             return response()->json([
                 'success' => false,
                 'message' => 'Data tidak ditemukan'
@@ -110,30 +83,21 @@ public function store(Request $request)
         return response()->json([
             'success' => true,
             'data' => $data
-        ], 200);
+        ]);
     }
 
-   
-    /**
-     * UPDATE DATA AKTIVITAS TANAM
-     */
     public function update(Request $request, $id)
     {
         $data = SiklusTanam::find($id);
 
         if (!$data) {
-
             return response()->json([
                 'success' => false,
                 'message' => 'Data tidak ditemukan'
             ], 404);
         }
 
-        /**
-         * CEGAH UPDATE JIKA SUDAH DIVERIFIKASI
-         */
-        if ($data->status_verifikasi == 'DITERIMA') {
-
+        if ($data->status_verifikasi === 'DITERIMA') {
             return response()->json([
                 'success' => false,
                 'message' => 'Data yang sudah diverifikasi tidak boleh diubah'
@@ -141,165 +105,136 @@ public function store(Request $request)
         }
 
         $request->validate([
-
             'lahan_id' => 'required|integer',
             'bibit_id' => 'required|integer',
-
             'tanggal_tanam' => 'required|date',
-
-            'estimasi_panen' => 'required|numeric',
-
+            'estimasi_panen' => 'nullable',
             'tanggal_panen' => 'required|date',
-
-            'hasil_panen' => 'required|numeric',
-            'created_by' => 'required|integer',
+            'hasil_panen' => 'required|numeric|min:0',
         ]);
 
         $data->update([
-
             'lahan_id' => $request->lahan_id,
             'bibit_id' => $request->bibit_id,
-
             'tanggal_tanam' => $request->tanggal_tanam,
             'estimasi_panen' => $request->estimasi_panen,
             'tanggal_panen' => $request->tanggal_panen,
-
             'hasil_panen' => $request->hasil_panen,
-            'created_by' => $request->created_by,
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Aktivitas tanam berhasil diperbarui',
-            'data' => $data
-        ], 200);
+            'data' => $data->fresh()
+        ]);
     }
 
+    public function totalProduksi(Request $request)
+    {
+        $user = $request->attributes->get('auth');
+        $tahun = Carbon::now()->year;
 
-public function totalProduksi(Request $request)
-{
-    $user = $request->attributes->get('auth');
+        $total = SiklusTanam::where('created_by', $user->sub)
+            ->where('status_verifikasi', 'DITERIMA')
+            ->whereYear('tanggal_panen', $tahun)
+            ->sum('hasil_panen');
 
-    $tahun = Carbon::now()->year;
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'tahun' => $tahun,
+                'total_produksi' => $total
+            ]
+        ]);
+    }
 
-    $total = SiklusTanam::where('created_by', $user->sub)
-        ->where('status_verifikasi', 'DITERIMA')
-        ->whereYear('tanggal_panen', $tahun)
-        ->sum('hasil_panen');
+    public function getPendingVerifications()
+    {
+        $pendingData = SiklusTanam::with(['bibit', 'lahan'])
+            ->where('status_verifikasi', 'PENDING')
+            ->orderByDesc('id')
+            ->get();
 
-    return response()->json([
-        'success' => true,
-        'data' => [
-            'tahun' => $tahun,
-            'total_produksi' => $total
-        ]
-    ]);
-}
+        return response()->json([
+            'success' => true,
+            'message' => 'Antrean verifikasi hasil panen berhasil diambil',
+            'data' => $pendingData
+        ]);
+    }
 
-    /**
-     * APPROVE OLEH PETUGAS
-     */
     public function approve($id)
     {
         $data = SiklusTanam::find($id);
 
         if (!$data) {
-
             return response()->json([
                 'success' => false,
-                'message' => 'Data tidak ditemukan'
+                'message' => 'Data hasil panen tidak ditemukan'
             ], 404);
         }
 
-        /**
-         * CEGAH DOUBLE APPROVE
-         */
-        if ($data->status_verifikasi == 'DITERIMA') {
-
+        if ($data->status_verifikasi === 'DITERIMA') {
             return response()->json([
                 'success' => false,
-                'message' => 'Data sudah diverifikasi'
+                'message' => 'Data hasil panen sudah diterima sebelumnya'
             ], 400);
         }
 
-        /**
-         * UPDATE STATUS VERIFIKASI
-         */
-        $data->update([
-            'status_verifikasi' => 'DITERIMA'
-        ]);
+        DB::transaction(function () use ($data) {
+            $data->update([
+                'status_verifikasi' => 'DITERIMA',
+                'status_aktif' => 'NONAKTIF',
+            ]);
 
-        /**
-         * AMBIL DATA LAHAN
-         */
-        $lahan = LahanSawah::find($data->lahan_id);
-
-        /**
-         * UPDATE TOTAL HASIL PANEN
-         * TOTAL = AKUMULASI SELURUH MUSIM
-         */
-        if ($lahan) {
-
-            $lahan->increment(
-                'total_hasil_panen_ton',
-                $data->hasil_panen
-            );
-        }
+            $this->hitungUlangProduktivitasLahan($data->lahan_id);
+        });
 
         return response()->json([
             'success' => true,
-            'message' => 'Aktivitas berhasil diverifikasi'
-        ], 200);
+            'message' => 'Hasil panen berhasil diterima dan masuk statistik'
+        ]);
     }
 
-    /**
-     * REJECT OLEH PETUGAS
-     */
     public function reject($id)
     {
         $data = SiklusTanam::find($id);
 
         if (!$data) {
-
             return response()->json([
                 'success' => false,
-                'message' => 'Data tidak ditemukan'
+                'message' => 'Data hasil panen tidak ditemukan'
             ], 404);
         }
 
-        /**
-         * UPDATE STATUS MENJADI DITOLAK
-         */
+        if ($data->status_verifikasi === 'DITOLAK') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data hasil panen sudah ditolak sebelumnya'
+            ], 400);
+        }
+
         $data->update([
             'status_verifikasi' => 'DITOLAK'
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Aktivitas ditolak'
-        ], 200);
+            'message' => 'Hasil panen berhasil ditolak'
+        ]);
     }
 
-    /**
-     * HAPUS DATA
-     */
     public function destroy($id)
     {
         $data = SiklusTanam::find($id);
 
         if (!$data) {
-
             return response()->json([
                 'success' => false,
                 'message' => 'Data tidak ditemukan'
             ], 404);
         }
 
-        /**
-         * CEGAH HAPUS DATA YANG SUDAH DIVERIFIKASI
-         */
-        if ($data->status_verifikasi == 'DITERIMA') {
-
+        if ($data->status_verifikasi === 'DITERIMA') {
             return response()->json([
                 'success' => false,
                 'message' => 'Data yang sudah diverifikasi tidak boleh dihapus'
@@ -311,22 +246,44 @@ public function totalProduksi(Request $request)
         return response()->json([
             'success' => true,
             'message' => 'Data berhasil dihapus'
-        ], 200);
+        ]);
     }
-    public function getPendingVerifications()
-    {
-        // Menarik data siklus tanam yang statusnya belum DITERIMA atau DITOLAK
-        // Memuat relasi data tabel bibit dan lahan sawah agar detailnya terlihat oleh Petugas
-        $pendingData = SiklusTanam::with(['bibit', 'lahan'])
-            ->where('status_verifikasi', 'PENDING')
-            ->orWhereNull('status_verifikasi') // Antisipasi jika default database kosong
-            ->orderBy('created_at', 'desc')
-            ->get();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Berhasil mengambil antrean verifikasi tanam',
-            'data' => $pendingData
-        ], 200);
+    private function hitungUlangProduktivitasLahan(int $lahanId): void
+    {
+        $lahan = LahanSawah::find($lahanId);
+
+        if (!$lahan) {
+            return;
+        }
+
+        $totalPanen = SiklusTanam::where('lahan_id', $lahanId)
+            ->where('status_verifikasi', 'DITERIMA')
+            ->sum('hasil_panen');
+
+        $luas = (float) $lahan->luas_lahan_hektar;
+        $produktivitas = $luas > 0 ? $totalPanen / $luas : 0;
+
+        $lahan->update([
+            'hasil_panen_ton' => round($totalPanen, 2),
+            'produktivitas_ton_ha' => round($produktivitas, 2),
+        ]);
+    }
+
+    private function buatNotifikasiPetugas(string $judul, string $pesan): void
+    {
+        try {
+            DB::table('notifikasi')->insert([
+                'role_id_penerima' => 2,
+                'user_id_penerima' => null,
+                'judul' => $judul,
+                'pesan' => $pesan,
+                'is_read' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Gagal membuat notifikasi petugas: ' . $e->getMessage());
+        }
     }
 }
