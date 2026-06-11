@@ -11,6 +11,7 @@ use App\Http\Controllers\RiwayatPanenController;
 use App\Http\Controllers\KecamatanController;
 use App\Http\Controllers\KelurahanController;
 use App\Http\Controllers\MonitoringKondisiController;
+use App\Http\Controllers\TipeLahanController;
 
 Route::middleware(\App\Http\Middleware\JwtMiddleware::class)->group(function () {
 
@@ -105,3 +106,6 @@ Route::get('/kecamatan/{id}', [KecamatanController::class, 'show']);
 
 Route::get('/kelurahan', [KelurahanController::class, 'index']);
 Route::get('/kelurahan/{id}', [KelurahanController::class, 'show']);
+
+Route::get('/tipe-lahan', [TipeLahanController::class, 'index']);
+Route::get('/tipe-lahan/{id}', [TipeLahanController::class, 'show']);
