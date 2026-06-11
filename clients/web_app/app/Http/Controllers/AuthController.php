@@ -234,8 +234,15 @@ class AuthController extends Controller
             return back()->with('status', 'Link reset password dikirim ke email');
         }
 
+        // Ambil pesan error asli dari API/Gateway jika ada
+        $errorMsg = 'Email tidak ditemukan';
+        $responseData = $response->json();
+        if (isset($responseData['message'])) {
+            $errorMsg = $responseData['message'];
+        }
+
         return back()->withErrors([
-            'email' => 'Email tidak ditemukan'
+            'email' => $errorMsg
         ]);
     }
 
@@ -245,6 +252,9 @@ class AuthController extends Controller
             'token' => 'required',
             'email' => 'required|email',
             'password' => 'required|min:6|confirmed'
+        ], [
+            'password.min' => 'Password minimal harus 6 karakter.',
+            'password.confirmed' => 'Konfirmasi password tidak cocok.'
         ]);
 
         $response = Http::withoutVerifying()
@@ -254,8 +264,19 @@ class AuthController extends Controller
             return redirect('/login')->with('success', 'Password berhasil direset');
         }
 
+        $errorMsg = 'Reset password gagal. Silakan coba lagi.';
+        $responseData = $response->json();
+
+        if (isset($responseData['errors']) && is_array($responseData['errors'])) {
+            return back()->withErrors($responseData['errors'])->withInput($request->except('password'));
+        }
+
+        if (isset($responseData['message'])) {
+            $errorMsg = $responseData['message'];
+        }
+
         return back()->withErrors([
-            'reset' => 'Reset password gagal'
-        ]);
+            'reset' => $errorMsg
+        ])->withInput($request->except('password'));
     }
 }

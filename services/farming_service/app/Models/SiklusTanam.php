@@ -37,6 +37,11 @@ class SiklusTanam extends Model
         return $this->belongsTo(LahanSawah::class, 'lahan_id');
     }
 
+    public function bibit()
+    {
+        return $this->belongsTo(JenisBibit::class, 'bibit_id');
+    }
+
     public function petani()
     {
         return $this->belongsTo(User::class, 'created_by');

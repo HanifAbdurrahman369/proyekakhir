@@ -131,4 +131,14 @@ $validated = $request->validate([
             ], 401);
         }
     }
+
+    public function resetPassword(Request $request)
+    {
+        $response = Http::withoutVerifying()->post(
+            'http://127.0.0.1:8002/api/reset-password',
+            $request->all()
+        );
+
+        return response()->json($response->json(), $response->status());
+    }
 }

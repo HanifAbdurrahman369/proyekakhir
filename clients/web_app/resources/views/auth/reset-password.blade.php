@@ -123,8 +123,9 @@
             <input type="email"
                    name="email"
                    value="{{ request()->email }}"
-                   readonly
-                   class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-100 focus:outline-none">
+                   {{ request()->email ? 'readonly' : '' }}
+                   class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm {{ request()->email ? 'bg-gray-100' : 'bg-white focus:ring-2 focus:ring-primary-400 focus:border-transparent transition' }} focus:outline-none"
+                   required>
         </div>
     </div>
 

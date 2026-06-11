@@ -25,6 +25,7 @@ Route::get('/health', function () {
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+Route::post('/forget-password', [AuthController::class, 'resetPassword']);
 Route::post('/verify', [AuthController::class, 'verifyToken']);
 
 Route::middleware('jwt')->get('/profile', function (Request $request) {

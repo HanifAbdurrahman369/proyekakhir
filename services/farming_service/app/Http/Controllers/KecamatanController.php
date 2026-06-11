@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\Camat;
+use App\Models\Kecamatan;
 
 class KecamatanController extends Controller
 {
@@ -12,7 +12,7 @@ class KecamatanController extends Controller
      */
     public function index()
     {
-        $data = Camat::all();
+        $data = Kecamatan::all();
 
         return response()->json([
             'success' => true,
@@ -26,7 +26,7 @@ class KecamatanController extends Controller
      */
     public function show($id)
     {
-        $data = Camat::find($id);
+        $data = Kecamatan::find($id);
 
         if (!$data) {
             return response()->json([
