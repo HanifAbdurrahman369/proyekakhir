@@ -9,27 +9,37 @@ class PetugasController extends Controller
 {
     private function gatewayUrl(): string
     {
-        return rtrim(env('GATEWAY_URL', 'http://127.0.0.1:8003'), '/') . '/api';
+        return rtrim(env('GATEWAY_URL', env('API_GATEWAY_URL', 'http://127.0.0.1:8003')), '/') . '/api';
     }
 
     private function getBearerToken(): string
     {
-        return session('token') ?? session('jwt_token') ?? '';
+        return session('token')
+            ?? session('jwt_token')
+            ?? session('access_token')
+            ?? session('api_token')
+            ?? '';
+    }
+
+    private function http()
+    {
+        $http = Http::acceptJson()->timeout(15);
+
+        if ($this->getBearerToken()) {
+            $http = $http->withToken($this->getBearerToken());
+        }
+
+        return $http;
     }
 
     private function getData(string $endpoint, mixed $default = [])
     {
-        $token = $this->getBearerToken();
-
-        if (!$token) {
+        if (!$this->getBearerToken()) {
             return $default;
         }
 
         try {
-            $response = Http::withToken($token)
-                ->acceptJson()
-                ->timeout(8)
-                ->get($this->gatewayUrl() . $endpoint);
+            $response = $this->http()->get($this->gatewayUrl() . $endpoint);
 
             if (!$response->successful()) {
                 return $default;
@@ -43,20 +53,51 @@ class PetugasController extends Controller
         }
     }
 
+    private function getDataWithError(string $endpoint, mixed $default = []): array
+    {
+        if (!$this->getBearerToken()) {
+            return [
+                'data' => $default,
+                'error' => 'Token login tidak ditemukan. Silakan login ulang.',
+            ];
+        }
+
+        try {
+            $response = $this->http()->get($this->gatewayUrl() . $endpoint);
+
+            if (!$response->successful()) {
+                $json = $response->json();
+
+                return [
+                    'data' => $default,
+                    'error' => $json['message'] ?? 'Gagal mengambil data. Status API: ' . $response->status(),
+                ];
+            }
+
+            $json = $response->json();
+
+            return [
+                'data' => $json['data'] ?? $json ?? $default,
+                'error' => null,
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'data' => $default,
+                'error' => 'Gagal terhubung ke API: ' . $e->getMessage(),
+            ];
+        }
+    }
+
     private function sendPost(string $endpoint, array $payload = [])
     {
-        $token = $this->getBearerToken();
-
-        return Http::withToken($token)
-            ->acceptJson()
-            ->timeout(10)
+        return $this->http()
             ->post($this->gatewayUrl() . $endpoint, $payload);
     }
 
     public function index()
     {
         $pendingLahan = $this->getData('/lahan/pending', []);
-        $pendingPanen = $this->getData('/activities/pending', []);
+        $pendingPanen = $this->getData('/panen/pending', []);
         $notifikasi = $this->getData('/notifikasi/petugas', []);
 
         $stats = [
@@ -72,6 +113,7 @@ class PetugasController extends Controller
             'stats' => $stats,
             'pendingLahan' => $pendingLahan,
             'pendingPanen' => $pendingPanen,
+            'panenPending' => $pendingPanen,
             'notifikasi' => $notifikasi,
         ]);
     }
@@ -109,19 +151,32 @@ class PetugasController extends Controller
         ]);
     }
 
-    public function verifikasiDataPetani()
+    public function verifikasiDataPetani(Request $request)
     {
-        $antreanLahan = $this->getData('/lahan/pending', []);
-        $antreanPanen = $this->getData('/activities/pending', []);
+        $lahanResult = $this->getDataWithError('/lahan/pending', []);
+        $panenResult = $this->getDataWithError('/panen/pending', []);
+        $notifikasi = $this->getData('/notifikasi/petugas', []);
 
-        return view('dashboard.petugas', [
+        $pendingLahan = $lahanResult['data'];
+        $pendingPanen = $panenResult['data'];
+
+        $dataView = [
             'page' => 'verifikasi-data-petani',
-            'antreanLahan' => $antreanLahan,
-            'antreanPanen' => $antreanPanen,
+            'pendingLahan' => $pendingLahan,
+            'pendingPanen' => $pendingPanen,
+            'panenPending' => $pendingPanen,
+            'notifikasi' => $notifikasi,
+            'errorLahan' => $lahanResult['error'],
+            'errorPanen' => $panenResult['error'],
+            'highlightPanenId' => $request->query('id'),
+            'highlightTipe' => $request->query('tipe'),
+        ];
 
-            // agar view lama yang masih memakai $antrean tidak error
-            'antrean' => $antreanPanen,
-        ]);
+        $view = view()->exists('dashboard.petugas.verifikasi-data-petani')
+            ? 'dashboard.petugas.verifikasi-data-petani'
+            : 'dashboard.petugas';
+
+        return view($view, $dataView);
     }
 
     public function storeSpasial(Request $request)
@@ -151,11 +206,7 @@ class PetugasController extends Controller
 
     public function updateSpasial(Request $request, $id)
     {
-        $token = $this->getBearerToken();
-
-        $response = Http::withToken($token)
-            ->acceptJson()
-            ->timeout(10)
+        $response = $this->http()
             ->put($this->gatewayUrl() . "/spasial-lahan/{$id}", $request->all());
 
         if ($response->successful()) {
@@ -170,11 +221,7 @@ class PetugasController extends Controller
 
     public function destroySpasial($id)
     {
-        $token = $this->getBearerToken();
-
-        $response = Http::withToken($token)
-            ->acceptJson()
-            ->timeout(10)
+        $response = $this->http()
             ->delete($this->gatewayUrl() . "/spasial-lahan/{$id}");
 
         if ($response->successful()) {
@@ -223,20 +270,47 @@ class PetugasController extends Controller
 
     public function aksiVerifikasi(Request $request, $id, $aksi)
     {
-        // route lama diarahkan ke verifikasi panen agar tetap kompatibel
+        $jenis = strtolower((string) $request->input('jenis', $request->query('jenis', 'panen')));
+
+        if ($jenis === 'lahan') {
+            return $this->prosesVerifikasi($request, 'lahan', $id, $aksi);
+        }
+
         return $this->prosesVerifikasi($request, 'panen', $id, $aksi);
+    }
+
+    public function redirectVerifikasiPanen($id)
+    {
+        return redirect('/verifikasi-data-petani?tipe=panen&id=' . $id);
+    }
+
+    public function bukaNotifikasi($id)
+    {
+        try {
+            $response = $this->http()->put($this->gatewayUrl() . '/notifikasi/' . $id . '/read');
+
+            if (!$response->successful()) {
+                return redirect('/verifikasi-data-petani')
+                    ->with('error', $response->json('message') ?? 'Notifikasi tidak dapat ditandai sudah dibaca.');
+            }
+        } catch (\Throwable $e) {
+            return redirect('/verifikasi-data-petani')
+                ->with('error', 'Notifikasi tidak bisa dibuka: ' . $e->getMessage());
+        }
+
+        return redirect('/verifikasi-data-petani');
     }
 
     private function prosesVerifikasi(Request $request, string $jenis, $id, string $aksi)
     {
         $aksi = strtolower($aksi);
 
-        if (in_array($aksi, ['terima', 'diterima', 'approve', 'approved'])) {
+        if (in_array($aksi, ['terima', 'diterima', 'setuju', 'approve', 'approved'], true)) {
             $endpointAction = 'approve';
             $pesanSukses = $jenis === 'lahan'
                 ? 'Pengajuan lahan berhasil diterima.'
-                : 'Laporan hasil panen berhasil diterima.';
-        } elseif (in_array($aksi, ['tolak', 'ditolak', 'reject', 'rejected'])) {
+                : 'Laporan hasil panen berhasil diterima dan data lahan sudah otomatis diperbarui.';
+        } elseif (in_array($aksi, ['tolak', 'ditolak', 'reject', 'rejected'], true)) {
             $endpointAction = 'reject';
             $pesanSukses = $jenis === 'lahan'
                 ? 'Pengajuan lahan berhasil ditolak.'
@@ -247,14 +321,20 @@ class PetugasController extends Controller
 
         $endpoint = $jenis === 'lahan'
             ? "/lahan/{$id}/{$endpointAction}"
-            : "/activities/{$id}/{$endpointAction}";
+            : "/panen/{$id}/{$endpointAction}";
 
-        $response = $this->sendPost($endpoint, $request->all());
+        try {
+            $response = $this->sendPost($endpoint, $request->except(['_token']));
 
-        if ($response->successful()) {
-            return redirect('/verifikasi-data-petani')->with('success', $pesanSukses);
+            if ($response->successful()) {
+                return redirect('/verifikasi-data-petani')->with('success', $response->json('message') ?? $pesanSukses);
+            }
+
+            return redirect('/verifikasi-data-petani')
+                ->with('error', $response->json('message') ?? 'Proses verifikasi gagal. Status API: ' . $response->status());
+        } catch (\Throwable $e) {
+            return redirect('/verifikasi-data-petani')
+                ->with('error', 'Gagal terhubung ke API verifikasi: ' . $e->getMessage());
         }
-
-        return back()->with('error', $response->json('message') ?? 'Proses verifikasi gagal.');
     }
 }

@@ -47,6 +47,21 @@ Route::middleware(\App\Http\Middleware\JwtMiddleware::class)->group(function () 
 
     /*
     |--------------------------------------------------------------------------
+    | PETUGAS - VERIFIKASI HASIL PANEN PETANI
+    |--------------------------------------------------------------------------
+    | Route /panen/* ditambahkan agar menu Verifikasi Data Petani di role petugas
+    | bisa mengambil antrean hasil panen PENDING, menyetujui, dan menolak data.
+    | Route /activities/* lama tetap dipertahankan agar fitur yang sudah ada tidak putus.
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/panen/pending', [SiklusTanamController::class, 'getPendingVerifications']);
+    Route::get('/panen/pending-verifications', [SiklusTanamController::class, 'getPendingVerifications']);
+    Route::post('/panen/{id}/verifikasi', [SiklusTanamController::class, 'verifyHarvest']);
+    Route::post('/panen/{id}/approve', [SiklusTanamController::class, 'approve']);
+    Route::post('/panen/{id}/reject', [SiklusTanamController::class, 'reject']);
+
+    /*
+    |--------------------------------------------------------------------------
     | PETUGAS - MONITORING PARAMETER LINGKUNGAN
     |--------------------------------------------------------------------------
     */
@@ -72,6 +87,7 @@ Route::middleware(\App\Http\Middleware\JwtMiddleware::class)->group(function () 
     Route::get('/activities/pending', [SiklusTanamController::class, 'getPendingVerifications']);
     Route::post('/activities/{id}/approve', [SiklusTanamController::class, 'approve']);
     Route::post('/activities/{id}/reject', [SiklusTanamController::class, 'reject']);
+    Route::post('/activities/{id}/verifikasi', [SiklusTanamController::class, 'verifyHarvest']);
 
     Route::get('/activities', [SiklusTanamController::class, 'index']);
     Route::post('/activities', [SiklusTanamController::class, 'store']);

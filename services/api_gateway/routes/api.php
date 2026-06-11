@@ -41,7 +41,7 @@ function proxyRequest(Request $request, string $serviceUrl, string $path)
     $options = [
         'headers' => $headers,
         'query'   => $request->query(),
-        'timeout' => 5,
+        'timeout' => 15,
     ];
 
     if (!in_array($request->method(), ['GET', 'HEAD'])) {
@@ -126,7 +126,7 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/auth/{any?}
 
 /*
 |--------------------------------------------------------------------------
-| 3. ROLE PETUGAS - Manajemen Data Spasial
+| 3. ROLE PETUGAS - Manajemen Data Spasial, Notifikasi, Monitoring
 |--------------------------------------------------------------------------
 */
 
@@ -147,7 +147,21 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/monitoring/
 
 /*
 |--------------------------------------------------------------------------
-| 4. RUTE LAMA - Dipertahankan
+| 4. PETUGAS - Verifikasi Hasil Panen
+|--------------------------------------------------------------------------
+| Route ini wajib eksplisit. Jika tidak ada, /api/panen/pending dianggap sebagai
+| service bernama "panen" oleh dynamic route dan hasilnya 404.
+|--------------------------------------------------------------------------
+*/
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/panen/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    $path = trim('panen/' . $any, '/');
+    return proxyRequest($request, $serviceMap['farming'], $path);
+})->where('any', '.*');
+
+/*
+|--------------------------------------------------------------------------
+| 5. RUTE LAMA - Dipertahankan
 |--------------------------------------------------------------------------
 */
 
@@ -231,7 +245,6 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/users/{any?
     return proxyRequest($request, $serviceMap['user'], $path);
 })->where('any', '.*');
 
-
 Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/map-lahan/{any?}', function (Request $request, $any = '') use ($serviceMap) {
     return proxyRequest($request, $serviceMap['gis'], trim('map-lahan/' . $any, '/'));
 })->where('any', '.*');
@@ -250,7 +263,7 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/master/{any
 
 /*
 |--------------------------------------------------------------------------
-| 5. DYNAMIC SERVICE ROUTE
+| 6. DYNAMIC SERVICE ROUTE
 |--------------------------------------------------------------------------
 | Contoh:
 | /api/auth/login

@@ -115,7 +115,11 @@ Route::middleware(['role:2'])->group(function () {
     Route::post('/petugas/verifikasi/panen/{id}/{aksi}', [PetugasController::class, 'aksiVerifikasiPanen'])->name('petugas.verifikasi.panen');
 
     Route::post('/petugas/verifikasi/{id}/{aksi}', [PetugasController::class, 'aksiVerifikasi'])->name('petugas.verifikasi.legacy');
-});
+
+    Route::post('/petugas/verifikasi-panen/{id}/{aksi}', [PetugasController::class, 'aksiVerifikasiPanen']);
+    Route::get('/petugas/verifikasi/{id}', [PetugasController::class, 'redirectVerifikasiPanen']);
+    Route::get('/notifikasi/{id}', [PetugasController::class, 'bukaNotifikasi']);
+    });
 
 /*
 ===================================================================
