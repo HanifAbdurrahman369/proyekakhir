@@ -125,6 +125,7 @@ class LahanSawahController extends Controller
         $request->validate([
             'kecamatan_id' => 'required',
             'kelurahan_id' => 'required',
+            'tipe_lahan_id' => 'required',
             'nama_lahan' => 'required|string|max:100',
             'alamat_detail' => 'required|string|max:150',
         ]);
@@ -133,14 +134,13 @@ class LahanSawahController extends Controller
             'user_id' => $user->sub,
             'kecamatan_id' => $request->kecamatan_id,
             'kelurahan_id' => $request->kelurahan_id,
+            'tipe_lahan_id' => $request->tipe_lahan_id,
             'nama_lahan' => $request->nama_lahan,
             'alamat_detail' => $request->alamat_detail,
 
             'status_verifikasi' => 'PENDING',
 
             'pemilik_lahan' => $request->pemilik_lahan ?? null,
-            'tipe_lahan_id' => $request->tipe_lahan_id ?? null,
-            'tipe_rawa' => $request->tipe_rawa ?? null,
             'tahun_lbs' => $request->tahun_lbs ?? '2024',
             'luas_lahan_hektar' => $request->luas_lahan_hektar ?? 0,
             'hasil_panen_ton' => 0,
