@@ -2,14 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class SiklusTanam extends Model
 {
-    use HasFactory;
-    
     protected $table = 'siklus_tanam';
+    protected $primaryKey = 'id';
+    public $timestamps = true;
 
     protected $fillable = [
         'lahan_id',
@@ -20,16 +19,26 @@ class SiklusTanam extends Model
         'tanggal_panen',
         'hasil_panen',
         'status_verifikasi',
-        'created_by'
+        'created_by',
+        'verified_by',
+        'verified_at',
+        'catatan_verifikasi',
     ];
 
-    public function bibit()
-    {
-        return $this->belongsTo(JenisBibit::class, 'bibit_id');
-    }
+    protected $casts = [
+        'hasil_panen' => 'float',
+        'tanggal_tanam' => 'date',
+        'tanggal_panen' => 'date',
+        'verified_at' => 'datetime',
+    ];
 
     public function lahan()
     {
         return $this->belongsTo(LahanSawah::class, 'lahan_id');
+    }
+
+    public function petani()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }
