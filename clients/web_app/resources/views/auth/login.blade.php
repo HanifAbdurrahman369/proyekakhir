@@ -16,6 +16,15 @@
     </a>
 </div>
 
+@if (session('success'))
+<div class="flex items-start gap-3 bg-green-50 border border-green-200 text-green-700 px-4 py-3 mb-5 rounded-2xl text-sm">
+    <svg class="w-5 h-5 mt-0.5 shrink-0 text-green-600" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+    </svg>
+    <span>{{ session('success') }}</span>
+</div>
+@endif
+
 @if ($errors->has('login'))
 <div class="flex items-start gap-3 bg-red-50 border border-red-200 text-red-600 px-4 py-3 mb-5 rounded-2xl text-sm">
     <svg class="w-5 h-5 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="currentColor">

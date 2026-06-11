@@ -4,6 +4,7 @@ class ApiEndpoints {
   static const String baseUrl = 'http://10.111.56.100:8003/api';
 
   // Auth & User Endpoints
+  
   static const String login = '/login';
   static const String register = '/user/register'; // Melalui dynamic gateway proxy ke User Service
   static const String profile = '/auth/profile';  // Melalui gateway proxy ke Auth Service (dengan middleware JWT)
