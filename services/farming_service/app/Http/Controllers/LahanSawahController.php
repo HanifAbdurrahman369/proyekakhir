@@ -14,16 +14,25 @@ class LahanSawahController extends Controller
     public function index(Request $request)
     {
         $user = $request->attributes->get('auth');
+        $select = [
+            'id',
+            'user_id',
+            'kecamatan_id',
+            'kelurahan_id',
+            'tipe_lahan_id',
+            'nama_lahan',
+            'pemilik_lahan',
+            'luas_lahan_hektar',
+            'alamat_detail',
+            'status_verifikasi',
+        ];
+
+        if (Schema::hasColumn('lahan_sawah', 'alasan_penolakan')) {
+            $select[] = 'alasan_penolakan';
+        }
 
         $data = LahanSawah::where('user_id', $user->sub)
-            ->select(
-                'id',
-                'nama_lahan',
-                'pemilik_lahan',
-                'luas_lahan_hektar',
-                'alamat_detail',
-                'status_verifikasi'
-            )
+            ->select($select)
             ->orderByDesc('id')
             ->paginate(5);
 
@@ -53,7 +62,7 @@ class LahanSawahController extends Controller
 
     public function accepted()
     {
-        $data = LahanSawah::with(['kecamatanLahan', 'kelurahan'])
+        $data = LahanSawah::with(['kecamatanLahan', 'kelurahanLahan'])
             ->where('status_verifikasi', 'DITERIMA')
             ->select(
                 'id',
@@ -100,9 +109,10 @@ class LahanSawahController extends Controller
         ]);
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        $data = LahanSawah::with(['kecamatanLahan', 'kelurahan', 'siklusTanam'])
+        $user = $request->attributes->get('auth');
+        $data = LahanSawah::with(['kecamatanLahan', 'kelurahanLahan'])
             ->find($id);
 
         if (!$data) {
@@ -110,6 +120,17 @@ class LahanSawahController extends Controller
                 'success' => false,
                 'message' => 'Data lahan tidak ditemukan'
             ], 404);
+        }
+
+        $roleId = (int) ($user->role_id ?? $user->role ?? 0);
+        $isOwner = (int) $data->user_id === (int) $user->sub;
+        $isPrivileged = in_array($roleId, [2, 3, 4], true);
+
+        if (!$isOwner && !$isPrivileged) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki akses ke data lahan ini'
+            ], 403);
         }
 
         return response()->json([
@@ -131,7 +152,7 @@ class LahanSawahController extends Controller
             'alamat_detail' => 'required|string|max:150',
         ]);
 
-        $data = LahanSawah::create([
+        $payload = [
             'user_id' => $user->sub,
             'kecamatan_id' => $request->kecamatan_id,
             'kelurahan_id' => $request->kelurahan_id,
@@ -149,7 +170,21 @@ class LahanSawahController extends Controller
             'latitude' => $request->latitude ?? null,
             'longitude' => $request->longitude ?? null,
             'foto_lahan' => $request->foto_lahan ?? null,
-        ]);
+        ];
+
+        if (Schema::hasColumn('lahan_sawah', 'alasan_penolakan')) {
+            $payload['alasan_penolakan'] = null;
+        }
+
+        if (Schema::hasColumn('lahan_sawah', 'created_at')) {
+            $payload['created_at'] = now();
+        }
+
+        if (Schema::hasColumn('lahan_sawah', 'updated_at')) {
+            $payload['updated_at'] = now();
+        }
+
+        $data = LahanSawah::create($payload);
 
         $this->buatNotifikasiPetugas(
             'Pengajuan Lahan Baru',
@@ -188,6 +223,14 @@ class LahanSawahController extends Controller
             'status_verifikasi' => 'DITERIMA',
         ];
 
+        if (Schema::hasColumn('lahan_sawah', 'alasan_penolakan')) {
+            $updateData['alasan_penolakan'] = null;
+        }
+
+        if (Schema::hasColumn('lahan_sawah', 'updated_at')) {
+            $updateData['updated_at'] = now();
+        }
+
         $fieldOpsional = [
             'pemilik_lahan',
             'tipe_lahan_id',
@@ -218,6 +261,10 @@ class LahanSawahController extends Controller
 
     public function reject(Request $request, $id)
     {
+        $request->validate([
+            'alasan_penolakan' => 'required|string|min:5|max:700',
+        ]);
+
         $data = LahanSawah::find($id);
 
         if (!$data) {
@@ -234,14 +281,90 @@ class LahanSawahController extends Controller
             ], 400);
         }
 
-        $data->update([
-            'status_verifikasi' => 'DITOLAK'
-        ]);
+        $payload = [
+            'status_verifikasi' => 'DITOLAK',
+        ];
+
+        if (Schema::hasColumn('lahan_sawah', 'alasan_penolakan')) {
+            $payload['alasan_penolakan'] = $request->input('alasan_penolakan');
+        }
+
+        if (Schema::hasColumn('lahan_sawah', 'updated_at')) {
+            $payload['updated_at'] = now();
+        }
+
+        $data->update($payload);
         $this->tandaiNotifikasiLahanTerbaca((int) $data->id);
 
         return response()->json([
             'success' => true,
             'message' => 'Lahan berhasil ditolak',
+            'data' => $data->fresh()
+        ]);
+    }
+
+    public function resubmit(Request $request, $id)
+    {
+        $user = $request->attributes->get('auth');
+
+        $request->validate([
+            'kecamatan_id' => 'required',
+            'kelurahan_id' => 'required',
+            'tipe_lahan_id' => 'required',
+            'nama_lahan' => 'required|string|max:100',
+            'alamat_detail' => 'required|string|max:150',
+            'pemilik_lahan' => 'nullable|string|max:100',
+        ]);
+
+        $data = LahanSawah::where('id', $id)
+            ->where('user_id', $user->sub)
+            ->first();
+
+        if (!$data) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data lahan tidak ditemukan'
+            ], 404);
+        }
+
+        if ($data->status_verifikasi !== 'DITOLAK') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya pengajuan yang ditolak yang dapat diajukan ulang'
+            ], 400);
+        }
+
+        $payload = [
+            'kecamatan_id' => $request->kecamatan_id,
+            'kelurahan_id' => $request->kelurahan_id,
+            'tipe_lahan_id' => $request->tipe_lahan_id,
+            'nama_lahan' => $request->nama_lahan,
+            'alamat_detail' => $request->alamat_detail,
+            'pemilik_lahan' => $request->pemilik_lahan ?? null,
+            'status_verifikasi' => 'PENDING',
+        ];
+
+        if (Schema::hasColumn('lahan_sawah', 'alasan_penolakan')) {
+            $payload['alasan_penolakan'] = null;
+        }
+
+        if (Schema::hasColumn('lahan_sawah', 'updated_at')) {
+            $payload['updated_at'] = now();
+        }
+
+        $data->update($payload);
+
+        $this->buatNotifikasiPetugas(
+            'Pengajuan Ulang Lahan',
+            'Petani memperbaiki dan mengajukan ulang lahan: ' . $data->fresh()->nama_lahan . '. Segera lakukan verifikasi.',
+            'lahan_sawah',
+            (int) $data->id,
+            '/verifikasi-data-petani?lahan_id=' . $data->id
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pengajuan lahan berhasil diperbaiki dan dikirim ulang',
             'data' => $data->fresh()
         ]);
     }
@@ -284,6 +407,15 @@ class LahanSawahController extends Controller
                 DB::table('notifikasi')
                     ->where('ref_type', 'lahan_sawah')
                     ->where('ref_id', $lahanId)
+                    ->update([
+                        'is_read' => 1,
+                        'updated_at' => now(),
+                    ]);
+            }
+
+            if (Schema::hasColumn('notifikasi', 'target_url')) {
+                DB::table('notifikasi')
+                    ->where('target_url', 'like', '%lahan_id=' . $lahanId . '%')
                     ->update([
                         'is_read' => 1,
                         'updated_at' => now(),

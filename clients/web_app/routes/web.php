@@ -5,6 +5,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\PetugasController;
+use App\Http\Controllers\PetaniController;
+use App\Http\Controllers\LahanSawahController;
 use App\Http\Controllers\SiklusTanamController;
 
 /*
@@ -67,7 +69,7 @@ Route::get('/statistik', function () {
 3. PENGALIHAN DASHBOARD MULTI-ROLE (Dipanggil Setelah Login)
 ===================================================================
 */
-Route::get('/dashboard-petani', function () { return view('dashboard.petani'); })->middleware('role:1');
+Route::get('/dashboard-petani', [PetaniController::class, 'index'])->middleware('role:1');
 
 // Memastikan "case 2: return redirect('/dashboard-petugas');" bekerja sempurna dan memuat data peta
 Route::get('/dashboard-petugas', [PetugasController::class, 'index'])->middleware('role:2');
@@ -101,6 +103,11 @@ Route::middleware(['role:2'])->group(function () {
 ===================================================================
 */
 Route::middleware(['role:1'])->group(function () {
+    Route::get('/dashboard-petani', [PetaniController::class, 'index']);
+    Route::get('/tambah-lahan', [LahanSawahController::class, 'create'])->name('tambah.lahan');
+    Route::post('/lahan/store', [LahanSawahController::class, 'storeLahan'])->name('lahan.store');
+    Route::get('/lahan/{id}/edit', [LahanSawahController::class, 'edit'])->name('lahan.edit');
+    Route::put('/lahan/{id}/resubmit', [LahanSawahController::class, 'resubmitLahan'])->name('lahan.resubmit');
     Route::get('/input-panen', [SiklusTanamController::class, 'create'])->name('input.panen');
     Route::get('/riwayat-panen', [SiklusTanamController::class, 'riwayatPanen'])->name('riwayat.panen');
     Route::post('/input-panen', [SiklusTanamController::class, 'store'])->name('input.panen.store');

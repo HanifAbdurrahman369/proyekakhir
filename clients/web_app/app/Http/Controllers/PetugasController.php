@@ -130,26 +130,24 @@ class PetugasController extends Controller
             'features' => [],
         ];
 
-        $punyaSpasialLengkap = function ($lahan) {
-            $lat = data_get($lahan, 'latitude');
-            $lng = data_get($lahan, 'longitude');
+        $punyaPolygon = function ($lahan) {
             $polygon = data_get($lahan, 'polygon_geojson') ?? data_get($lahan, 'geojson') ?? data_get($lahan, 'polygon_area');
 
-            return !empty($lat) && !empty($lng) && !empty($polygon);
+            return !empty($polygon);
         };
 
         $lahanLamaSpasial = collect($spasialRows)
-            ->filter(function ($lahan) use ($punyaSpasialLengkap) {
-                return $punyaSpasialLengkap($lahan);
+            ->filter(function ($lahan) use ($punyaPolygon) {
+                return $punyaPolygon($lahan);
             })
             ->values()
             ->all();
 
         $lahanBelumDipetakan = collect($spasialRows)
-            ->filter(function ($lahan) use ($punyaSpasialLengkap) {
+            ->filter(function ($lahan) use ($punyaPolygon) {
                 $statusVerifikasi = strtoupper((string) data_get($lahan, 'status_verifikasi', ''));
 
-                return $statusVerifikasi === 'DITERIMA' && !$punyaSpasialLengkap($lahan);
+                return $statusVerifikasi === 'DITERIMA' && !$punyaPolygon($lahan);
             })
             ->values()
             ->all();

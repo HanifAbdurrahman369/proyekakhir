@@ -35,7 +35,7 @@
     $totalPending = data_get($stats, 'total_pending', (int)$pendingLahanCount + (int)$pendingPanenCount);
 
     $spasialRows = is_array($spasialRows) && count($spasialRows) ? $spasialRows : $lahanDiterima;
-    $punyaSpasialLengkap = fn($item) => !empty(data_get($item, 'latitude')) && !empty(data_get($item, 'longitude')) && !empty(data_get($item, 'polygon_geojson') ?? data_get($item, 'geojson') ?? data_get($item, 'polygon_area'));
+    $punyaSpasialLengkap = fn($item) => !empty(data_get($item, 'polygon_geojson') ?? data_get($item, 'geojson') ?? data_get($item, 'polygon_area'));
     $lahanBaruSpasial = collect($lahanBelumDipetakan)->values();
     $lahanLamaSpasial = isset($lahanLamaSpasial)
         ? collect($lahanLamaSpasial)->values()
@@ -171,7 +171,23 @@
                             </thead>
                             <tbody class="divide-y divide-primary-100">
                                 @forelse($pendingLahan as $item)
-                                    <tr>
+                                    @php
+                                        $lahanId = $ambil($item, ['id']);
+                                        $lahanDetailPayload = [
+                                            'id' => $lahanId,
+                                            'nama_petani' => $ambil($item, ['nama_petani','petani.nama_lengkap','user.nama_lengkap']),
+                                            'email_petani' => $ambil($item, ['email_petani','petani.email','user.email']),
+                                            'nama_lahan' => $ambil($item, ['nama_lahan','lahan.nama_lahan']),
+                                            'pemilik_lahan' => $ambil($item, ['pemilik_lahan']),
+                                            'nama_kecamatan' => $ambil($item, ['nama_kecamatan','kecamatan.nama_kecamatan']),
+                                            'nama_kelurahan' => $ambil($item, ['nama_kelurahan','kelurahan.nama_kelurahan']),
+                                            'luas_lahan_hektar' => $angka($ambil($item, ['luas_lahan_hektar'], 0)),
+                                            'alamat_detail' => $ambil($item, ['alamat_detail'], ''),
+                                            'status_verifikasi' => $ambil($item, ['status_verifikasi'], 'PENDING'),
+                                        ];
+                                        $lahanDetailJson = htmlspecialchars(json_encode($lahanDetailPayload, JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8');
+                                    @endphp
+                                    <tr class="{{ (string)request('lahan_id') === (string)$lahanId ? 'bg-primary-50' : '' }}">
                                         <td class="px-5 py-4">
                                             <p class="font-bold text-primary-900">{{ $ambil($item, ['nama_petani','petani.nama_lengkap','user.nama_lengkap']) }}</p>
                                             <p class="text-xs text-slate-500">{{ $ambil($item, ['email_petani','petani.email','user.email']) }}</p>
@@ -188,9 +204,24 @@
                                         <td class="px-5 py-4 text-slate-700">{{ $angka($ambil($item, ['luas_lahan_hektar'], 0)) }} Ha</td>
                                         <td class="px-5 py-4"><span class="px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">PENDING</span></td>
                                         <td class="px-5 py-4">
-                                            <div class="flex justify-end gap-2">
-                                                <form method="POST" action="{{ url('/petugas/verifikasi-lahan/' . $ambil($item, ['id']) . '/diterima') }}">@csrf<button class="px-4 py-2 rounded-xl bg-green-50 text-green-700 border border-green-200 font-bold hover:bg-green-600 hover:text-white transition">Setujui</button></form>
-                                                <form method="POST" action="{{ url('/petugas/verifikasi-lahan/' . $ambil($item, ['id']) . '/ditolak') }}">@csrf<button class="px-4 py-2 rounded-xl bg-red-50 text-red-600 border border-red-200 font-bold hover:bg-red-600 hover:text-white transition">Tolak</button></form>
+                                            <div class="flex flex-wrap justify-end gap-2">
+                                                <button type="button"
+                                                        class="btnDetailLahan px-4 py-2 rounded-xl bg-white text-primary-700 border border-primary-100 font-bold hover:bg-primary-50 transition"
+                                                        data-lahan="{!! $lahanDetailJson !!}"
+                                                        data-approve-url="{{ url('/petugas/verifikasi-lahan/' . $lahanId . '/diterima') }}"
+                                                        data-reject-url="{{ url('/petugas/verifikasi-lahan/' . $lahanId . '/ditolak') }}">
+                                                    Detail
+                                                </button>
+                                                <form method="POST" action="{{ url('/petugas/verifikasi-lahan/' . $lahanId . '/diterima') }}" onsubmit="return confirm('Setujui pengajuan lahan ini? Pastikan detail pengajuan sudah benar.');">
+                                                    @csrf
+                                                    <button class="px-4 py-2 rounded-xl bg-green-50 text-green-700 border border-green-200 font-bold hover:bg-green-600 hover:text-white transition">Setujui</button>
+                                                </form>
+                                                <button type="button"
+                                                        class="btnTolakLahan px-4 py-2 rounded-xl bg-red-50 text-red-600 border border-red-200 font-bold hover:bg-red-600 hover:text-white transition"
+                                                        data-reject-url="{{ url('/petugas/verifikasi-lahan/' . $lahanId . '/ditolak') }}"
+                                                        data-nama="{{ $ambil($item, ['nama_lahan','lahan.nama_lahan']) }}">
+                                                    Tolak
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -260,6 +291,79 @@
                         </table>
                     </div>
                 </div>
+
+                <div id="lahanDetailModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/45 px-4 py-6">
+                    <div class="w-full max-w-4xl rounded-3xl bg-white shadow-2xl border border-primary-100 overflow-hidden">
+                        <div class="px-6 py-5 border-b border-primary-100 bg-[#f7fced] flex items-start justify-between gap-4">
+                            <div>
+                                <p class="text-xs font-bold uppercase tracking-[0.18em] text-primary-700">Detail Pengajuan Lahan</p>
+                                <h3 id="detailNamaLahan" class="text-2xl font-extrabold text-primary-900 mt-1">-</h3>
+                                <p id="detailSubLahan" class="text-sm text-slate-500 mt-1">-</p>
+                            </div>
+                            <button type="button" class="modalClose w-10 h-10 rounded-2xl border border-primary-100 bg-white text-primary-700 font-extrabold hover:bg-primary-50">x</button>
+                        </div>
+                        <div class="p-6">
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div class="rounded-2xl border border-primary-100 p-4">
+                                    <p class="text-xs font-bold text-slate-500 uppercase">Pengaju</p>
+                                    <p id="detailPengaju" class="text-primary-900 font-bold mt-2">-</p>
+                                    <p id="detailEmail" class="text-sm text-slate-500 mt-1">-</p>
+                                </div>
+                                <div class="rounded-2xl border border-primary-100 p-4">
+                                    <p class="text-xs font-bold text-slate-500 uppercase">Pemilik Lahan</p>
+                                    <p id="detailPemilik" class="text-primary-900 font-bold mt-2">-</p>
+                                    <p id="detailStatus" class="text-sm text-amber-700 mt-1">PENDING</p>
+                                </div>
+                                <div class="rounded-2xl border border-primary-100 p-4">
+                                    <p class="text-xs font-bold text-slate-500 uppercase">Wilayah</p>
+                                    <p id="detailWilayah" class="text-primary-900 font-bold mt-2">-</p>
+                                </div>
+                                <div class="rounded-2xl border border-primary-100 p-4">
+                                    <p class="text-xs font-bold text-slate-500 uppercase">Estimasi Luas</p>
+                                    <p id="detailLuas" class="text-primary-900 font-bold mt-2">0 Ha</p>
+                                </div>
+                                <div class="md:col-span-2 rounded-2xl border border-primary-100 p-4">
+                                    <p class="text-xs font-bold text-slate-500 uppercase">Alamat Detail</p>
+                                    <p id="detailAlamat" class="text-primary-900 font-semibold mt-2 leading-relaxed">-</p>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 flex flex-col sm:flex-row justify-end gap-3">
+                                <button type="button" id="detailRejectButton" class="px-5 py-3 rounded-2xl bg-red-50 text-red-600 border border-red-200 font-bold hover:bg-red-600 hover:text-white transition">Tolak</button>
+                                <form method="POST" action="#" id="detailApproveForm" onsubmit="return confirm('Setujui pengajuan lahan ini? Pastikan seluruh detail pengajuan sudah sesuai.');">
+                                    @csrf
+                                    <button class="w-full sm:w-auto px-5 py-3 rounded-2xl bg-green-50 text-green-700 border border-green-200 font-bold hover:bg-green-600 hover:text-white transition">Setujui Pengajuan</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="lahanRejectModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/45 px-4 py-6">
+                    <div class="w-full max-w-xl rounded-3xl bg-white shadow-2xl border border-red-100 overflow-hidden">
+                        <div class="px-6 py-5 border-b border-red-100 bg-red-50 flex items-start justify-between gap-4">
+                            <div>
+                                <p class="text-xs font-bold uppercase tracking-[0.18em] text-red-600">Tolak Pengajuan</p>
+                                <h3 id="rejectNamaLahan" class="text-xl font-extrabold text-red-900 mt-1">-</h3>
+                                <p class="text-sm text-red-700 mt-1">Alasan ini akan terlihat oleh petani sebagai dasar perbaikan.</p>
+                            </div>
+                            <button type="button" class="modalClose w-10 h-10 rounded-2xl border border-red-100 bg-white text-red-600 font-extrabold hover:bg-red-50">x</button>
+                        </div>
+                        <form method="POST" action="#" id="rejectLahanForm" class="p-6 space-y-4">
+                            @csrf
+                            <div>
+                                <label class="block text-sm font-bold text-slate-600 mb-2">Alasan Penolakan</label>
+                                <textarea name="alasan_penolakan" rows="5" required minlength="5" maxlength="700"
+                                          class="w-full rounded-2xl border border-red-100 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-200"
+                                          placeholder="Contoh: alamat lahan belum lengkap, lokasi tidak sesuai wilayah, atau dokumen pendukung perlu diperbaiki."></textarea>
+                            </div>
+                            <div class="flex flex-col sm:flex-row justify-end gap-3">
+                                <button type="button" class="modalClose px-5 py-3 rounded-2xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition">Batal</button>
+                                <button class="px-5 py-3 rounded-2xl bg-red-600 text-white font-bold hover:bg-red-700 transition">Kirim Penolakan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
         @endif
 
@@ -300,12 +404,12 @@
                         <div class="p-4 space-y-4">
                             <div class="grid md:grid-cols-2 gap-3">
                                 <button type="button" class="spatial-choice sourceToggle is-active rounded-2xl px-4 py-3 text-left transition" data-source="baru">
-                                    <span class="block text-sm font-extrabold">Lahan Baru</span>
-                                    <span class="block text-xs mt-1">{{ $lahanBaruSpasial->count() }} disetujui, belum dipetakan</span>
+                                    <span class="block text-sm font-extrabold">Lahan Belum Dipetakan</span>
+                                    <span class="block text-xs mt-1">{{ $lahanBaruSpasial->count() }} disetujui, belum memiliki polygon</span>
                                 </button>
                                 <button type="button" class="spatial-choice sourceToggle rounded-2xl px-4 py-3 text-left transition" data-source="lama">
-                                    <span class="block text-sm font-extrabold">Lahan Lama</span>
-                                    <span class="block text-xs mt-1">{{ $lahanLamaSpasial->count() }} data lahan_sawah terpetakan</span>
+                                    <span class="block text-sm font-extrabold">Lahan Sudah Dipetakan</span>
+                                    <span class="block text-xs mt-1">{{ $lahanLamaSpasial->count() }} data memiliki polygon</span>
                                 </button>
                             </div>
 
@@ -318,38 +422,29 @@
                                                     <span class="block font-extrabold text-primary-900">{{ $ambil($item, ['nama_lahan']) }}</span>
                                                     <span class="block text-xs text-slate-500 mt-1">{{ $ambil($item, ['nama_kecamatan']) }} / {{ $ambil($item, ['nama_kelurahan']) }}</span>
                                                 </span>
-                                                <span class="px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">WAJIB DIPETAKAN</span>
+                                                <span class="px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">BELUM DIPETAKAN</span>
                                             </span>
                                             <span class="block text-xs text-slate-500 mt-3">{{ $ambil($item, ['alamat_detail'], '') }} - Sudah disetujui</span>
                                         </button>
                                     @empty
-                                        <div class="rounded-2xl border border-primary-100 bg-white px-4 py-8 text-center text-sm text-slate-500">Tidak ada lahan baru yang menunggu pemetaan.</div>
+                                        <div class="rounded-2xl border border-primary-100 bg-white px-4 py-8 text-center text-sm text-slate-500">Tidak ada lahan disetujui yang menunggu pemetaan.</div>
                                     @endforelse
                                 </div>
 
                                 <div id="sourceListLama" class="spatial-list space-y-2 hidden">
                                     @forelse($lahanLamaSpasial as $item)
-                                        @php
-                                            $statusSpasial = $ambil($item, ['status_spasial'], 'BELUM_DIPETAKAN');
-                                            $statusVerifikasiLama = strtoupper((string) $ambil($item, ['status_verifikasi'], '-'));
-                                            $statusClassLama = match ($statusVerifikasiLama) {
-                                                'DITERIMA' => 'bg-green-50 text-green-700 border-green-200',
-                                                'DITOLAK' => 'bg-red-50 text-red-600 border-red-200',
-                                                default => 'bg-amber-50 text-amber-700 border-amber-200',
-                                            };
-                                        @endphp
                                         <button type="button" class="spatial-row btnPilihLahan w-full rounded-2xl p-4 text-left transition hover:bg-primary-50" data-source="lama" data-lahan-id="{{ $ambil($item, ['id']) }}">
                                             <span class="flex items-start justify-between gap-3">
                                                 <span>
                                                     <span class="block font-extrabold text-primary-900">{{ $ambil($item, ['nama_lahan']) }}</span>
                                                     <span class="block text-xs text-slate-500 mt-1">{{ $ambil($item, ['nama_kecamatan']) }} / {{ $ambil($item, ['nama_kelurahan']) }}</span>
                                                 </span>
-                                                <span class="px-2 py-1 rounded-full {{ $statusClassLama }} border text-[10px] font-bold">{{ $statusVerifikasiLama }}</span>
+                                                <span class="px-2 py-1 rounded-full bg-green-50 text-green-700 border border-green-200 text-[10px] font-bold">SUDAH DIPETAKAN</span>
                                             </span>
-                                            <span class="block text-xs text-slate-500 mt-3">{{ $angka($ambil($item, ['luas_lahan_hektar'], 0)) }} Ha - {{ $ambil($item, ['pemilik_lahan','nama_petani']) }} - {{ $statusSpasial === 'SUDAH_DIPETAKAN' ? 'Sudah dipetakan' : 'Belum lengkap' }}</span>
+                                            <span class="block text-xs text-slate-500 mt-3">{{ $angka($ambil($item, ['luas_lahan_hektar'], 0)) }} Ha - {{ $ambil($item, ['pemilik_lahan','nama_petani']) }} - polygon tersedia</span>
                                         </button>
                                     @empty
-                                        <div class="rounded-2xl border border-primary-100 bg-white px-4 py-8 text-center text-sm text-slate-500">Belum ada lahan lama yang bisa dikelola.</div>
+                                        <div class="rounded-2xl border border-primary-100 bg-white px-4 py-8 text-center text-sm text-slate-500">Belum ada lahan yang sudah memiliki polygon.</div>
                                     @endforelse
                                 </div>
                             </div>
@@ -382,7 +477,7 @@
                         <div>
                             <p id="selectedSourceLabel" class="text-xs text-primary-700 font-bold uppercase tracking-[0.18em]">Belum memilih lahan</p>
                             <h2 id="selectedLahanTitle" class="text-xl font-extrabold text-primary-900 mt-1">Informasi Titik dan Batas Area</h2>
-                            <p id="selectedLahanMeta" class="text-sm text-slate-500 mt-1">Pilih lahan baru atau lahan lama dari panel kiri untuk membuka formulir pemetaan.</p>
+                            <p id="selectedLahanMeta" class="text-sm text-slate-500 mt-1">Pilih lahan belum dipetakan atau lahan sudah dipetakan dari panel kiri untuk membuka formulir pemetaan.</p>
                         </div>
                         <span id="formModeBadge" class="w-fit px-3 py-1 rounded-full bg-slate-50 text-slate-500 text-xs font-bold border border-slate-200">Terkunci</span>
                     </div>
@@ -541,6 +636,99 @@
     </div>
 @endsection
 
+@if($page === 'verifikasi-data-petani')
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const detailModal = document.getElementById('lahanDetailModal');
+                const rejectModal = document.getElementById('lahanRejectModal');
+                const approveForm = document.getElementById('detailApproveForm');
+                const rejectForm = document.getElementById('rejectLahanForm');
+                const detailRejectButton = document.getElementById('detailRejectButton');
+                let activeRejectUrl = '';
+                let activeRejectName = '';
+
+                function showModal(modal) {
+                    modal?.classList.remove('hidden');
+                    modal?.classList.add('flex');
+                }
+
+                function hideModal(modal) {
+                    modal?.classList.add('hidden');
+                    modal?.classList.remove('flex');
+                }
+
+                function setText(id, value) {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = value || '-';
+                }
+
+                function openReject(url, name) {
+                    activeRejectUrl = url || activeRejectUrl;
+                    activeRejectName = name || activeRejectName || 'Pengajuan lahan';
+                    if (rejectForm) {
+                        rejectForm.action = activeRejectUrl || '#';
+                        rejectForm.reset();
+                    }
+                    setText('rejectNamaLahan', activeRejectName);
+                    hideModal(detailModal);
+                    showModal(rejectModal);
+                }
+
+                document.querySelectorAll('.btnDetailLahan').forEach(button => {
+                    button.addEventListener('click', function () {
+                        let data = {};
+                        try {
+                            data = JSON.parse(this.dataset.lahan || '{}');
+                        } catch (e) {
+                            data = {};
+                        }
+
+                        activeRejectUrl = this.dataset.rejectUrl || '';
+                        activeRejectName = data.nama_lahan || 'Pengajuan lahan';
+                        if (approveForm) approveForm.action = this.dataset.approveUrl || '#';
+                        if (detailRejectButton) detailRejectButton.dataset.rejectUrl = activeRejectUrl;
+
+                        setText('detailNamaLahan', data.nama_lahan);
+                        setText('detailSubLahan', `${data.nama_kecamatan || '-'} / ${data.nama_kelurahan || '-'}`);
+                        setText('detailPengaju', data.nama_petani);
+                        setText('detailEmail', data.email_petani);
+                        setText('detailPemilik', data.pemilik_lahan);
+                        setText('detailStatus', data.status_verifikasi || 'PENDING');
+                        setText('detailWilayah', `${data.nama_kecamatan || '-'} / ${data.nama_kelurahan || '-'}`);
+                        setText('detailLuas', `${data.luas_lahan_hektar || '0'} Ha`);
+                        setText('detailAlamat', data.alamat_detail);
+                        showModal(detailModal);
+                    });
+                });
+
+                document.querySelectorAll('.btnTolakLahan').forEach(button => {
+                    button.addEventListener('click', function () {
+                        openReject(this.dataset.rejectUrl || '', this.dataset.nama || 'Pengajuan lahan');
+                    });
+                });
+
+                detailRejectButton?.addEventListener('click', function () {
+                    openReject(this.dataset.rejectUrl || activeRejectUrl, activeRejectName);
+                });
+
+                document.querySelectorAll('.modalClose').forEach(button => {
+                    button.addEventListener('click', function () {
+                        hideModal(detailModal);
+                        hideModal(rejectModal);
+                    });
+                });
+
+                [detailModal, rejectModal].forEach(modal => {
+                    modal?.addEventListener('click', function (event) {
+                        if (event.target === modal) hideModal(modal);
+                    });
+                });
+            });
+        </script>
+    @endpush
+@endif
+
 @if($page === 'manajemen-data-spasial')
     @push('scripts')
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -638,7 +826,7 @@
                         form.action = `${updateBaseUrl}/${id}`;
                         methodInput.value = 'PUT';
                         if (modeBadge) {
-                            modeBadge.textContent = source === 'baru' ? 'Wajib Dipetakan' : 'Edit Data';
+                            modeBadge.textContent = source === 'baru' ? 'Belum Dipetakan' : 'Sudah Dipetakan';
                             modeBadge.className = source === 'baru'
                                 ? 'px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200'
                                 : 'px-3 py-1 rounded-full bg-primary-50 text-primary-700 text-xs font-bold border border-primary-100';
@@ -647,7 +835,7 @@
                         form.action = storeUrl;
                         methodInput.value = '';
                         if (modeBadge) {
-                            modeBadge.textContent = 'Data Baru';
+                            modeBadge.textContent = 'Belum Dipetakan';
                             modeBadge.className = 'px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200';
                         }
                     }
@@ -914,7 +1102,7 @@
 
                     const lokasi = [data.nama_kecamatan, data.nama_kelurahan].filter(Boolean).join(' / ') || 'Lokasi belum lengkap';
                     const pemilik = data.pemilik_lahan || data.nama_petani || 'Pemilik belum diisi';
-                    if (selectedSourceLabel) selectedSourceLabel.textContent = source === 'baru' ? 'Antrean lahan baru / siap dipetakan' : 'Lahan lama / data aktif';
+                    if (selectedSourceLabel) selectedSourceLabel.textContent = source === 'baru' ? 'Lahan belum dipetakan' : 'Lahan sudah dipetakan';
                     if (selectedLahanTitle) selectedLahanTitle.textContent = data.nama_lahan || 'Lahan Sawah Terpilih';
                     if (selectedLahanMeta) selectedLahanMeta.textContent = `${lokasi} - ${pemilik}`;
                     if (selectedMapLabel) {
@@ -960,7 +1148,7 @@
                     setSelectedRow(null);
                     if (selectedSourceLabel) selectedSourceLabel.textContent = 'Belum memilih lahan';
                     if (selectedLahanTitle) selectedLahanTitle.textContent = 'Informasi Titik dan Batas Area';
-                    if (selectedLahanMeta) selectedLahanMeta.textContent = 'Pilih lahan baru atau lahan lama dari panel kiri untuk membuka formulir pemetaan.';
+                    if (selectedLahanMeta) selectedLahanMeta.textContent = 'Pilih lahan belum dipetakan atau lahan sudah dipetakan dari panel kiri untuk membuka formulir pemetaan.';
                     if (selectedMapLabel) selectedMapLabel.textContent = 'Batas Kabupaten Barito Kuala ditampilkan sebagai garis wilayah. Pilih lahan untuk mulai mengatur titik dan batas area.';
                     if (deleteForm) {
                         deleteForm.action = '#';
@@ -1093,7 +1281,8 @@
 
                 if (highlightLahanId && dataById.has(String(highlightLahanId))) {
                     const row = dataById.get(String(highlightLahanId));
-                    const source = row.status_spasial === 'BELUM_DIPETAKAN' ? 'baru' : 'lama';
+                    const hasPolygon = Boolean(row.polygon_geojson || row.geojson || row.polygon_area);
+                    const source = hasPolygon ? 'lama' : 'baru';
                     fillForm(row, source);
                 }
 

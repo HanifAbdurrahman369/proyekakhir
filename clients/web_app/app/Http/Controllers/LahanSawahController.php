@@ -16,7 +16,7 @@ class LahanSawahController extends Controller
         return env('GATEWAY_URL', 'http://127.0.0.1:8003');
     }
 
-    public function create()
+    private function referensi(): array
     {
         $kecamatan = Http::get(
             $this->gatewayUrl() . '/api/kecamatan'
@@ -30,9 +30,46 @@ class LahanSawahController extends Controller
             $this->gatewayUrl() . '/api/tipe-lahan'
         )->json()['data'] ?? [];
 
+        return compact('kecamatan', 'kelurahan', 'tipeLahan');
+    }
+
+    public function create()
+    {
+        ['kecamatan' => $kecamatan, 'kelurahan' => $kelurahan, 'tipeLahan' => $tipeLahan] = $this->referensi();
+
         return view(
             'partials.sidebar.tambah-lahan',
             compact('kecamatan', 'kelurahan', 'tipeLahan')
+        );
+    }
+
+    public function edit($id)
+    {
+        $token = session('token');
+
+        if (!$token) {
+            return redirect('/login')->with('error', 'Login dulu');
+        }
+
+        ['kecamatan' => $kecamatan, 'kelurahan' => $kelurahan, 'tipeLahan' => $tipeLahan] = $this->referensi();
+
+        $response = Http::withToken($token)
+            ->acceptJson()
+            ->get($this->gatewayUrl() . '/api/lahan/' . $id);
+
+        if (!$response->successful()) {
+            return redirect('/dashboard-petani')->with('error', $response->json('message') ?? 'Data lahan tidak ditemukan');
+        }
+
+        $editLahan = $response->json('data') ?? [];
+
+        if (($editLahan['status_verifikasi'] ?? '') !== 'DITOLAK') {
+            return redirect('/dashboard-petani')->with('error', 'Hanya pengajuan ditolak yang dapat diperbaiki.');
+        }
+
+        return view(
+            'partials.sidebar.tambah-lahan',
+            compact('kecamatan', 'kelurahan', 'tipeLahan', 'editLahan')
         );
     }
 
@@ -53,6 +90,7 @@ class LahanSawahController extends Controller
                 'kecamatan_id' => $request->kecamatan_id,
                 'kelurahan_id' => $request->kelurahan_id,
                 'tipe_lahan_id' => $request->tipe_lahan_id,
+                'pemilik_lahan' => $request->pemilik_lahan,
                 'alamat_detail' => $request->alamat_detail,
             ]);
 
@@ -61,6 +99,34 @@ class LahanSawahController extends Controller
         }
 
         return back()->with('error', 'Gagal mengirim data');
+    }
+
+    public function resubmitLahan(Request $request, $id)
+    {
+        $token = session('token');
+
+        if (!$token) {
+            return redirect('/login')->with('error', 'Login dulu');
+        }
+
+        $response = Http::withToken($token)
+            ->acceptJson()
+            ->put($this->gatewayUrl() . '/api/lahan/' . $id . '/resubmit', [
+                'nama_lahan' => $request->nama_lahan,
+                'kecamatan_id' => $request->kecamatan_id,
+                'kelurahan_id' => $request->kelurahan_id,
+                'tipe_lahan_id' => $request->tipe_lahan_id,
+                'pemilik_lahan' => $request->pemilik_lahan,
+                'alamat_detail' => $request->alamat_detail,
+            ]);
+
+        if ($response->successful()) {
+            return redirect('/dashboard-petani')->with('success', 'Pengajuan lahan berhasil diperbaiki dan dikirim ulang.');
+        }
+
+        return back()
+            ->withInput()
+            ->with('error', $response->json('message') ?? 'Gagal mengajukan ulang lahan.');
     }
 
 }

@@ -379,7 +379,6 @@ class LahanSawahController extends Controller
         $data = (array) $row;
         $polygon = $data['polygon_geojson'] ?? null;
         $hasPolygon = !empty($polygon);
-        $hasPoint = !empty($data['latitude']) && !empty($data['longitude']);
 
         $data['luas_lahan_hektar'] = (float) ($data['luas_lahan_hektar'] ?? 0);
         $data['hasil_panen_ton'] = (float) ($data['hasil_panen_ton'] ?? 0);
@@ -388,7 +387,7 @@ class LahanSawahController extends Controller
         $data['longitude'] = $data['longitude'] !== null ? (float) $data['longitude'] : null;
         $data['polygon_geojson'] = $polygon;
         $data['geojson'] = $polygon;
-        $data['status_spasial'] = $data['status_spasial'] ?? (($hasPolygon && $hasPoint) ? 'SUDAH_DIPETAKAN' : 'BELUM_DIPETAKAN');
+        $data['status_spasial'] = $hasPolygon ? 'SUDAH_DIPETAKAN' : 'BELUM_DIPETAKAN';
         $data['is_wajib_dipetakan'] = ($data['status_verifikasi'] ?? null) === 'DITERIMA' && $data['status_spasial'] === 'BELUM_DIPETAKAN';
 
         return $data;

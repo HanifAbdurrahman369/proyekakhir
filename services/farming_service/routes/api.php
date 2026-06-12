@@ -32,7 +32,9 @@ Route::middleware(\App\Http\Middleware\JwtMiddleware::class)->group(function () 
     | PETUGAS - NOTIFIKASI
     |--------------------------------------------------------------------------
     */
+    Route::get('/notifikasi', [NotifikasiController::class, 'index']);
     Route::get('/notifikasi/petugas', [NotifikasiController::class, 'getNotifikasiPetugas']);
+    Route::get('/notifikasi/{id}', [NotifikasiController::class, 'show']);
     Route::put('/notifikasi/{id}/read', [NotifikasiController::class, 'markAsRead']);
 
     /*
@@ -62,6 +64,7 @@ Route::middleware(\App\Http\Middleware\JwtMiddleware::class)->group(function () 
     Route::get('/lahan', [LahanSawahController::class, 'index']);
     Route::get('/lahan/dropdown', [LahanSawahController::class, 'dropdown']);
     Route::post('/lahan', [LahanSawahController::class, 'store']);
+    Route::put('/lahan/{id}/resubmit', [LahanSawahController::class, 'resubmit']);
     Route::get('/lahan/{id}', [LahanSawahController::class, 'show']);
 
     /*

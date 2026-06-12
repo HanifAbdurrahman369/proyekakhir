@@ -112,6 +112,21 @@
 
         </div>
 
+        @if(($item['status_verifikasi'] ?? '') === 'DITOLAK')
+            <div class="mt-3 rounded-2xl border border-red-200 bg-red-50 p-4">
+                <p class="text-xs font-bold uppercase tracking-wide text-red-600">Alasan Penolakan</p>
+                <p class="text-sm text-red-700 mt-2 leading-relaxed">
+                    {{ $item['alasan_penolakan'] ?? 'Petugas belum menambahkan alasan penolakan.' }}
+                </p>
+                <div class="mt-4">
+                    <a href="{{ route('lahan.edit', $item['id']) }}"
+                       class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-white text-red-700 border border-red-200 text-sm font-bold hover:bg-red-600 hover:text-white transition">
+                        Perbaiki Pengajuan
+                    </a>
+                </div>
+            </div>
+        @endif
+
     </div>
 
     @empty

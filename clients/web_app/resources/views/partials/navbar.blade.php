@@ -129,18 +129,30 @@
                                     const badge = document.getElementById('notif-badge');
                                     const list = document.getElementById('notif-list');
 
-                                    if (json.unread_count > 0) {
-                                        badge.innerText = json.unread_count;
+                                    const liveNotifCount = Math.max(
+                                        Number(json.unread_count || 0),
+                                        Number(json.pending_count || json.pending_counts?.total_pending || 0)
+                                    );
+
+                                    if (liveNotifCount > 0) {
+                                        badge.innerText = liveNotifCount;
                                         badge.classList.remove('hidden');
                                     } else {
                                         badge.classList.add('hidden');
                                     }
 
-                                    list.innerHTML = json.data.length === 0
-                                        ? '<li class="p-5 text-center text-xs text-slate-400">Belum ada notifikasi</li>'
-                                        : '';
+                                    const notifications = Array.isArray(json.data) ? json.data : [];
+                                    const pendingCount = Number(json.pending_count || json.pending_counts?.total_pending || 0);
 
-                                    json.data.forEach(item => {
+                                    if (notifications.length === 0 && pendingCount > 0) {
+                                        list.innerHTML = `<li class="p-4 border-b border-[#edf4df] hover:bg-[#f7fced] cursor-pointer bg-[#f7fced]" onclick="window.location.href='/verifikasi-data-petani'"><p class="font-bold text-xs text-[#203c10]">Pekerjaan verifikasi menunggu</p><p class="text-[11px] text-slate-500 mt-1 leading-relaxed">Ada data petani yang perlu diverifikasi.</p></li>`;
+                                    } else {
+                                        list.innerHTML = notifications.length === 0
+                                            ? '<li class="p-5 text-center text-xs text-slate-400">Belum ada notifikasi</li>'
+                                            : '';
+                                    }
+
+                                    notifications.forEach(item => {
                                         const targetUrl = item.target_url || '/verifikasi-data-petani';
                                         const encodedTargetUrl = encodeURIComponent(targetUrl);
                                         const unreadClass = Number(item.is_read) === 0 ? 'bg-[#f7fced]' : 'bg-white';

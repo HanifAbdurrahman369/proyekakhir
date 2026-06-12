@@ -20,10 +20,13 @@ class NotifikasiController extends Controller
         $unreadCount = (clone $query)
             ->where('is_read', 0)
             ->count();
+        $pendingCounts = $this->pendingCounts();
 
         return response()->json([
             'success' => true,
             'unread_count' => $unreadCount,
+            'pending_count' => $pendingCounts['total_pending'],
+            'pending_counts' => $pendingCounts,
             'data' => $notifikasi,
         ], 200, [], JSON_INVALID_UTF8_SUBSTITUTE);
     }
@@ -41,10 +44,13 @@ class NotifikasiController extends Controller
         $unreadCount = (clone $query)
             ->where('is_read', 0)
             ->count();
+        $pendingCounts = $this->pendingCounts();
 
         return response()->json([
             'success' => true,
             'unread_count' => $unreadCount,
+            'pending_count' => $pendingCounts['total_pending'],
+            'pending_counts' => $pendingCounts,
             'data' => $notifikasi,
         ], 200, [], JSON_INVALID_UTF8_SUBSTITUTE);
     }
@@ -75,7 +81,7 @@ class NotifikasiController extends Controller
                 'pesan' => $notifikasi->pesan,
                 'ref_type' => $notifikasi->ref_type ?? null,
                 'ref_id' => $notifikasi->ref_id ?? null,
-                'target_url' => $notifikasi->target_url ?: '/verifikasi-data-petani',
+                'target_url' => ($notifikasi->target_url ?? null) ?: '/verifikasi-data-petani',
                 'is_read' => 1,
             ],
         ], 200, [], JSON_INVALID_UTF8_SUBSTITUTE);
@@ -94,5 +100,30 @@ class NotifikasiController extends Controller
             'success' => true,
             'message' => 'Notifikasi ditandai sudah dibaca.',
         ]);
+    }
+
+    private function pendingCounts(): array
+    {
+        try {
+            $pendingLahan = DB::table('lahan_sawah')
+                ->where('status_verifikasi', 'PENDING')
+                ->count();
+
+            $pendingPanen = DB::table('siklus_tanam')
+                ->where('status_verifikasi', 'PENDING')
+                ->count();
+
+            return [
+                'pending_lahan' => $pendingLahan,
+                'pending_panen' => $pendingPanen,
+                'total_pending' => $pendingLahan + $pendingPanen,
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'pending_lahan' => 0,
+                'pending_panen' => 0,
+                'total_pending' => 0,
+            ];
+        }
     }
 }
