@@ -132,9 +132,11 @@
                                         : '';
 
                                     json.data.forEach(item => {
+                                        const targetUrl = item.target_url || '/verifikasi-data-petani';
+                                        const encodedTargetUrl = encodeURIComponent(targetUrl);
                                         list.innerHTML += `
                                             <li class="p-4 border-b border-[#edf4df] hover:bg-[#f7fced] cursor-pointer"
-                                                onclick="bacaNotif(${item.id})">
+                                                onclick="bacaNotif(${item.id}, decodeURIComponent('${encodedTargetUrl}'))">
                                                 <p class="font-bold text-xs text-[#203c10]">${item.judul}</p>
                                                 <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">${item.pesan}</p>
                                             </li>
@@ -145,14 +147,14 @@
                             .catch(() => {});
                         }
 
-                        window.bacaNotif = function(id) {
+                        window.bacaNotif = function(id, targetUrl = '/verifikasi-data-petani') {
                             fetch(`${gateway}/notifikasi/${id}/read`, {
                                 method: 'PUT',
                                 headers: {
                                     'Authorization': `Bearer ${token}`
                                 }
                             }).then(() => {
-                                window.location.href = '/verifikasi-panen';
+                                window.location.href = targetUrl;
                             });
                         };
 

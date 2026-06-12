@@ -86,6 +86,11 @@ Route::middleware(['role:2'])->group(function () {
     Route::get('/input-parameter-lingkungan', [PetugasController::class, 'inputParameterLingkungan']);
     Route::get('/verifikasi-data-petani', [PetugasController::class, 'verifikasiDataPetani']);  
     Route::post('/petugas/spasial/simpan', [PetugasController::class, 'storeSpasial']);
+    Route::put('/petugas/spasial/{id}', [PetugasController::class, 'updateSpasial']);
+    Route::delete('/petugas/spasial/{id}', [PetugasController::class, 'destroySpasial']);
+    Route::post('/petugas/parameter-lingkungan/simpan', [PetugasController::class, 'storeParameterLingkungan']);
+    Route::post('/petugas/verifikasi-lahan/{id}/{aksi}', [PetugasController::class, 'aksiVerifikasiLahan']);
+    Route::post('/petugas/verifikasi-panen/{id}/{aksi}', [PetugasController::class, 'aksiVerifikasiPanen']);
     Route::post('/petugas/verifikasi/{id}/{aksi}', [PetugasController::class, 'aksiVerifikasi']);
 });
 

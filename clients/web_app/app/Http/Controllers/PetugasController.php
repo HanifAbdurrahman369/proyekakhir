@@ -53,6 +53,25 @@ class PetugasController extends Controller
         }
     }
 
+    private function getJson(string $endpoint, array $query = []): array
+    {
+        if (!$this->token()) {
+            return [];
+        }
+
+        try {
+            $response = $this->http()->get($this->api($endpoint), $query);
+
+            if (!$response->successful()) {
+                return [];
+            }
+
+            return $response->json() ?? [];
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
     private function postData(string $endpoint, array $payload = [])
     {
         return $this->http()->post($this->api($endpoint), $payload);
@@ -99,30 +118,100 @@ class PetugasController extends Controller
             'tipe_lahan' => [],
         ]);
 
-        $koleksiLahan = $this->getData('/spasial-lahan?kabupaten=batola&status=DITERIMA', [
+        $spasialResponse = $this->getJson('/spasial-lahan', [
+            'status' => 'ALL',
+            'kabupaten' => 'batola',
+        ]);
+        $batasWilayah = $this->getJson('/batas-wilayah');
+        $pendingLahan = $this->getData('/lahan/pending', []);
+
+        $spasialRows = $spasialResponse['data'] ?? [];
+        $koleksiLahan = [
             'type' => 'FeatureCollection',
             'features' => [],
-        ]);
+        ];
 
-        $lahanDiterima = $this->getData('/lahan/accepted', []);
-        $lahanBelumDipetakan = collect(is_array($lahanDiterima) ? $lahanDiterima : [])
-            ->filter(function ($lahan) {
-                $statusSpasial = data_get($lahan, 'status_spasial');
-                $lat = data_get($lahan, 'latitude');
-                $lng = data_get($lahan, 'longitude');
-                $polygon = data_get($lahan, 'polygon_geojson') ?? data_get($lahan, 'geojson') ?? data_get($lahan, 'polygon_area');
+        $punyaSpasialLengkap = function ($lahan) {
+            $lat = data_get($lahan, 'latitude');
+            $lng = data_get($lahan, 'longitude');
+            $polygon = data_get($lahan, 'polygon_geojson') ?? data_get($lahan, 'geojson') ?? data_get($lahan, 'polygon_area');
 
-                return $statusSpasial === 'BELUM_DIPETAKAN' || empty($lat) || empty($lng) || empty($polygon);
+            return !empty($lat) && !empty($lng) && !empty($polygon);
+        };
+
+        $lahanLamaSpasial = collect($spasialRows)
+            ->filter(function ($lahan) use ($punyaSpasialLengkap) {
+                $statusVerifikasi = strtoupper((string) data_get($lahan, 'status_verifikasi', ''));
+
+                return $statusVerifikasi !== 'DITOLAK' && $punyaSpasialLengkap($lahan);
             })
             ->values()
             ->all();
+
+        $spasialById = collect($spasialRows)->keyBy(fn ($item) => (string) data_get($item, 'id'));
+
+        $pendingUntukSpasial = collect(is_array($pendingLahan) ? $pendingLahan : [])
+            ->map(function ($lahan) use ($spasialById) {
+                $id = (string) data_get($lahan, 'id');
+                $spasial = (array) ($spasialById->get($id) ?? []);
+                $lahan = (array) $lahan;
+
+                $merged = array_merge($spasial, $lahan, [
+                    'status_verifikasi' => data_get($lahan, 'status_verifikasi', 'PENDING'),
+                    'polygon_geojson' => data_get($spasial, 'polygon_geojson') ?? data_get($spasial, 'geojson'),
+                    'geojson' => data_get($spasial, 'geojson') ?? data_get($spasial, 'polygon_geojson'),
+                ]);
+
+                unset($merged['polygon_area']);
+
+                return $merged;
+            });
+
+        $lahanSiapDipetakan = collect($spasialRows)
+            ->filter(function ($lahan) use ($punyaSpasialLengkap) {
+                $statusVerifikasi = strtoupper((string) data_get($lahan, 'status_verifikasi', ''));
+
+                return $statusVerifikasi === 'DITERIMA' && !$punyaSpasialLengkap($lahan);
+            })
+            ->reject(fn ($lahan) => $pendingUntukSpasial->contains(fn ($pending) => (string) data_get($pending, 'id') === (string) data_get($lahan, 'id')));
+
+        $lahanBelumDipetakan = $pendingUntukSpasial
+            ->concat($lahanSiapDipetakan)
+            ->values()
+            ->all();
+
+        $totalSpasialTerdata = collect($spasialRows)
+            ->pluck('id')
+            ->concat($pendingUntukSpasial->pluck('id'))
+            ->filter()
+            ->unique()
+            ->count();
+
+        $spasialSummary = $spasialResponse['summary'] ?? [
+            'total' => is_countable($spasialRows) ? count($spasialRows) : 0,
+            'sudah_dipetakan' => 0,
+            'belum_dipetakan' => 0,
+        ];
+        $spasialSummary['total'] = $totalSpasialTerdata;
+        $spasialSummary['sudah_dipetakan'] = count($lahanLamaSpasial);
+        $spasialSummary['belum_dipetakan'] = count($lahanBelumDipetakan);
+        $spasialSummary['persentase_lengkap'] = $spasialSummary['total'] > 0
+            ? round(($spasialSummary['sudah_dipetakan'] / $spasialSummary['total']) * 100, 2)
+            : 0;
+
+        $lahanDiterima = is_array($spasialRows) ? $spasialRows : [];
 
         return view('dashboard.petugas', [
             'page' => 'manajemen-data-spasial',
             'referensi' => $referensi,
             'koleksiLahan' => $koleksiLahan,
+            'batasWilayah' => $batasWilayah,
+            'spasialRows' => $spasialRows,
+            'spasialSummary' => $spasialSummary,
             'lahanDiterima' => $lahanDiterima,
             'lahanBelumDipetakan' => $lahanBelumDipetakan,
+            'lahanLamaSpasial' => $lahanLamaSpasial,
+            'pendingLahan' => $pendingLahan,
             'highlightLahanId' => $request->query('lahan_id'),
         ]);
     }
@@ -162,13 +251,16 @@ class PetugasController extends Controller
             'kecamatan_id' => 'required|integer',
             'kelurahan_id' => 'nullable|integer',
             'tipe_lahan_id' => 'nullable|integer',
+            'tipe_rawa' => 'nullable|string|max:100',
             'nama_lahan' => 'required|string|max:100',
             'pemilik_lahan' => 'nullable|string|max:100',
-            'luas_lahan_hektar' => 'required|numeric|min:0',
+            'tahun_lbs' => 'nullable|in:2017,2024',
+            'luas_lahan_hektar' => 'required|numeric|min:0.0001',
             'alamat_detail' => 'nullable|string',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
-            'polygon_geojson' => 'nullable|string',
+            'polygon_geojson' => 'required|string',
+            'catatan_spasial' => 'nullable|string|max:500',
         ]);
 
         $payload = $request->all();
@@ -188,6 +280,23 @@ class PetugasController extends Controller
 
     public function updateSpasial(Request $request, $id)
     {
+        $request->validate([
+            'user_id' => 'nullable|integer',
+            'kecamatan_id' => 'required|integer',
+            'kelurahan_id' => 'nullable|integer',
+            'tipe_lahan_id' => 'nullable|integer',
+            'tipe_rawa' => 'nullable|string|max:100',
+            'nama_lahan' => 'required|string|max:100',
+            'pemilik_lahan' => 'nullable|string|max:100',
+            'tahun_lbs' => 'nullable|in:2017,2024',
+            'luas_lahan_hektar' => 'required|numeric|min:0.0001',
+            'alamat_detail' => 'nullable|string',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+            'polygon_geojson' => 'required|string',
+            'catatan_spasial' => 'nullable|string|max:500',
+        ]);
+
         $payload = $request->all();
         $payload['status_spasial'] = 'SUDAH_DIPETAKAN';
 
@@ -205,10 +314,10 @@ class PetugasController extends Controller
         $response = $this->deleteData('/spasial-lahan/' . $id);
 
         if ($response->successful()) {
-            return redirect('/manajemen-data-spasial')->with('success', 'Data spasial lahan berhasil dihapus.');
+            return redirect('/manajemen-data-spasial')->with('success', 'Polygon lahan berhasil dikosongkan. Data pengajuan tetap tersimpan sebagai arsip.');
         }
 
-        return back()->with('error', 'Gagal menghapus data spasial lahan.');
+        return back()->with('error', $response->json('message') ?? 'Gagal menghapus data spasial lahan.');
     }
 
     public function storeParameterLingkungan(Request $request)
@@ -218,7 +327,7 @@ class PetugasController extends Controller
             'tanggal_cek' => 'required|date',
             'ph_air' => 'nullable|numeric',
             'tinggi_muka_air' => 'nullable|numeric',
-            'status_air' => 'nullable|string',
+            'status_air' => 'nullable|in:Surut,Pasang,Banjir,Normal',
             'kekeruhan_air' => 'nullable|string',
             'catatan_petugas' => 'nullable|string',
             'latitude' => 'nullable|numeric',

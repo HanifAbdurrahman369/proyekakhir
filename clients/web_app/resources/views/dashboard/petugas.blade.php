@@ -11,6 +11,9 @@
     $notifikasi = $notifikasi ?? [];
     $referensi = $referensi ?? [];
     $koleksiLahan = $koleksiLahan ?? ['type' => 'FeatureCollection', 'features' => []];
+    $batasWilayah = $batasWilayah ?? ['type' => 'FeatureCollection', 'features' => []];
+    $spasialRows = $spasialRows ?? [];
+    $spasialSummary = $spasialSummary ?? [];
     $lahanDiterima = $lahanDiterima ?? $lahan ?? [];
     $lahanBelumDipetakan = $lahanBelumDipetakan ?? [];
     $monitoring = $monitoring ?? [];
@@ -30,37 +33,66 @@
     $pendingLahanCount = data_get($stats, 'pending_lahan', is_countable($pendingLahan) ? count($pendingLahan) : 0);
     $pendingPanenCount = data_get($stats, 'pending_panen', is_countable($pendingPanen) ? count($pendingPanen) : 0);
     $totalPending = data_get($stats, 'total_pending', (int)$pendingLahanCount + (int)$pendingPanenCount);
+
+    $spasialRows = is_array($spasialRows) && count($spasialRows) ? $spasialRows : $lahanDiterima;
+    $punyaSpasialLengkap = fn($item) => !empty(data_get($item, 'latitude')) && !empty(data_get($item, 'longitude')) && !empty(data_get($item, 'polygon_geojson') ?? data_get($item, 'geojson') ?? data_get($item, 'polygon_area'));
+    $lahanBaruSpasial = collect($lahanBelumDipetakan)->values();
+    $lahanLamaSpasial = isset($lahanLamaSpasial)
+        ? collect($lahanLamaSpasial)->values()
+        : collect($spasialRows)
+            ->filter(fn($item) => strtoupper((string) data_get($item, 'status_verifikasi', '')) !== 'DITOLAK' && $punyaSpasialLengkap($item))
+            ->values();
+    $totalSpasial = data_get($spasialSummary, 'total', is_countable($spasialRows) ? count($spasialRows) : 0);
+    $sudahDipetakan = data_get($spasialSummary, 'sudah_dipetakan', $lahanLamaSpasial->count());
+    $belumDipetakan = data_get($spasialSummary, 'belum_dipetakan', $lahanBaruSpasial->count());
+    $persentaseLengkap = data_get($spasialSummary, 'persentase_lengkap', $totalSpasial > 0 ? round(($sudahDipetakan / $totalSpasial) * 100, 2) : 0);
 @endphp
 
 @if($page === 'manajemen-data-spasial')
     @push('styles')
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
         <style>
-            #petugasSpasialMap { height: 520px; min-height: 520px; border-radius: 24px; overflow: hidden; z-index: 1; }
+            #petugasSpasialMap { height: 560px; min-height: 560px; border-radius: 20px; overflow: hidden; z-index: 1; }
             .leaflet-container { font-family: 'Poppins', sans-serif; }
+            .spatial-panel { background: rgba(255,255,255,.94); border: 1px solid rgba(231,239,216,.95); box-shadow: 0 16px 42px rgba(32,60,16,.065); }
+            .spatial-choice { border: 1px solid #e7efd8; background: #fff; color: #475569; }
+            .spatial-choice.is-active { border-color: #65bd00; background: #edf8dc; color: #203c10; box-shadow: inset 0 0 0 1px rgba(101,189,0,.18); }
+            .spatial-row { border: 1px solid #edf4df; background: #fff; }
+            .spatial-row.is-active { border-color: #65bd00; background: #f7fced; }
+            .spatial-workspace.is-locked .spatial-form-body { display: none; }
+            .spatial-workspace.is-locked .approval-state { display: none; }
+            .spatial-workspace.is-awaiting-verification .spatial-form-body { display: none; }
+            .spatial-workspace:not(.is-awaiting-verification) .approval-state { display: none; }
+            .spatial-workspace:not(.is-locked) .spatial-empty-state { display: none; }
+            .spatial-list { max-height: 360px; overflow-y: auto; }
+            .map-tool.is-active { background: #203c10; color: #fff; border-color: #203c10; }
+            .map-tool:disabled { opacity: .45; cursor: not-allowed; }
+            .spatial-section-title { letter-spacing: .18em; }
         </style>
     @endpush
 @endif
 
 @section('content')
     <div class="space-y-6">
-        <div class="glass-card rounded-2xl p-5 md:p-6">
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-                <div>
-                    <p class="text-primary-700 text-xs font-bold uppercase tracking-[0.22em] mb-2">SIG-PALA BATOLA</p>
-                    <h1 class="text-2xl md:text-3xl font-extrabold text-primary-900">Dashboard Petugas</h1>
-                    <p class="text-sm text-slate-500 mt-2 max-w-3xl">
-                        Verifikasi pengajuan petani, kelola data spasial lahan, dan input parameter lingkungan lapangan.
-                    </p>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                    <a href="{{ url('/dashboard-petugas') }}" class="px-4 py-2 rounded-xl text-sm font-bold transition {{ $isActive('dashboard') }}">Dashboard</a>
-                    <a href="{{ url('/verifikasi-data-petani') }}" class="px-4 py-2 rounded-xl text-sm font-bold transition {{ $isActive('verifikasi-data-petani') }}">Verifikasi</a>
-                    <a href="{{ url('/manajemen-data-spasial') }}" class="px-4 py-2 rounded-xl text-sm font-bold transition {{ $isActive('manajemen-data-spasial') }}">Data Spasial</a>
-                    <a href="{{ url('/input-parameter-lingkungan') }}" class="px-4 py-2 rounded-xl text-sm font-bold transition {{ $isActive('input-parameter-lingkungan') }}">Parameter</a>
+        @unless(in_array($page, ['manajemen-data-spasial', 'verifikasi-data-petani'], true))
+            <div class="glass-card rounded-2xl p-5 md:p-6">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+                    <div>
+                        <p class="text-primary-700 text-xs font-bold uppercase tracking-[0.22em] mb-2">SIG-PALA BATOLA</p>
+                        <h1 class="text-2xl md:text-3xl font-extrabold text-primary-900">Dashboard Petugas</h1>
+                        <p class="text-sm text-slate-500 mt-2 max-w-3xl">
+                            Verifikasi pengajuan petani, kelola data spasial lahan, dan input parameter lingkungan lapangan.
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="{{ url('/dashboard-petugas') }}" class="px-4 py-2 rounded-xl text-sm font-bold transition {{ $isActive('dashboard') }}">Dashboard</a>
+                        <a href="{{ url('/verifikasi-data-petani') }}" class="px-4 py-2 rounded-xl text-sm font-bold transition {{ $isActive('verifikasi-data-petani') }}">Verifikasi</a>
+                        <a href="{{ url('/manajemen-data-spasial') }}" class="px-4 py-2 rounded-xl text-sm font-bold transition {{ $isActive('manajemen-data-spasial') }}">Data Spasial</a>
+                        <a href="{{ url('/input-parameter-lingkungan') }}" class="px-4 py-2 rounded-xl text-sm font-bold transition {{ $isActive('input-parameter-lingkungan') }}">Parameter</a>
+                    </div>
                 </div>
             </div>
-        </div>
+        @endunless
 
         @if(session('success'))
             <div class="rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-green-800 text-sm font-semibold">{{ session('success') }}</div>
@@ -219,56 +251,218 @@
         @endif
 
         @if($page === 'manajemen-data-spasial')
-            <div class="grid xl:grid-cols-5 gap-6">
-                <div class="xl:col-span-3 soft-card bg-white rounded-2xl border border-primary-100 p-5">
-                    <div class="flex items-center justify-between gap-4 mb-4">
-                        <div>
-                            <h2 class="text-xl font-extrabold text-primary-900">Peta Manajemen Data Spasial</h2>
-                            <p class="text-sm text-slate-500 mt-1">Peta difokuskan ke Kabupaten Batola. Klik peta untuk mengambil titik, dan aktifkan mode polygon untuk menggambar batas lahan.</p>
-                        </div>
-                        <button type="button" id="btnPolygonMode" class="px-4 py-2 rounded-xl bg-primary-600 text-white font-bold text-sm">Mode Polygon</button>
+            <div class="space-y-5">
+                <div class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-5">
+                    <div>
+                        <p class="text-primary-700 text-xs font-bold uppercase tracking-[0.22em] mb-2">Manajemen Data Spasial</p>
+                        <h1 class="text-2xl md:text-3xl font-extrabold text-primary-900">Pemetaan Lahan Sawah</h1>
+                        <p class="text-sm text-slate-500 mt-2 max-w-3xl">Pilih lahan terlebih dahulu, lalu tentukan titik tengah, gambar batas area, dan lengkapi informasi lahan.</p>
                     </div>
-                    <div id="petugasSpasialMap" class="border border-primary-100"></div>
-                    <div class="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
-                        <span class="px-3 py-1 rounded-full bg-primary-50 border border-primary-100">Klik peta: isi latitude/longitude</span>
-                        <span class="px-3 py-1 rounded-full bg-primary-50 border border-primary-100">Mode polygon: klik minimal 3 titik</span>
-                        <button type="button" id="btnClearPolygon" class="px-3 py-1 rounded-full bg-red-50 text-red-600 border border-red-100 font-bold">Reset Polygon</button>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 min-w-0">
+                        <div class="rounded-2xl border border-primary-100 bg-white/80 px-4 py-3">
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">Total</p>
+                            <p class="text-lg font-extrabold text-primary-900">{{ $totalSpasial }}</p>
+                        </div>
+                        <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                            <p class="text-[10px] text-amber-600 font-bold uppercase">Baru</p>
+                            <p class="text-lg font-extrabold text-amber-700">{{ $belumDipetakan }}</p>
+                        </div>
+                        <div class="rounded-2xl border border-primary-100 bg-white/80 px-4 py-3">
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">Dipetakan</p>
+                            <p class="text-lg font-extrabold text-primary-700">{{ $sudahDipetakan }}</p>
+                        </div>
+                        <div class="rounded-2xl border border-primary-100 bg-white/80 px-4 py-3">
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">Lengkap</p>
+                            <p class="text-lg font-extrabold text-primary-900">{{ $angka($persentaseLengkap, 0) }}%</p>
+                        </div>
                     </div>
                 </div>
 
-                <div class="xl:col-span-2 soft-card bg-white rounded-2xl border border-primary-100 p-5">
-                    <h2 class="text-xl font-extrabold text-primary-900 mb-4">Form Data Spasial Lahan</h2>
-                    <form method="POST" action="{{ url('/petugas/spasial/simpan') }}" class="space-y-4">
-                        @csrf
+                <div class="space-y-5">
+                    <section class="spatial-panel rounded-2xl overflow-hidden">
+                        <div class="px-5 py-4 border-b border-primary-100 bg-[#f7fced]">
+                            <p class="spatial-section-title text-xs text-primary-700 font-bold uppercase">Pilih Lahan</p>
+                            <h2 class="text-lg font-extrabold text-primary-900 mt-1">Sumber Data Pemetaan</h2>
+                        </div>
+                        <div class="p-4 space-y-4">
+                            <div class="grid md:grid-cols-2 gap-3">
+                                <button type="button" class="spatial-choice sourceToggle is-active rounded-2xl px-4 py-3 text-left transition" data-source="baru">
+                                    <span class="block text-sm font-extrabold">Lahan Baru</span>
+                                    <span class="block text-xs mt-1">{{ $lahanBaruSpasial->count() }} antrean/siap dipetakan</span>
+                                </button>
+                                <button type="button" class="spatial-choice sourceToggle rounded-2xl px-4 py-3 text-left transition" data-source="lama">
+                                    <span class="block text-sm font-extrabold">Lahan Lama</span>
+                                    <span class="block text-xs mt-1">{{ $lahanLamaSpasial->count() }} data aktif</span>
+                                </button>
+                            </div>
+
+                            <div>
+                                <div id="sourceListBaru" class="spatial-list space-y-2">
+                                    @forelse($lahanBaruSpasial as $item)
+                                        @php
+                                            $statusVerifikasiBaru = strtoupper((string) $ambil($item, ['status_verifikasi'], 'PENDING'));
+                                            $labelVerifikasiBaru = $statusVerifikasiBaru === 'DITERIMA' ? 'LEGAL' : 'PENDING';
+                                        @endphp
+                                        <button type="button" class="spatial-row btnPilihLahan w-full rounded-2xl p-4 text-left transition hover:bg-primary-50" data-source="baru" data-lahan-id="{{ $ambil($item, ['id']) }}">
+                                            <span class="flex items-start justify-between gap-3">
+                                                <span>
+                                                    <span class="block font-extrabold text-primary-900">{{ $ambil($item, ['nama_lahan']) }}</span>
+                                                    <span class="block text-xs text-slate-500 mt-1">{{ $ambil($item, ['nama_kecamatan']) }} / {{ $ambil($item, ['nama_kelurahan']) }}</span>
+                                                </span>
+                                                <span class="px-2 py-1 rounded-full {{ $statusVerifikasiBaru === 'DITERIMA' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200' }} border text-[10px] font-bold">{{ $labelVerifikasiBaru }}</span>
+                                            </span>
+                                            <span class="block text-xs text-slate-500 mt-3">{{ $ambil($item, ['alamat_detail'], '') }}</span>
+                                        </button>
+                                    @empty
+                                        <div class="rounded-2xl border border-primary-100 bg-white px-4 py-8 text-center text-sm text-slate-500">Tidak ada lahan baru yang menunggu pemetaan.</div>
+                                    @endforelse
+                                </div>
+
+                                <div id="sourceListLama" class="spatial-list space-y-2 hidden">
+                                    @forelse($lahanLamaSpasial as $item)
+                                        @php
+                                            $statusSpasial = $ambil($item, ['status_spasial'], 'BELUM_DIPETAKAN');
+                                            $statusVerifikasiLama = strtoupper((string) $ambil($item, ['status_verifikasi'], '-'));
+                                        @endphp
+                                        <button type="button" class="spatial-row btnPilihLahan w-full rounded-2xl p-4 text-left transition hover:bg-primary-50" data-source="lama" data-lahan-id="{{ $ambil($item, ['id']) }}">
+                                            <span class="flex items-start justify-between gap-3">
+                                                <span>
+                                                    <span class="block font-extrabold text-primary-900">{{ $ambil($item, ['nama_lahan']) }}</span>
+                                                    <span class="block text-xs text-slate-500 mt-1">{{ $ambil($item, ['nama_kecamatan']) }} / {{ $ambil($item, ['nama_kelurahan']) }}</span>
+                                                </span>
+                                                <span class="px-2 py-1 rounded-full {{ $statusSpasial === 'SUDAH_DIPETAKAN' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200' }} border text-[10px] font-bold">{{ $statusSpasial === 'SUDAH_DIPETAKAN' ? 'AKTIF' : 'BELUM' }}</span>
+                                            </span>
+                                            <span class="block text-xs text-slate-500 mt-3">{{ $angka($ambil($item, ['luas_lahan_hektar'], 0)) }} Ha - {{ $ambil($item, ['pemilik_lahan','nama_petani']) }} - {{ $statusVerifikasiLama }}</span>
+                                        </button>
+                                    @empty
+                                        <div class="rounded-2xl border border-primary-100 bg-white px-4 py-8 text-center text-sm text-slate-500">Belum ada lahan lama yang bisa dikelola.</div>
+                                    @endforelse
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="spatial-panel rounded-2xl p-4">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                            <div>
+                                <h2 class="text-lg font-extrabold text-primary-900">Peta Kerja Petugas</h2>
+                                <p id="selectedMapLabel" class="text-sm text-slate-500 mt-1">Batas Kabupaten Barito Kuala ditampilkan sebagai garis wilayah. Pilih lahan untuk mulai mengatur titik dan batas area.</p>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <button type="button" id="btnSetPointMode" class="map-tool px-4 py-2 rounded-xl bg-primary-50 text-primary-700 border border-primary-100 font-bold text-sm">Titik Tengah</button>
+                                <button type="button" id="btnPolygonMode" class="map-tool px-4 py-2 rounded-xl bg-primary-600 text-white border border-primary-600 font-bold text-sm">Gambar Batas</button>
+                                <button type="button" id="btnFinishPolygon" class="map-tool px-4 py-2 rounded-xl bg-white text-primary-700 border border-primary-100 font-bold text-sm">Selesai</button>
+                                <button type="button" id="btnUndoPolygonPoint" class="map-tool px-4 py-2 rounded-xl bg-white text-slate-600 border border-slate-200 font-bold text-sm">Urungkan Titik</button>
+                                <button type="button" id="btnClearPolygon" class="map-tool px-4 py-2 rounded-xl bg-red-50 text-red-600 border border-red-100 font-bold text-sm">Kosongkan Batas</button>
+                            </div>
+                        </div>
+                        <div id="polygonProgress" class="mb-3 rounded-2xl border border-primary-100 bg-primary-50 px-4 py-3 text-sm text-primary-900">
+                            Pilih lahan, lalu gunakan tombol peta untuk mengatur titik tengah dan batas area.
+                        </div>
+                        <div id="petugasSpasialMap" class="border border-primary-100"></div>
+                    </section>
+                </div>
+
+                <div id="spatialWorkspace" class="spatial-workspace is-locked spatial-panel rounded-2xl p-5">
+                    <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 border-b border-primary-100 pb-4">
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 mb-2">Lahan Diterima / Belum Dipetakan</label>
-                            <select name="lahan_id" id="lahan_id" class="w-full">
-                                <option value="">Tambah data spasial baru</option>
-                                @foreach($lahanBelumDipetakan as $lahanItem)
-                                    <option value="{{ $ambil($lahanItem, ['id']) }}" data-lahan='@json($lahanItem)'>{{ $ambil($lahanItem, ['nama_lahan']) }} - {{ $ambil($lahanItem, ['pemilik_lahan']) }}</option>
-                                @endforeach
-                            </select>
+                            <p id="selectedSourceLabel" class="text-xs text-primary-700 font-bold uppercase tracking-[0.18em]">Belum memilih lahan</p>
+                            <h2 id="selectedLahanTitle" class="text-xl font-extrabold text-primary-900 mt-1">Informasi Titik dan Batas Area</h2>
+                            <p id="selectedLahanMeta" class="text-sm text-slate-500 mt-1">Pilih lahan baru atau lahan lama dari panel kiri untuk membuka formulir pemetaan.</p>
                         </div>
-                        <div class="grid md:grid-cols-2 gap-4">
-                            <div><label class="block text-xs font-bold text-slate-500 mb-2">Nama Lahan</label><input name="nama_lahan" id="nama_lahan" class="w-full" required></div>
-                            <div><label class="block text-xs font-bold text-slate-500 mb-2">Pemilik Lahan</label><input name="pemilik_lahan" id="pemilik_lahan" class="w-full"></div>
+                        <span id="formModeBadge" class="w-fit px-3 py-1 rounded-full bg-slate-50 text-slate-500 text-xs font-bold border border-slate-200">Terkunci</span>
+                    </div>
+
+                    <div class="spatial-empty-state py-12 text-center">
+                        <p class="text-primary-900 font-extrabold">Pilih salah satu lahan untuk mulai bekerja.</p>
+                        <p class="text-sm text-slate-500 mt-2">Form dibuat bertahap agar petugas dapat memeriksa sumber lahan, lokasi peta, lalu menyimpan perubahan dengan lebih rapi.</p>
+                    </div>
+
+                    <div class="approval-state pt-5">
+                        <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+                            <p class="text-sm font-extrabold text-amber-800">Lahan ini masih menunggu verifikasi.</p>
+                            <p id="approvalStateText" class="text-sm text-amber-700 mt-2">Setujui lahan terlebih dahulu di alur verifikasi sebelum petugas membuat titik tengah dan batas area.</p>
+                            <div class="mt-4 flex flex-col sm:flex-row gap-3">
+                                <form method="POST" action="#" id="approveSelectedForm">@csrf<button class="w-full sm:w-auto px-5 py-3 rounded-2xl bg-green-600 text-white font-extrabold hover:bg-green-700 transition">Setujui dan Lanjutkan Pemetaan</button></form>
+                                <form method="POST" action="#" id="rejectSelectedForm" onsubmit="return confirm('Tolak pengajuan lahan ini?');">@csrf<button class="w-full sm:w-auto px-5 py-3 rounded-2xl bg-white text-red-600 border border-red-200 font-bold hover:bg-red-600 hover:text-white transition">Tolak Pengajuan</button></form>
+                            </div>
                         </div>
-                        <div class="grid md:grid-cols-2 gap-4">
-                            <div><label class="block text-xs font-bold text-slate-500 mb-2">Kecamatan ID</label><input name="kecamatan_id" id="kecamatan_id" type="number" class="w-full" required></div>
-                            <div><label class="block text-xs font-bold text-slate-500 mb-2">Kelurahan ID</label><input name="kelurahan_id" id="kelurahan_id" type="number" class="w-full"></div>
-                        </div>
-                        <div class="grid md:grid-cols-2 gap-4">
-                            <div><label class="block text-xs font-bold text-slate-500 mb-2">Tipe Lahan ID</label><input name="tipe_lahan_id" id="tipe_lahan_id" type="number" class="w-full"></div>
-                            <div><label class="block text-xs font-bold text-slate-500 mb-2">Luas Lahan (Ha)</label><input name="luas_lahan_hektar" id="luas_lahan_hektar" type="number" step="0.01" class="w-full" required></div>
-                        </div>
-                        <div><label class="block text-xs font-bold text-slate-500 mb-2">Alamat Detail</label><textarea name="alamat_detail" id="alamat_detail" rows="2" class="w-full"></textarea></div>
-                        <div class="grid md:grid-cols-2 gap-4">
-                            <div><label class="block text-xs font-bold text-slate-500 mb-2">Latitude</label><input name="latitude" id="latitude" type="number" step="any" class="w-full" required></div>
-                            <div><label class="block text-xs font-bold text-slate-500 mb-2">Longitude</label><input name="longitude" id="longitude" type="number" step="any" class="w-full" required></div>
-                        </div>
-                        <div><label class="block text-xs font-bold text-slate-500 mb-2">Polygon GeoJSON</label><textarea name="polygon_geojson" id="polygon_geojson" rows="4" class="w-full" placeholder="Polygon akan terisi otomatis dari peta"></textarea></div>
-                        <button class="btn-green w-full rounded-2xl py-3 font-extrabold transition">Simpan Data Spasial</button>
-                    </form>
+                    </div>
+
+                    <div class="spatial-form-body pt-5">
+                        <form method="POST" action="{{ url('/petugas/spasial/simpan') }}" id="spasialForm" class="space-y-5">
+                            @csrf
+                            <input type="hidden" name="_method" id="form_method" value="">
+                            <input type="hidden" name="lahan_id" id="lahan_id">
+                            <input type="hidden" name="user_id" id="user_id">
+
+                            <div class="grid lg:grid-cols-2 gap-4">
+                                <div><label class="block text-xs font-bold text-slate-500 mb-2">Nama Lahan</label><input name="nama_lahan" id="nama_lahan" class="w-full" required></div>
+                                <div><label class="block text-xs font-bold text-slate-500 mb-2">Pemilik Lahan</label><input name="pemilik_lahan" id="pemilik_lahan" class="w-full"></div>
+                            </div>
+                            <div class="grid lg:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 mb-2">Kecamatan</label>
+                                    <select name="kecamatan_id" id="kecamatan_id" class="w-full" required>
+                                        <option value="">Pilih kecamatan</option>
+                                        @foreach(data_get($referensi, 'kecamatan', []) as $item)
+                                            <option value="{{ $ambil($item, ['id']) }}">{{ $ambil($item, ['nama_kecamatan','nama']) }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 mb-2">Kelurahan</label>
+                                    <select name="kelurahan_id" id="kelurahan_id" class="w-full">
+                                        <option value="">Pilih kelurahan</option>
+                                        @foreach(data_get($referensi, 'kelurahan', []) as $item)
+                                            <option value="{{ $ambil($item, ['id']) }}" data-kecamatan="{{ $ambil($item, ['kecamatan_id'], '') }}">{{ $ambil($item, ['nama_kelurahan','nama']) }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="grid lg:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 mb-2">Tipe Lahan</label>
+                                    <select name="tipe_lahan_id" id="tipe_lahan_id" class="w-full">
+                                        <option value="">Pilih tipe lahan</option>
+                                        @foreach(data_get($referensi, 'tipe_lahan', []) as $item)
+                                            <option value="{{ $ambil($item, ['id']) }}">{{ $ambil($item, ['nama_tipe','nama']) }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div><label class="block text-xs font-bold text-slate-500 mb-2">Tipe Rawa</label><input name="tipe_rawa" id="tipe_rawa" class="w-full" placeholder="Contoh: Tipe B"></div>
+                                <div><label class="block text-xs font-bold text-slate-500 mb-2">Tahun Basis</label><select name="tahun_lbs" id="tahun_lbs" class="w-full"><option value="2024">2024</option><option value="2017">2017</option></select></div>
+                            </div>
+                            <div class="grid lg:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-500 mb-2">Luas Lahan (Ha)</label>
+                                    <input name="luas_lahan_hektar" id="luas_lahan_hektar" type="number" step="0.01" class="w-full" required>
+                                    <div class="mt-2 flex items-center justify-between gap-2">
+                                        <p id="areaEstimateText" class="text-xs text-slate-500">Luas dari peta belum tersedia.</p>
+                                        <button type="button" id="btnUseMapArea" class="hidden shrink-0 px-3 py-1 rounded-lg bg-primary-50 text-primary-700 border border-primary-100 text-xs font-bold">Gunakan</button>
+                                    </div>
+                                </div>
+                                <div><label class="block text-xs font-bold text-slate-500 mb-2">Latitude</label><input name="latitude" id="latitude" type="number" step="any" class="w-full" required></div>
+                                <div><label class="block text-xs font-bold text-slate-500 mb-2">Longitude</label><input name="longitude" id="longitude" type="number" step="any" class="w-full" required></div>
+                            </div>
+                            <div><label class="block text-xs font-bold text-slate-500 mb-2">Alamat Detail</label><textarea name="alamat_detail" id="alamat_detail" rows="2" class="w-full"></textarea></div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-2">Data Batas Area Otomatis</label>
+                                <textarea name="polygon_geojson" id="polygon_geojson" rows="3" class="w-full font-mono text-xs bg-slate-50" required readonly placeholder="Klik tombol Gambar Batas, lalu klik minimal 3 titik di peta."></textarea>
+                                <p id="polygonStatusText" class="text-xs text-slate-500 mt-2">Belum ada batas area yang siap disimpan.</p>
+                            </div>
+                            <div><label class="block text-xs font-bold text-slate-500 mb-2">Catatan Spasial</label><textarea name="catatan_spasial" id="catatan_spasial" rows="2" class="w-full"></textarea></div>
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <button class="btn-green flex-1 rounded-2xl py-3 font-extrabold transition">Simpan Data Spasial</button>
+                                <button type="button" id="btnResetForm" class="px-5 py-3 rounded-2xl border border-primary-100 text-primary-700 font-bold hover:bg-primary-50 transition">Reset</button>
+                            </div>
+                        </form>
+                        <form method="POST" action="#" id="deleteSpasialForm" class="mt-3 hidden" onsubmit="return confirm('Kosongkan batas area lahan ini? Data lahan tetap tersimpan.');">
+                            @csrf
+                            @method('DELETE')
+                            <button class="w-full px-5 py-3 rounded-2xl bg-red-50 text-red-600 border border-red-200 font-bold hover:bg-red-600 hover:text-white transition">Kosongkan Batas Area Lahan Terpilih</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         @endif
@@ -290,7 +484,15 @@
                         </div>
                         <div class="grid md:grid-cols-2 gap-4">
                             <div><label class="block text-xs font-bold text-slate-500 mb-2">Tanggal Cek</label><input type="date" name="tanggal_cek" class="w-full" value="{{ date('Y-m-d') }}" required></div>
-                            <div><label class="block text-xs font-bold text-slate-500 mb-2">Status Air</label><input name="status_air" class="w-full" placeholder="Normal / Tinggi / Rendah"></div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-2">Status Air</label>
+                                <select name="status_air" class="w-full">
+                                    <option value="Normal">Normal</option>
+                                    <option value="Surut">Surut</option>
+                                    <option value="Pasang">Pasang</option>
+                                    <option value="Banjir">Banjir</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="grid md:grid-cols-2 gap-4">
                             <div><label class="block text-xs font-bold text-slate-500 mb-2">pH Air</label><input type="number" step="0.01" name="ph_air" class="w-full"></div>
@@ -329,9 +531,16 @@
                 const mapEl = document.getElementById('petugasSpasialMap');
                 if (!mapEl || typeof L === 'undefined') return;
 
+                const batasWilayah = @json($batasWilayah);
+                const semuaLahanRaw = @json($spasialRows);
+                const antreanLahanRaw = @json($lahanBaruSpasial);
+                const highlightLahanId = @json((string)($highlightLahanId ?? ''));
+                const updateBaseUrl = @json(url('/petugas/spasial'));
+                const storeUrl = @json(url('/petugas/spasial/simpan'));
+
                 const batolaCenter = [-3.05, 114.62];
                 const batolaBounds = L.latLngBounds([[-3.55, 114.20], [-2.45, 115.05]]);
-                const map = L.map('petugasSpasialMap', { maxBounds: batolaBounds, maxBoundsViscosity: 0.75 }).setView(batolaCenter, 10);
+                const map = L.map('petugasSpasialMap', { maxBounds: batolaBounds, maxBoundsViscosity: 0.75, doubleClickZoom: false }).setView(batolaCenter, 10);
 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 19,
@@ -344,75 +553,590 @@
                 let polygonMode = false;
                 let polygonPoints = [];
                 let polygonLayer = null;
+                let batasLayer = null;
+                let selectedCanEdit = false;
 
+                const form = document.getElementById('spasialForm');
+                const methodInput = document.getElementById('form_method');
+                const modeBadge = document.getElementById('formModeBadge');
+                const lahanIdInput = document.getElementById('lahan_id');
+                const userInput = document.getElementById('user_id');
                 const latInput = document.getElementById('latitude');
                 const lngInput = document.getElementById('longitude');
                 const polygonInput = document.getElementById('polygon_geojson');
+                const luasInput = document.getElementById('luas_lahan_hektar');
+                const kecamatanSelect = document.getElementById('kecamatan_id');
+                const kelurahanSelect = document.getElementById('kelurahan_id');
+                const workspace = document.getElementById('spatialWorkspace');
+                const selectedSourceLabel = document.getElementById('selectedSourceLabel');
+                const selectedLahanTitle = document.getElementById('selectedLahanTitle');
+                const selectedLahanMeta = document.getElementById('selectedLahanMeta');
+                const selectedMapLabel = document.getElementById('selectedMapLabel');
+                const deleteForm = document.getElementById('deleteSpasialForm');
+                const approvalStateText = document.getElementById('approvalStateText');
+                const approveSelectedForm = document.getElementById('approveSelectedForm');
+                const rejectSelectedForm = document.getElementById('rejectSelectedForm');
+                const polygonProgress = document.getElementById('polygonProgress');
+                const polygonStatusText = document.getElementById('polygonStatusText');
+                const btnSetPointMode = document.getElementById('btnSetPointMode');
+                const btnPolygonMode = document.getElementById('btnPolygonMode');
+                const btnFinishPolygon = document.getElementById('btnFinishPolygon');
+                const btnUndoPolygonPoint = document.getElementById('btnUndoPolygonPoint');
+                const btnClearPolygon = document.getElementById('btnClearPolygon');
+                const areaEstimateText = document.getElementById('areaEstimateText');
+                const btnUseMapArea = document.getElementById('btnUseMapArea');
+
+                function normalizeList(value) {
+                    if (Array.isArray(value)) return value;
+                    if (value && typeof value === 'object') return Object.values(value);
+                    return [];
+                }
+
+                const semuaLahan = normalizeList(semuaLahanRaw);
+                const antreanLahan = normalizeList(antreanLahanRaw);
+                const dataById = new Map([...semuaLahan, ...antreanLahan].map(item => [String(item.id), item]));
+                let selectedLahanId = null;
+                let manualLuasEdited = false;
+                let lastMapAreaHa = 0;
+
+                function setValue(id, value) {
+                    const el = document.getElementById(id);
+                    if (el) el.value = value ?? '';
+                }
+
+                function setFormMode(id, source) {
+                    if (!form || !methodInput) return;
+
+                    if (id) {
+                        form.action = `${updateBaseUrl}/${id}`;
+                        methodInput.value = 'PUT';
+                        if (modeBadge) {
+                            modeBadge.textContent = source === 'baru' ? 'Wajib Dipetakan' : 'Edit Data';
+                            modeBadge.className = source === 'baru'
+                                ? 'px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200'
+                                : 'px-3 py-1 rounded-full bg-primary-50 text-primary-700 text-xs font-bold border border-primary-100';
+                        }
+                    } else {
+                        form.action = storeUrl;
+                        methodInput.value = '';
+                        if (modeBadge) {
+                            modeBadge.textContent = 'Data Baru';
+                            modeBadge.className = 'px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200';
+                        }
+                    }
+                }
+
+                function setSource(source) {
+                    document.querySelectorAll('.sourceToggle').forEach(button => {
+                        button.classList.toggle('is-active', button.dataset.source === source);
+                    });
+
+                    document.getElementById('sourceListBaru')?.classList.toggle('hidden', source !== 'baru');
+                    document.getElementById('sourceListLama')?.classList.toggle('hidden', source !== 'lama');
+                }
+
+                function setSelectedRow(id) {
+                    document.querySelectorAll('.btnPilihLahan').forEach(button => {
+                        button.classList.toggle('is-active', String(button.dataset.lahanId || '') === String(id || ''));
+                    });
+                }
+
+                function isPendingVerification(data) {
+                    return String((data && data.status_verifikasi) || '').toUpperCase() === 'PENDING';
+                }
+
+                function hitungLuasHektar(points) {
+                    if (!Array.isArray(points) || points.length < 3) return 0;
+
+                    const latRata = points.reduce((sum, point) => sum + point.lat, 0) / points.length;
+                    const meterPerDerajatLat = 111320;
+                    const meterPerDerajatLng = 111320 * Math.cos(latRata * Math.PI / 180);
+                    const projected = points.map(point => ({
+                        x: point.lng * meterPerDerajatLng,
+                        y: point.lat * meterPerDerajatLat
+                    }));
+
+                    let luasMeter = 0;
+                    for (let i = 0; i < projected.length; i += 1) {
+                        const next = projected[(i + 1) % projected.length];
+                        luasMeter += projected[i].x * next.y - next.x * projected[i].y;
+                    }
+
+                    return Math.abs(luasMeter) / 2 / 10000;
+                }
+
+                function updateLuasDariPeta(fillInput = false) {
+                    lastMapAreaHa = hitungLuasHektar(polygonPoints);
+
+                    if (lastMapAreaHa > 0) {
+                        const formatted = lastMapAreaHa.toFixed(2);
+                        if (areaEstimateText) areaEstimateText.textContent = `Estimasi peta: ${formatted} Ha`;
+                        btnUseMapArea?.classList.remove('hidden');
+
+                        if (fillInput && !manualLuasEdited && luasInput) {
+                            luasInput.value = formatted;
+                        }
+                    } else {
+                        if (areaEstimateText) areaEstimateText.textContent = 'Luas dari peta belum tersedia.';
+                        btnUseMapArea?.classList.add('hidden');
+                    }
+                }
+
+                function polygonMessage() {
+                    if (!selectedLahanId) {
+                        return 'Pilih lahan, lalu gunakan tombol peta untuk mengatur titik tengah dan batas area.';
+                    }
+
+                    if (!selectedCanEdit) {
+                        return 'Lahan masih menunggu verifikasi. Setujui terlebih dahulu sebelum membuat titik dan batas area.';
+                    }
+
+                    if (polygonMode) {
+                        return `Mode gambar aktif. Klik peta untuk menambah titik batas area. Titik saat ini: ${polygonPoints.length}.`;
+                    }
+
+                    if (polygonPoints.length >= 3) {
+                        return `Batas area siap disimpan dengan ${polygonPoints.length} titik.`;
+                    }
+
+                    return `Klik Titik Tengah untuk mengatur lokasi tengah, atau Gambar Batas untuk membuat area. Titik batas: ${polygonPoints.length}.`;
+                }
+
+                function updateMapTools() {
+                    const hasSelection = Boolean(selectedLahanId);
+                    const canDraw = hasSelection && selectedCanEdit;
+
+                    [btnSetPointMode, btnPolygonMode, btnFinishPolygon, btnUndoPolygonPoint, btnClearPolygon].forEach(button => {
+                        if (button) button.disabled = !canDraw;
+                    });
+
+                    btnPolygonMode?.classList.toggle('is-active', polygonMode);
+                    btnSetPointMode?.classList.toggle('is-active', canDraw && !polygonMode);
+
+                    if (btnPolygonMode) {
+                        btnPolygonMode.textContent = polygonMode ? 'Sedang Menggambar' : 'Gambar Batas';
+                    }
+
+                    if (btnFinishPolygon) btnFinishPolygon.disabled = !canDraw || polygonPoints.length < 3;
+                    if (btnUndoPolygonPoint) btnUndoPolygonPoint.disabled = !canDraw || polygonPoints.length === 0;
+                    if (btnClearPolygon) btnClearPolygon.disabled = !canDraw || polygonPoints.length === 0;
+
+                    if (polygonProgress) polygonProgress.textContent = polygonMessage();
+                    if (polygonStatusText) {
+                        polygonStatusText.textContent = polygonPoints.length >= 3
+                            ? `Batas area siap disimpan. Jumlah titik: ${polygonPoints.length}.`
+                            : `Minimal 3 titik batas area diperlukan. Titik saat ini: ${polygonPoints.length}.`;
+                    }
+                }
+
+                function drawBatasWilayah() {
+                    if (!batasWilayah || !batasWilayah.type) return;
+
+                    batasLayer = L.geoJSON(batasWilayah, {
+                        interactive: false,
+                        style: {
+                            color: '#203c10',
+                            weight: 2.4,
+                            opacity: 0.9,
+                            fillOpacity: 0,
+                            fillColor: 'transparent',
+                            dashArray: '6 6'
+                        }
+                    }).addTo(map);
+
+                    try {
+                        map.fitBounds(batasLayer.getBounds(), { padding: [18, 18] });
+                    } catch (e) {
+                        map.fitBounds(batolaBounds);
+                    }
+                }
 
                 function setPoint(latlng) {
                     if (latInput) latInput.value = latlng.lat.toFixed(7);
                     if (lngInput) lngInput.value = latlng.lng.toFixed(7);
                     if (marker) marker.setLatLng(latlng);
-                    else marker = L.marker(latlng, { draggable: true }).addTo(map);
-                    marker.on('dragend', function(e) {
-                        const pos = e.target.getLatLng();
-                        if (latInput) latInput.value = pos.lat.toFixed(7);
-                        if (lngInput) lngInput.value = pos.lng.toFixed(7);
-                    });
+                    else {
+                        marker = L.marker(latlng, { draggable: true }).addTo(map);
+                        marker.on('dragend', function(e) {
+                            const pos = e.target.getLatLng();
+                            if (latInput) latInput.value = pos.lat.toFixed(7);
+                            if (lngInput) lngInput.value = pos.lng.toFixed(7);
+                        });
+                    }
+                }
+
+                function clearPolygonLayer() {
+                    if (polygonLayer) map.removeLayer(polygonLayer);
+                    polygonLayer = null;
                 }
 
                 function refreshPolygon() {
-                    if (polygonLayer) map.removeLayer(polygonLayer);
+                    clearPolygonLayer();
+                    if (polygonPoints.length > 0) {
+                        const layers = [];
+
+                        if (polygonPoints.length >= 3) {
+                            layers.push(L.polygon(polygonPoints, { color: '#3e7d00', weight: 3, fillOpacity: 0.18 }));
+                        } else if (polygonPoints.length >= 2) {
+                            layers.push(L.polyline(polygonPoints, { color: '#3e7d00', weight: 3, dashArray: '6 6' }));
+                        }
+
+                        polygonPoints.forEach((point, index) => {
+                            layers.push(L.circleMarker(point, {
+                                radius: 5,
+                                color: '#203c10',
+                                weight: 2,
+                                fillColor: '#65bd00',
+                                fillOpacity: 0.9
+                            }).bindTooltip(String(index + 1), { permanent: false }));
+                        });
+
+                        polygonLayer = L.layerGroup(layers).addTo(map);
+                    }
+
                     if (polygonPoints.length >= 3) {
-                        polygonLayer = L.polygon(polygonPoints, { color: '#3e7d00', weight: 3, fillOpacity: 0.2 }).addTo(map);
                         const coords = polygonPoints.map(p => [p.lng, p.lat]);
                         coords.push([polygonPoints[0].lng, polygonPoints[0].lat]);
                         if (polygonInput) polygonInput.value = JSON.stringify({ type: 'Polygon', coordinates: [coords] });
+                        updateLuasDariPeta(true);
+                        if (!marker && (!latInput?.value || !lngInput?.value)) {
+                            const centroid = polygonPoints.reduce((acc, point) => ({
+                                lat: acc.lat + point.lat / polygonPoints.length,
+                                lng: acc.lng + point.lng / polygonPoints.length
+                            }), { lat: 0, lng: 0 });
+                            setPoint(L.latLng(centroid.lat, centroid.lng));
+                        }
+                    } else if (polygonInput) {
+                        polygonInput.value = '';
+                        updateLuasDariPeta(false);
+                    }
+                    updateMapTools();
+                }
+
+                function readGeometry(geojson) {
+                    if (!geojson) return null;
+                    try {
+                        const parsed = typeof geojson === 'string' ? JSON.parse(geojson) : geojson;
+                        return parsed.type === 'Feature' ? parsed.geometry : parsed;
+                    } catch (e) {
+                        return null;
                     }
                 }
 
+                function drawGeometry(geojson) {
+                    const geometry = readGeometry(geojson);
+                    clearPolygonLayer();
+                    polygonPoints = [];
+
+                    if (!geometry) return;
+
+                    polygonLayer = L.geoJSON(geometry, {
+                        style: { color: '#3e7d00', weight: 3, fillOpacity: 0.22 }
+                    }).addTo(map);
+
+                    const firstRing = geometry.type === 'Polygon'
+                        ? geometry.coordinates?.[0]
+                        : geometry.coordinates?.[0]?.[0];
+
+                    if (Array.isArray(firstRing)) {
+                        polygonPoints = firstRing.slice(0, -1).map(coord => L.latLng(coord[1], coord[0]));
+                    }
+
+                    updateLuasDariPeta(false);
+                    updateMapTools();
+
+                    try {
+                        map.fitBounds(polygonLayer.getBounds(), { padding: [24, 24] });
+                    } catch (e) {}
+                }
+
+                function filterKelurahan() {
+                    if (!kecamatanSelect || !kelurahanSelect) return;
+                    const kecamatanId = kecamatanSelect.value;
+
+                    Array.from(kelurahanSelect.options).forEach(option => {
+                        if (!option.value) {
+                            option.hidden = false;
+                            return;
+                        }
+
+                        const itemKecamatan = option.dataset.kecamatan || '';
+                        option.hidden = kecamatanId && itemKecamatan && itemKecamatan !== kecamatanId;
+                    });
+                }
+
+                function fillForm(data, source = 'lama') {
+                    if (!data) return;
+
+                    selectedLahanId = data.id ? String(data.id) : null;
+                    selectedCanEdit = !isPendingVerification(data);
+                    manualLuasEdited = false;
+                    lastMapAreaHa = 0;
+                    setSource(source);
+                    setSelectedRow(selectedLahanId);
+                    workspace?.classList.remove('is-locked');
+                    workspace?.classList.toggle('is-awaiting-verification', !selectedCanEdit);
+                    setFormMode(data.id, source);
+                    if (lahanIdInput) lahanIdInput.value = data.id ?? '';
+                    if (userInput) userInput.value = data.user_id ?? '';
+
+                    setValue('nama_lahan', data.nama_lahan);
+                    setValue('pemilik_lahan', data.pemilik_lahan || data.nama_petani);
+                    setValue('kecamatan_id', data.kecamatan_id);
+                    filterKelurahan();
+                    setValue('kelurahan_id', data.kelurahan_id);
+                    setValue('tipe_lahan_id', data.tipe_lahan_id);
+                    setValue('tipe_rawa', data.tipe_rawa);
+                    setValue('tahun_lbs', data.tahun_lbs || '2024');
+                    setValue('luas_lahan_hektar', data.luas_lahan_hektar);
+                    setValue('alamat_detail', data.alamat_detail);
+                    setValue('latitude', data.latitude);
+                    setValue('longitude', data.longitude);
+                    setValue('polygon_geojson', data.polygon_geojson || data.geojson || '');
+                    setValue('catatan_spasial', data.catatan_spasial || '');
+
+                    const lokasi = [data.nama_kecamatan, data.nama_kelurahan].filter(Boolean).join(' / ') || 'Lokasi belum lengkap';
+                    const pemilik = data.pemilik_lahan || data.nama_petani || 'Pemilik belum diisi';
+                    if (selectedSourceLabel) selectedSourceLabel.textContent = source === 'baru' ? 'Antrean lahan baru / siap dipetakan' : 'Lahan lama / data aktif';
+                    if (selectedLahanTitle) selectedLahanTitle.textContent = data.nama_lahan || 'Lahan Sawah Terpilih';
+                    if (selectedLahanMeta) selectedLahanMeta.textContent = `${lokasi} - ${pemilik}`;
+                    if (selectedMapLabel) {
+                        selectedMapLabel.textContent = selectedCanEdit
+                            ? `${data.nama_lahan || 'Lahan terpilih'} - klik peta untuk mengatur titik tengah atau gunakan Gambar Batas untuk membuat area.`
+                            : `${data.nama_lahan || 'Lahan terpilih'} masih menunggu verifikasi. Setujui dulu sebelum pemetaan.`;
+                    }
+                    if (approvalStateText) approvalStateText.textContent = `${data.nama_lahan || 'Lahan ini'} masih berstatus PENDING. Setelah disetujui, halaman akan kembali ke pemetaan lahan terpilih.`;
+                    if (approveSelectedForm) approveSelectedForm.action = data.id ? `/petugas/verifikasi-lahan/${data.id}/diterima` : '#';
+                    if (rejectSelectedForm) rejectSelectedForm.action = data.id ? `/petugas/verifikasi-lahan/${data.id}/ditolak` : '#';
+
+                    const hasPolygon = Boolean(data.polygon_geojson || data.geojson);
+                    if (deleteForm) {
+                        deleteForm.action = data.id ? `${updateBaseUrl}/${data.id}` : '#';
+                        deleteForm.classList.toggle('hidden', !data.id || !hasPolygon || !selectedCanEdit);
+                    }
+
+                    if (data.latitude && data.longitude) {
+                        const latlng = L.latLng(parseFloat(data.latitude), parseFloat(data.longitude));
+                        setPoint(latlng);
+                        map.setView(latlng, 15);
+                    } else if (marker) {
+                        map.removeLayer(marker);
+                        marker = null;
+                    }
+
+                    if (hasPolygon) {
+                        drawGeometry(data.polygon_geojson || data.geojson);
+                    } else {
+                        clearPolygonLayer();
+                        polygonPoints = [];
+                        if (polygonInput) polygonInput.value = '';
+                        updateLuasDariPeta(false);
+                        updateMapTools();
+                    }
+
+                    form?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+
+                function resetForm() {
+                    selectedLahanId = null;
+                    selectedCanEdit = false;
+                    polygonMode = false;
+                    manualLuasEdited = false;
+                    lastMapAreaHa = 0;
+                    form?.reset();
+                    setFormMode(null, null);
+                    workspace?.classList.add('is-locked');
+                    workspace?.classList.remove('is-awaiting-verification');
+                    setSelectedRow(null);
+                    if (selectedSourceLabel) selectedSourceLabel.textContent = 'Belum memilih lahan';
+                    if (selectedLahanTitle) selectedLahanTitle.textContent = 'Informasi Titik dan Batas Area';
+                    if (selectedLahanMeta) selectedLahanMeta.textContent = 'Pilih lahan baru atau lahan lama dari panel kiri untuk membuka formulir pemetaan.';
+                    if (selectedMapLabel) selectedMapLabel.textContent = 'Batas Kabupaten Barito Kuala ditampilkan sebagai garis wilayah. Pilih lahan untuk mulai mengatur titik dan batas area.';
+                    if (deleteForm) {
+                        deleteForm.action = '#';
+                        deleteForm.classList.add('hidden');
+                    }
+                    if (approveSelectedForm) approveSelectedForm.action = '#';
+                    if (rejectSelectedForm) rejectSelectedForm.action = '#';
+                    if (lahanIdInput) lahanIdInput.value = '';
+                    if (userInput) userInput.value = '';
+                    if (marker) {
+                        map.removeLayer(marker);
+                        marker = null;
+                    }
+                    clearPolygonLayer();
+                    polygonPoints = [];
+                    if (polygonInput) polygonInput.value = '';
+                    updateLuasDariPeta(false);
+                    filterKelurahan();
+                    updateMapTools();
+                }
+
+                drawBatasWilayah();
+
                 map.on('click', function(e) {
-                    setPoint(e.latlng);
+                    if (!selectedLahanId) {
+                        if (selectedMapLabel) selectedMapLabel.textContent = 'Pilih lahan terlebih dahulu sebelum menentukan titik atau batas area.';
+                        updateMapTools();
+                        return;
+                    }
+
+                    if (!selectedCanEdit) {
+                        if (selectedMapLabel) selectedMapLabel.textContent = 'Lahan masih menunggu verifikasi. Setujui terlebih dahulu sebelum pemetaan.';
+                        updateMapTools();
+                        return;
+                    }
+
                     if (polygonMode) {
                         polygonPoints.push(e.latlng);
                         refreshPolygon();
+                    } else {
+                        setPoint(e.latlng);
+                        updateMapTools();
                     }
                 });
 
-                document.getElementById('btnPolygonMode')?.addEventListener('click', function () {
+                btnSetPointMode?.addEventListener('click', function () {
+                    if (!selectedLahanId) {
+                        if (selectedMapLabel) selectedMapLabel.textContent = 'Pilih lahan terlebih dahulu sebelum mengatur titik tengah.';
+                        updateMapTools();
+                        return;
+                    }
+
+                    if (!selectedCanEdit) {
+                        if (selectedMapLabel) selectedMapLabel.textContent = 'Setujui lahan terlebih dahulu sebelum mengatur titik tengah.';
+                        updateMapTools();
+                        return;
+                    }
+
+                    polygonMode = false;
+                    if (selectedMapLabel) selectedMapLabel.textContent = 'Mode titik tengah aktif. Klik satu lokasi di peta.';
+                    updateMapTools();
+                });
+
+                btnPolygonMode?.addEventListener('click', function () {
+                    if (!selectedLahanId) {
+                        if (selectedMapLabel) selectedMapLabel.textContent = 'Pilih lahan terlebih dahulu sebelum menggambar batas area.';
+                        updateMapTools();
+                        return;
+                    }
+
+                    if (!selectedCanEdit) {
+                        if (selectedMapLabel) selectedMapLabel.textContent = 'Setujui lahan terlebih dahulu sebelum menggambar batas area.';
+                        updateMapTools();
+                        return;
+                    }
+
                     polygonMode = !polygonMode;
-                    this.textContent = polygonMode ? 'Mode Polygon Aktif' : 'Mode Polygon';
-                    this.classList.toggle('bg-primary-700', polygonMode);
+                    if (selectedMapLabel) selectedMapLabel.textContent = polygonMode
+                        ? 'Mode gambar batas aktif. Klik peta berurutan mengelilingi lahan.'
+                        : 'Mode gambar batas dimatikan.';
+                    updateMapTools();
                 });
 
-                document.getElementById('btnClearPolygon')?.addEventListener('click', function () {
+                btnFinishPolygon?.addEventListener('click', function () {
+                    if (!selectedCanEdit || polygonPoints.length < 3) {
+                        if (selectedMapLabel) selectedMapLabel.textContent = 'Minimal 3 titik diperlukan untuk menyelesaikan batas area.';
+                        updateMapTools();
+                        return;
+                    }
+
+                    polygonMode = false;
+                    refreshPolygon();
+                    if (selectedMapLabel) selectedMapLabel.textContent = 'Batas area siap disimpan. Periksa informasi lahan lalu tekan Simpan.';
+                    updateMapTools();
+                });
+
+                btnUndoPolygonPoint?.addEventListener('click', function () {
+                    if (!selectedCanEdit || polygonPoints.length === 0) return;
+                    polygonPoints.pop();
+                    refreshPolygon();
+                    if (selectedMapLabel) selectedMapLabel.textContent = 'Titik terakhir batas area dibatalkan.';
+                });
+
+                btnClearPolygon?.addEventListener('click', function () {
+                    if (!selectedLahanId) {
+                        if (selectedMapLabel) selectedMapLabel.textContent = 'Pilih lahan terlebih dahulu sebelum mengatur batas area.';
+                        updateMapTools();
+                        return;
+                    }
+
+                    if (!selectedCanEdit) {
+                        if (selectedMapLabel) selectedMapLabel.textContent = 'Setujui lahan terlebih dahulu sebelum mengatur batas area.';
+                        updateMapTools();
+                        return;
+                    }
+
                     polygonPoints = [];
-                    if (polygonLayer) map.removeLayer(polygonLayer);
-                    polygonLayer = null;
+                    polygonMode = false;
+                    clearPolygonLayer();
                     if (polygonInput) polygonInput.value = '';
+                    updateMapTools();
                 });
 
-                document.getElementById('lahan_id')?.addEventListener('change', function() {
-                    const option = this.options[this.selectedIndex];
-                    if (!option || !option.dataset.lahan) return;
-                    try {
-                        const data = JSON.parse(option.dataset.lahan);
-                        const set = (id, value) => { const el = document.getElementById(id); if (el) el.value = value ?? ''; };
-                        set('nama_lahan', data.nama_lahan);
-                        set('pemilik_lahan', data.pemilik_lahan);
-                        set('kecamatan_id', data.kecamatan_id);
-                        set('kelurahan_id', data.kelurahan_id);
-                        set('tipe_lahan_id', data.tipe_lahan_id ?? data.kategori_lahan_id);
-                        set('luas_lahan_hektar', data.luas_lahan_hektar);
-                        set('alamat_detail', data.alamat_detail);
-                        set('polygon_geojson', data.polygon_geojson ?? data.geojson ?? '');
-                        if (data.latitude && data.longitude) {
-                            const latlng = L.latLng(parseFloat(data.latitude), parseFloat(data.longitude));
-                            setPoint(latlng);
-                            map.setView(latlng, 15);
-                        }
-                    } catch (e) {}
+                document.getElementById('btnResetForm')?.addEventListener('click', resetForm);
+                kecamatanSelect?.addEventListener('change', filterKelurahan);
+                luasInput?.addEventListener('input', function() {
+                    manualLuasEdited = true;
                 });
+
+                btnUseMapArea?.addEventListener('click', function() {
+                    if (lastMapAreaHa > 0 && luasInput) {
+                        luasInput.value = lastMapAreaHa.toFixed(2);
+                        manualLuasEdited = false;
+                    }
+                });
+
+                document.querySelectorAll('.sourceToggle').forEach(button => {
+                    button.addEventListener('click', function() {
+                        setSource(this.dataset.source || 'baru');
+                    });
+                });
+
+                document.querySelectorAll('.btnPilihLahan').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const id = String(this.dataset.lahanId || '');
+                        const row = dataById.get(id);
+
+                        if (!row) {
+                            if (selectedMapLabel) selectedMapLabel.textContent = 'Data lahan tidak ditemukan. Muat ulang halaman lalu coba lagi.';
+                            return;
+                        }
+
+                        fillForm(row, this.dataset.source || 'lama');
+                    });
+                });
+
+                if (highlightLahanId && dataById.has(String(highlightLahanId))) {
+                    const row = dataById.get(String(highlightLahanId));
+                    const source = String(row.status_verifikasi || '').toUpperCase() === 'PENDING' || row.status_spasial === 'BELUM_DIPETAKAN' ? 'baru' : 'lama';
+                    fillForm(row, source);
+                }
+
+                form?.addEventListener('submit', function(e) {
+                    if (!selectedCanEdit) {
+                        e.preventDefault();
+                        if (selectedMapLabel) selectedMapLabel.textContent = 'Setujui lahan terlebih dahulu sebelum menyimpan pemetaan.';
+                        updateMapTools();
+                        return;
+                    }
+
+                    if (!latInput?.value || !lngInput?.value) {
+                        e.preventDefault();
+                        if (selectedMapLabel) selectedMapLabel.textContent = 'Tentukan titik tengah lahan di peta terlebih dahulu.';
+                        updateMapTools();
+                        return;
+                    }
+
+                    if (!polygonInput?.value || polygonPoints.length < 3) {
+                        e.preventDefault();
+                        if (selectedMapLabel) selectedMapLabel.textContent = 'Gambar batas area minimal 3 titik sebelum menyimpan.';
+                        updateMapTools();
+                    }
+                });
+
+                filterKelurahan();
+                updateMapTools();
             });
         </script>
     @endpush

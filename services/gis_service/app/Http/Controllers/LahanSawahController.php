@@ -3,372 +3,310 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\LahanSawah;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 
 class LahanSawahController extends Controller
 {
-    /**
-     * Menampilkan data lahan milik petani yang sedang login.
-     * Data PENDING tetap tampil di riwayat petani, tetapi belum legal.
-     */
     public function index(Request $request)
     {
-        $userId = $this->getAuthUserId($request);
+        $query = $this->baseLahanQuery();
 
-        if (!$userId) {
-            return response()->json([
-                'success' => false,
-                'message' => 'User tidak terautentikasi'
-            ], 401);
+        $status = strtoupper((string) $request->query('status', 'DITERIMA'));
+        if ($status !== 'ALL') {
+            $query->where('lahan_sawah.status_verifikasi', $status);
         }
-
-        $query = LahanSawah::where('user_id', $userId)
-            ->select(
-                'id',
-                'user_id',
-                'kecamatan_id',
-                'kelurahan_id',
-                'tipe_lahan_id',
-                'nama_lahan',
-                'pemilik_lahan',
-                'tahun_lbs',
-                'luas_lahan_hektar',
-                'hasil_panen_ton',
-                'produktivitas_ton_ha',
-                'alamat_detail',
-                'koordinat_tengah',
-                'latitude',
-                'longitude',
-                'foto_lahan',
-                'status_verifikasi',
-                'created_at'
-            )
-            ->orderByDesc('id');
-
-        if ($request->filled('status')) {
-            $query->where('status_verifikasi', strtoupper($request->status));
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Data lahan berhasil diambil',
-            'data' => $query->paginate($request->get('per_page', 5))
-        ]);
-    }
-
-    /**
-     * Dropdown lahan untuk input panen.
-     * Hanya lahan DITERIMA yang boleh dipakai.
-     */
-    public function dropdown(Request $request)
-    {
-        $userId = $this->getAuthUserId($request);
-
-        if (!$userId) {
-            return response()->json([
-                'success' => false,
-                'message' => 'User tidak terautentikasi'
-            ], 401);
-        }
-
-        $data = LahanSawah::where('user_id', $userId)
-            ->where('status_verifikasi', 'DITERIMA')
-            ->select(
-                'id',
-                'nama_lahan',
-                'luas_lahan_hektar',
-                'alamat_detail'
-            )
-            ->orderBy('nama_lahan')
-            ->get();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Dropdown lahan legal berhasil diambil',
-            'data' => $data
-        ]);
-    }
-
-    /**
-     * Data lahan legal untuk petugas.
-     * Dipakai pada monitoring dan daftar lahan yang sudah sah.
-     */
-    public function accepted(Request $request)
-    {
-        $query = DB::table('lahan_sawah')
-            ->leftJoin('users', 'lahan_sawah.user_id', '=', 'users.id')
-            ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
-            ->leftJoin('kelurahan', 'lahan_sawah.kelurahan_id', '=', 'kelurahan.id')
-            ->leftJoin('tipe_lahan', 'lahan_sawah.tipe_lahan_id', '=', 'tipe_lahan.id')
-            ->where('lahan_sawah.status_verifikasi', 'DITERIMA')
-            ->select($this->selectLahanWithGeo());
 
         if ($request->filled('kecamatan_id')) {
-            $query->where('lahan_sawah.kecamatan_id', $request->kecamatan_id);
+            $query->where('lahan_sawah.kecamatan_id', $request->query('kecamatan_id'));
         }
 
         if ($request->filled('kelurahan_id')) {
-            $query->where('lahan_sawah.kelurahan_id', $request->kelurahan_id);
+            $query->where('lahan_sawah.kelurahan_id', $request->query('kelurahan_id'));
+        }
+
+        $rows = $query
+            ->orderByRaw("CASE WHEN lahan_sawah.status_verifikasi = 'DITERIMA' THEN 0 ELSE 1 END")
+            ->orderBy('lahan_sawah.nama_lahan')
+            ->get()
+            ->map(fn ($row) => $this->normalisasiLahan($row))
+            ->values()
+            ->all();
+
+        if ($request->filled('status_spasial')) {
+            $target = strtoupper((string) $request->query('status_spasial'));
+            $rows = collect($rows)
+                ->filter(fn ($row) => ($row['status_spasial'] ?? '') === $target)
+                ->values()
+                ->all();
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Data lahan legal berhasil diambil',
-            'data' => $query->orderBy('lahan_sawah.nama_lahan')->get()
-        ]);
+            'message' => 'Data spasial lahan berhasil diambil.',
+            'summary' => $this->buildSummary($rows),
+            'data' => $rows,
+            'feature_collection' => $this->buildFeatureCollection($rows),
+        ], 200, [], JSON_INVALID_UTF8_SUBSTITUTE);
     }
 
-    /**
-     * Antrean lahan baru dari petani.
-     * Dipakai pada dashboard/verifikasi role petugas.
-     */
-    public function pending(Request $request)
+    public function getReferensiData()
     {
-        $query = DB::table('lahan_sawah')
+        return response()->json([
+            'success' => true,
+            'message' => 'Referensi data spasial berhasil diambil.',
+            'data' => [
+                'petani' => $this->ambilPetani(),
+                'kecamatan' => $this->ambilTabel('kecamatan', ['id', 'nama_kecamatan'], 'nama_kecamatan'),
+                'kelurahan' => $this->ambilTabel('kelurahan', ['id', 'kecamatan_id', 'nama_kelurahan'], 'nama_kelurahan'),
+                'tipe_lahan' => $this->ambilTabel('tipe_lahan', ['id', 'nama_tipe'], 'nama_tipe'),
+            ],
+        ], 200, [], JSON_INVALID_UTF8_SUBSTITUTE);
+    }
+
+    public function store(Request $request)
+    {
+        [$payload, $geometry] = $this->validasiPayloadSpasial($request, true);
+
+        $payload['status_verifikasi'] = 'DITERIMA';
+        $payload['status_spasial'] = 'SUDAH_DIPETAKAN';
+
+        if (Schema::hasColumn('lahan_sawah', 'created_at')) {
+            $payload['created_at'] = now();
+        }
+
+        if (Schema::hasColumn('lahan_sawah', 'updated_at')) {
+            $payload['updated_at'] = now();
+        }
+
+        try {
+            $id = DB::transaction(function () use ($payload, $geometry) {
+                $id = DB::table('lahan_sawah')->insertGetId(
+                    $this->filterExistingColumns('lahan_sawah', $payload)
+                );
+
+                $this->simpanPolygonWajib($id, $geometry);
+
+                return $id;
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data spasial lahan berhasil dibuat.',
+                'data' => $this->getDetailLahan($id),
+            ], 201, [], JSON_INVALID_UTF8_SUBSTITUTE);
+        } catch (\Throwable $e) {
+            Log::error('Gagal membuat data spasial lahan: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membuat data spasial lahan. Pastikan polygon valid dan kolom spasial tersedia.',
+            ], 422);
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        if (!$this->lahanAda($id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data lahan tidak ditemukan.',
+            ], 404);
+        }
+
+        [$payload, $geometry] = $this->validasiPayloadSpasial($request, false);
+
+        $payload['status_verifikasi'] = 'DITERIMA';
+        $payload['status_spasial'] = 'SUDAH_DIPETAKAN';
+
+        if (Schema::hasColumn('lahan_sawah', 'updated_at')) {
+            $payload['updated_at'] = now();
+        }
+
+        try {
+            DB::transaction(function () use ($id, $payload, $geometry) {
+                DB::table('lahan_sawah')
+                    ->where('id', $id)
+                    ->update($this->filterExistingColumns('lahan_sawah', $payload));
+
+                $this->simpanPolygonWajib((int) $id, $geometry);
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data polygon dan informasi spasial lahan berhasil diperbarui.',
+                'data' => $this->getDetailLahan($id),
+            ], 200, [], JSON_INVALID_UTF8_SUBSTITUTE);
+        } catch (\Throwable $e) {
+            Log::error('Gagal memperbarui data spasial lahan: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui data spasial lahan. Pastikan polygon valid.',
+            ], 422);
+        }
+    }
+
+    public function destroy($id)
+    {
+        if (!$this->lahanAda($id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data lahan tidak ditemukan.',
+            ], 404);
+        }
+
+        try {
+            DB::transaction(function () use ($id) {
+                if (Schema::hasColumn('lahan_sawah', 'polygon_area')) {
+                    DB::statement('UPDATE lahan_sawah SET polygon_area = NULL WHERE id = ?', [$id]);
+                }
+
+                $payload = [
+                    'latitude' => null,
+                    'longitude' => null,
+                    'koordinat_tengah' => null,
+                    'status_spasial' => 'BELUM_DIPETAKAN',
+                ];
+
+                if (Schema::hasColumn('lahan_sawah', 'updated_at')) {
+                    $payload['updated_at'] = now();
+                }
+
+                DB::table('lahan_sawah')
+                    ->where('id', $id)
+                    ->update($this->filterExistingColumns('lahan_sawah', $payload));
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Polygon lahan berhasil dikosongkan. Arsip lahan tetap tersimpan.',
+                'data' => $this->getDetailLahan($id),
+            ], 200, [], JSON_INVALID_UTF8_SUBSTITUTE);
+        } catch (\Throwable $e) {
+            Log::error('Gagal mengosongkan polygon lahan: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengosongkan polygon lahan.',
+            ], 422);
+        }
+    }
+
+    private function validasiPayloadSpasial(Request $request, bool $isCreate): array
+    {
+        $request->validate([
+            'user_id' => 'nullable|integer',
+            'kecamatan_id' => 'required|integer',
+            'kelurahan_id' => 'nullable|integer',
+            'tipe_lahan_id' => 'nullable|integer',
+            'tipe_rawa' => 'nullable|string|max:100',
+            'nama_lahan' => 'required|string|max:100',
+            'pemilik_lahan' => 'nullable|string|max:100',
+            'tahun_lbs' => 'nullable|in:2017,2024',
+            'luas_lahan_hektar' => 'required|numeric|min:0.0001',
+            'alamat_detail' => 'nullable|string|max:500',
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+            'foto_lahan' => 'nullable|string|max:150',
+            'polygon_geojson' => 'required|string',
+            'catatan_spasial' => 'nullable|string|max:500',
+        ]);
+
+        $geometry = $this->validasiGeoJson($request->input('polygon_geojson'));
+
+        $lat = (float) $request->input('latitude');
+        $lng = (float) $request->input('longitude');
+
+        $payload = [
+            'user_id' => $request->filled('user_id') ? $request->input('user_id') : null,
+            'kecamatan_id' => $request->input('kecamatan_id'),
+            'kelurahan_id' => $request->input('kelurahan_id'),
+            'tipe_lahan_id' => $request->input('tipe_lahan_id'),
+            'tipe_rawa' => $request->input('tipe_rawa'),
+            'nama_lahan' => $request->input('nama_lahan'),
+            'pemilik_lahan' => $request->input('pemilik_lahan'),
+            'tahun_lbs' => $request->input('tahun_lbs', '2024'),
+            'luas_lahan_hektar' => $request->input('luas_lahan_hektar'),
+            'alamat_detail' => $request->input('alamat_detail'),
+            'koordinat_tengah' => $lat . ',' . $lng,
+            'latitude' => $lat,
+            'longitude' => $lng,
+            'foto_lahan' => $request->input('foto_lahan'),
+            'catatan_spasial' => $request->input('catatan_spasial'),
+            'catatan_verifikasi_spasial' => $request->input('catatan_spasial'),
+        ];
+
+        if (!$isCreate && !$request->filled('user_id')) {
+            unset($payload['user_id']);
+        }
+
+        return [$payload, $geometry];
+    }
+
+    private function validasiGeoJson(string $raw): array
+    {
+        $decoded = json_decode($raw, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+            throw ValidationException::withMessages([
+                'polygon_geojson' => 'Polygon GeoJSON tidak valid.',
+            ]);
+        }
+
+        $geometry = ($decoded['type'] ?? null) === 'Feature'
+            ? ($decoded['geometry'] ?? null)
+            : $decoded;
+
+        if (!is_array($geometry) || !in_array($geometry['type'] ?? null, ['Polygon', 'MultiPolygon'], true)) {
+            throw ValidationException::withMessages([
+                'polygon_geojson' => 'Polygon wajib berupa GeoJSON Polygon atau MultiPolygon.',
+            ]);
+        }
+
+        $rings = $geometry['type'] === 'Polygon'
+            ? ($geometry['coordinates'] ?? [])
+            : ($geometry['coordinates'][0] ?? []);
+
+        $outerRing = $rings[0] ?? [];
+
+        if (!is_array($outerRing) || count($outerRing) < 4) {
+            throw ValidationException::withMessages([
+                'polygon_geojson' => 'Polygon wajib memiliki minimal 3 titik dan titik penutup.',
+            ]);
+        }
+
+        return $geometry;
+    }
+
+    private function simpanPolygonWajib(int $lahanId, array $geometry): void
+    {
+        if (!Schema::hasColumn('lahan_sawah', 'polygon_area')) {
+            throw new \RuntimeException('Kolom polygon_area belum tersedia.');
+        }
+
+        DB::statement(
+            'UPDATE lahan_sawah SET polygon_area = ST_GeomFromGeoJSON(?) WHERE id = ?',
+            [json_encode($geometry), $lahanId]
+        );
+    }
+
+    private function baseLahanQuery()
+    {
+        return DB::table('lahan_sawah')
             ->leftJoin('users', 'lahan_sawah.user_id', '=', 'users.id')
             ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
             ->leftJoin('kelurahan', 'lahan_sawah.kelurahan_id', '=', 'kelurahan.id')
             ->leftJoin('tipe_lahan', 'lahan_sawah.tipe_lahan_id', '=', 'tipe_lahan.id')
-            ->where('lahan_sawah.status_verifikasi', 'PENDING')
             ->select($this->selectLahanWithGeo());
-
-        if ($request->filled('kecamatan_id')) {
-            $query->where('lahan_sawah.kecamatan_id', $request->kecamatan_id);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Antrean pengajuan lahan berhasil diambil',
-            'data' => $query->orderByDesc('lahan_sawah.id')->get()
-        ]);
     }
 
-    /**
-     * Detail lahan.
-     * Polygon dikembalikan sebagai GeoJSON agar tidak menyebabkan error UTF-8.
-     */
-    public function show($id)
-    {
-        $data = $this->getDetailLahan($id);
-
-        if (!$data) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data lahan tidak ditemukan'
-            ], 404);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Detail lahan sawah berhasil diambil',
-            'data' => $data
-        ]);
-    }
-
-    /**
-     * Input lahan dari petani.
-     * Jangan langsung legal, selalu masuk sebagai PENDING.
-     */
-    public function store(Request $request)
-    {
-        $userId = $this->getAuthUserId($request);
-
-        if (!$userId) {
-            return response()->json([
-                'success' => false,
-                'message' => 'User tidak terautentikasi'
-            ], 401);
-        }
-
-        $request->validate([
-            'kecamatan_id' => 'required|integer',
-            'kelurahan_id' => 'required|integer',
-            'tipe_lahan_id' => 'nullable|integer',
-            'nama_lahan' => 'required|string|max:100',
-            'pemilik_lahan' => 'nullable|string|max:100',
-            'tahun_lbs' => 'nullable|in:2017,2024',
-            'luas_lahan_hektar' => 'nullable|numeric|min:0',
-            'alamat_detail' => 'required|string|max:150',
-            'koordinat_tengah' => 'nullable|string|max:100',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
-            'foto_lahan' => 'nullable|string|max:150',
-            'polygon_wkt' => 'nullable|string',
-            'polygon_geojson' => 'nullable|string',
-        ]);
-
-        $payload = [
-            'user_id' => $userId,
-            'kecamatan_id' => $request->kecamatan_id,
-            'kelurahan_id' => $request->kelurahan_id,
-            'tipe_lahan_id' => $request->tipe_lahan_id,
-            'nama_lahan' => $request->nama_lahan,
-            'pemilik_lahan' => $request->pemilik_lahan,
-            'tahun_lbs' => $request->tahun_lbs ?? '2024',
-            'luas_lahan_hektar' => $request->luas_lahan_hektar ?? 0,
-            'hasil_panen_ton' => 0,
-            'produktivitas_ton_ha' => 0,
-            'alamat_detail' => $request->alamat_detail,
-            'koordinat_tengah' => $request->koordinat_tengah,
-            'latitude' => $request->latitude,
-            'longitude' => $request->longitude,
-            'foto_lahan' => $request->foto_lahan,
-            'status_verifikasi' => 'PENDING',
-        ];
-
-        $payload = $this->filterExistingColumns('lahan_sawah', $payload);
-
-        $data = LahanSawah::create($payload);
-
-        $this->simpanPolygonJikaAda($data->id, $request);
-
-        $this->buatNotifikasiPetugas(
-            'Pengajuan Lahan Baru',
-            'Petani mengajukan lahan baru: ' . $data->nama_lahan . '. Segera lakukan verifikasi.'
-        );
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Pengajuan lahan berhasil dikirim dan menunggu verifikasi petugas',
-            'data' => $this->getDetailLahan($data->id)
-        ], 201);
-    }
-
-    /**
-     * Petugas menerima lahan.
-     * Setelah diterima, lahan menjadi legal dan boleh muncul di frontend/peta/statistik.
-     */
-    public function approve(Request $request, $id)
-    {
-        $data = LahanSawah::find($id);
-
-        if (!$data) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data lahan tidak ditemukan'
-            ], 404);
-        }
-
-        if ($data->status_verifikasi === 'DITERIMA') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Lahan sudah diterima sebelumnya'
-            ], 400);
-        }
-
-        $request->validate([
-            'kecamatan_id' => 'nullable|integer',
-            'kelurahan_id' => 'nullable|integer',
-            'tipe_lahan_id' => 'nullable|integer',
-            'nama_lahan' => 'nullable|string|max:100',
-            'pemilik_lahan' => 'nullable|string|max:100',
-            'tahun_lbs' => 'nullable|in:2017,2024',
-            'luas_lahan_hektar' => 'nullable|numeric|min:0',
-            'alamat_detail' => 'nullable|string|max:150',
-            'koordinat_tengah' => 'nullable|string|max:100',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
-            'foto_lahan' => 'nullable|string|max:150',
-            'polygon_wkt' => 'nullable|string',
-            'polygon_geojson' => 'nullable|string',
-        ]);
-
-        $payload = [
-            'status_verifikasi' => 'DITERIMA',
-        ];
-
-        $fieldOpsional = [
-            'kecamatan_id',
-            'kelurahan_id',
-            'tipe_lahan_id',
-            'nama_lahan',
-            'pemilik_lahan',
-            'tahun_lbs',
-            'luas_lahan_hektar',
-            'alamat_detail',
-            'koordinat_tengah',
-            'latitude',
-            'longitude',
-            'foto_lahan',
-        ];
-
-        foreach ($fieldOpsional as $field) {
-            if ($request->filled($field)) {
-                $payload[$field] = $request->input($field);
-            }
-        }
-
-        $payload = $this->filterExistingColumns('lahan_sawah', $payload);
-
-        $data->update($payload);
-
-        $this->simpanPolygonJikaAda($data->id, $request);
-        $this->hitungUlangProduktivitasLahan($data->id);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Lahan berhasil diterima dan menjadi data legal',
-            'data' => $this->getDetailLahan($data->id)
-        ]);
-    }
-
-    /**
-     * Petugas menolak lahan.
-     * Data tetap tersimpan sebagai riwayat, tetapi tidak legal dan tidak masuk frontend resmi.
-     */
-    public function reject(Request $request, $id)
-    {
-        $data = LahanSawah::find($id);
-
-        if (!$data) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data lahan tidak ditemukan'
-            ], 404);
-        }
-
-        if ($data->status_verifikasi === 'DITOLAK') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Lahan sudah ditolak sebelumnya'
-            ], 400);
-        }
-
-        $data->update([
-            'status_verifikasi' => 'DITOLAK'
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Lahan berhasil ditolak',
-            'data' => $this->getDetailLahan($data->id)
-        ]);
-    }
-
-    /**
-     * Ambil user id dari JWT middleware.
-     */
-    private function getAuthUserId(Request $request): ?int
-    {
-        $user = $request->attributes->get('auth');
-
-        if (!$user) {
-            return null;
-        }
-
-        return $user->sub ?? $user->id ?? null;
-    }
-
-    /**
-     * Select eksplisit agar polygon_area tidak dikirim sebagai binary mentah.
-     */
     private function selectLahanWithGeo(): array
     {
-        return [
+        $select = [
             'lahan_sawah.id',
             'lahan_sawah.user_id',
             'lahan_sawah.kecamatan_id',
@@ -376,7 +314,6 @@ class LahanSawahController extends Controller
             'lahan_sawah.tipe_lahan_id',
             'lahan_sawah.nama_lahan',
             'lahan_sawah.pemilik_lahan',
-            'lahan_sawah.tahun_lbs',
             'lahan_sawah.luas_lahan_hektar',
             'lahan_sawah.hasil_panen_ton',
             'lahan_sawah.produktivitas_ton_ha',
@@ -386,119 +323,169 @@ class LahanSawahController extends Controller
             'lahan_sawah.longitude',
             'lahan_sawah.foto_lahan',
             'lahan_sawah.status_verifikasi',
-            'lahan_sawah.created_at',
             'users.nama_lengkap as nama_petani',
             'users.email as email_petani',
             'kecamatan.nama_kecamatan',
             'kelurahan.nama_kelurahan',
             'tipe_lahan.nama_tipe',
-            DB::raw('ST_AsGeoJSON(lahan_sawah.polygon_area) as polygon_geojson'),
         ];
+
+        if (Schema::hasColumn('lahan_sawah', 'tipe_rawa')) {
+            $select[] = 'lahan_sawah.tipe_rawa';
+        }
+
+        if (Schema::hasColumn('lahan_sawah', 'tahun_lbs')) {
+            $select[] = 'lahan_sawah.tahun_lbs';
+        }
+
+        if (Schema::hasColumn('lahan_sawah', 'created_at')) {
+            $select[] = 'lahan_sawah.created_at';
+        }
+
+        if (Schema::hasColumn('lahan_sawah', 'updated_at')) {
+            $select[] = 'lahan_sawah.updated_at';
+        }
+
+        if (Schema::hasColumn('lahan_sawah', 'status_spasial')) {
+            $select[] = 'lahan_sawah.status_spasial';
+        }
+
+        $select[] = Schema::hasColumn('lahan_sawah', 'polygon_area')
+            ? DB::raw('ST_AsGeoJSON(lahan_sawah.polygon_area) as polygon_geojson')
+            : DB::raw('NULL as polygon_geojson');
+
+        return $select;
     }
 
-    /**
-     * Detail lahan dengan join data pendukung.
-     */
-    private function getDetailLahan($id)
+    private function getDetailLahan($id): ?array
     {
-        return DB::table('lahan_sawah')
-            ->leftJoin('users', 'lahan_sawah.user_id', '=', 'users.id')
-            ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
-            ->leftJoin('kelurahan', 'lahan_sawah.kelurahan_id', '=', 'kelurahan.id')
-            ->leftJoin('tipe_lahan', 'lahan_sawah.tipe_lahan_id', '=', 'tipe_lahan.id')
+        $row = $this->baseLahanQuery()
             ->where('lahan_sawah.id', $id)
-            ->select($this->selectLahanWithGeo())
             ->first();
+
+        return $row ? $this->normalisasiLahan($row) : null;
     }
 
-    /**
-     * Simpan polygon jika dikirim oleh petugas.
-     * Mendukung polygon_wkt dan polygon_geojson.
-     */
-    private function simpanPolygonJikaAda(int $lahanId, Request $request): void
+    private function normalisasiLahan($row): array
     {
-        try {
-            if ($request->filled('polygon_wkt')) {
-                DB::statement(
-                    'UPDATE lahan_sawah SET polygon_area = ST_GeomFromText(?, 4326) WHERE id = ?',
-                    [$request->polygon_wkt, $lahanId]
-                );
-            }
+        $data = (array) $row;
+        $polygon = $data['polygon_geojson'] ?? null;
+        $hasPolygon = !empty($polygon);
+        $hasPoint = !empty($data['latitude']) && !empty($data['longitude']);
 
-            if ($request->filled('polygon_geojson')) {
-                DB::statement(
-                    'UPDATE lahan_sawah SET polygon_area = ST_GeomFromGeoJSON(?) WHERE id = ?',
-                    [$request->polygon_geojson, $lahanId]
-                );
-            }
-        } catch (\Throwable $e) {
-            Log::error('Gagal menyimpan polygon lahan: ' . $e->getMessage());
-        }
+        $data['luas_lahan_hektar'] = (float) ($data['luas_lahan_hektar'] ?? 0);
+        $data['hasil_panen_ton'] = (float) ($data['hasil_panen_ton'] ?? 0);
+        $data['produktivitas_ton_ha'] = (float) ($data['produktivitas_ton_ha'] ?? 0);
+        $data['latitude'] = $data['latitude'] !== null ? (float) $data['latitude'] : null;
+        $data['longitude'] = $data['longitude'] !== null ? (float) $data['longitude'] : null;
+        $data['polygon_geojson'] = $polygon;
+        $data['geojson'] = $polygon;
+        $data['status_spasial'] = $data['status_spasial'] ?? (($hasPolygon && $hasPoint) ? 'SUDAH_DIPETAKAN' : 'BELUM_DIPETAKAN');
+        $data['is_wajib_dipetakan'] = ($data['status_verifikasi'] ?? null) === 'DITERIMA' && $data['status_spasial'] === 'BELUM_DIPETAKAN';
+
+        return $data;
     }
 
-    /**
-     * Hitung ulang total panen dan produktivitas lahan.
-     * Hanya panen berstatus DITERIMA yang dihitung.
-     */
-    private function hitungUlangProduktivitasLahan(int $lahanId): void
+    private function buildFeatureCollection(array $rows): array
     {
-        $lahan = LahanSawah::find($lahanId);
+        $features = [];
 
-        if (!$lahan) {
-            return;
+        foreach ($rows as $row) {
+            $geometry = null;
+
+            if (!empty($row['polygon_geojson'])) {
+                $geometry = json_decode($row['polygon_geojson'], true);
+            }
+
+            if (!$geometry && !empty($row['latitude']) && !empty($row['longitude'])) {
+                $geometry = [
+                    'type' => 'Point',
+                    'coordinates' => [(float) $row['longitude'], (float) $row['latitude']],
+                ];
+            }
+
+            if (!$geometry) {
+                continue;
+            }
+
+            $properties = $row;
+            unset($properties['polygon_geojson'], $properties['geojson']);
+
+            $features[] = [
+                'type' => 'Feature',
+                'geometry' => $geometry,
+                'properties' => $properties,
+            ];
         }
 
-        $totalPanen = DB::table('siklus_tanam')
-            ->where('lahan_id', $lahanId)
-            ->where('status_verifikasi', 'DITERIMA')
-            ->sum(DB::raw('COALESCE(hasil_panen, 0)'));
-
-        $luas = (float) $lahan->luas_lahan_hektar;
-        $produktivitas = $luas > 0 ? $totalPanen / $luas : 0;
-
-        $payload = [
-            'hasil_panen_ton' => round($totalPanen, 2),
-            'produktivitas_ton_ha' => round($produktivitas, 2),
+        return [
+            'type' => 'FeatureCollection',
+            'features' => $features,
         ];
-
-        $payload = $this->filterExistingColumns('lahan_sawah', $payload);
-
-        $lahan->update($payload);
     }
 
-    /**
-     * Buat notifikasi untuk semua petugas.
-     */
-    private function buatNotifikasiPetugas(string $judul, string $pesan): void
+    private function buildSummary(array $rows): array
     {
-        try {
-            if (!Schema::hasTable('notifikasi')) {
-                return;
-            }
+        $total = count($rows);
+        $sudah = collect($rows)->where('status_spasial', 'SUDAH_DIPETAKAN')->count();
+        $belum = collect($rows)->where('status_spasial', 'BELUM_DIPETAKAN')->count();
 
-            DB::table('notifikasi')->insert([
-                'role_id_penerima' => 2,
-                'user_id_penerima' => null,
-                'judul' => $judul,
-                'pesan' => $pesan,
-                'is_read' => 0,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        } catch (\Throwable $e) {
-            Log::error('Gagal membuat notifikasi petugas: ' . $e->getMessage());
-        }
+        return [
+            'total' => $total,
+            'sudah_dipetakan' => $sudah,
+            'belum_dipetakan' => $belum,
+            'persentase_lengkap' => $total > 0 ? round(($sudah / $total) * 100, 2) : 0,
+        ];
     }
 
-    /**
-     * Menghindari error jika ada field yang tidak ada di tabel database.
-     */
+    private function ambilPetani(): array
+    {
+        if (!Schema::hasTable('users')) {
+            return [];
+        }
+
+        $query = DB::table('users')->select('id', 'nama_lengkap', 'email');
+
+        if (Schema::hasColumn('users', 'role_id')) {
+            $query->where('role_id', 1);
+        }
+
+        return $query->orderBy('nama_lengkap')->get()->toArray();
+    }
+
+    private function ambilTabel(string $table, array $columns, string $orderBy): array
+    {
+        if (!Schema::hasTable($table)) {
+            return [];
+        }
+
+        $availableColumns = collect($columns)
+            ->filter(fn ($column) => Schema::hasColumn($table, $column))
+            ->values()
+            ->all();
+
+        if (empty($availableColumns)) {
+            return [];
+        }
+
+        $query = DB::table($table)->select($availableColumns);
+
+        if (Schema::hasColumn($table, $orderBy)) {
+            $query->orderBy($orderBy);
+        }
+
+        return $query->get()->toArray();
+    }
+
+    private function lahanAda($id): bool
+    {
+        return DB::table('lahan_sawah')->where('id', $id)->exists();
+    }
+
     private function filterExistingColumns(string $table, array $payload): array
     {
         return collect($payload)
-            ->filter(function ($value, $key) use ($table) {
-                return Schema::hasColumn($table, $key);
-            })
+            ->filter(fn ($value, $key) => Schema::hasColumn($table, $key))
             ->toArray();
     }
 }

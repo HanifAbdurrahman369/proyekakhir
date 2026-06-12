@@ -7,6 +7,27 @@ use Illuminate\Support\Facades\DB;
 
 class NotifikasiController extends Controller
 {
+    public function getNotifikasiPetugas(Request $request)
+    {
+        $query = DB::table('notifikasi')
+            ->where('role_id_penerima', 2);
+
+        $notifikasi = (clone $query)
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->get();
+
+        $unreadCount = (clone $query)
+            ->where('is_read', 0)
+            ->count();
+
+        return response()->json([
+            'success' => true,
+            'unread_count' => $unreadCount,
+            'data' => $notifikasi,
+        ], 200, [], JSON_INVALID_UTF8_SUBSTITUTE);
+    }
+
     public function index(Request $request)
     {
         $notifikasi = DB::table('notifikasi')
