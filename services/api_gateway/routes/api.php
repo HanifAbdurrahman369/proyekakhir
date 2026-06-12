@@ -41,7 +41,7 @@ function proxyRequest(Request $request, string $serviceUrl, string $path)
     $options = [
         'headers' => $headers,
         'query'   => $request->query(),
-        'timeout' => 30,
+        'timeout' => 5,
     ];
 
     if (!in_array($request->method(), ['GET', 'HEAD'])) {
@@ -126,7 +126,7 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/auth/{any?}
 
 /*
 |--------------------------------------------------------------------------
-| 3. ROLE PETUGAS - Manajemen Data Spasial, Notifikasi, Monitoring
+| 3. ROLE PETUGAS - Manajemen Data Spasial
 |--------------------------------------------------------------------------
 */
 
@@ -149,8 +149,7 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/monitoring/
 |--------------------------------------------------------------------------
 | 4. PETUGAS - Verifikasi Hasil Panen
 |--------------------------------------------------------------------------
-| Route ini wajib eksplisit. Jika tidak ada, /api/panen/pending dianggap sebagai
-| service bernama "panen" oleh dynamic route dan hasilnya 404.
+| Route eksplisit agar /api/panen/pending tidak jatuh ke dynamic service route.
 |--------------------------------------------------------------------------
 */
 
@@ -245,6 +244,7 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/users/{any?
     return proxyRequest($request, $serviceMap['user'], $path);
 })->where('any', '.*');
 
+
 Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/map-lahan/{any?}', function (Request $request, $any = '') use ($serviceMap) {
     return proxyRequest($request, $serviceMap['gis'], trim('map-lahan/' . $any, '/'));
 })->where('any', '.*');
@@ -263,7 +263,7 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/master/{any
 
 /*
 |--------------------------------------------------------------------------
-| 6. DYNAMIC SERVICE ROUTE
+| 5. DYNAMIC SERVICE ROUTE
 |--------------------------------------------------------------------------
 | Contoh:
 | /api/auth/login

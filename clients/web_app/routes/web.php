@@ -6,10 +6,6 @@ use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\PetugasController;
 use App\Http\Controllers\SiklusTanamController;
-use App\Http\Controllers\ProduksiDaerahController;
-use App\Http\Controllers\PejabatController;
-use App\Http\Controllers\PetaniController;
-use App\Http\Controllers\LahanSawahController;
 
 /*
 |--------------------------------------------------------------------------
@@ -50,13 +46,6 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('
 // Profil Pengguna (Wajib Login JWT)
 Route::get('/profile', [AuthController::class, 'profile'])->middleware('jwt');
 
-/*
-===================================================================
-1B. API ENDPOINTS untuk AJAX/Fetch dari Browser
-===================================================================
-*/
-
-
 
 /*
 ===================================================================
@@ -78,48 +67,27 @@ Route::get('/statistik', function () {
 3. PENGALIHAN DASHBOARD MULTI-ROLE (Dipanggil Setelah Login)
 ===================================================================
 */
-Route::get('/dashboard-petani', [PetaniController::class, 'index'])->middleware('role:1');
+Route::get('/dashboard-petani', function () { return view('dashboard.petani'); })->middleware('role:1');
 
 // Memastikan "case 2: return redirect('/dashboard-petugas');" bekerja sempurna dan memuat data peta
 Route::get('/dashboard-petugas', [PetugasController::class, 'index'])->middleware('role:2');
 
-Route::get('/dashboard-pejabat',  [PejabatController::class, 'index'])->middleware('role:3');
+Route::get('/dashboard-pejabat', function () { return view('dashboard.pejabat'); })->middleware('role:3');
+
 
 /*
 ===================================================================
-3B. OPERASIONAL PEJABAT (ROLE: 3) - Analisis Data Daerah
+4. OPERASIONAL PETUGAS (ROLE: 2) - Manajemen Spasial
 ===================================================================
 */
-Route::middleware(['role:3'])->group(function () {
-    Route::get('/laporan-produksi', [ProduksiDaerahController::class, 'index'])->name('laporan.produksi');
-    Route::get('/laporan-produksi/export-excel', [ProduksiDaerahController::class, 'export'])->name('laporan.produksi.export');
-    Route::get('/laporan-produksi/export-pdf', [ProduksiDaerahController::class, 'exportPdf'])->name('laporan.produksi.pdf');
-    Route::get('/produksi-kecamatan', [PejabatController::class, 'produksiKecamatan'])->name('produksi.kecamatan');
-    Route::get('/lahan-kecamatan', [PejabatController::class, 'lahanKecamatan'])->name('lahan.kecamatan');
-
-});
 Route::middleware(['role:2'])->group(function () {
-    Route::get('/dashboard-petugas', [PetugasController::class, 'index'])->name('petugas.dashboard');
-
-    Route::get('/manajemen-data-spasial', [PetugasController::class, 'manajemenDataSpasial'])->name('petugas.spasial');
-    Route::post('/petugas/spasial/simpan', [PetugasController::class, 'storeSpasial'])->name('petugas.spasial.store');
-    Route::put('/petugas/spasial/{id}', [PetugasController::class, 'updateSpasial'])->name('petugas.spasial.update');
-    Route::delete('/petugas/spasial/{id}', [PetugasController::class, 'destroySpasial'])->name('petugas.spasial.destroy');
-
-    Route::get('/input-parameter-lingkungan', [PetugasController::class, 'inputParameterLingkungan'])->name('petugas.monitoring');
-    Route::post('/petugas/monitoring/simpan', [PetugasController::class, 'storeParameterLingkungan'])->name('petugas.monitoring.store');
-
-    Route::get('/verifikasi-data-petani', [PetugasController::class, 'verifikasiDataPetani'])->name('petugas.verifikasi');
-
-    Route::post('/petugas/verifikasi/lahan/{id}/{aksi}', [PetugasController::class, 'aksiVerifikasiLahan'])->name('petugas.verifikasi.lahan');
-    Route::post('/petugas/verifikasi/panen/{id}/{aksi}', [PetugasController::class, 'aksiVerifikasiPanen'])->name('petugas.verifikasi.panen');
-
-    Route::post('/petugas/verifikasi/{id}/{aksi}', [PetugasController::class, 'aksiVerifikasi'])->name('petugas.verifikasi.legacy');
-
-    Route::post('/petugas/verifikasi-panen/{id}/{aksi}', [PetugasController::class, 'aksiVerifikasiPanen']);
-    Route::get('/petugas/verifikasi/{id}', [PetugasController::class, 'redirectVerifikasiPanen']);
-    Route::get('/notifikasi/{id}', [PetugasController::class, 'bukaNotifikasi']);
-    });
+    Route::get('/dashboard-petugas', [PetugasController::class, 'index']);
+    Route::get('/manajemen-data-spasial', [PetugasController::class, 'manajemenDataSpasial']);
+    Route::get('/input-parameter-lingkungan', [PetugasController::class, 'inputParameterLingkungan']);
+    Route::get('/verifikasi-data-petani', [PetugasController::class, 'verifikasiDataPetani']);  
+    Route::post('/petugas/spasial/simpan', [PetugasController::class, 'storeSpasial']);
+    Route::post('/petugas/verifikasi/{id}/{aksi}', [PetugasController::class, 'aksiVerifikasi']);
+});
 
 /*
 ===================================================================
@@ -130,10 +98,6 @@ Route::middleware(['role:1'])->group(function () {
     Route::get('/input-panen', [SiklusTanamController::class, 'create'])->name('input.panen');
     Route::get('/riwayat-panen', [SiklusTanamController::class, 'riwayatPanen'])->name('riwayat.panen');
     Route::post('/input-panen', [SiklusTanamController::class, 'store'])->name('input.panen.store');
-
-    Route::get('/lahan/create', [LahanSawahController::class, 'create'])->name('tambah.lahan');
-    Route::post('/lahan/store', [LahanSawahController::class, 'storeLahan'])->name('lahan.store');
-
 });
 
 

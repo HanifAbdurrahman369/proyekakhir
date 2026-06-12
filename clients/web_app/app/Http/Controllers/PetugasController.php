@@ -9,10 +9,11 @@ class PetugasController extends Controller
 {
     private function gatewayUrl(): string
     {
-        return rtrim(env('GATEWAY_URL', env('API_GATEWAY_URL', 'http://127.0.0.1:8003')), '/') . '/api';
+        $base = rtrim(env('GATEWAY_URL', env('API_GATEWAY_URL', 'http://127.0.0.1:8003')), '/');
+        return str_ends_with($base, '/api') ? $base : $base . '/api';
     }
 
-    private function getBearerToken(): string
+    private function token(): string
     {
         return session('token')
             ?? session('jwt_token')
@@ -23,88 +24,60 @@ class PetugasController extends Controller
 
     private function http()
     {
-        $http = Http::acceptJson()->timeout(15);
+        $http = Http::acceptJson()->timeout(10);
+        return $this->token() ? $http->withToken($this->token()) : $http;
+    }
 
-        if ($this->getBearerToken()) {
-            $http = $http->withToken($this->getBearerToken());
-        }
-
-        return $http;
+    private function api(string $endpoint): string
+    {
+        return $this->gatewayUrl() . '/' . ltrim($endpoint, '/');
     }
 
     private function getData(string $endpoint, mixed $default = [])
     {
-        if (!$this->getBearerToken()) {
+        if (!$this->token()) {
             return $default;
         }
 
         try {
-            $response = $this->http()->get($this->gatewayUrl() . $endpoint);
+            $response = $this->http()->get($this->api($endpoint));
 
             if (!$response->successful()) {
                 return $default;
             }
 
             $json = $response->json();
-
             return $json['data'] ?? $json ?? $default;
         } catch (\Throwable $e) {
             return $default;
         }
     }
 
-    private function getDataWithError(string $endpoint, mixed $default = []): array
+    private function postData(string $endpoint, array $payload = [])
     {
-        if (!$this->getBearerToken()) {
-            return [
-                'data' => $default,
-                'error' => 'Token login tidak ditemukan. Silakan login ulang.',
-            ];
-        }
-
-        try {
-            $response = $this->http()->get($this->gatewayUrl() . $endpoint);
-
-            if (!$response->successful()) {
-                $json = $response->json();
-
-                return [
-                    'data' => $default,
-                    'error' => $json['message'] ?? 'Gagal mengambil data. Status API: ' . $response->status(),
-                ];
-            }
-
-            $json = $response->json();
-
-            return [
-                'data' => $json['data'] ?? $json ?? $default,
-                'error' => null,
-            ];
-        } catch (\Throwable $e) {
-            return [
-                'data' => $default,
-                'error' => 'Gagal terhubung ke API: ' . $e->getMessage(),
-            ];
-        }
+        return $this->http()->post($this->api($endpoint), $payload);
     }
 
-    private function sendPost(string $endpoint, array $payload = [])
+    private function putData(string $endpoint, array $payload = [])
     {
-        return $this->http()
-            ->post($this->gatewayUrl() . $endpoint, $payload);
+        return $this->http()->put($this->api($endpoint), $payload);
+    }
+
+    private function deleteData(string $endpoint)
+    {
+        return $this->http()->delete($this->api($endpoint));
     }
 
     public function index()
     {
         $pendingLahan = $this->getData('/lahan/pending', []);
         $pendingPanen = $this->getData('/panen/pending', []);
-        $notifikasi = $this->getData('/notifikasi/petugas', []);
+        $notifikasi = $this->getData('/notifikasi', []);
 
         $stats = [
             'pending_lahan' => is_countable($pendingLahan) ? count($pendingLahan) : 0,
             'pending_panen' => is_countable($pendingPanen) ? count($pendingPanen) : 0,
-            'total_pending' => (is_countable($pendingLahan) ? count($pendingLahan) : 0)
-                + (is_countable($pendingPanen) ? count($pendingPanen) : 0),
+            'total_pending' => (is_countable($pendingLahan) ? count($pendingLahan) : 0) + (is_countable($pendingPanen) ? count($pendingPanen) : 0),
             'notifikasi' => is_countable($notifikasi) ? count($notifikasi) : 0,
         ];
 
@@ -113,12 +86,11 @@ class PetugasController extends Controller
             'stats' => $stats,
             'pendingLahan' => $pendingLahan,
             'pendingPanen' => $pendingPanen,
-            'panenPending' => $pendingPanen,
             'notifikasi' => $notifikasi,
         ]);
     }
 
-    public function manajemenDataSpasial()
+    public function manajemenDataSpasial(Request $request)
     {
         $referensi = $this->getData('/spasial-lahan/referensi', [
             'petani' => [],
@@ -127,15 +99,31 @@ class PetugasController extends Controller
             'tipe_lahan' => [],
         ]);
 
-        $koleksiLahan = $this->getData('/spasial-lahan?status=DITERIMA', [
+        $koleksiLahan = $this->getData('/spasial-lahan?kabupaten=batola&status=DITERIMA', [
             'type' => 'FeatureCollection',
             'features' => [],
         ]);
+
+        $lahanDiterima = $this->getData('/lahan/accepted', []);
+        $lahanBelumDipetakan = collect(is_array($lahanDiterima) ? $lahanDiterima : [])
+            ->filter(function ($lahan) {
+                $statusSpasial = data_get($lahan, 'status_spasial');
+                $lat = data_get($lahan, 'latitude');
+                $lng = data_get($lahan, 'longitude');
+                $polygon = data_get($lahan, 'polygon_geojson') ?? data_get($lahan, 'geojson') ?? data_get($lahan, 'polygon_area');
+
+                return $statusSpasial === 'BELUM_DIPETAKAN' || empty($lat) || empty($lng) || empty($polygon);
+            })
+            ->values()
+            ->all();
 
         return view('dashboard.petugas', [
             'page' => 'manajemen-data-spasial',
             'referensi' => $referensi,
             'koleksiLahan' => $koleksiLahan,
+            'lahanDiterima' => $lahanDiterima,
+            'lahanBelumDipetakan' => $lahanBelumDipetakan,
+            'highlightLahanId' => $request->query('lahan_id'),
         ]);
     }
 
@@ -153,80 +141,71 @@ class PetugasController extends Controller
 
     public function verifikasiDataPetani(Request $request)
     {
-        $lahanResult = $this->getDataWithError('/lahan/pending', []);
-        $panenResult = $this->getDataWithError('/panen/pending', []);
-        $notifikasi = $this->getData('/notifikasi/petugas', []);
+        $pendingLahan = $this->getData('/lahan/pending', []);
+        $panenPending = $this->getData('/panen/pending', []);
 
-        $pendingLahan = $lahanResult['data'];
-        $pendingPanen = $panenResult['data'];
-
-        $dataView = [
+        return view('dashboard.petugas', [
             'page' => 'verifikasi-data-petani',
             'pendingLahan' => $pendingLahan,
-            'pendingPanen' => $pendingPanen,
-            'panenPending' => $pendingPanen,
-            'notifikasi' => $notifikasi,
-            'errorLahan' => $lahanResult['error'],
-            'errorPanen' => $panenResult['error'],
+            'panenPending' => $panenPending,
+            'pendingPanen' => $panenPending,
             'highlightPanenId' => $request->query('id'),
-            'highlightTipe' => $request->query('tipe'),
-        ];
-
-        $view = view()->exists('dashboard.petugas.verifikasi-data-petani')
-            ? 'dashboard.petugas.verifikasi-data-petani'
-            : 'dashboard.petugas';
-
-        return view($view, $dataView);
+            'highlightLahanId' => $request->query('lahan_id'),
+        ]);
     }
 
     public function storeSpasial(Request $request)
     {
         $request->validate([
-            'user_id' => 'required',
-            'kecamatan_id' => 'required',
-            'kelurahan_id' => 'required',
-            'nama_lahan' => 'required',
-            'luas_lahan_hektar' => 'required|numeric',
+            'lahan_id' => 'nullable|integer',
+            'user_id' => 'nullable|integer',
+            'kecamatan_id' => 'required|integer',
+            'kelurahan_id' => 'nullable|integer',
+            'tipe_lahan_id' => 'nullable|integer',
+            'nama_lahan' => 'required|string|max:100',
+            'pemilik_lahan' => 'nullable|string|max:100',
+            'luas_lahan_hektar' => 'required|numeric|min:0',
+            'alamat_detail' => 'nullable|string',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+            'polygon_geojson' => 'nullable|string',
         ]);
 
         $payload = $request->all();
         $payload['status_verifikasi'] = 'DITERIMA';
+        $payload['status_spasial'] = 'SUDAH_DIPETAKAN';
 
-        $response = $this->sendPost('/spasial-lahan', $payload);
+        $response = $request->filled('lahan_id')
+            ? $this->putData('/spasial-lahan/' . $request->input('lahan_id'), $payload)
+            : $this->postData('/spasial-lahan', $payload);
 
         if ($response->successful()) {
-            return redirect('/manajemen-data-spasial')
-                ->with('success', 'Data lahan berhasil dipetakan dan langsung legal.');
+            return redirect('/manajemen-data-spasial')->with('success', 'Data spasial lahan berhasil disimpan.');
         }
 
-        return back()
-            ->with('error', $response->json('message') ?? 'Gagal menyimpan data spasial lahan.')
-            ->withInput();
+        return back()->with('error', $response->json('message') ?? 'Gagal menyimpan data spasial lahan.')->withInput();
     }
 
     public function updateSpasial(Request $request, $id)
     {
-        $response = $this->http()
-            ->put($this->gatewayUrl() . "/spasial-lahan/{$id}", $request->all());
+        $payload = $request->all();
+        $payload['status_spasial'] = 'SUDAH_DIPETAKAN';
+
+        $response = $this->putData('/spasial-lahan/' . $id, $payload);
 
         if ($response->successful()) {
-            return redirect('/manajemen-data-spasial')
-                ->with('success', 'Data spasial lahan berhasil diperbarui.');
+            return redirect('/manajemen-data-spasial')->with('success', 'Data spasial lahan berhasil diperbarui.');
         }
 
-        return back()
-            ->with('error', $response->json('message') ?? 'Gagal memperbarui data spasial.')
-            ->withInput();
+        return back()->with('error', $response->json('message') ?? 'Gagal memperbarui data spasial.')->withInput();
     }
 
     public function destroySpasial($id)
     {
-        $response = $this->http()
-            ->delete($this->gatewayUrl() . "/spasial-lahan/{$id}");
+        $response = $this->deleteData('/spasial-lahan/' . $id);
 
         if ($response->successful()) {
-            return redirect('/manajemen-data-spasial')
-                ->with('success', 'Data spasial lahan berhasil dihapus.');
+            return redirect('/manajemen-data-spasial')->with('success', 'Data spasial lahan berhasil dihapus.');
         }
 
         return back()->with('error', 'Gagal menghapus data spasial lahan.');
@@ -246,37 +225,58 @@ class PetugasController extends Controller
             'longitude' => 'nullable|numeric',
         ]);
 
-        $response = $this->sendPost('/monitoring', $request->all());
+        $response = $this->postData('/monitoring', $request->all());
 
         if ($response->successful()) {
-            return redirect('/input-parameter-lingkungan')
-                ->with('success', 'Parameter lingkungan berhasil disimpan.');
+            return redirect('/input-parameter-lingkungan')->with('success', 'Parameter lingkungan berhasil disimpan.');
         }
 
-        return back()
-            ->with('error', $response->json('message') ?? 'Gagal menyimpan parameter lingkungan.')
-            ->withInput();
+        return back()->with('error', $response->json('message') ?? 'Gagal menyimpan parameter lingkungan.')->withInput();
     }
 
     public function aksiVerifikasiLahan(Request $request, $id, $aksi)
     {
-        return $this->prosesVerifikasi($request, 'lahan', $id, $aksi);
+        $aksi = strtolower($aksi);
+        $endpointAction = in_array($aksi, ['terima', 'diterima', 'setuju', 'approve', 'approved'], true) ? 'approve' : 'reject';
+
+        $response = $this->postData('/lahan/' . $id . '/' . $endpointAction, $request->all());
+
+        if ($response->successful()) {
+            if ($endpointAction === 'approve') {
+                return redirect('/manajemen-data-spasial?lahan_id=' . $id)
+                    ->with('success', 'Pengajuan lahan disetujui. Lanjutkan membuat titik lokasi dan polygon lahan.');
+            }
+
+            return redirect('/verifikasi-data-petani')->with('success', 'Pengajuan lahan berhasil ditolak.');
+        }
+
+        return back()->with('error', $response->json('message') ?? 'Proses verifikasi lahan gagal.');
     }
 
     public function aksiVerifikasiPanen(Request $request, $id, $aksi)
     {
-        return $this->prosesVerifikasi($request, 'panen', $id, $aksi);
+        $aksi = strtolower($aksi);
+
+        if (in_array($aksi, ['terima', 'setuju', 'diterima', 'approve', 'approved'], true)) {
+            $aksiApi = 'DITERIMA';
+        } elseif (in_array($aksi, ['tolak', 'ditolak', 'reject', 'rejected'], true)) {
+            $aksiApi = 'DITOLAK';
+        } else {
+            return redirect('/verifikasi-data-petani')->with('error', 'Aksi verifikasi panen tidak valid.');
+        }
+
+        $response = $this->postData('/panen/' . $id . '/verifikasi', ['aksi' => $aksiApi] + $request->all());
+
+        if ($response->successful()) {
+            return redirect('/verifikasi-data-petani')->with('success', $response->json('message') ?? 'Status hasil panen berhasil diperbarui.');
+        }
+
+        return redirect('/verifikasi-data-petani')->with('error', $response->json('message') ?? 'Gagal memverifikasi hasil panen.');
     }
 
     public function aksiVerifikasi(Request $request, $id, $aksi)
     {
-        $jenis = strtolower((string) $request->input('jenis', $request->query('jenis', 'panen')));
-
-        if ($jenis === 'lahan') {
-            return $this->prosesVerifikasi($request, 'lahan', $id, $aksi);
-        }
-
-        return $this->prosesVerifikasi($request, 'panen', $id, $aksi);
+        return $this->aksiVerifikasiPanen($request, $id, $aksi);
     }
 
     public function redirectVerifikasiPanen($id)
@@ -286,55 +286,13 @@ class PetugasController extends Controller
 
     public function bukaNotifikasi($id)
     {
-        try {
-            $response = $this->http()->put($this->gatewayUrl() . '/notifikasi/' . $id . '/read');
+        $response = $this->http()->get($this->api('/notifikasi/' . $id));
 
-            if (!$response->successful()) {
-                return redirect('/verifikasi-data-petani')
-                    ->with('error', $response->json('message') ?? 'Notifikasi tidak dapat ditandai sudah dibaca.');
-            }
-        } catch (\Throwable $e) {
-            return redirect('/verifikasi-data-petani')
-                ->with('error', 'Notifikasi tidak bisa dibuka: ' . $e->getMessage());
+        if ($response->successful()) {
+            $targetUrl = $response->json('data.target_url') ?? '/verifikasi-data-petani';
+            return redirect($targetUrl);
         }
 
         return redirect('/verifikasi-data-petani');
-    }
-
-    private function prosesVerifikasi(Request $request, string $jenis, $id, string $aksi)
-    {
-        $aksi = strtolower($aksi);
-
-        if (in_array($aksi, ['terima', 'diterima', 'setuju', 'approve', 'approved'], true)) {
-            $endpointAction = 'approve';
-            $pesanSukses = $jenis === 'lahan'
-                ? 'Pengajuan lahan berhasil diterima.'
-                : 'Laporan hasil panen berhasil diterima dan data lahan sudah otomatis diperbarui.';
-        } elseif (in_array($aksi, ['tolak', 'ditolak', 'reject', 'rejected'], true)) {
-            $endpointAction = 'reject';
-            $pesanSukses = $jenis === 'lahan'
-                ? 'Pengajuan lahan berhasil ditolak.'
-                : 'Laporan hasil panen berhasil ditolak.';
-        } else {
-            return back()->with('error', 'Aksi verifikasi tidak valid.');
-        }
-
-        $endpoint = $jenis === 'lahan'
-            ? "/lahan/{$id}/{$endpointAction}"
-            : "/panen/{$id}/{$endpointAction}";
-
-        try {
-            $response = $this->sendPost($endpoint, $request->except(['_token']));
-
-            if ($response->successful()) {
-                return redirect('/verifikasi-data-petani')->with('success', $response->json('message') ?? $pesanSukses);
-            }
-
-            return redirect('/verifikasi-data-petani')
-                ->with('error', $response->json('message') ?? 'Proses verifikasi gagal. Status API: ' . $response->status());
-        } catch (\Throwable $e) {
-            return redirect('/verifikasi-data-petani')
-                ->with('error', 'Gagal terhubung ke API verifikasi: ' . $e->getMessage());
-        }
     }
 }
