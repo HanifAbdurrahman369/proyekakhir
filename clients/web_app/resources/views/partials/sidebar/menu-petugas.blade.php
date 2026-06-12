@@ -38,11 +38,9 @@
     </span>
     <span class="flex-1">Beranda Petugas</span>
 
-    @if($totalPending > 0)
-        <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-red-100 text-red-700 border border-red-200">
-            {{ $totalPending }}
-        </span>
-    @endif
+    <span data-petugas-pending-badge class="px-2 py-0.5 rounded-full text-[10px] font-extrabold border {{ $totalPending > 0 ? 'bg-red-100 text-red-700 border-red-200' : 'bg-slate-100 text-slate-500 border-slate-200' }}">
+        {{ $totalPending }}
+    </span>
 </a>
 
 <a href="/manajemen-data-spasial" class="{{ $menuBase }} {{ request()->is('manajemen-data-spasial') ? $menuActive : $menuIdle }}">
@@ -71,9 +69,47 @@
     </span>
     <span class="flex-1">Verifikasi Data Petani</span>
 
-    @if($totalPending > 0)
-        <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-red-100 text-red-700 border border-red-200">
-            {{ $totalPending }}
-        </span>
-    @endif
+    <span data-petugas-pending-badge class="px-2 py-0.5 rounded-full text-[10px] font-extrabold border {{ $totalPending > 0 ? 'bg-red-100 text-red-700 border-red-200' : 'bg-slate-100 text-slate-500 border-slate-200' }}">
+        {{ $totalPending }}
+    </span>
 </a>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        async function refreshPetugasPendingCounts() {
+            try {
+                const response = await fetch('/petugas/pending-counts', {
+                    headers: { 'Accept': 'application/json' }
+                });
+                const json = await response.json();
+                const total = Number(json?.data?.total_pending ?? 0);
+
+                document.querySelectorAll('[data-petugas-pending-badge]').forEach((badge) => {
+                    badge.textContent = total;
+                    badge.classList.toggle('bg-red-100', total > 0);
+                    badge.classList.toggle('text-red-700', total > 0);
+                    badge.classList.toggle('border-red-200', total > 0);
+                    badge.classList.toggle('bg-slate-100', total <= 0);
+                    badge.classList.toggle('text-slate-500', total <= 0);
+                    badge.classList.toggle('border-slate-200', total <= 0);
+                });
+
+                document.querySelectorAll('[data-petugas-pending-lahan]').forEach((badge) => {
+                    badge.textContent = `${Number(json?.data?.pending_lahan ?? 0)} belum diverifikasi`;
+                });
+
+                document.querySelectorAll('[data-petugas-pending-panen]').forEach((badge) => {
+                    badge.textContent = `${Number(json?.data?.pending_panen ?? 0)} belum diverifikasi`;
+                });
+            } catch (error) {}
+        }
+
+        window.refreshPetugasPendingCounts = refreshPetugasPendingCounts;
+        refreshPetugasPendingCounts();
+        setInterval(refreshPetugasPendingCounts, 8000);
+        window.addEventListener('focus', refreshPetugasPendingCounts);
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) refreshPetugasPendingCounts();
+        });
+    });
+</script>

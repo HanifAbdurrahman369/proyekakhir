@@ -85,6 +85,7 @@ Route::middleware(['role:2'])->group(function () {
     Route::get('/manajemen-data-spasial', [PetugasController::class, 'manajemenDataSpasial']);
     Route::get('/input-parameter-lingkungan', [PetugasController::class, 'inputParameterLingkungan']);
     Route::get('/verifikasi-data-petani', [PetugasController::class, 'verifikasiDataPetani']);  
+    Route::get('/petugas/pending-counts', [PetugasController::class, 'pendingCounts']);
     Route::post('/petugas/spasial/simpan', [PetugasController::class, 'storeSpasial']);
     Route::put('/petugas/spasial/{id}', [PetugasController::class, 'updateSpasial']);
     Route::delete('/petugas/spasial/{id}', [PetugasController::class, 'destroySpasial']);

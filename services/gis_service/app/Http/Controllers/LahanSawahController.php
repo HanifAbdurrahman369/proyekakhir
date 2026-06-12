@@ -110,7 +110,12 @@ class LahanSawahController extends Controller
 
     public function update(Request $request, $id)
     {
-        if (!$this->lahanAda($id)) {
+        $existing = DB::table('lahan_sawah')
+            ->where('id', $id)
+            ->select('status_verifikasi')
+            ->first();
+
+        if (!$existing) {
             return response()->json([
                 'success' => false,
                 'message' => 'Data lahan tidak ditemukan.',
@@ -119,7 +124,10 @@ class LahanSawahController extends Controller
 
         [$payload, $geometry] = $this->validasiPayloadSpasial($request, false);
 
-        $payload['status_verifikasi'] = 'DITERIMA';
+        if (($existing->status_verifikasi ?? null) !== 'DITOLAK') {
+            $payload['status_verifikasi'] = 'DITERIMA';
+        }
+
         $payload['status_spasial'] = 'SUDAH_DIPETAKAN';
 
         if (Schema::hasColumn('lahan_sawah', 'updated_at')) {
@@ -275,7 +283,7 @@ class LahanSawahController extends Controller
 
         if (!is_array($outerRing) || count($outerRing) < 4) {
             throw ValidationException::withMessages([
-                'polygon_geojson' => 'Polygon wajib memiliki minimal 3 titik dan titik penutup.',
+                'polygon_geojson' => 'Polygon wajib memiliki minimal 3 titik dan titik penutup. Titik batas dapat lebih dari 4 titik.',
             ]);
         }
 

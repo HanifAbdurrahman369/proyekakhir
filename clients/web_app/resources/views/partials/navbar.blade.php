@@ -90,7 +90,7 @@
                                 Notifikasi Masuk
                             </p>
                             <p class="text-[10px] text-slate-400 mt-0.5">
-                                Update otomatis setiap 30 detik
+                                Update otomatis setiap beberapa detik
                             </p>
                         </div>
 
@@ -106,6 +106,15 @@
                     document.addEventListener('DOMContentLoaded', () => {
                         const token = "{{ session('token') }}";
                         const gateway = "{{ env('GATEWAY_URL', 'http://127.0.0.1:8003') }}/api";
+
+                        function escapeHtml(value) {
+                            return String(value ?? '')
+                                .replace(/&/g, '&amp;')
+                                .replace(/</g, '&lt;')
+                                .replace(/>/g, '&gt;')
+                                .replace(/"/g, '&quot;')
+                                .replace(/'/g, '&#039;');
+                        }
 
                         function fetchNotif() {
                             fetch(`${gateway}/notifikasi/petugas`, {
@@ -134,14 +143,19 @@
                                     json.data.forEach(item => {
                                         const targetUrl = item.target_url || '/verifikasi-data-petani';
                                         const encodedTargetUrl = encodeURIComponent(targetUrl);
+                                        const unreadClass = Number(item.is_read) === 0 ? 'bg-[#f7fced]' : 'bg-white';
                                         list.innerHTML += `
-                                            <li class="p-4 border-b border-[#edf4df] hover:bg-[#f7fced] cursor-pointer"
+                                            <li class="p-4 border-b border-[#edf4df] hover:bg-[#f7fced] cursor-pointer ${unreadClass}"
                                                 onclick="bacaNotif(${item.id}, decodeURIComponent('${encodedTargetUrl}'))">
-                                                <p class="font-bold text-xs text-[#203c10]">${item.judul}</p>
-                                                <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">${item.pesan}</p>
+                                                <p class="font-bold text-xs text-[#203c10]">${escapeHtml(item.judul)}</p>
+                                                <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">${escapeHtml(item.pesan)}</p>
                                             </li>
                                         `;
                                     });
+
+                                    if (typeof window.refreshPetugasPendingCounts === 'function') {
+                                        window.refreshPetugasPendingCounts();
+                                    }
                                 }
                             })
                             .catch(() => {});
@@ -159,7 +173,11 @@
                         };
 
                         fetchNotif();
-                        setInterval(fetchNotif, 30000);
+                        setInterval(fetchNotif, 8000);
+                        window.addEventListener('focus', fetchNotif);
+                        document.addEventListener('visibilitychange', () => {
+                            if (!document.hidden) fetchNotif();
+                        });
                     });
                 </script>
             @endif

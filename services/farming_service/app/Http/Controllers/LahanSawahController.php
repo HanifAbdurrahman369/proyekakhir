@@ -7,6 +7,7 @@ use App\Models\LahanSawah;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class LahanSawahController extends Controller
 {
@@ -152,7 +153,10 @@ class LahanSawahController extends Controller
 
         $this->buatNotifikasiPetugas(
             'Pengajuan Lahan Baru',
-            'Petani mengajukan lahan baru: ' . $data->nama_lahan . '. Segera lakukan verifikasi.'
+            'Petani mengajukan lahan baru: ' . $data->nama_lahan . '. Segera lakukan verifikasi.',
+            'lahan_sawah',
+            (int) $data->id,
+            '/verifikasi-data-petani?lahan_id=' . $data->id
         );
 
         return response()->json([
@@ -203,6 +207,7 @@ class LahanSawahController extends Controller
         }
 
         $data->update($updateData);
+        $this->tandaiNotifikasiLahanTerbaca((int) $data->id);
 
         return response()->json([
             'success' => true,
@@ -232,6 +237,7 @@ class LahanSawahController extends Controller
         $data->update([
             'status_verifikasi' => 'DITOLAK'
         ]);
+        $this->tandaiNotifikasiLahanTerbaca((int) $data->id);
 
         return response()->json([
             'success' => true,
@@ -240,10 +246,10 @@ class LahanSawahController extends Controller
         ]);
     }
 
-    private function buatNotifikasiPetugas(string $judul, string $pesan): void
+    private function buatNotifikasiPetugas(string $judul, string $pesan, ?string $refType = null, ?int $refId = null, ?string $targetUrl = null): void
     {
         try {
-            DB::table('notifikasi')->insert([
+            $payload = [
                 'role_id_penerima' => 2,
                 'user_id_penerima' => null,
                 'judul' => $judul,
@@ -251,9 +257,40 @@ class LahanSawahController extends Controller
                 'is_read' => 0,
                 'created_at' => now(),
                 'updated_at' => now(),
-            ]);
+            ];
+
+            if (Schema::hasColumn('notifikasi', 'ref_type')) {
+                $payload['ref_type'] = $refType;
+            }
+
+            if (Schema::hasColumn('notifikasi', 'ref_id')) {
+                $payload['ref_id'] = $refId;
+            }
+
+            if (Schema::hasColumn('notifikasi', 'target_url')) {
+                $payload['target_url'] = $targetUrl ?: '/verifikasi-data-petani';
+            }
+
+            DB::table('notifikasi')->insert($payload);
         } catch (\Throwable $e) {
             Log::error('Gagal membuat notifikasi petugas: ' . $e->getMessage());
+        }
+    }
+
+    private function tandaiNotifikasiLahanTerbaca(int $lahanId): void
+    {
+        try {
+            if (Schema::hasColumn('notifikasi', 'ref_type') && Schema::hasColumn('notifikasi', 'ref_id')) {
+                DB::table('notifikasi')
+                    ->where('ref_type', 'lahan_sawah')
+                    ->where('ref_id', $lahanId)
+                    ->update([
+                        'is_read' => 1,
+                        'updated_at' => now(),
+                    ]);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Gagal menandai notifikasi lahan terbaca: ' . $e->getMessage());
         }
     }
 }

@@ -40,7 +40,7 @@
     $lahanLamaSpasial = isset($lahanLamaSpasial)
         ? collect($lahanLamaSpasial)->values()
         : collect($spasialRows)
-            ->filter(fn($item) => strtoupper((string) data_get($item, 'status_verifikasi', '')) !== 'DITOLAK' && $punyaSpasialLengkap($item))
+            ->filter(fn($item) => $punyaSpasialLengkap($item))
             ->values();
     $totalSpasial = data_get($spasialSummary, 'total', is_countable($spasialRows) ? count($spasialRows) : 0);
     $sudahDipetakan = data_get($spasialSummary, 'sudah_dipetakan', $lahanLamaSpasial->count());
@@ -60,14 +60,21 @@
             .spatial-row { border: 1px solid #edf4df; background: #fff; }
             .spatial-row.is-active { border-color: #65bd00; background: #f7fced; }
             .spatial-workspace.is-locked .spatial-form-body { display: none; }
-            .spatial-workspace.is-locked .approval-state { display: none; }
-            .spatial-workspace.is-awaiting-verification .spatial-form-body { display: none; }
-            .spatial-workspace:not(.is-awaiting-verification) .approval-state { display: none; }
             .spatial-workspace:not(.is-locked) .spatial-empty-state { display: none; }
             .spatial-list { max-height: 360px; overflow-y: auto; }
             .map-tool.is-active { background: #203c10; color: #fff; border-color: #203c10; }
             .map-tool:disabled { opacity: .45; cursor: not-allowed; }
             .spatial-section-title { letter-spacing: .18em; }
+            .spatial-field { border: 1px solid #e7efd8; border-radius: 16px; padding: 14px 16px; background: #fff; min-height: 86px; transition: border-color .18s ease, box-shadow .18s ease; }
+            .spatial-field:focus-within { border-color: #65bd00; box-shadow: 0 0 0 3px rgba(101,189,0,.10); }
+            .spatial-field label { margin-bottom: 10px; }
+            .spatial-field input,
+            .spatial-field select,
+            .spatial-field textarea { border: 0 !important; box-shadow: none !important; background: transparent !important; padding: 0 !important; border-radius: 0 !important; }
+            .spatial-field input:focus,
+            .spatial-field select:focus,
+            .spatial-field textarea:focus { outline: none !important; box-shadow: none !important; }
+            .spatial-form-section { border-top: 1px solid #e7efd8; padding-top: 18px; }
         </style>
     @endpush
 @endif
@@ -144,7 +151,10 @@
             <div class="space-y-6">
                 <div class="soft-card bg-white rounded-2xl border border-primary-100 overflow-hidden">
                     <div class="px-5 py-4 border-b border-primary-100">
-                        <h2 class="text-xl font-extrabold text-primary-900">Antrean Pengajuan Lahan Baru</h2>
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <h2 class="text-xl font-extrabold text-primary-900">Antrean Pengajuan Lahan Baru</h2>
+                            <span data-petugas-pending-lahan class="px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-xs font-extrabold">{{ is_countable($pendingLahan) ? count($pendingLahan) : 0 }} belum diverifikasi</span>
+                        </div>
                         <p class="text-sm text-slate-500 mt-1">Lahan yang disetujui akan masuk ke Manajemen Data Spasial untuk dibuat titik dan polygon.</p>
                     </div>
                     <div class="overflow-x-auto">
@@ -194,7 +204,10 @@
 
                 <div class="soft-card bg-white rounded-2xl border border-primary-100 overflow-hidden">
                     <div class="px-5 py-4 border-b border-primary-100">
-                        <h2 class="text-xl font-extrabold text-primary-900">Antrean Hasil Panen</h2>
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <h2 class="text-xl font-extrabold text-primary-900">Antrean Hasil Panen</h2>
+                            <span data-petugas-pending-panen class="px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-xs font-extrabold">{{ is_countable($panenPending) ? count($panenPending) : 0 }} belum diverifikasi</span>
+                        </div>
                         <p class="text-sm text-slate-500 mt-1">Menampilkan pengaju, lahan, bibit, tanggal tanam, tanggal panen, dan hasil panen.</p>
                     </div>
                     <div class="overflow-x-auto">
@@ -288,30 +301,26 @@
                             <div class="grid md:grid-cols-2 gap-3">
                                 <button type="button" class="spatial-choice sourceToggle is-active rounded-2xl px-4 py-3 text-left transition" data-source="baru">
                                     <span class="block text-sm font-extrabold">Lahan Baru</span>
-                                    <span class="block text-xs mt-1">{{ $lahanBaruSpasial->count() }} antrean/siap dipetakan</span>
+                                    <span class="block text-xs mt-1">{{ $lahanBaruSpasial->count() }} disetujui, belum dipetakan</span>
                                 </button>
                                 <button type="button" class="spatial-choice sourceToggle rounded-2xl px-4 py-3 text-left transition" data-source="lama">
                                     <span class="block text-sm font-extrabold">Lahan Lama</span>
-                                    <span class="block text-xs mt-1">{{ $lahanLamaSpasial->count() }} data aktif</span>
+                                    <span class="block text-xs mt-1">{{ $lahanLamaSpasial->count() }} data lahan_sawah terpetakan</span>
                                 </button>
                             </div>
 
                             <div>
                                 <div id="sourceListBaru" class="spatial-list space-y-2">
                                     @forelse($lahanBaruSpasial as $item)
-                                        @php
-                                            $statusVerifikasiBaru = strtoupper((string) $ambil($item, ['status_verifikasi'], 'PENDING'));
-                                            $labelVerifikasiBaru = $statusVerifikasiBaru === 'DITERIMA' ? 'LEGAL' : 'PENDING';
-                                        @endphp
                                         <button type="button" class="spatial-row btnPilihLahan w-full rounded-2xl p-4 text-left transition hover:bg-primary-50" data-source="baru" data-lahan-id="{{ $ambil($item, ['id']) }}">
                                             <span class="flex items-start justify-between gap-3">
                                                 <span>
                                                     <span class="block font-extrabold text-primary-900">{{ $ambil($item, ['nama_lahan']) }}</span>
                                                     <span class="block text-xs text-slate-500 mt-1">{{ $ambil($item, ['nama_kecamatan']) }} / {{ $ambil($item, ['nama_kelurahan']) }}</span>
                                                 </span>
-                                                <span class="px-2 py-1 rounded-full {{ $statusVerifikasiBaru === 'DITERIMA' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200' }} border text-[10px] font-bold">{{ $labelVerifikasiBaru }}</span>
+                                                <span class="px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold">WAJIB DIPETAKAN</span>
                                             </span>
-                                            <span class="block text-xs text-slate-500 mt-3">{{ $ambil($item, ['alamat_detail'], '') }}</span>
+                                            <span class="block text-xs text-slate-500 mt-3">{{ $ambil($item, ['alamat_detail'], '') }} - Sudah disetujui</span>
                                         </button>
                                     @empty
                                         <div class="rounded-2xl border border-primary-100 bg-white px-4 py-8 text-center text-sm text-slate-500">Tidak ada lahan baru yang menunggu pemetaan.</div>
@@ -323,6 +332,11 @@
                                         @php
                                             $statusSpasial = $ambil($item, ['status_spasial'], 'BELUM_DIPETAKAN');
                                             $statusVerifikasiLama = strtoupper((string) $ambil($item, ['status_verifikasi'], '-'));
+                                            $statusClassLama = match ($statusVerifikasiLama) {
+                                                'DITERIMA' => 'bg-green-50 text-green-700 border-green-200',
+                                                'DITOLAK' => 'bg-red-50 text-red-600 border-red-200',
+                                                default => 'bg-amber-50 text-amber-700 border-amber-200',
+                                            };
                                         @endphp
                                         <button type="button" class="spatial-row btnPilihLahan w-full rounded-2xl p-4 text-left transition hover:bg-primary-50" data-source="lama" data-lahan-id="{{ $ambil($item, ['id']) }}">
                                             <span class="flex items-start justify-between gap-3">
@@ -330,9 +344,9 @@
                                                     <span class="block font-extrabold text-primary-900">{{ $ambil($item, ['nama_lahan']) }}</span>
                                                     <span class="block text-xs text-slate-500 mt-1">{{ $ambil($item, ['nama_kecamatan']) }} / {{ $ambil($item, ['nama_kelurahan']) }}</span>
                                                 </span>
-                                                <span class="px-2 py-1 rounded-full {{ $statusSpasial === 'SUDAH_DIPETAKAN' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200' }} border text-[10px] font-bold">{{ $statusSpasial === 'SUDAH_DIPETAKAN' ? 'AKTIF' : 'BELUM' }}</span>
+                                                <span class="px-2 py-1 rounded-full {{ $statusClassLama }} border text-[10px] font-bold">{{ $statusVerifikasiLama }}</span>
                                             </span>
-                                            <span class="block text-xs text-slate-500 mt-3">{{ $angka($ambil($item, ['luas_lahan_hektar'], 0)) }} Ha - {{ $ambil($item, ['pemilik_lahan','nama_petani']) }} - {{ $statusVerifikasiLama }}</span>
+                                            <span class="block text-xs text-slate-500 mt-3">{{ $angka($ambil($item, ['luas_lahan_hektar'], 0)) }} Ha - {{ $ambil($item, ['pemilik_lahan','nama_petani']) }} - {{ $statusSpasial === 'SUDAH_DIPETAKAN' ? 'Sudah dipetakan' : 'Belum lengkap' }}</span>
                                         </button>
                                     @empty
                                         <div class="rounded-2xl border border-primary-100 bg-white px-4 py-8 text-center text-sm text-slate-500">Belum ada lahan lama yang bisa dikelola.</div>
@@ -357,7 +371,7 @@
                             </div>
                         </div>
                         <div id="polygonProgress" class="mb-3 rounded-2xl border border-primary-100 bg-primary-50 px-4 py-3 text-sm text-primary-900">
-                            Pilih lahan, lalu gunakan tombol peta untuk mengatur titik tengah dan batas area.
+                            Pilih lahan, lalu gunakan tombol peta untuk mengatur titik tengah dan batas area. Titik batas minimal 3 dan dapat lebih dari 4 titik.
                         </div>
                         <div id="petugasSpasialMap" class="border border-primary-100"></div>
                     </section>
@@ -378,17 +392,6 @@
                         <p class="text-sm text-slate-500 mt-2">Form dibuat bertahap agar petugas dapat memeriksa sumber lahan, lokasi peta, lalu menyimpan perubahan dengan lebih rapi.</p>
                     </div>
 
-                    <div class="approval-state pt-5">
-                        <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5">
-                            <p class="text-sm font-extrabold text-amber-800">Lahan ini masih menunggu verifikasi.</p>
-                            <p id="approvalStateText" class="text-sm text-amber-700 mt-2">Setujui lahan terlebih dahulu di alur verifikasi sebelum petugas membuat titik tengah dan batas area.</p>
-                            <div class="mt-4 flex flex-col sm:flex-row gap-3">
-                                <form method="POST" action="#" id="approveSelectedForm">@csrf<button class="w-full sm:w-auto px-5 py-3 rounded-2xl bg-green-600 text-white font-extrabold hover:bg-green-700 transition">Setujui dan Lanjutkan Pemetaan</button></form>
-                                <form method="POST" action="#" id="rejectSelectedForm" onsubmit="return confirm('Tolak pengajuan lahan ini?');">@csrf<button class="w-full sm:w-auto px-5 py-3 rounded-2xl bg-white text-red-600 border border-red-200 font-bold hover:bg-red-600 hover:text-white transition">Tolak Pengajuan</button></form>
-                            </div>
-                        </div>
-                    </div>
-
                     <div class="spatial-form-body pt-5">
                         <form method="POST" action="{{ url('/petugas/spasial/simpan') }}" id="spasialForm" class="space-y-5">
                             @csrf
@@ -396,62 +399,77 @@
                             <input type="hidden" name="lahan_id" id="lahan_id">
                             <input type="hidden" name="user_id" id="user_id">
 
-                            <div class="grid lg:grid-cols-2 gap-4">
-                                <div><label class="block text-xs font-bold text-slate-500 mb-2">Nama Lahan</label><input name="nama_lahan" id="nama_lahan" class="w-full" required></div>
-                                <div><label class="block text-xs font-bold text-slate-500 mb-2">Pemilik Lahan</label><input name="pemilik_lahan" id="pemilik_lahan" class="w-full"></div>
-                            </div>
-                            <div class="grid lg:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-500 mb-2">Kecamatan</label>
-                                    <select name="kecamatan_id" id="kecamatan_id" class="w-full" required>
-                                        <option value="">Pilih kecamatan</option>
-                                        @foreach(data_get($referensi, 'kecamatan', []) as $item)
-                                            <option value="{{ $ambil($item, ['id']) }}">{{ $ambil($item, ['nama_kecamatan','nama']) }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-500 mb-2">Kelurahan</label>
-                                    <select name="kelurahan_id" id="kelurahan_id" class="w-full">
-                                        <option value="">Pilih kelurahan</option>
-                                        @foreach(data_get($referensi, 'kelurahan', []) as $item)
-                                            <option value="{{ $ambil($item, ['id']) }}" data-kecamatan="{{ $ambil($item, ['kecamatan_id'], '') }}">{{ $ambil($item, ['nama_kelurahan','nama']) }}</option>
-                                        @endforeach
-                                    </select>
+                            <div class="spatial-form-section">
+                                <p class="text-xs font-extrabold text-primary-700 uppercase tracking-[0.18em] mb-4">Identitas Lahan</p>
+                                <div class="grid lg:grid-cols-2 gap-4">
+                                    <div class="spatial-field"><label class="block text-xs font-bold text-slate-500">Nama Lahan</label><input name="nama_lahan" id="nama_lahan" class="w-full" required></div>
+                                    <div class="spatial-field"><label class="block text-xs font-bold text-slate-500">Pemilik Lahan</label><input name="pemilik_lahan" id="pemilik_lahan" class="w-full"></div>
                                 </div>
                             </div>
-                            <div class="grid lg:grid-cols-3 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-500 mb-2">Tipe Lahan</label>
-                                    <select name="tipe_lahan_id" id="tipe_lahan_id" class="w-full">
-                                        <option value="">Pilih tipe lahan</option>
-                                        @foreach(data_get($referensi, 'tipe_lahan', []) as $item)
-                                            <option value="{{ $ambil($item, ['id']) }}">{{ $ambil($item, ['nama_tipe','nama']) }}</option>
-                                        @endforeach
-                                    </select>
+
+                            <div class="spatial-form-section">
+                                <p class="text-xs font-extrabold text-primary-700 uppercase tracking-[0.18em] mb-4">Wilayah dan Klasifikasi</p>
+                                <div class="grid lg:grid-cols-2 gap-4">
+                                    <div class="spatial-field">
+                                        <label class="block text-xs font-bold text-slate-500">Kecamatan</label>
+                                        <select name="kecamatan_id" id="kecamatan_id" class="w-full" required>
+                                            <option value="">Pilih kecamatan</option>
+                                            @foreach(data_get($referensi, 'kecamatan', []) as $item)
+                                                <option value="{{ $ambil($item, ['id']) }}">{{ $ambil($item, ['nama_kecamatan','nama']) }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="spatial-field">
+                                        <label class="block text-xs font-bold text-slate-500">Kelurahan</label>
+                                        <select name="kelurahan_id" id="kelurahan_id" class="w-full">
+                                            <option value="">Pilih kelurahan</option>
+                                            @foreach(data_get($referensi, 'kelurahan', []) as $item)
+                                                <option value="{{ $ambil($item, ['id']) }}" data-kecamatan="{{ $ambil($item, ['kecamatan_id'], '') }}">{{ $ambil($item, ['nama_kelurahan','nama']) }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
                                 </div>
-                                <div><label class="block text-xs font-bold text-slate-500 mb-2">Tipe Rawa</label><input name="tipe_rawa" id="tipe_rawa" class="w-full" placeholder="Contoh: Tipe B"></div>
-                                <div><label class="block text-xs font-bold text-slate-500 mb-2">Tahun Basis</label><select name="tahun_lbs" id="tahun_lbs" class="w-full"><option value="2024">2024</option><option value="2017">2017</option></select></div>
+                                <div class="grid lg:grid-cols-3 gap-4 mt-4">
+                                    <div class="spatial-field">
+                                        <label class="block text-xs font-bold text-slate-500">Tipe Lahan</label>
+                                        <select name="tipe_lahan_id" id="tipe_lahan_id" class="w-full">
+                                            <option value="">Pilih tipe lahan</option>
+                                            @foreach(data_get($referensi, 'tipe_lahan', []) as $item)
+                                                <option value="{{ $ambil($item, ['id']) }}">{{ $ambil($item, ['nama_tipe','nama']) }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="spatial-field"><label class="block text-xs font-bold text-slate-500">Tipe Rawa</label><input name="tipe_rawa" id="tipe_rawa" class="w-full" placeholder="Contoh: Tipe B"></div>
+                                    <div class="spatial-field"><label class="block text-xs font-bold text-slate-500">Tahun Basis</label><select name="tahun_lbs" id="tahun_lbs" class="w-full"><option value="2024">2024</option><option value="2017">2017</option></select></div>
+                                </div>
                             </div>
-                            <div class="grid lg:grid-cols-3 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-500 mb-2">Luas Lahan (Ha)</label>
+
+                            <div class="spatial-form-section">
+                                <p class="text-xs font-extrabold text-primary-700 uppercase tracking-[0.18em] mb-4">Ukuran dan Titik Tengah</p>
+                                <div class="grid lg:grid-cols-3 gap-4">
+                                <div class="spatial-field">
+                                    <label class="block text-xs font-bold text-slate-500">Luas Lahan (Ha)</label>
                                     <input name="luas_lahan_hektar" id="luas_lahan_hektar" type="number" step="0.01" class="w-full" required>
                                     <div class="mt-2 flex items-center justify-between gap-2">
                                         <p id="areaEstimateText" class="text-xs text-slate-500">Luas dari peta belum tersedia.</p>
                                         <button type="button" id="btnUseMapArea" class="hidden shrink-0 px-3 py-1 rounded-lg bg-primary-50 text-primary-700 border border-primary-100 text-xs font-bold">Gunakan</button>
                                     </div>
                                 </div>
-                                <div><label class="block text-xs font-bold text-slate-500 mb-2">Latitude</label><input name="latitude" id="latitude" type="number" step="any" class="w-full" required></div>
-                                <div><label class="block text-xs font-bold text-slate-500 mb-2">Longitude</label><input name="longitude" id="longitude" type="number" step="any" class="w-full" required></div>
+                                <div class="spatial-field"><label class="block text-xs font-bold text-slate-500">Latitude</label><input name="latitude" id="latitude" type="number" step="any" class="w-full" required></div>
+                                <div class="spatial-field"><label class="block text-xs font-bold text-slate-500">Longitude</label><input name="longitude" id="longitude" type="number" step="any" class="w-full" required></div>
+                                </div>
                             </div>
-                            <div><label class="block text-xs font-bold text-slate-500 mb-2">Alamat Detail</label><textarea name="alamat_detail" id="alamat_detail" rows="2" class="w-full"></textarea></div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-500 mb-2">Data Batas Area Otomatis</label>
-                                <textarea name="polygon_geojson" id="polygon_geojson" rows="3" class="w-full font-mono text-xs bg-slate-50" required readonly placeholder="Klik tombol Gambar Batas, lalu klik minimal 3 titik di peta."></textarea>
-                                <p id="polygonStatusText" class="text-xs text-slate-500 mt-2">Belum ada batas area yang siap disimpan.</p>
+
+                            <div class="spatial-form-section">
+                                <p class="text-xs font-extrabold text-primary-700 uppercase tracking-[0.18em] mb-4">Alamat dan Batas Area</p>
+                                <div class="spatial-field"><label class="block text-xs font-bold text-slate-500">Alamat Detail</label><textarea name="alamat_detail" id="alamat_detail" rows="2" class="w-full"></textarea></div>
+                                <div class="spatial-field mt-4">
+                                    <label class="block text-xs font-bold text-slate-500">Data Batas Area Otomatis</label>
+                                    <textarea name="polygon_geojson" id="polygon_geojson" rows="3" class="w-full font-mono text-xs bg-slate-50" required readonly placeholder="Klik tombol Gambar Batas, lalu klik minimal 3 titik di peta."></textarea>
+                                    <p id="polygonStatusText" class="text-xs text-slate-500 mt-2">Belum ada batas area yang siap disimpan.</p>
+                                </div>
+                                <div class="spatial-field mt-4"><label class="block text-xs font-bold text-slate-500">Catatan Spasial</label><textarea name="catatan_spasial" id="catatan_spasial" rows="2" class="w-full"></textarea></div>
                             </div>
-                            <div><label class="block text-xs font-bold text-slate-500 mb-2">Catatan Spasial</label><textarea name="catatan_spasial" id="catatan_spasial" rows="2" class="w-full"></textarea></div>
                             <div class="flex flex-col sm:flex-row gap-3">
                                 <button class="btn-green flex-1 rounded-2xl py-3 font-extrabold transition">Simpan Data Spasial</button>
                                 <button type="button" id="btnResetForm" class="px-5 py-3 rounded-2xl border border-primary-100 text-primary-700 font-bold hover:bg-primary-50 transition">Reset</button>
@@ -542,9 +560,22 @@
                 const batolaBounds = L.latLngBounds([[-3.55, 114.20], [-2.45, 115.05]]);
                 const map = L.map('petugasSpasialMap', { maxBounds: batolaBounds, maxBoundsViscosity: 0.75, doubleClickZoom: false }).setView(batolaCenter, 10);
 
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 19,
                     attribution: '&copy; OpenStreetMap'
+                });
+
+                const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    maxZoom: 19,
+                    attribution: 'Tiles &copy; Esri'
+                }).addTo(map);
+
+                L.control.layers({
+                    'Satelit': satelliteLayer,
+                    'Peta Jalan': osmLayer
+                }, {}, {
+                    position: 'topright',
+                    collapsed: true
                 }).addTo(map);
 
                 map.fitBounds(batolaBounds);
@@ -554,7 +585,6 @@
                 let polygonPoints = [];
                 let polygonLayer = null;
                 let batasLayer = null;
-                let selectedCanEdit = false;
 
                 const form = document.getElementById('spasialForm');
                 const methodInput = document.getElementById('form_method');
@@ -573,9 +603,6 @@
                 const selectedLahanMeta = document.getElementById('selectedLahanMeta');
                 const selectedMapLabel = document.getElementById('selectedMapLabel');
                 const deleteForm = document.getElementById('deleteSpasialForm');
-                const approvalStateText = document.getElementById('approvalStateText');
-                const approveSelectedForm = document.getElementById('approveSelectedForm');
-                const rejectSelectedForm = document.getElementById('rejectSelectedForm');
                 const polygonProgress = document.getElementById('polygonProgress');
                 const polygonStatusText = document.getElementById('polygonStatusText');
                 const btnSetPointMode = document.getElementById('btnSetPointMode');
@@ -641,10 +668,6 @@
                     });
                 }
 
-                function isPendingVerification(data) {
-                    return String((data && data.status_verifikasi) || '').toUpperCase() === 'PENDING';
-                }
-
                 function hitungLuasHektar(points) {
                     if (!Array.isArray(points) || points.length < 3) return 0;
 
@@ -684,15 +707,11 @@
 
                 function polygonMessage() {
                     if (!selectedLahanId) {
-                        return 'Pilih lahan, lalu gunakan tombol peta untuk mengatur titik tengah dan batas area.';
-                    }
-
-                    if (!selectedCanEdit) {
-                        return 'Lahan masih menunggu verifikasi. Setujui terlebih dahulu sebelum membuat titik dan batas area.';
+                        return 'Pilih lahan, lalu gunakan tombol peta untuk mengatur titik tengah dan batas area. Titik batas minimal 3 dan dapat lebih dari 4 titik.';
                     }
 
                     if (polygonMode) {
-                        return `Mode gambar aktif. Klik peta untuk menambah titik batas area. Titik saat ini: ${polygonPoints.length}.`;
+                        return `Mode gambar aktif. Klik peta untuk menambah titik batas area tanpa batas maksimum. Titik saat ini: ${polygonPoints.length}.`;
                     }
 
                     if (polygonPoints.length >= 3) {
@@ -704,7 +723,7 @@
 
                 function updateMapTools() {
                     const hasSelection = Boolean(selectedLahanId);
-                    const canDraw = hasSelection && selectedCanEdit;
+                    const canDraw = hasSelection;
 
                     [btnSetPointMode, btnPolygonMode, btnFinishPolygon, btnUndoPolygonPoint, btnClearPolygon].forEach(button => {
                         if (button) button.disabled = !canDraw;
@@ -869,13 +888,11 @@
                     if (!data) return;
 
                     selectedLahanId = data.id ? String(data.id) : null;
-                    selectedCanEdit = !isPendingVerification(data);
                     manualLuasEdited = false;
                     lastMapAreaHa = 0;
                     setSource(source);
                     setSelectedRow(selectedLahanId);
                     workspace?.classList.remove('is-locked');
-                    workspace?.classList.toggle('is-awaiting-verification', !selectedCanEdit);
                     setFormMode(data.id, source);
                     if (lahanIdInput) lahanIdInput.value = data.id ?? '';
                     if (userInput) userInput.value = data.user_id ?? '';
@@ -901,18 +918,13 @@
                     if (selectedLahanTitle) selectedLahanTitle.textContent = data.nama_lahan || 'Lahan Sawah Terpilih';
                     if (selectedLahanMeta) selectedLahanMeta.textContent = `${lokasi} - ${pemilik}`;
                     if (selectedMapLabel) {
-                        selectedMapLabel.textContent = selectedCanEdit
-                            ? `${data.nama_lahan || 'Lahan terpilih'} - klik peta untuk mengatur titik tengah atau gunakan Gambar Batas untuk membuat area.`
-                            : `${data.nama_lahan || 'Lahan terpilih'} masih menunggu verifikasi. Setujui dulu sebelum pemetaan.`;
+                        selectedMapLabel.textContent = `${data.nama_lahan || 'Lahan terpilih'} - klik peta untuk mengatur titik tengah atau gunakan Gambar Batas untuk membuat area.`;
                     }
-                    if (approvalStateText) approvalStateText.textContent = `${data.nama_lahan || 'Lahan ini'} masih berstatus PENDING. Setelah disetujui, halaman akan kembali ke pemetaan lahan terpilih.`;
-                    if (approveSelectedForm) approveSelectedForm.action = data.id ? `/petugas/verifikasi-lahan/${data.id}/diterima` : '#';
-                    if (rejectSelectedForm) rejectSelectedForm.action = data.id ? `/petugas/verifikasi-lahan/${data.id}/ditolak` : '#';
 
                     const hasPolygon = Boolean(data.polygon_geojson || data.geojson);
                     if (deleteForm) {
                         deleteForm.action = data.id ? `${updateBaseUrl}/${data.id}` : '#';
-                        deleteForm.classList.toggle('hidden', !data.id || !hasPolygon || !selectedCanEdit);
+                        deleteForm.classList.toggle('hidden', !data.id || !hasPolygon);
                     }
 
                     if (data.latitude && data.longitude) {
@@ -939,14 +951,12 @@
 
                 function resetForm() {
                     selectedLahanId = null;
-                    selectedCanEdit = false;
                     polygonMode = false;
                     manualLuasEdited = false;
                     lastMapAreaHa = 0;
                     form?.reset();
                     setFormMode(null, null);
                     workspace?.classList.add('is-locked');
-                    workspace?.classList.remove('is-awaiting-verification');
                     setSelectedRow(null);
                     if (selectedSourceLabel) selectedSourceLabel.textContent = 'Belum memilih lahan';
                     if (selectedLahanTitle) selectedLahanTitle.textContent = 'Informasi Titik dan Batas Area';
@@ -956,8 +966,6 @@
                         deleteForm.action = '#';
                         deleteForm.classList.add('hidden');
                     }
-                    if (approveSelectedForm) approveSelectedForm.action = '#';
-                    if (rejectSelectedForm) rejectSelectedForm.action = '#';
                     if (lahanIdInput) lahanIdInput.value = '';
                     if (userInput) userInput.value = '';
                     if (marker) {
@@ -981,12 +989,6 @@
                         return;
                     }
 
-                    if (!selectedCanEdit) {
-                        if (selectedMapLabel) selectedMapLabel.textContent = 'Lahan masih menunggu verifikasi. Setujui terlebih dahulu sebelum pemetaan.';
-                        updateMapTools();
-                        return;
-                    }
-
                     if (polygonMode) {
                         polygonPoints.push(e.latlng);
                         refreshPolygon();
@@ -1003,12 +1005,6 @@
                         return;
                     }
 
-                    if (!selectedCanEdit) {
-                        if (selectedMapLabel) selectedMapLabel.textContent = 'Setujui lahan terlebih dahulu sebelum mengatur titik tengah.';
-                        updateMapTools();
-                        return;
-                    }
-
                     polygonMode = false;
                     if (selectedMapLabel) selectedMapLabel.textContent = 'Mode titik tengah aktif. Klik satu lokasi di peta.';
                     updateMapTools();
@@ -1021,12 +1017,6 @@
                         return;
                     }
 
-                    if (!selectedCanEdit) {
-                        if (selectedMapLabel) selectedMapLabel.textContent = 'Setujui lahan terlebih dahulu sebelum menggambar batas area.';
-                        updateMapTools();
-                        return;
-                    }
-
                     polygonMode = !polygonMode;
                     if (selectedMapLabel) selectedMapLabel.textContent = polygonMode
                         ? 'Mode gambar batas aktif. Klik peta berurutan mengelilingi lahan.'
@@ -1035,7 +1025,7 @@
                 });
 
                 btnFinishPolygon?.addEventListener('click', function () {
-                    if (!selectedCanEdit || polygonPoints.length < 3) {
+                    if (!selectedLahanId || polygonPoints.length < 3) {
                         if (selectedMapLabel) selectedMapLabel.textContent = 'Minimal 3 titik diperlukan untuk menyelesaikan batas area.';
                         updateMapTools();
                         return;
@@ -1048,7 +1038,7 @@
                 });
 
                 btnUndoPolygonPoint?.addEventListener('click', function () {
-                    if (!selectedCanEdit || polygonPoints.length === 0) return;
+                    if (!selectedLahanId || polygonPoints.length === 0) return;
                     polygonPoints.pop();
                     refreshPolygon();
                     if (selectedMapLabel) selectedMapLabel.textContent = 'Titik terakhir batas area dibatalkan.';
@@ -1057,12 +1047,6 @@
                 btnClearPolygon?.addEventListener('click', function () {
                     if (!selectedLahanId) {
                         if (selectedMapLabel) selectedMapLabel.textContent = 'Pilih lahan terlebih dahulu sebelum mengatur batas area.';
-                        updateMapTools();
-                        return;
-                    }
-
-                    if (!selectedCanEdit) {
-                        if (selectedMapLabel) selectedMapLabel.textContent = 'Setujui lahan terlebih dahulu sebelum mengatur batas area.';
                         updateMapTools();
                         return;
                     }
@@ -1109,14 +1093,14 @@
 
                 if (highlightLahanId && dataById.has(String(highlightLahanId))) {
                     const row = dataById.get(String(highlightLahanId));
-                    const source = String(row.status_verifikasi || '').toUpperCase() === 'PENDING' || row.status_spasial === 'BELUM_DIPETAKAN' ? 'baru' : 'lama';
+                    const source = row.status_spasial === 'BELUM_DIPETAKAN' ? 'baru' : 'lama';
                     fillForm(row, source);
                 }
 
                 form?.addEventListener('submit', function(e) {
-                    if (!selectedCanEdit) {
+                    if (!selectedLahanId) {
                         e.preventDefault();
-                        if (selectedMapLabel) selectedMapLabel.textContent = 'Setujui lahan terlebih dahulu sebelum menyimpan pemetaan.';
+                        if (selectedMapLabel) selectedMapLabel.textContent = 'Pilih lahan terlebih dahulu sebelum menyimpan pemetaan.';
                         updateMapTools();
                         return;
                     }
