@@ -110,22 +110,43 @@
 
             </div>
 
-        </div>
-
-        @if(($item['status_verifikasi'] ?? '') === 'DITOLAK')
-            <div class="mt-3 rounded-2xl border border-red-200 bg-red-50 p-4">
-                <p class="text-xs font-bold uppercase tracking-wide text-red-600">Alasan Penolakan</p>
-                <p class="text-sm text-red-700 mt-2 leading-relaxed">
-                    {{ $item['alasan_penolakan'] ?? 'Petugas belum menambahkan alasan penolakan.' }}
-                </p>
-                <div class="mt-4">
-                    <a href="{{ route('lahan.edit', $item['id']) }}"
-                       class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-white text-red-700 border border-red-200 text-sm font-bold hover:bg-red-600 hover:text-white transition">
-                        Perbaiki Pengajuan
-                    </a>
+            {{-- Catatan Verifikasi & Alasan Penolakan --}}
+            @if(($item['status_verifikasi'] ?? '') === 'DITOLAK')
+                <div class="md:col-span-2 rounded-2xl p-3 bg-white border border-[#e7efd8]">
+                    <p class="text-xs text-slate-500 font-bold uppercase tracking-wide">
+                        Catatan Verifikasi
+                    </p>
+                    <p class="text-sm font-semibold text-[#14280b] mt-1 leading-relaxed">
+                        {{ $item['catatan_verifikasi'] ?? '-' }}
+                    </p>
                 </div>
-            </div>
-        @endif
+
+                <div class="md:col-span-2 rounded-2xl p-3 bg-red-50 border border-red-200">
+                    <p class="text-xs text-red-600 font-bold uppercase tracking-wide">
+                        Alasan Penolakan
+                    </p>
+                    <p class="text-sm text-red-700 mt-1 leading-relaxed">
+                        {{ $item['alasan_penolakan'] ?? 'Petugas belum menambahkan alasan penolakan.' }}
+                    </p>
+                    <div class="mt-2.5">
+                        <a href="{{ route('lahan.edit', $item['id']) }}"
+                           class="inline-flex items-center justify-center px-3.5 py-1.5 rounded-xl bg-white text-red-700 border border-red-200 text-xs font-bold hover:bg-red-700 hover:text-white transition-all duration-300 shadow-sm hover:shadow">
+                            Perbaiki Pengajuan
+                        </a>
+                    </div>
+                </div>
+            @else
+                <div class="md:col-span-4 rounded-2xl p-3 bg-white border border-[#e7efd8]">
+                    <p class="text-xs text-slate-500 font-bold uppercase tracking-wide">
+                        Catatan Verifikasi
+                    </p>
+                    <p class="text-sm font-semibold text-[#14280b] mt-1 leading-relaxed">
+                        {{ $item['catatan_verifikasi'] ?? 'Belum ada catatan verifikasi.' }}
+                    </p>
+                </div>
+            @endif
+
+        </div>
 
     </div>
 

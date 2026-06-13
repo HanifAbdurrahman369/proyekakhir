@@ -31,10 +31,15 @@ class LahanSawahController extends Controller
             $select[] = 'alasan_penolakan';
         }
 
+        if (Schema::hasColumn('lahan_sawah', 'catatan_verifikasi')) {
+            $select[] = 'catatan_verifikasi';
+        }
+
         $data = LahanSawah::where('user_id', $user->sub)
             ->select($select)
+            ->orderByRaw("CASE status_verifikasi WHEN 'PENDING' THEN 1 WHEN 'DITOLAK' THEN 2 WHEN 'DITERIMA' THEN 3 ELSE 4 END")
             ->orderByDesc('id')
-            ->paginate(5);
+            ->paginate(2);
 
         return response()->json([
             'success' => true,

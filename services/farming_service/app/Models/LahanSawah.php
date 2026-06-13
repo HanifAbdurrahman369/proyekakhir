@@ -29,6 +29,9 @@ class LahanSawah extends Model
         'foto_lahan',
         'status_verifikasi',
         'alasan_penolakan',
+        'verified_by',
+        'verified_at',
+        'catatan_verifikasi',
         'created_at',
         'updated_at',
     ];
