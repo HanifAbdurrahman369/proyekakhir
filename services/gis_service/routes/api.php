@@ -7,6 +7,7 @@ use App\Http\Controllers\LahanSawahController;
 // RUTE MAP PUBLIK
 Route::get('/statistik', [PublicApiController::class, 'getStatistik']);
 Route::get('/batas-wilayah', [PublicApiController::class, 'getBatasWilayah']);
+Route::get('/batas-kecamatan', [PublicApiController::class, 'getBatasKecamatan']);
 Route::get('/map-lahan', [PublicApiController::class, 'getMapData']); 
 
 // RUTE SPASIAL UNTUK PETUGAS (Dibuat lepas dari Middleware agar tidak 404)

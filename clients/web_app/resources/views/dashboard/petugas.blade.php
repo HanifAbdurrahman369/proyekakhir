@@ -12,6 +12,7 @@
     $referensi = $referensi ?? [];
     $koleksiLahan = $koleksiLahan ?? ['type' => 'FeatureCollection', 'features' => []];
     $batasWilayah = $batasWilayah ?? ['type' => 'FeatureCollection', 'features' => []];
+    $batasKecamatan = $batasKecamatan ?? ['type' => 'FeatureCollection', 'features' => []];
     $spasialRows = $spasialRows ?? [];
     $spasialSummary = $spasialSummary ?? [];
     $lahanDiterima = $lahanDiterima ?? $lahan ?? [];
@@ -52,9 +53,18 @@
     @push('styles')
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
         <style>
-            #petugasSpasialMap { height: 560px; min-height: 560px; border-radius: 20px; overflow: hidden; z-index: 1; }
+            #petugasSpasialMap { height: 560px; min-height: 560px; overflow: hidden; z-index: 1; }
             .leaflet-container { font-family: 'Poppins', sans-serif; }
             .spatial-panel { background: rgba(255,255,255,.94); border: 1px solid rgba(231,239,216,.95); box-shadow: 0 16px 42px rgba(32,60,16,.065); }
+            .spatial-map-shell { position: relative; border: 1px solid #dfeccc; border-radius: 20px; overflow: hidden; background: #eef5e4; }
+            .spatial-map-tools { position: absolute; left: 16px; right: 16px; bottom: 16px; z-index: 650; display: flex; flex-wrap: wrap; gap: 8px; pointer-events: none; }
+            .spatial-map-tools .map-tool { pointer-events: auto; background: rgba(255,255,255,.96); color: #334155; border: 1px solid rgba(226,232,240,.95); box-shadow: 0 12px 32px rgba(32,60,16,.12); backdrop-filter: blur(10px); }
+            .spatial-map-tools .map-tool.is-primary { background: #65bd00; color: #fff; border-color: #65bd00; }
+            .spatial-map-tools .map-tool.is-danger { background: #fff7f7; color: #dc2626; border-color: #fecaca; }
+            .spatial-map-tools .map-tool.is-active { background: #203c10; color: #fff; border-color: #203c10; }
+            .spatial-map-shell .leaflet-control-layers { border: 0; border-radius: 16px; box-shadow: 0 14px 34px rgba(32,60,16,.16); overflow: hidden; }
+            .spatial-map-shell .leaflet-control-layers-expanded { padding: 12px 14px; color: #203c10; font-weight: 700; }
+            .spatial-map-shell .leaflet-control-layers-selector { accent-color: #65bd00; }
             .spatial-choice { border: 1px solid #e7efd8; background: #fff; color: #475569; }
             .spatial-choice.is-active { border-color: #65bd00; background: #edf8dc; color: #203c10; box-shadow: inset 0 0 0 1px rgba(101,189,0,.18); }
             .spatial-row { border: 1px solid #edf4df; background: #fff; }
@@ -62,7 +72,6 @@
             .spatial-workspace.is-locked .spatial-form-body { display: none; }
             .spatial-workspace:not(.is-locked) .spatial-empty-state { display: none; }
             .spatial-list { max-height: 360px; overflow-y: auto; }
-            .map-tool.is-active { background: #203c10; color: #fff; border-color: #203c10; }
             .map-tool:disabled { opacity: .45; cursor: not-allowed; }
             .spatial-section-title { letter-spacing: .18em; }
             .spatial-field { border: 1px solid #e7efd8; border-radius: 16px; padding: 14px 16px; background: #fff; min-height: 86px; transition: border-color .18s ease, box-shadow .18s ease; }
@@ -455,20 +464,22 @@
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
                             <div>
                                 <h2 class="text-lg font-extrabold text-primary-900">Peta Kerja Petugas</h2>
-                                <p id="selectedMapLabel" class="text-sm text-slate-500 mt-1">Batas Kabupaten Barito Kuala ditampilkan sebagai garis wilayah. Pilih lahan untuk mulai mengatur titik dan batas area.</p>
-                            </div>
-                            <div class="flex flex-wrap gap-2">
-                                <button type="button" id="btnSetPointMode" class="map-tool px-4 py-2 rounded-xl bg-primary-50 text-primary-700 border border-primary-100 font-bold text-sm">Titik Tengah</button>
-                                <button type="button" id="btnPolygonMode" class="map-tool px-4 py-2 rounded-xl bg-primary-600 text-white border border-primary-600 font-bold text-sm">Gambar Batas</button>
-                                <button type="button" id="btnFinishPolygon" class="map-tool px-4 py-2 rounded-xl bg-white text-primary-700 border border-primary-100 font-bold text-sm">Selesai</button>
-                                <button type="button" id="btnUndoPolygonPoint" class="map-tool px-4 py-2 rounded-xl bg-white text-slate-600 border border-slate-200 font-bold text-sm">Urungkan Titik</button>
-                                <button type="button" id="btnClearPolygon" class="map-tool px-4 py-2 rounded-xl bg-red-50 text-red-600 border border-red-100 font-bold text-sm">Kosongkan Batas</button>
+                                <p id="selectedMapLabel" class="text-sm text-slate-500 mt-1">Batas Kabupaten Barito Kuala dan layer Kecamatan Belawang tersedia di kontrol peta. Pilih lahan untuk mulai mengatur titik dan batas area.</p>
                             </div>
                         </div>
-                        <div id="polygonProgress" class="mb-3 rounded-2xl border border-primary-100 bg-primary-50 px-4 py-3 text-sm text-primary-900">
-                            Pilih lahan, lalu gunakan tombol peta untuk mengatur titik tengah dan batas area. Titik batas minimal 3 dan dapat lebih dari 4 titik.
+                        <div class="spatial-map-shell">
+                            <div id="petugasSpasialMap"></div>
+                            <div class="spatial-map-tools">
+                                <button type="button" id="btnSetPointMode" class="map-tool px-4 py-2 rounded-xl font-bold text-sm">Titik Tengah</button>
+                                <button type="button" id="btnPolygonMode" class="map-tool is-primary px-4 py-2 rounded-xl font-bold text-sm">Gambar Batas</button>
+                                <button type="button" id="btnFinishPolygon" class="map-tool px-4 py-2 rounded-xl font-bold text-sm">Selesai</button>
+                                <button type="button" id="btnUndoPolygonPoint" class="map-tool px-4 py-2 rounded-xl font-bold text-sm">Urungkan Titik</button>
+                                <button type="button" id="btnClearPolygon" class="map-tool is-danger px-4 py-2 rounded-xl font-bold text-sm">Kosongkan Batas</button>
+                            </div>
                         </div>
-                        <div id="petugasSpasialMap" class="border border-primary-100"></div>
+                        <div id="polygonProgress" class="mt-3 rounded-2xl border border-primary-100 bg-primary-50 px-4 py-3 text-sm text-primary-900">
+                            Pilih lahan, lalu gunakan tombol di dalam peta untuk mengatur titik tengah dan batas area. Titik batas minimal 3 dan dapat lebih dari 4 titik.
+                        </div>
                     </section>
                 </div>
 
@@ -736,6 +747,7 @@
                 if (!mapEl || typeof L === 'undefined') return;
 
                 const batasWilayah = @json($batasWilayah);
+                const batasKecamatan = @json($batasKecamatan);
                 const semuaLahanRaw = @json($spasialRows);
                 const antreanLahanRaw = @json($lahanBaruSpasial);
                 const highlightLahanId = @json((string)($highlightLahanId ?? ''));
@@ -756,10 +768,16 @@
                     attribution: 'Tiles &copy; Esri'
                 }).addTo(map);
 
+                const batasKabupatenGroup = L.layerGroup().addTo(map);
+                const batasKecamatanGroup = L.layerGroup().addTo(map);
+
                 L.control.layers({
                     'Satelit': satelliteLayer,
                     'Peta Jalan': osmLayer
-                }, {}, {
+                }, {
+                    'Batas Kabupaten': batasKabupatenGroup,
+                    'Kecamatan Belawang': batasKecamatanGroup
+                }, {
                     position: 'topright',
                     collapsed: true
                 }).addTo(map);
@@ -947,13 +965,30 @@
                             fillColor: 'transparent',
                             dashArray: '6 6'
                         }
-                    }).addTo(map);
+                    }).addTo(batasKabupatenGroup);
 
                     try {
                         map.fitBounds(batasLayer.getBounds(), { padding: [18, 18] });
                     } catch (e) {
                         map.fitBounds(batolaBounds);
                     }
+                }
+
+                function drawBatasKecamatan() {
+                    const collection = batasKecamatan?.data || batasKecamatan;
+                    if (!collection || !collection.type) return;
+
+                    L.geoJSON(collection, {
+                        interactive: false,
+                        style: {
+                            color: '#f59e0b',
+                            weight: 2.4,
+                            opacity: 0.95,
+                            fillOpacity: 0,
+                            fillColor: 'transparent',
+                            dashArray: '8 6'
+                        }
+                    }).addTo(batasKecamatanGroup);
                 }
 
                 function setPoint(latlng) {
@@ -1145,7 +1180,7 @@
                     if (selectedSourceLabel) selectedSourceLabel.textContent = 'Belum memilih lahan';
                     if (selectedLahanTitle) selectedLahanTitle.textContent = 'Informasi Titik dan Batas Area';
                     if (selectedLahanMeta) selectedLahanMeta.textContent = 'Pilih lahan belum dipetakan atau lahan sudah dipetakan dari panel kiri untuk membuka formulir pemetaan.';
-                    if (selectedMapLabel) selectedMapLabel.textContent = 'Batas Kabupaten Barito Kuala ditampilkan sebagai garis wilayah. Pilih lahan untuk mulai mengatur titik dan batas area.';
+                    if (selectedMapLabel) selectedMapLabel.textContent = 'Batas Kabupaten Barito Kuala dan layer Kecamatan Belawang tersedia di kontrol peta. Pilih lahan untuk mulai mengatur titik dan batas area.';
                     if (deleteForm) {
                         deleteForm.action = '#';
                         deleteForm.classList.add('hidden');
@@ -1165,6 +1200,7 @@
                 }
 
                 drawBatasWilayah();
+                drawBatasKecamatan();
 
                 map.on('click', function(e) {
                     if (!selectedLahanId) {

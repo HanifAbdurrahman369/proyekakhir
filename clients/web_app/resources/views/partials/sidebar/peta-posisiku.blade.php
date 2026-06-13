@@ -107,6 +107,37 @@
         }
     ).addTo(map);
 
+    const gatewayBase = window.GATEWAY_URL || "{{ env('GATEWAY_URL', 'http://127.0.0.1:8003') }}";
+    const batasKecamatanGroup = L.layerGroup().addTo(map);
+
+    L.control.layers({}, {
+        'Kecamatan Belawang': batasKecamatanGroup
+    }, {
+        position: 'topright',
+        collapsed: true
+    }).addTo(map);
+
+    fetch(`${gatewayBase}/api/batas-kecamatan`)
+        .then(response => response.json())
+        .then(data => {
+            const featureCollection = data.data || data;
+
+            L.geoJSON(featureCollection, {
+                interactive: false,
+                style: {
+                    color: '#f59e0b',
+                    weight: 2.2,
+                    opacity: 0.95,
+                    fillColor: 'transparent',
+                    fillOpacity: 0,
+                    dashArray: '8 6'
+                }
+            }).addTo(batasKecamatanGroup);
+        })
+        .catch(() => {
+            console.error('API Batas Kecamatan bermasalah');
+        });
+
     /*
     |--------------------------------------------------------------------------
     | ALERT HELPER

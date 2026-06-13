@@ -296,7 +296,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // 2. Layer Groups
     const kabGroup = L.layerGroup().addTo(map);
-    const kecGroup = L.layerGroup();
+    const kecGroup = L.layerGroup().addTo(map);
     const kelGroup = L.layerGroup();
     const lahanGroup = L.layerGroup().addTo(map);
 
@@ -333,6 +333,25 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         })
         .catch(err => console.error("API Batas Wilayah bermasalah"));
+
+    // 4b. Ambil Batas Kecamatan
+    fetch(`${apiBase}/batas-kecamatan`)
+        .then(res => res.json())
+        .then(data => {
+            const featureCollection = data.data || data;
+            L.geoJSON(featureCollection, {
+                interactive: false,
+                style: {
+                    color: "#f59e0b",
+                    weight: 2.2,
+                    opacity: 0.95,
+                    fillColor: "transparent",
+                    fillOpacity: 0,
+                    dashArray: "8 6"
+                }
+            }).addTo(kecGroup);
+        })
+        .catch(err => console.error("API Batas Kecamatan bermasalah"));
 
     // 5. Ambil Lahan Sawah
   // 5. Ambil Lahan Sawah

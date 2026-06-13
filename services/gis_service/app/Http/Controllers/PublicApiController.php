@@ -308,4 +308,80 @@ class PublicApiController extends Controller
 
         return response($rawJson, 200)->header('Content-Type', 'application/json');
     }
+
+    public function getBatasKecamatan()
+    {
+        $rows = DB::table('kecamatan')
+            ->whereNotNull('polygon_geojson')
+            ->where('polygon_geojson', '!=', '')
+            ->select('id', 'nama_kecamatan', 'polygon_geojson')
+            ->orderBy('nama_kecamatan')
+            ->get();
+
+        $features = [];
+
+        foreach ($rows as $row) {
+            $geojson = json_decode($row->polygon_geojson, true);
+
+            if (!is_array($geojson)) {
+                continue;
+            }
+
+            $features = array_merge($features, $this->normalisasiFeatureKecamatan($geojson, [
+                'id' => $row->id,
+                'kecamatan_id' => $row->id,
+                'nama_kecamatan' => $row->nama_kecamatan,
+            ]));
+        }
+
+        return response()->json([
+            'success' => true,
+            'type' => 'FeatureCollection',
+            'features' => $features,
+            'data' => [
+                'type' => 'FeatureCollection',
+                'features' => $features,
+            ],
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    }
+
+    private function normalisasiFeatureKecamatan(array $geojson, array $baseProperties): array
+    {
+        if (($geojson['type'] ?? null) === 'FeatureCollection') {
+            return collect($geojson['features'] ?? [])
+                ->filter(fn ($feature) => is_array($feature) && !empty($feature['geometry']))
+                ->map(function ($feature) use ($baseProperties) {
+                    $feature['properties'] = array_merge(
+                        (array) ($feature['properties'] ?? []),
+                        $baseProperties
+                    );
+
+                    return [
+                        'type' => 'Feature',
+                        'geometry' => $feature['geometry'],
+                        'properties' => $feature['properties'],
+                    ];
+                })
+                ->values()
+                ->all();
+        }
+
+        if (($geojson['type'] ?? null) === 'Feature' && !empty($geojson['geometry'])) {
+            return [[
+                'type' => 'Feature',
+                'geometry' => $geojson['geometry'],
+                'properties' => array_merge((array) ($geojson['properties'] ?? []), $baseProperties),
+            ]];
+        }
+
+        if (!empty($geojson['type']) && !empty($geojson['coordinates'])) {
+            return [[
+                'type' => 'Feature',
+                'geometry' => $geojson,
+                'properties' => $baseProperties,
+            ]];
+        }
+
+        return [];
+    }
 }

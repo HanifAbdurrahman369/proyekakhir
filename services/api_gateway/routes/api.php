@@ -257,6 +257,10 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/batas-wilay
     return proxyRequest($request, $serviceMap['gis'], trim('batas-wilayah/' . $any, '/'));
 })->where('any', '.*');
 
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/batas-kecamatan/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    return proxyRequest($request, $serviceMap['gis'], trim('batas-kecamatan/' . $any, '/'));
+})->where('any', '.*');
+
 Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/master/{any?}', function (Request $request, $any = '') use ($serviceMap) {
     return proxyRequest($request, $serviceMap['master'], $any);
 })->where('any', '.*');

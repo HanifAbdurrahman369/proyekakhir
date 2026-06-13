@@ -130,6 +130,7 @@ class PetugasController extends Controller
             'kabupaten' => 'batola',
         ]);
         $batasWilayah = $this->getJson('/batas-wilayah');
+        $batasKecamatan = $this->getJson('/batas-kecamatan');
 
         $spasialRows = $spasialResponse['data'] ?? [];
         $koleksiLahan = [
@@ -184,6 +185,7 @@ class PetugasController extends Controller
             'referensi' => $referensi,
             'koleksiLahan' => $koleksiLahan,
             'batasWilayah' => $batasWilayah,
+            'batasKecamatan' => $batasKecamatan,
             'spasialRows' => $spasialRows,
             'spasialSummary' => $spasialSummary,
             'lahanDiterima' => $lahanDiterima,
