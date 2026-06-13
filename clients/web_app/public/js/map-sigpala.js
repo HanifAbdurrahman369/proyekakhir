@@ -1,6 +1,37 @@
 // ========================================================
 // 0. INJEKSI CSS DINAMIS UNTUK MAP & CONTROL LAYER
 // ========================================================
+function sigpalaDisplay(value, fallback = '-') {
+    return value === null || value === undefined || value === '' ? fallback : value;
+}
+
+function sigpalaNumber(value, fractionDigits = 2) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return '0';
+    return number.toLocaleString('id-ID', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: fractionDigits
+    });
+}
+
+function sigpalaZoomToFeature(map, layer, feature) {
+    if (layer && typeof layer.getBounds === 'function') {
+        const bounds = layer.getBounds();
+        if (bounds && bounds.isValid()) {
+            map.fitBounds(bounds, { padding: [36, 36], maxZoom: 17 });
+            return;
+        }
+    }
+
+    if (feature && feature.geometry && feature.geometry.type === 'Point' && Array.isArray(feature.geometry.coordinates)) {
+        const lng = Number(feature.geometry.coordinates[0]);
+        const lat = Number(feature.geometry.coordinates[1]);
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            map.setView([lat, lng], 17);
+        }
+    }
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     const gatewayUrl = window.GATEWAY_URL || '';
     const apiBase = gatewayUrl ? `${gatewayUrl}/api` : '/api';
@@ -267,7 +298,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const kabGroup = L.layerGroup().addTo(map);
     const kecGroup = L.layerGroup();
     const kelGroup = L.layerGroup();
-    const lahanGroup = L.layerGroup();
+    const lahanGroup = L.layerGroup().addTo(map);
 
     // 3. Konfigurasi Layer Control
     const baseMaps = {
@@ -293,6 +324,7 @@ document.addEventListener("DOMContentLoaded", function () {
         .then(res => res.json())
         .then(geojsonData => {
             const layerBatas = L.geoJSON(geojsonData, {
+                interactive: false,
                 style: { color: "#2563eb", weight: 2, fillColor: "#3b82f6", fillOpacity: 0.08 }
             }).addTo(kabGroup);
 
@@ -311,6 +343,18 @@ document.addEventListener("DOMContentLoaded", function () {
                 style: { color: "#16a34a", fillColor: "#22c55e", fillOpacity: 0.6 },
                 onEachFeature: function (feature, layer) {
                     const props = feature.properties;
+                    const namaLahan = sigpalaDisplay(props.nama_lahan);
+                    const pemilik = sigpalaDisplay(props.pemilik || props.pemilik_lahan);
+                    const tipeLahan = sigpalaDisplay(props.tipe_lahan || props.nama_tipe, 'Belum Ditentukan');
+                    const tahunLbs = sigpalaDisplay(props.tahun_lbs);
+                    const wilayah = `${sigpalaDisplay(props.kecamatan)} / ${sigpalaDisplay(props.kelurahan)}`;
+                    const luasHa = sigpalaNumber(props.luas_ha || props.luas_lahan_hektar);
+                    const hasilPanen = sigpalaNumber(props.hasil_panen || props.hasil_panen_ton);
+                    const produktivitas = sigpalaNumber(props.produktivitas || props.produktivitas_ton_ha);
+
+                    layer.on('click', function () {
+                        sigpalaZoomToFeature(map, layer, feature);
+                    });
                     // ============================================
                     // POPUP REDESIGN — CLEAN GREEN CARD
                     // ============================================
@@ -322,8 +366,8 @@ document.addEventListener("DOMContentLoaded", function () {
                                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
                                     <div style="width:28px; height:28px; background:rgba(255,255,255,0.2); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;">🌾</div>
                                     <div>
-                                        <p style="margin:0; font-size:13px; font-weight:700; color:#ffffff; line-height:1.3;">${props.nama_lahan}</p>
-                                        <p style="margin:0; font-size:11px; color:rgba(255,255,255,0.75); font-weight:400;">Lahan Sawah</p>
+                                        <p style="margin:0; font-size:13px; font-weight:700; color:#ffffff; line-height:1.3;">${namaLahan}</p>
+                                        <p style="margin:0; font-size:11px; color:rgba(255,255,255,0.75); font-weight:400;">${tipeLahan}</p>
                                     </div>
                                 </div>
                             </div>
@@ -332,18 +376,29 @@ document.addEventListener("DOMContentLoaded", function () {
                             <div style="background:#ffffff; padding:12px 16px;">
                                 <div style="display:flex; align-items:center; gap:6px; margin-bottom:10px;">
                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                    <p style="margin:0; font-size:12px; color:#64748b; font-weight:400;">Pemilik: <span style="font-weight:600; color:#334155;">${props.pemilik}</span></p>
+                                    <p style="margin:0; font-size:12px; color:#64748b; font-weight:400;">Pemilik: <span style="font-weight:600; color:#334155;">${pemilik}</span></p>
                                 </div>
 
                                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
                                     <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:8px 10px; text-align:center;">
                                         <p style="margin:0; font-size:10px; color:#16a34a; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Luas</p>
-                                        <p style="margin:0; font-size:14px; font-weight:700; color:#166534;">${props.luas_ha} <span style="font-size:10px; font-weight:500;">Ha</span></p>
+                                        <p style="margin:0; font-size:14px; font-weight:700; color:#166534;">${luasHa} <span style="font-size:10px; font-weight:500;">Ha</span></p>
                                     </div>
                                     <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:8px 10px; text-align:center;">
                                         <p style="margin:0; font-size:10px; color:#16a34a; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Panen</p>
                                         <!-- MENGUBAH PROP MENJADI hasil_panen -->
-                                        <p style="margin:0; font-size:14px; font-weight:700; color:#166534;">${props.hasil_panen} <span style="font-size:10px; font-weight:500;">Ton</span></p>
+                                        <p style="margin:0; font-size:14px; font-weight:700; color:#166534;">${hasilPanen} <span style="font-size:10px; font-weight:500;">Ton</span></p>
+                                    </div>
+                                </div>
+
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:12px;">
+                                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:7px 9px;">
+                                        <p style="margin:0 0 2px; font-size:9px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Wilayah</p>
+                                        <p style="margin:0; font-size:11px; color:#334155; font-weight:600; line-height:1.35;">${wilayah}</p>
+                                    </div>
+                                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:7px 9px;">
+                                        <p style="margin:0 0 2px; font-size:9px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Basis / Produktivitas</p>
+                                        <p style="margin:0; font-size:11px; color:#334155; font-weight:600; line-height:1.35;">${tahunLbs} - ${produktivitas} Ton/Ha</p>
                                     </div>
                                 </div>
 
@@ -403,6 +458,16 @@ function showDetail(props) {
     if (!panel || !content) return;
 
     panel.style.right = '0';
+    const namaLahan = sigpalaDisplay(props.nama_lahan);
+    const pemilik = sigpalaDisplay(props.pemilik || props.pemilik_lahan);
+    const tipeLahan = sigpalaDisplay(props.tipe_lahan || props.nama_tipe, 'Belum Ditentukan');
+    const tahunLbs = sigpalaDisplay(props.tahun_lbs);
+    const kecamatan = sigpalaDisplay(props.kecamatan || props.nama_kecamatan);
+    const kelurahan = sigpalaDisplay(props.kelurahan || props.nama_kelurahan);
+    const alamatDetail = sigpalaDisplay(props.alamat_detail);
+    const luasHa = sigpalaNumber(props.luas_ha || props.luas_lahan_hektar);
+    const hasilPanen = sigpalaNumber(props.hasil_panen || props.hasil_panen_ton);
+    const produktivitas = sigpalaNumber(props.produktivitas || props.produktivitas_ton_ha);
 
     content.innerHTML = `
         <div style="font-family:'Poppins',sans-serif;">
@@ -429,12 +494,12 @@ function showDetail(props) {
                         ">🌾</div>
                         <div>
                             <p style="margin:0; font-size:10px; color:rgba(255,255,255,0.65); font-weight:500; text-transform:uppercase; letter-spacing:1px;">Informasi Lahan</p>
-                            <p style="margin:0; font-size:16px; font-weight:700; color:#ffffff; line-height:1.3;">${props.nama_lahan}</p>
+                            <p style="margin:0; font-size:16px; font-weight:700; color:#ffffff; line-height:1.3;">${namaLahan}</p>
                         </div>
                     </div>
                     <div style="display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.13); border-radius:8px; padding:6px 10px; width:fit-content;">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        <p style="margin:0; font-size:12px; color:rgba(255,255,255,0.9); font-weight:500;">${props.pemilik}</p>
+                        <p style="margin:0; font-size:12px; color:rgba(255,255,255,0.9); font-weight:500;">${pemilik}</p>
                     </div>
                 </div>
             </div>
@@ -452,7 +517,7 @@ function showDetail(props) {
                     padding:12px 14px; text-align:center;
                 ">
                     <p style="margin:0 0 2px; font-size:10px; font-weight:600; color:#16a34a; text-transform:uppercase; letter-spacing:0.8px;">Luas Lahan</p>
-                    <p style="margin:0; font-size:20px; font-weight:800; color:#166534; line-height:1.1;">${props.luas_ha}</p>
+                    <p style="margin:0; font-size:20px; font-weight:800; color:#166534; line-height:1.1;">${luasHa}</p>
                     <p style="margin:0; font-size:10px; font-weight:500; color:#94a3b8;">Hektar</p>
                 </div>
                 <div style="
@@ -463,7 +528,7 @@ function showDetail(props) {
                 ">
                     <!-- UBAH PRODUKTIVITAS MENJADI HASIL PANEN -->
                     <p style="margin:0 0 2px; font-size:10px; font-weight:600; color:#16a34a; text-transform:uppercase; letter-spacing:0.8px;">Hasil Panen</p>
-                    <p style="margin:0; font-size:20px; font-weight:800; color:#166534; line-height:1.1;">${props.hasil_panen}</p>
+                    <p style="margin:0; font-size:20px; font-weight:800; color:#166534; line-height:1.1;">${hasilPanen}</p>
                     <p style="margin:0; font-size:10px; font-weight:500; color:#94a3b8;">Ton</p>
                 </div>
             </div>
@@ -499,7 +564,24 @@ function showDetail(props) {
                             </div>
                             <div>
                                 <p style="margin:0; font-size:10px; font-weight:600; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">Kecamatan / Kelurahan</p>
-                                <p style="margin:2px 0 0; font-size:13px; font-weight:600; color:#1e293b;">${props.kecamatan} <span style="color:#94a3b8; font-weight:400;">/</span> ${props.kelurahan}</p>
+                                <p style="margin:2px 0 0; font-size:13px; font-weight:600; color:#1e293b;">${kecamatan} <span style="color:#94a3b8; font-weight:400;">/</span> ${kelurahan}</p>
+                            </div>
+                        </div>
+
+                        <div style="height:1px; background:#e2e8f0; margin:0 14px;"></div>
+
+                        <!-- Tipe Lahan -->
+                        <div style="padding:12px 14px; display:flex; align-items:flex-start; gap:10px;">
+                            <div style="
+                                width:32px; height:32px; flex-shrink:0;
+                                background:#dcfce7; border-radius:8px;
+                                display:flex; align-items:center; justify-content:center;
+                            ">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h10.5L20 6.5V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-1.5z"/><path d="M14 3v4h4"/><path d="M8 13h8"/><path d="M8 17h6"/></svg>
+                            </div>
+                            <div>
+                                <p style="margin:0; font-size:10px; font-weight:600; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">Tipe Lahan / Tahun Basis</p>
+                                <p style="margin:2px 0 0; font-size:13px; font-weight:600; color:#1e293b; line-height:1.5;">${tipeLahan} <span style="color:#94a3b8; font-weight:400;">/</span> ${tahunLbs}</p>
                             </div>
                         </div>
 
@@ -516,7 +598,7 @@ function showDetail(props) {
                             </div>
                             <div>
                                 <p style="margin:0; font-size:10px; font-weight:600; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">Alamat Detail</p>
-                                <p style="margin:2px 0 0; font-size:13px; font-weight:500; color:#1e293b; line-height:1.5;">${props.alamat_detail}</p>
+                                <p style="margin:2px 0 0; font-size:13px; font-weight:500; color:#1e293b; line-height:1.5;">${alamatDetail}</p>
                             </div>
                         </div>
                     </div>
@@ -546,7 +628,7 @@ function showDetail(props) {
                             <!-- UBAH ESTIMASI MENJADI PRODUKTIVITAS LAHAN -->
                             <p style="margin:0 0 4px; font-size:11px; font-weight:600; color:#16a34a; text-transform:uppercase; letter-spacing:0.8px;">Produktivitas Lahan</p>
                             <div style="display:flex; align-items:baseline; gap:5px;">
-                                <span style="font-size:38px; font-weight:800; color:#15803d; line-height:1;">${props.produktivitas}</span>
+                                <span style="font-size:38px; font-weight:800; color:#15803d; line-height:1;">${produktivitas}</span>
                                 <span style="font-size:15px; font-weight:600; color:#16a34a;">Ton / Ha</span>
                             </div>
                             <p style="margin:4px 0 0; font-size:11px; color:#4ade80; font-weight:500;">Tingkat Produktivitas Lahan Sawah Rawa</p>

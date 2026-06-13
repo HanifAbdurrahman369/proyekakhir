@@ -33,6 +33,13 @@ class PetugasController extends Controller
         return $this->gatewayUrl() . '/' . ltrim($endpoint, '/');
     }
 
+    private function currentUserId(): ?int
+    {
+        $id = session('user.id') ?? data_get(session('user'), 'id');
+
+        return $id ? (int) $id : null;
+    }
+
     private function getData(string $endpoint, mixed $default = [])
     {
         if (!$this->token()) {
@@ -238,7 +245,6 @@ class PetugasController extends Controller
             'kecamatan_id' => 'required|integer',
             'kelurahan_id' => 'nullable|integer',
             'tipe_lahan_id' => 'nullable|integer',
-            'tipe_rawa' => 'nullable|string|max:100',
             'nama_lahan' => 'required|string|max:100',
             'pemilik_lahan' => 'nullable|string|max:100',
             'tahun_lbs' => 'nullable|in:2017,2024',
@@ -247,22 +253,23 @@ class PetugasController extends Controller
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
             'polygon_geojson' => 'required|string',
-            'catatan_spasial' => 'nullable|string|max:500',
         ]);
 
         $payload = $request->all();
         $payload['status_verifikasi'] = 'DITERIMA';
         $payload['status_spasial'] = 'SUDAH_DIPETAKAN';
+        unset($payload['tipe_rawa'], $payload['catatan_spasial']);
+
+        if ($this->currentUserId()) {
+            $payload['spasial_updated_by'] = $this->currentUserId();
+        }
 
         $response = $request->filled('lahan_id')
             ? $this->putData('/spasial-lahan/' . $request->input('lahan_id'), $payload)
             : $this->postData('/spasial-lahan', $payload);
 
         if ($response->successful()) {
-            $savedId = $response->json('data.id') ?? $request->input('lahan_id');
-            $redirect = '/manajemen-data-spasial' . ($savedId ? '?lahan_id=' . $savedId : '');
-
-            return redirect($redirect)->with('success', 'Data lahan berhasil dipetakan dan tersimpan ke tabel lahan_sawah.');
+            return redirect('/manajemen-data-spasial')->with('success', 'Data lahan berhasil dipetakan dan tersimpan ke tabel lahan_sawah.');
         }
 
         return back()->with('error', $response->json('message') ?? 'Gagal menyimpan data spasial lahan.')->withInput();
@@ -275,7 +282,6 @@ class PetugasController extends Controller
             'kecamatan_id' => 'required|integer',
             'kelurahan_id' => 'nullable|integer',
             'tipe_lahan_id' => 'nullable|integer',
-            'tipe_rawa' => 'nullable|string|max:100',
             'nama_lahan' => 'required|string|max:100',
             'pemilik_lahan' => 'nullable|string|max:100',
             'tahun_lbs' => 'nullable|in:2017,2024',
@@ -284,16 +290,20 @@ class PetugasController extends Controller
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
             'polygon_geojson' => 'required|string',
-            'catatan_spasial' => 'nullable|string|max:500',
         ]);
 
         $payload = $request->all();
         $payload['status_spasial'] = 'SUDAH_DIPETAKAN';
+        unset($payload['tipe_rawa'], $payload['catatan_spasial']);
+
+        if ($this->currentUserId()) {
+            $payload['spasial_updated_by'] = $this->currentUserId();
+        }
 
         $response = $this->putData('/spasial-lahan/' . $id, $payload);
 
         if ($response->successful()) {
-            return redirect('/manajemen-data-spasial?lahan_id=' . $id)->with('success', 'Data spasial lahan berhasil diperbarui.');
+            return redirect('/manajemen-data-spasial')->with('success', 'Data spasial lahan berhasil diperbarui.');
         }
 
         return back()->with('error', $response->json('message') ?? 'Gagal memperbarui data spasial.')->withInput();
@@ -338,7 +348,13 @@ class PetugasController extends Controller
         $aksi = strtolower($aksi);
         $endpointAction = in_array($aksi, ['terima', 'diterima', 'setuju', 'approve', 'approved'], true) ? 'approve' : 'reject';
 
-        $response = $this->postData('/lahan/' . $id . '/' . $endpointAction, $request->all());
+        $payload = $request->all();
+
+        if ($this->currentUserId()) {
+            $payload['verified_by'] = $this->currentUserId();
+        }
+
+        $response = $this->postData('/lahan/' . $id . '/' . $endpointAction, $payload);
 
         if ($response->successful()) {
             if ($endpointAction === 'approve') {

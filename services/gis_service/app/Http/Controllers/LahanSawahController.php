@@ -180,6 +180,14 @@ class LahanSawahController extends Controller
                     'status_spasial' => 'BELUM_DIPETAKAN',
                 ];
 
+                if (Schema::hasColumn('lahan_sawah', 'polygon_geojson')) {
+                    $payload['polygon_geojson'] = null;
+                }
+
+                if (Schema::hasColumn('lahan_sawah', 'spasial_updated_at')) {
+                    $payload['spasial_updated_at'] = now();
+                }
+
                 if (Schema::hasColumn('lahan_sawah', 'updated_at')) {
                     $payload['updated_at'] = now();
                 }
@@ -211,7 +219,6 @@ class LahanSawahController extends Controller
             'kecamatan_id' => 'required|integer',
             'kelurahan_id' => 'nullable|integer',
             'tipe_lahan_id' => 'nullable|integer',
-            'tipe_rawa' => 'nullable|string|max:100',
             'nama_lahan' => 'required|string|max:100',
             'pemilik_lahan' => 'nullable|string|max:100',
             'tahun_lbs' => 'nullable|in:2017,2024',
@@ -221,10 +228,11 @@ class LahanSawahController extends Controller
             'longitude' => 'required|numeric|between:-180,180',
             'foto_lahan' => 'nullable|string|max:150',
             'polygon_geojson' => 'required|string',
-            'catatan_spasial' => 'nullable|string|max:500',
+            'spasial_updated_by' => 'nullable|integer',
         ]);
 
         $geometry = $this->validasiGeoJson($request->input('polygon_geojson'));
+        $normalizedGeoJson = json_encode($geometry, JSON_UNESCAPED_UNICODE);
 
         $lat = (float) $request->input('latitude');
         $lng = (float) $request->input('longitude');
@@ -234,7 +242,6 @@ class LahanSawahController extends Controller
             'kecamatan_id' => $request->input('kecamatan_id'),
             'kelurahan_id' => $request->input('kelurahan_id'),
             'tipe_lahan_id' => $request->input('tipe_lahan_id'),
-            'tipe_rawa' => $request->input('tipe_rawa'),
             'nama_lahan' => $request->input('nama_lahan'),
             'pemilik_lahan' => $request->input('pemilik_lahan'),
             'tahun_lbs' => $request->input('tahun_lbs', '2024'),
@@ -244,9 +251,19 @@ class LahanSawahController extends Controller
             'latitude' => $lat,
             'longitude' => $lng,
             'foto_lahan' => $request->input('foto_lahan'),
-            'catatan_spasial' => $request->input('catatan_spasial'),
-            'catatan_verifikasi_spasial' => $request->input('catatan_spasial'),
         ];
+
+        if (Schema::hasColumn('lahan_sawah', 'polygon_geojson')) {
+            $payload['polygon_geojson'] = $normalizedGeoJson;
+        }
+
+        if ($request->filled('spasial_updated_by') && Schema::hasColumn('lahan_sawah', 'spasial_updated_by')) {
+            $payload['spasial_updated_by'] = $request->input('spasial_updated_by');
+        }
+
+        if (Schema::hasColumn('lahan_sawah', 'spasial_updated_at')) {
+            $payload['spasial_updated_at'] = now();
+        }
 
         if (!$isCreate && !$request->filled('user_id')) {
             unset($payload['user_id']);
@@ -296,9 +313,20 @@ class LahanSawahController extends Controller
             throw new \RuntimeException('Kolom polygon_area belum tersedia.');
         }
 
+        $geojson = json_encode($geometry, JSON_UNESCAPED_UNICODE);
+
+        if (Schema::hasColumn('lahan_sawah', 'polygon_geojson')) {
+            DB::statement(
+                'UPDATE lahan_sawah SET polygon_area = ST_GeomFromGeoJSON(?), polygon_geojson = ? WHERE id = ?',
+                [$geojson, $geojson, $lahanId]
+            );
+
+            return;
+        }
+
         DB::statement(
             'UPDATE lahan_sawah SET polygon_area = ST_GeomFromGeoJSON(?) WHERE id = ?',
-            [json_encode($geometry), $lahanId]
+            [$geojson, $lahanId]
         );
     }
 
@@ -337,10 +365,6 @@ class LahanSawahController extends Controller
             'kelurahan.nama_kelurahan',
             'tipe_lahan.nama_tipe',
         ];
-
-        if (Schema::hasColumn('lahan_sawah', 'tipe_rawa')) {
-            $select[] = 'lahan_sawah.tipe_rawa';
-        }
 
         if (Schema::hasColumn('lahan_sawah', 'tahun_lbs')) {
             $select[] = 'lahan_sawah.tahun_lbs';

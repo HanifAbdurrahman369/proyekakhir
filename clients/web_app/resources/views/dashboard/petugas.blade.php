@@ -524,7 +524,7 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="grid lg:grid-cols-3 gap-4 mt-4">
+                                <div class="grid lg:grid-cols-2 gap-4 mt-4">
                                     <div class="spatial-field">
                                         <label class="block text-xs font-bold text-slate-500">Tipe Lahan</label>
                                         <select name="tipe_lahan_id" id="tipe_lahan_id" class="w-full">
@@ -534,7 +534,6 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="spatial-field"><label class="block text-xs font-bold text-slate-500">Tipe Rawa</label><input name="tipe_rawa" id="tipe_rawa" class="w-full" placeholder="Contoh: Tipe B"></div>
                                     <div class="spatial-field"><label class="block text-xs font-bold text-slate-500">Tahun Basis</label><select name="tahun_lbs" id="tahun_lbs" class="w-full"><option value="2024">2024</option><option value="2017">2017</option></select></div>
                                 </div>
                             </div>
@@ -563,7 +562,6 @@
                                     <textarea name="polygon_geojson" id="polygon_geojson" rows="3" class="w-full font-mono text-xs bg-slate-50" required readonly placeholder="Klik tombol Gambar Batas, lalu klik minimal 3 titik di peta."></textarea>
                                     <p id="polygonStatusText" class="text-xs text-slate-500 mt-2">Belum ada batas area yang siap disimpan.</p>
                                 </div>
-                                <div class="spatial-field mt-4"><label class="block text-xs font-bold text-slate-500">Catatan Spasial</label><textarea name="catatan_spasial" id="catatan_spasial" rows="2" class="w-full"></textarea></div>
                             </div>
                             <div class="flex flex-col sm:flex-row gap-3">
                                 <button class="btn-green flex-1 rounded-2xl py-3 font-extrabold transition">Simpan Data Spasial</button>
@@ -1091,14 +1089,12 @@
                     filterKelurahan();
                     setValue('kelurahan_id', data.kelurahan_id);
                     setValue('tipe_lahan_id', data.tipe_lahan_id);
-                    setValue('tipe_rawa', data.tipe_rawa);
                     setValue('tahun_lbs', data.tahun_lbs || '2024');
                     setValue('luas_lahan_hektar', data.luas_lahan_hektar);
                     setValue('alamat_detail', data.alamat_detail);
                     setValue('latitude', data.latitude);
                     setValue('longitude', data.longitude);
                     setValue('polygon_geojson', data.polygon_geojson || data.geojson || '');
-                    setValue('catatan_spasial', data.catatan_spasial || '');
 
                     const lokasi = [data.nama_kecamatan, data.nama_kelurahan].filter(Boolean).join(' / ') || 'Lokasi belum lengkap';
                     const pemilik = data.pemilik_lahan || data.nama_petani || 'Pemilik belum diisi';

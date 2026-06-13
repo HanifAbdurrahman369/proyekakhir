@@ -53,7 +53,7 @@
         
         <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 transition-all hover:border-blue-100 flex flex-col">
             <h3 class="text-slate-800 font-bold text-xl mb-8 flex items-center gap-3">
-                <span class="w-2.5 h-8 bg-blue-500 rounded-full"></span> Distribusi Tipe Rawa
+                <span class="w-2.5 h-8 bg-blue-500 rounded-full"></span> Distribusi Tipe Lahan
             </h3>
             <div class="relative w-full h-[300px] flex items-center justify-center"><canvas id="pieChart"></canvas></div>
         </div>
@@ -96,13 +96,9 @@
                     </div>
 
                     <div class="space-y-2">
-                        <label class="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Kategori Tipe</label>
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Tipe Lahan</label>
                         <select id="filterTipe" class="custom-select w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl text-base font-medium font-['Poppins'] text-slate-600 focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-inner">
-                            <option value="all">Semua Tipe</option>
-                            <option value="a">Tipe A</option>
-                            <option value="b">Tipe B</option>
-                            <option value="c">Tipe C</option>
-                            <option value="d">Tipe D</option>
+                            <option value="all">Semua Tipe Lahan</option>
                         </select>
                     </div>
 
@@ -194,6 +190,7 @@
 
                     renderCharts(data);
                     globalData = data.tabel_rekap;
+                    populateTipeLahanFilter(data.tipe_lahan_options || []);
                     
                     if(document.getElementById('filterTahun')) {
                         applyFilters();
@@ -207,6 +204,23 @@
             if(el) el.addEventListener(id === 'tableSearch' ? 'input' : 'change', applyFilters);
         });
     });
+
+    function populateTipeLahanFilter(options) {
+        const select = document.getElementById('filterTipe');
+        if (!select) return;
+
+        const selectedValue = select.value || 'all';
+        select.innerHTML = '<option value="all">Semua Tipe Lahan</option>';
+
+        options.forEach(option => {
+            const opt = document.createElement('option');
+            opt.value = option.id;
+            opt.textContent = option.nama_tipe;
+            select.appendChild(opt);
+        });
+
+        select.value = [...select.options].some(option => option.value === selectedValue) ? selectedValue : 'all';
+    }
 
     function applyFilters() {
         if(!globalData || globalData.length === 0) return;
@@ -222,9 +236,11 @@
             const totalPanen = parseFloat(item.total_panen || 0);
             const prod = totalLuas > 0 ? (totalPanen / totalLuas) : 0;
 
-            const matchSearch = !search || item.nama_kecamatan.toLowerCase().includes(search);
+            const lokasi = `${item.nama_kecamatan || ''} ${item.nama_kelurahan || ''}`.toLowerCase();
+            const tipeIds = (item.tipe_lahan_ids || []).map(value => String(value));
+            const matchSearch = !search || lokasi.includes(search);
             const matchTahun = tahun === 'all' || item.tahun_lbs === tahun;
-            const matchTipe = tipe === 'all' || parseFloat(item['luas_' + tipe]) > 0;
+            const matchTipe = tipe === 'all' || tipeIds.includes(String(tipe));
             const matchProd = minProd === 'all' || prod >= parseFloat(minProd);
 
             return matchSearch && matchTahun && matchTipe && matchProd;
@@ -266,18 +282,27 @@
             const prod = totalLuas > 0 ? (totalPanen / totalLuas) : 0;
             const bg = index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30';
 
-            let tipeBadges = `<div class="flex flex-wrap gap-2 justify-center">`;
-            const colors = { 'a': 'blue', 'b': 'emerald', 'c': 'amber', 'd': 'purple' };
-            ['a','b','c','d'].forEach(t => {
-                const val = parseFloat(item['luas_'+t] || 0);
-                if(val > 0) {
-                    tipeBadges += `<span class="px-2.5 py-1.5 bg-${colors[t]}-50 text-${colors[t]}-700 text-sm font-medium rounded-xl border border-${colors[t]}-100">
-                        ${t.toUpperCase()}: ${val.toFixed(2)} Ha
+            const tipeRincian = Array.isArray(item.rincian_tipe_lahan) ? item.rincian_tipe_lahan : [];
+            const badgeClasses = [
+                'bg-blue-50 text-blue-700 border-blue-100',
+                'bg-emerald-50 text-emerald-700 border-emerald-100',
+                'bg-amber-50 text-amber-700 border-amber-100',
+                'bg-purple-50 text-purple-700 border-purple-100',
+                'bg-rose-50 text-rose-700 border-rose-100'
+            ];
+            let tipeBadges = '<div class="flex flex-wrap gap-2 justify-center">';
+
+            tipeRincian.forEach((tipe, tipeIndex) => {
+                const val = parseFloat(tipe.total_luas || 0);
+                if (val > 0) {
+                    tipeBadges += `<span class="px-2.5 py-1.5 ${badgeClasses[tipeIndex % badgeClasses.length]} text-sm font-medium rounded-xl border">
+                        ${tipe.nama_tipe || 'Belum Ditentukan'}: ${val.toFixed(2)} Ha
                     </span>`;
                 }
             });
-            tipeBadges += `</div>`;
-            if(tipeBadges === `<div class="flex flex-wrap gap-2 justify-center"></div>`) tipeBadges = `<span class="text-slate-300 italic">-</span>`;
+
+            tipeBadges += '</div>';
+            if(tipeRincian.length === 0) tipeBadges = '<span class="text-slate-300 italic">-</span>';
 
             tbody.insertAdjacentHTML('beforeend', `
                 <tr class="${bg} hover:bg-slate-50 transition-colors">
@@ -339,12 +364,13 @@
         }
 
         // 2. Render Doughnut Chart
-        if(document.getElementById('pieChart') && data.chart_luas_tipe_rawa) {
+        const tipeLahanChart = data.chart_luas_tipe_lahan || [];
+        if(document.getElementById('pieChart') && tipeLahanChart.length > 0) {
             new Chart(document.getElementById('pieChart').getContext('2d'), {
                 type: 'doughnut',
                 data: {
-                    labels: data.chart_luas_tipe_rawa.map(i => i.tipe_rawa),
-                    datasets: [{ data: data.chart_luas_tipe_rawa.map(i => i.total_luas), backgroundColor: colors.palette, borderWidth: 0 }]
+                    labels: tipeLahanChart.map(i => i.nama_tipe || i.tipe_lahan || 'Belum Ditentukan'),
+                    datasets: [{ data: tipeLahanChart.map(i => i.total_luas), backgroundColor: colors.palette, borderWidth: 0 }]
                 },
                 options: { ...config, plugins: { legend: { display: true, position: 'right', labels: { usePointStyle: true, font: { family: 'Poppins' } } } }, cutout: '75%' }
             });

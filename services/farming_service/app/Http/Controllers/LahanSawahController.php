@@ -203,6 +203,8 @@ class LahanSawahController extends Controller
 
     public function approve(Request $request, $id)
     {
+        $user = $request->attributes->get('auth');
+        $petugasId = $request->input('verified_by') ?? data_get($user, 'sub') ?? data_get($user, 'id');
         $data = LahanSawah::find($id);
 
         if (!$data) {
@@ -229,6 +231,18 @@ class LahanSawahController extends Controller
 
         if (Schema::hasColumn('lahan_sawah', 'updated_at')) {
             $updateData['updated_at'] = now();
+        }
+
+        if ($petugasId && Schema::hasColumn('lahan_sawah', 'verified_by')) {
+            $updateData['verified_by'] = (int) $petugasId;
+        }
+
+        if (Schema::hasColumn('lahan_sawah', 'verified_at')) {
+            $updateData['verified_at'] = now();
+        }
+
+        if (Schema::hasColumn('lahan_sawah', 'catatan_verifikasi')) {
+            $updateData['catatan_verifikasi'] = 'Pengajuan lahan disetujui oleh petugas dan menunggu proses pemetaan spasial.';
         }
 
         $fieldOpsional = [
@@ -261,6 +275,9 @@ class LahanSawahController extends Controller
 
     public function reject(Request $request, $id)
     {
+        $user = $request->attributes->get('auth');
+        $petugasId = $request->input('verified_by') ?? data_get($user, 'sub') ?? data_get($user, 'id');
+
         $request->validate([
             'alasan_penolakan' => 'required|string|min:5|max:700',
         ]);
@@ -291,6 +308,18 @@ class LahanSawahController extends Controller
 
         if (Schema::hasColumn('lahan_sawah', 'updated_at')) {
             $payload['updated_at'] = now();
+        }
+
+        if ($petugasId && Schema::hasColumn('lahan_sawah', 'verified_by')) {
+            $payload['verified_by'] = (int) $petugasId;
+        }
+
+        if (Schema::hasColumn('lahan_sawah', 'verified_at')) {
+            $payload['verified_at'] = now();
+        }
+
+        if (Schema::hasColumn('lahan_sawah', 'catatan_verifikasi')) {
+            $payload['catatan_verifikasi'] = $request->input('alasan_penolakan');
         }
 
         $data->update($payload);
@@ -350,6 +379,18 @@ class LahanSawahController extends Controller
 
         if (Schema::hasColumn('lahan_sawah', 'updated_at')) {
             $payload['updated_at'] = now();
+        }
+
+        if (Schema::hasColumn('lahan_sawah', 'verified_by')) {
+            $payload['verified_by'] = null;
+        }
+
+        if (Schema::hasColumn('lahan_sawah', 'verified_at')) {
+            $payload['verified_at'] = null;
+        }
+
+        if (Schema::hasColumn('lahan_sawah', 'catatan_verifikasi')) {
+            $payload['catatan_verifikasi'] = null;
         }
 
         $data->update($payload);
