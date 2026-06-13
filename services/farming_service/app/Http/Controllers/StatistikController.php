@@ -94,7 +94,7 @@ class StatistikController extends Controller
         ]);
     }
 
-        /**
+    /**
      * Luas lahan per kecamatan
      */
     public function lahanPerKecamatan(Request $request)

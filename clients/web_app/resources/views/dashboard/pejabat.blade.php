@@ -10,9 +10,13 @@
         <p class="text-sm text-slate-500 mt-1">Analisis Data Komoditas Daerah — {{ now()->translatedFormat('F Y') }}</p>
     </div>
 
-    <button onclick="window.print()" class="inline-flex items-center justify-center px-5 py-3 rounded-2xl text-sm font-bold border border-[#dfeccc] text-[#3E7D00] bg-white hover:bg-[#f7fced] transition">
+    <a href="{{ route('pejabat.cetak') }}" target="_blank"
+       class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold text-white bg-gradient-to-r from-[#3E7D00] to-[#65bd00] shadow-md hover:scale-105 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+        </svg>
         Cetak Laporan
-    </button>
+    </a>
 </div>
 
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6 items-stretch">
@@ -73,17 +77,19 @@
 
 </div>
 
-    @php
-    $bulanLabel = [
-        1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr',
-        5 => 'Mei', 6 => 'Jun', 7 => 'Jul', 8 => 'Agt',
-        9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des'
-    ];
+@php
+$bulanLabel = [
+    1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr',
+    5 => 'Mei', 6 => 'Jun', 7 => 'Jul', 8 => 'Agt',
+    9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des'
+];
 
-    $maxProduksi = max($produksiBulanan ?: [1]);
-    @endphp
+$maxProduksi = max($produksiBulanan ?: [1]);
+@endphp
 
-    <div class="glass-card rounded-[28px] p-5 sm:p-6">
+{{-- Tren Produksi Bulanan --}}
+<div class="glass-card rounded-[28px] p-5 sm:p-6 flex flex-col justify-between">
+    <div>
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
             <div>
                 <h3 class="text-base font-extrabold text-[#14280b]">Tren Produksi Bulanan</h3>
@@ -92,29 +98,25 @@
         </div>
 
         <div class="h-52 flex items-end gap-2 sm:gap-3 overflow-x-auto pb-2">
+            @foreach($produksiBulanan as $bulan => $total)
+                @php
+                    $height = $maxProduksi > 0
+                        ? max(20, ($total / $maxProduksi) * 145)
+                        : 20;
+                @endphp
 
-        @foreach($produksiBulanan as $bulan => $total)
+                <div class="min-w-10 flex-1 flex flex-col items-center gap-2">
+                    <div class="w-full rounded-t-2xl transition hover:opacity-80 flex items-start justify-center text-white text-[10px] font-bold pt-1"
+                        style="height:{{ $height }}px; background:linear-gradient(180deg,#65bd00,#3E7D00);">
+                        {{ number_format($total, 0) }}
+                    </div>
 
-            @php
-                $height = $maxProduksi > 0
-                    ? max(20, ($total / $maxProduksi) * 145)
-                    : 20;
-            @endphp
-
-            <div class="min-w-10 flex-1 flex flex-col items-center gap-2">
-                <div class="w-full rounded-t-2xl transition hover:opacity-80 flex items-start justify-center text-white text-[10px] font-bold pt-1"
-                    style="height:{{ $height }}px; background:linear-gradient(180deg,#65bd00,#3E7D00);">
-
-                    {{ number_format($total, 0) }}
+                    <span class="text-[10px] text-slate-400 font-bold uppercase">
+                        {{ $bulanLabel[$bulan] ?? '-' }}
+                    </span>
                 </div>
-
-                <span class="text-[10px] text-slate-400 font-bold uppercase">
-                    {{ $bulanLabel[$bulan] ?? '-' }}
-                </span>
-
-            </div>
-
-        @endforeach
-
+            @endforeach
+        </div>
     </div>
+</div>
 @endsection
