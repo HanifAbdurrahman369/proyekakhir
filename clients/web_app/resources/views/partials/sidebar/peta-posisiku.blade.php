@@ -9,6 +9,26 @@
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
 />
 
+<style>
+    .sigpala-kecamatan-label {
+        background: rgba(255,255,255,.88);
+        border: 1px solid rgba(32,60,16,.12);
+        border-radius: 999px;
+        box-shadow: 0 8px 20px rgba(15,23,42,.14);
+        color: #203c10;
+        font-family: 'Poppins', sans-serif;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: .03em;
+        padding: 4px 8px;
+        text-transform: uppercase;
+    }
+
+    .sigpala-kecamatan-label::before {
+        display: none;
+    }
+</style>
+
 <div class="max-w-7xl mx-auto bg-white p-6 rounded-xl shadow">
 
     {{-- HEADER --}}
@@ -109,9 +129,22 @@
 
     const gatewayBase = window.GATEWAY_URL || "{{ env('GATEWAY_URL', 'http://127.0.0.1:8003') }}";
     const batasKecamatanGroup = L.layerGroup().addTo(map);
+    const kecamatanPalette = [
+        '#15803d', '#0f766e', '#0369a1', '#7c3aed', '#c2410c',
+        '#be123c', '#047857', '#b45309', '#4338ca', '#0e7490',
+        '#65a30d', '#a21caf', '#1d4ed8', '#ca8a04', '#dc2626',
+        '#0891b2', '#4d7c0f'
+    ];
+
+    function warnaKecamatan(feature) {
+        const props = feature?.properties || {};
+        const id = Number(props.kecamatan_id || props.id || 1);
+
+        return props.warna_peta || props.fill_color || kecamatanPalette[(Math.max(id, 1) - 1) % kecamatanPalette.length];
+    }
 
     L.control.layers({}, {
-        'Kecamatan Belawang': batasKecamatanGroup
+        'Batas Kecamatan': batasKecamatanGroup
     }, {
         position: 'topright',
         collapsed: true
@@ -124,13 +157,28 @@
 
             L.geoJSON(featureCollection, {
                 interactive: false,
-                style: {
-                    color: '#f59e0b',
-                    weight: 2.2,
-                    opacity: 0.95,
-                    fillColor: 'transparent',
-                    fillOpacity: 0,
-                    dashArray: '8 6'
+                style: function(feature) {
+                    const color = warnaKecamatan(feature);
+
+                    return {
+                        color,
+                        weight: 2,
+                        opacity: 0.96,
+                        fillColor: color,
+                        fillOpacity: 0.07,
+                        dashArray: '7 5'
+                    };
+                },
+                onEachFeature: function(feature, layer) {
+                    const props = feature?.properties || {};
+                    const label = props.nama_kecamatan || props.kecamatan || props.label;
+                    if (!label) return;
+
+                    layer.bindTooltip(label, {
+                        permanent: true,
+                        direction: 'center',
+                        className: 'sigpala-kecamatan-label'
+                    });
                 }
             }).addTo(batasKecamatanGroup);
         })

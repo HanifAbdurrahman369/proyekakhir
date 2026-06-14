@@ -22,6 +22,7 @@ class LahanSimulasiSeeder extends Seeder
         DB::table('provinsi')->truncate();
         DB::table('jenis_bibit')->truncate();
         DB::table('kategori_lahan')->truncate();
+        DB::table('tipe_lahan')->truncate();
         DB::table('users')->truncate();
         DB::table('roles')->truncate();
 
@@ -35,10 +36,11 @@ class LahanSimulasiSeeder extends Seeder
         
         DB::table('provinsi')->insert(['id' => 1, 'nama_provinsi' => 'Kalimantan Selatan']);
         DB::table('kabupaten')->insert(['id' => 1, 'provinsi_id' => 1, 'nama_kabupaten' => 'Barito Kuala']);
-        DB::table('kecamatan')->insert(['Ide' => 1, 'provinsi_id' => 1, 'nama_kecamatan' => 'Marabahan']);
+        DB::table('kecamatan')->insert(['id' => 1, 'kabupaten_id' => 1, 'nama_kecamatan' => 'Marabahan']);
         DB::table('kelurahan')->insert(['id' => 1, 'kecamatan_id' => 1, 'nama_kelurahan' => 'Ulu Benteng']);
         
         DB::table('kategori_lahan')->insert(['id' => 1, 'nama_kategori' => 'Lahan Sawah Rawa', 'deskripsi' => 'Rawa Pasang Surut']);
+        DB::table('tipe_lahan')->insert(['id' => 1, 'nama_tipe' => 'Lahan Sawah', 'deskripsi' => 'Lahan sawah rawa untuk simulasi']);
         DB::table('jenis_bibit')->insert(['id' => 1, 'nama_bibit' => 'Siam Mayang', 'varietas' => 'Lokal', 'masa_tanam_hari' => 120]);
 
         // ========================================================================
@@ -49,11 +51,11 @@ class LahanSimulasiSeeder extends Seeder
         DB::table('lahan_sawah')->insert([
             'id' => 1,
             'user_id' => 1,
+            'kecamatan_id' => 1,
             'kelurahan_id' => '1',
-            'kategori_lahan_id' => 1,
             'nama_lahan' => 'Sawah Kotak Area A',
             'pemilik_lahan' => 'Bapak Budi',
-            'tipe_rawa' => 'Pasang Surut Tipe B',
+            'tipe_lahan_id' => 1,
             'luas_lahan_hektar' => 2.5,
             // Titik tengah koordinat (sekitar Marabahan, Batola)
             'latitude' => -2.980000, 
@@ -66,11 +68,11 @@ class LahanSimulasiSeeder extends Seeder
         DB::table('lahan_sawah')->insert([
             'id' => 2,
             'user_id' => 1,
+            'kecamatan_id' => 1,
             'kelurahan_id' => '1',
-            'kategori_lahan_id' => 1,
             'nama_lahan' => 'Sawah Kotak Area B',
             'pemilik_lahan' => 'Ibu Siti',
-            'tipe_rawa' => 'Rawa Lebak',
+            'tipe_lahan_id' => 1,
             'luas_lahan_hektar' => 1.8,
             // Titik tengah koordinat
             'latitude' => -2.950000, 

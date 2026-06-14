@@ -81,7 +81,7 @@ class PublicApiController extends Controller
 
         $features = [];
 
-        foreach ($rows as $row) {
+        foreach ($rows as $index => $row) {
             $geometry = $row->geojson ? json_decode($row->geojson, true) : null;
 
             if (!$geometry && $row->latitude && $row->longitude) {
@@ -99,6 +99,7 @@ class PublicApiController extends Controller
                 'type' => 'Feature',
                 'geometry' => $geometry,
                 'properties' => [
+                    'nomor_urut' => $index + 1,
                     'id' => $row->id,
                     'user_id' => $row->user_id,
                     'kecamatan_id' => $row->kecamatan_id,
@@ -305,22 +306,66 @@ class PublicApiController extends Controller
 
         $rawJson = trim($kabupaten->polygon_baritokuala);
         $rawJson = preg_replace('/^[\xEF\xBB\xBF]+/', '', $rawJson);
+        $rawJson = str_ireplace('Barito Delta', 'Barito Kuala', $rawJson);
 
-        return response($rawJson, 200)->header('Content-Type', 'application/json');
+        $geojson = json_decode($rawJson, true);
+
+        if (is_array($geojson)) {
+            $geojson['name'] = 'barito_kuala_boundary_full';
+            $geojson['meta'] = [
+                'nama_wilayah' => 'Barito Kuala',
+                'warna_garis' => '#203c10',
+                'warna_isi' => 'transparent',
+                'fill_opacity' => 0,
+                'style_contract' => 'properties.warna_peta/fill_color dapat dipakai frontend web dan mobile',
+            ];
+
+            if (($geojson['type'] ?? null) === 'FeatureCollection') {
+                $geojson['features'] = collect($geojson['features'] ?? [])
+                    ->filter(fn ($feature) => is_array($feature) && !empty($feature['geometry']))
+                    ->map(function ($feature) {
+                        $feature['properties'] = array_merge((array) ($feature['properties'] ?? []), [
+                            'nama' => 'Kabupaten Barito Kuala',
+                            'nama_kabupaten' => 'Barito Kuala',
+                            'label' => 'Barito Kuala',
+                            'warna_peta' => '#203c10',
+                            'fill_color' => 'transparent',
+                            'fill_opacity' => 0,
+                        ]);
+
+                        return $feature;
+                    })
+                    ->values()
+                    ->all();
+            }
+
+            $rawJson = json_encode($geojson, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }
+
+        return response($rawJson, 200)
+            ->header('Content-Type', 'application/json')
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     }
 
     public function getBatasKecamatan()
     {
+        $palette = [
+            '#15803d', '#0f766e', '#0369a1', '#7c3aed', '#c2410c',
+            '#be123c', '#047857', '#b45309', '#4338ca', '#0e7490',
+            '#65a30d', '#a21caf', '#1d4ed8', '#ca8a04', '#dc2626',
+            '#0891b2', '#4d7c0f',
+        ];
+
         $rows = DB::table('kecamatan')
             ->whereNotNull('polygon_geojson')
             ->where('polygon_geojson', '!=', '')
             ->select('id', 'nama_kecamatan', 'polygon_geojson')
-            ->orderBy('nama_kecamatan')
+            ->orderBy('id')
             ->get();
 
         $features = [];
 
-        foreach ($rows as $row) {
+        foreach ($rows as $index => $row) {
             $geojson = json_decode($row->polygon_geojson, true);
 
             if (!is_array($geojson)) {
@@ -331,6 +376,9 @@ class PublicApiController extends Controller
                 'id' => $row->id,
                 'kecamatan_id' => $row->id,
                 'nama_kecamatan' => $row->nama_kecamatan,
+                'label' => $row->nama_kecamatan,
+                'warna_peta' => $palette[$index % count($palette)],
+                'fill_color' => $palette[$index % count($palette)],
             ]));
         }
 
@@ -338,9 +386,19 @@ class PublicApiController extends Controller
             'success' => true,
             'type' => 'FeatureCollection',
             'features' => $features,
+            'meta' => [
+                'jumlah_kecamatan' => count($features),
+                'warna_diambil_dari' => 'properties.warna_peta',
+                'label_diambil_dari' => 'properties.nama_kecamatan',
+            ],
             'data' => [
                 'type' => 'FeatureCollection',
                 'features' => $features,
+                'meta' => [
+                    'jumlah_kecamatan' => count($features),
+                    'warna_diambil_dari' => 'properties.warna_peta',
+                    'label_diambil_dari' => 'properties.nama_kecamatan',
+                ],
             ],
         ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     }

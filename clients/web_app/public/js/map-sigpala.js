@@ -32,6 +32,67 @@ function sigpalaZoomToFeature(map, layer, feature) {
     }
 }
 
+const SIGPALA_KECAMATAN_PALETTE = [
+    "#15803d", "#0f766e", "#0369a1", "#7c3aed", "#c2410c",
+    "#be123c", "#047857", "#b45309", "#4338ca", "#0e7490",
+    "#65a30d", "#a21caf", "#1d4ed8", "#ca8a04", "#dc2626",
+    "#0891b2", "#4d7c0f"
+];
+
+function sigpalaKecamatanColor(feature) {
+    const props = feature?.properties || {};
+    const id = Number(props.kecamatan_id || props.id || 1);
+    return props.warna_peta || props.fill_color || SIGPALA_KECAMATAN_PALETTE[(Math.max(id, 1) - 1) % SIGPALA_KECAMATAN_PALETTE.length];
+}
+
+function sigpalaKecamatanStyle(feature) {
+    const color = sigpalaKecamatanColor(feature);
+    return {
+        color,
+        weight: 2,
+        opacity: 0.96,
+        fillColor: color,
+        fillOpacity: 0.07,
+        dashArray: "7 5"
+    };
+}
+
+function sigpalaBindKecamatanLabel(feature, layer) {
+    const props = feature?.properties || {};
+    const label = props.nama_kecamatan || props.kecamatan || props.label;
+    if (!label) return;
+
+    layer.bindTooltip(label, {
+        permanent: true,
+        direction: "center",
+        className: "sigpala-kecamatan-label"
+    });
+}
+
+function sigpalaKabupatenStyle(feature) {
+    const props = feature?.properties || {};
+    return {
+        color: props.warna_peta || "#203c10",
+        weight: 2.8,
+        opacity: 0.92,
+        fillColor: props.fill_color || "transparent",
+        fillOpacity: Number(props.fill_opacity ?? 0),
+        dashArray: "10 6"
+    };
+}
+
+function sigpalaBindWilayahLabel(feature, layer) {
+    const props = feature?.properties || {};
+    const label = props.nama_kabupaten || props.nama || props.label;
+    if (!label) return;
+
+    layer.bindTooltip(label, {
+        permanent: false,
+        direction: "center",
+        className: "sigpala-wilayah-label"
+    });
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     const gatewayUrl = window.GATEWAY_URL || '';
     const apiBase = gatewayUrl ? `${gatewayUrl}/api` : '/api';
@@ -256,6 +317,40 @@ document.addEventListener("DOMContentLoaded", function () {
             background: var(--green-50) !important;
         }
 
+        .sigpala-kecamatan-label {
+            background: rgba(255,255,255,.88) !important;
+            border: 1px solid rgba(32,60,16,.12) !important;
+            border-radius: 999px !important;
+            box-shadow: 0 8px 20px rgba(15,23,42,.14) !important;
+            color: #203c10 !important;
+            font-size: 10px !important;
+            font-weight: 800 !important;
+            letter-spacing: .03em !important;
+            padding: 4px 8px !important;
+            text-transform: uppercase !important;
+        }
+
+        .sigpala-kecamatan-label::before {
+            display: none !important;
+        }
+
+        .sigpala-wilayah-label {
+            background: rgba(32,60,16,.92) !important;
+            border: 0 !important;
+            border-radius: 999px !important;
+            box-shadow: 0 10px 24px rgba(15,23,42,.18) !important;
+            color: #ffffff !important;
+            font-size: 11px !important;
+            font-weight: 800 !important;
+            letter-spacing: .04em !important;
+            padding: 5px 10px !important;
+            text-transform: uppercase !important;
+        }
+
+        .sigpala-wilayah-label::before {
+            display: none !important;
+        }
+
         /* ============================================
            SIDE PANEL
         ============================================ */
@@ -325,7 +420,8 @@ document.addEventListener("DOMContentLoaded", function () {
         .then(geojsonData => {
             const layerBatas = L.geoJSON(geojsonData, {
                 interactive: false,
-                style: { color: "#2563eb", weight: 2, fillColor: "#3b82f6", fillOpacity: 0.08 }
+                style: sigpalaKabupatenStyle,
+                onEachFeature: sigpalaBindWilayahLabel
             }).addTo(kabGroup);
 
             if (layerBatas.getBounds().isValid()) {
@@ -341,14 +437,8 @@ document.addEventListener("DOMContentLoaded", function () {
             const featureCollection = data.data || data;
             L.geoJSON(featureCollection, {
                 interactive: false,
-                style: {
-                    color: "#f59e0b",
-                    weight: 2.2,
-                    opacity: 0.95,
-                    fillColor: "transparent",
-                    fillOpacity: 0,
-                    dashArray: "8 6"
-                }
+                style: sigpalaKecamatanStyle,
+                onEachFeature: sigpalaBindKecamatanLabel
             }).addTo(kecGroup);
         })
         .catch(err => console.error("API Batas Kecamatan bermasalah"));

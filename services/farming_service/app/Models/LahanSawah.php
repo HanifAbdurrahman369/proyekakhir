@@ -15,7 +15,6 @@ class LahanSawah extends Model
         'kecamatan_id',
         'kelurahan_id',
         'tipe_lahan_id',
-        'tipe_rawa',
         'nama_lahan',
         'pemilik_lahan',
         'tahun_lbs',

@@ -260,7 +260,7 @@ class PetugasController extends Controller
         $payload = $request->all();
         $payload['status_verifikasi'] = 'DITERIMA';
         $payload['status_spasial'] = 'SUDAH_DIPETAKAN';
-        unset($payload['tipe_rawa'], $payload['catatan_spasial']);
+        unset($payload['catatan_spasial']);
 
         if ($this->currentUserId()) {
             $payload['spasial_updated_by'] = $this->currentUserId();
@@ -296,7 +296,7 @@ class PetugasController extends Controller
 
         $payload = $request->all();
         $payload['status_spasial'] = 'SUDAH_DIPETAKAN';
-        unset($payload['tipe_rawa'], $payload['catatan_spasial']);
+        unset($payload['catatan_spasial']);
 
         if ($this->currentUserId()) {
             $payload['spasial_updated_by'] = $this->currentUserId();

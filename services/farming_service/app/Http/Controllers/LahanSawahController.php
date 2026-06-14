@@ -41,6 +41,13 @@ class LahanSawahController extends Controller
             ->orderByDesc('id')
             ->paginate(2);
 
+        $offset = ($data->currentPage() - 1) * $data->perPage();
+        $data->getCollection()->transform(function ($row, $index) use ($offset) {
+            $row->nomor_urut = $offset + $index + 1;
+
+            return $row;
+        });
+
         return response()->json([
             'success' => true,
             'message' => 'Data lahan berhasil diambil',
@@ -56,7 +63,13 @@ class LahanSawahController extends Controller
             ->where('status_verifikasi', 'DITERIMA')
             ->select('id', 'nama_lahan')
             ->orderBy('nama_lahan')
-            ->get();
+            ->get()
+            ->values()
+            ->map(function ($row, $index) {
+                $row->nomor_urut = $index + 1;
+
+                return $row;
+            });
 
         return response()->json([
             'success' => true,
@@ -81,7 +94,13 @@ class LahanSawahController extends Controller
                 'status_verifikasi'
             )
             ->orderBy('nama_lahan')
-            ->get();
+            ->get()
+            ->values()
+            ->map(function ($row, $index) {
+                $row->nomor_urut = $index + 1;
+
+                return $row;
+            });
 
         return response()->json([
             'success' => true,
@@ -105,7 +124,13 @@ class LahanSawahController extends Controller
                 'kelurahan.nama_kelurahan'
             )
             ->orderByDesc('lahan_sawah.id')
-            ->get();
+            ->get()
+            ->values()
+            ->map(function ($row, $index) {
+                $row->nomor_urut = $index + 1;
+
+                return $row;
+            });
 
         return response()->json([
             'success' => true,
@@ -253,7 +278,6 @@ class LahanSawahController extends Controller
         $fieldOpsional = [
             'pemilik_lahan',
             'tipe_lahan_id',
-            'tipe_rawa',
             'tahun_lbs',
             'luas_lahan_hektar',
             'latitude',

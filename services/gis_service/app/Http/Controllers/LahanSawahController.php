@@ -44,6 +44,8 @@ class LahanSawahController extends Controller
                 ->all();
         }
 
+        $rows = $this->beriNomorUrut($rows);
+
         return response()->json([
             'success' => true,
             'message' => 'Data spasial lahan berhasil diambil.',
@@ -415,6 +417,18 @@ class LahanSawahController extends Controller
         $data['is_wajib_dipetakan'] = ($data['status_verifikasi'] ?? null) === 'DITERIMA' && $data['status_spasial'] === 'BELUM_DIPETAKAN';
 
         return $data;
+    }
+
+    private function beriNomorUrut(array $rows): array
+    {
+        return collect($rows)
+            ->values()
+            ->map(function ($row, $index) {
+                $row['nomor_urut'] = $index + 1;
+
+                return $row;
+            })
+            ->all();
     }
 
     private function buildFeatureCollection(array $rows): array

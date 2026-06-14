@@ -65,6 +65,10 @@
             .spatial-map-shell .leaflet-control-layers { border: 0; border-radius: 16px; box-shadow: 0 14px 34px rgba(32,60,16,.16); overflow: hidden; }
             .spatial-map-shell .leaflet-control-layers-expanded { padding: 12px 14px; color: #203c10; font-weight: 700; }
             .spatial-map-shell .leaflet-control-layers-selector { accent-color: #65bd00; }
+            .spatial-map-shell .sigpala-kecamatan-label { background: rgba(255,255,255,.88); border: 1px solid rgba(32,60,16,.12); border-radius: 999px; box-shadow: 0 8px 20px rgba(15,23,42,.14); color: #203c10; font-size: 10px; font-weight: 800; letter-spacing: .03em; padding: 4px 8px; text-transform: uppercase; }
+            .spatial-map-shell .sigpala-kecamatan-label::before { display: none; }
+            .spatial-map-shell .sigpala-wilayah-label { background: rgba(32,60,16,.92); border: 0; border-radius: 999px; box-shadow: 0 10px 24px rgba(15,23,42,.18); color: #fff; font-size: 11px; font-weight: 800; letter-spacing: .04em; padding: 5px 10px; text-transform: uppercase; }
+            .spatial-map-shell .sigpala-wilayah-label::before { display: none; }
             .spatial-choice { border: 1px solid #e7efd8; background: #fff; color: #475569; }
             .spatial-choice.is-active { border-color: #65bd00; background: #edf8dc; color: #203c10; box-shadow: inset 0 0 0 1px rgba(101,189,0,.18); }
             .spatial-row { border: 1px solid #edf4df; background: #fff; }
@@ -464,7 +468,7 @@
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
                             <div>
                                 <h2 class="text-lg font-extrabold text-primary-900">Peta Kerja Petugas</h2>
-                                <p id="selectedMapLabel" class="text-sm text-slate-500 mt-1">Batas Kabupaten Barito Kuala dan layer Kecamatan Belawang tersedia di kontrol peta. Pilih lahan untuk mulai mengatur titik dan batas area.</p>
+                                <p id="selectedMapLabel" class="text-sm text-slate-500 mt-1">Batas Kabupaten Barito Kuala dan layer batas kecamatan tersedia di kontrol peta. Pilih lahan untuk mulai mengatur titik dan batas area.</p>
                             </div>
                         </div>
                         <div class="spatial-map-shell">
@@ -776,7 +780,7 @@
                     'Peta Jalan': osmLayer
                 }, {
                     'Batas Kabupaten': batasKabupatenGroup,
-                    'Kecamatan Belawang': batasKecamatanGroup
+                    'Batas Kecamatan': batasKecamatanGroup
                 }, {
                     position: 'topright',
                     collapsed: true
@@ -789,6 +793,13 @@
                 let polygonPoints = [];
                 let polygonLayer = null;
                 let batasLayer = null;
+
+                const kecamatanPalette = [
+                    '#15803d', '#0f766e', '#0369a1', '#7c3aed', '#c2410c',
+                    '#be123c', '#047857', '#b45309', '#4338ca', '#0e7490',
+                    '#65a30d', '#a21caf', '#1d4ed8', '#ca8a04', '#dc2626',
+                    '#0891b2', '#4d7c0f'
+                ];
 
                 const form = document.getElementById('spasialForm');
                 const methodInput = document.getElementById('form_method');
@@ -952,19 +963,38 @@
                     }
                 }
 
+                function styleKabupaten(feature) {
+                    const props = feature?.properties || {};
+
+                    return {
+                        color: props.warna_peta || '#203c10',
+                        weight: 2.4,
+                        opacity: 0.9,
+                        fillOpacity: Number(props.fill_opacity ?? 0),
+                        fillColor: props.fill_color || 'transparent',
+                        dashArray: '6 6'
+                    };
+                }
+
+                function labelWilayah(feature, layer) {
+                    const props = feature?.properties || {};
+                    const label = props.nama_kabupaten || props.nama || props.label;
+                    if (!label) return;
+
+                    layer.bindTooltip(label, {
+                        permanent: false,
+                        direction: 'center',
+                        className: 'sigpala-wilayah-label'
+                    });
+                }
+
                 function drawBatasWilayah() {
                     if (!batasWilayah || !batasWilayah.type) return;
 
                     batasLayer = L.geoJSON(batasWilayah, {
                         interactive: false,
-                        style: {
-                            color: '#203c10',
-                            weight: 2.4,
-                            opacity: 0.9,
-                            fillOpacity: 0,
-                            fillColor: 'transparent',
-                            dashArray: '6 6'
-                        }
+                        style: styleKabupaten,
+                        onEachFeature: labelWilayah
                     }).addTo(batasKabupatenGroup);
 
                     try {
@@ -974,20 +1004,46 @@
                     }
                 }
 
+                function warnaKecamatan(feature) {
+                    const props = feature?.properties || {};
+                    const id = Number(props.kecamatan_id || props.id || 1);
+
+                    return props.warna_peta || props.fill_color || kecamatanPalette[(Math.max(id, 1) - 1) % kecamatanPalette.length];
+                }
+
+                function styleKecamatan(feature) {
+                    const color = warnaKecamatan(feature);
+
+                    return {
+                        color,
+                        weight: 2.2,
+                        opacity: 0.96,
+                        fillOpacity: 0.07,
+                        fillColor: color,
+                        dashArray: '7 5'
+                    };
+                }
+
+                function labelKecamatan(feature, layer) {
+                    const props = feature?.properties || {};
+                    const label = props.nama_kecamatan || props.kecamatan || props.label;
+                    if (!label) return;
+
+                    layer.bindTooltip(label, {
+                        permanent: true,
+                        direction: 'center',
+                        className: 'sigpala-kecamatan-label'
+                    });
+                }
+
                 function drawBatasKecamatan() {
                     const collection = batasKecamatan?.data || batasKecamatan;
                     if (!collection || !collection.type) return;
 
                     L.geoJSON(collection, {
                         interactive: false,
-                        style: {
-                            color: '#f59e0b',
-                            weight: 2.4,
-                            opacity: 0.95,
-                            fillOpacity: 0,
-                            fillColor: 'transparent',
-                            dashArray: '8 6'
-                        }
+                        style: styleKecamatan,
+                        onEachFeature: labelKecamatan
                     }).addTo(batasKecamatanGroup);
                 }
 
@@ -1180,7 +1236,7 @@
                     if (selectedSourceLabel) selectedSourceLabel.textContent = 'Belum memilih lahan';
                     if (selectedLahanTitle) selectedLahanTitle.textContent = 'Informasi Titik dan Batas Area';
                     if (selectedLahanMeta) selectedLahanMeta.textContent = 'Pilih lahan belum dipetakan atau lahan sudah dipetakan dari panel kiri untuk membuka formulir pemetaan.';
-                    if (selectedMapLabel) selectedMapLabel.textContent = 'Batas Kabupaten Barito Kuala dan layer Kecamatan Belawang tersedia di kontrol peta. Pilih lahan untuk mulai mengatur titik dan batas area.';
+                    if (selectedMapLabel) selectedMapLabel.textContent = 'Batas Kabupaten Barito Kuala dan layer batas kecamatan tersedia di kontrol peta. Pilih lahan untuk mulai mengatur titik dan batas area.';
                     if (deleteForm) {
                         deleteForm.action = '#';
                         deleteForm.classList.add('hidden');
