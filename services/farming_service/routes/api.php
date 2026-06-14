@@ -87,6 +87,12 @@ Route::middleware(\App\Http\Middleware\JwtMiddleware::class)->group(function () 
     Route::post('/activities/{id}/reject', [SiklusTanamController::class, 'reject']);
     Route::post('/activities/{id}/verifikasi', [SiklusTanamController::class, 'verifyHarvest']);
 
+    // Pemupukan / Siklus Pupuk
+    Route::get('/jenis-pupuk', [SiklusTanamController::class, 'getJenisPupuk']);
+    Route::get('/my-siklus-tanam', [SiklusTanamController::class, 'getMySiklusTanam']);
+    Route::get('/siklus-pupuk', [SiklusTanamController::class, 'getSiklusPupuk']);
+    Route::post('/siklus-pupuk', [SiklusTanamController::class, 'storeSiklusPupuk']);
+
     Route::get('/activities', [SiklusTanamController::class, 'index']);
     Route::post('/activities', [SiklusTanamController::class, 'store']);
     Route::get('/total-produksi', [SiklusTanamController::class, 'totalProduksi']);

@@ -82,6 +82,7 @@ class AuthController extends Controller
                 ->withInput($request->except(['password', 'math_captcha_answer']));
         }
 
+
         /*
         |--------------------------------------------------------------------------
         | Kirim login ke backend melalui API Gateway

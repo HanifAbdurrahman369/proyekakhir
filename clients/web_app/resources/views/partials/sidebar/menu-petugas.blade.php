@@ -1,8 +1,8 @@
 @php
-    $menuBase = 'group flex items-center gap-3 px-3.5 py-3 rounded-2xl text-[13px] font-semibold transition-all duration-200';
+    $menuBase = 'group flex items-center gap-2.5 px-3 py-2.5 rounded-2xl text-[13px] font-semibold transition-all duration-200';
     $menuActive = 'bg-[#edf8dc] text-[#203c10] shadow-sm ring-1 ring-[#dfeccc]';
     $menuIdle = 'text-slate-600 hover:bg-[#f7fced] hover:text-[#2f5c12]';
-    $iconBase = 'w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition';
+    $iconBase = 'w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition';
     $iconActive = 'bg-[#3E7D00] text-white';
     $iconIdle = 'bg-slate-100 text-slate-500 group-hover:bg-[#edf8dc] group-hover:text-[#3E7D00]';
 

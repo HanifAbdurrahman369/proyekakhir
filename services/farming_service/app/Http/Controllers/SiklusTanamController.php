@@ -265,7 +265,8 @@ class SiklusTanamController extends Controller
         }
 
         $data->update([
-            'status_verifikasi' => 'DITOLAK'
+            'status_verifikasi' => 'DITOLAK',
+            'catatan_verifikasi' => request()->input('alasan_penolakan') ?? request()->input('catatan_verifikasi')
         ]);
 
         $this->tandaiNotifikasiPanenTerbaca((int) $data->id);
@@ -321,6 +322,7 @@ class SiklusTanamController extends Controller
                 'st.tanggal_panen',
                 'st.hasil_panen',
                 'st.status_verifikasi',
+                'st.catatan_verifikasi',
                 'st.created_by',
                 'st.created_at',
                 'st.updated_at',
@@ -369,6 +371,7 @@ class SiklusTanamController extends Controller
             'hasil_panen' => $hasilPanen,
             'hasil_panen_label' => number_format((float) ($hasilPanen ?? 0), 2, ',', '.') . ' Ton',
             'status_verifikasi' => $row->status_verifikasi,
+            'catatan_verifikasi' => $this->safeText($row->catatan_verifikasi),
             'created_by' => (int) $row->created_by,
             'created_at' => $row->created_at,
             'updated_at' => $row->updated_at,
@@ -505,6 +508,154 @@ class SiklusTanamController extends Controller
         } catch (\Throwable $e) {
             return false;
         }
+    }
+
+    public function getJenisPupuk()
+    {
+        $data = DB::table('jenis_pupuk')->get()->map(function ($row) {
+            return [
+                'id' => (int) $row->id,
+                'nama_pupuk' => $row->nama_bibit, // Note: mapped to nama_bibit in the schema
+                'tipe' => $row->varietas,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $data
+        ]);
+    }
+
+    public function getMySiklusTanam(Request $request)
+    {
+        $user = $request->attributes->get('auth');
+        $userId = $user->sub ?? $user->id ?? null;
+
+        if (!$userId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token pengguna tidak valid.'
+            ], 401);
+        }
+
+        $data = SiklusTanam::with(['lahan', 'bibit'])
+            ->where('created_by', $userId)
+            ->orderByDesc('id')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'tanggal_tanam' => $item->tanggal_tanam,
+                    'nama_lahan' => $item->lahan->nama_lahan ?? '-',
+                    'nama_bibit' => $item->bibit->nama_bibit ?? '-',
+                    'status_verifikasi' => $item->status_verifikasi,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $data
+        ]);
+    }
+
+    public function storeSiklusPupuk(Request $request)
+    {
+        $request->validate([
+            'siklus_tanam_id' => 'required|integer',
+            'pupuk_id' => 'required|integer',
+            'tanggal_pemupukan' => 'required|date',
+            'takaran' => 'required|numeric|min:0.01',
+        ]);
+
+        $user = $request->attributes->get('auth');
+        $userId = $user->sub ?? $user->id ?? null;
+
+        if (!$userId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token pengguna tidak valid.'
+            ], 401);
+        }
+
+        // Verify that the siklus_tanam belongs to the user
+        $siklus = SiklusTanam::where('id', $request->siklus_tanam_id)
+            ->where('created_by', $userId)
+            ->first();
+
+        if (!$siklus) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Siklus tanam tidak valid.'
+            ], 403);
+        }
+
+        $id = DB::table('siklus_pupuk')->insertGetId([
+            'siklus_tanam_id' => $request->siklus_tanam_id,
+            'pupuk_id' => $request->pupuk_id,
+            'tanggal_pemupukan' => $request->tanggal_pemupukan,
+            'takaran' => $request->takaran,
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Catatan pemupukan berhasil disimpan.',
+            'data' => [
+                'id' => $id,
+                'siklus_tanam_id' => $request->siklus_tanam_id,
+                'pupuk_id' => $request->pupuk_id,
+                'tanggal_pemupukan' => $request->tanggal_pemupukan,
+                'takaran' => $request->takaran,
+            ]
+        ], 201);
+    }
+
+    public function getSiklusPupuk(Request $request)
+    {
+        $user = $request->attributes->get('auth');
+        $userId = $user->sub ?? $user->id ?? null;
+
+        if (!$userId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token pengguna tidak valid.'
+            ], 401);
+        }
+
+        $perPage = $request->get('per_page', 3);
+        $paginator = DB::table('siklus_pupuk as sp')
+            ->join('siklus_tanam as st', 'sp.siklus_tanam_id', '=', 'st.id')
+            ->join('lahan_sawah as ls', 'st.lahan_id', '=', 'ls.id')
+            ->join('jenis_pupuk as jp', 'sp.pupuk_id', '=', 'jp.id')
+            ->where('st.created_by', $userId)
+            ->select([
+                'sp.id',
+                'ls.nama_lahan',
+                'jp.nama_bibit as nama_pupuk',
+                'jp.varietas as tipe_pupuk',
+                'sp.tanggal_pemupukan',
+                'sp.takaran'
+            ])
+            ->orderByDesc('sp.tanggal_pemupukan')
+            ->orderByDesc('sp.id')
+            ->paginate($perPage, ['*'], 'pupuk_page');
+
+        $paginator->getCollection()->transform(function ($row) {
+            return [
+                'id' => (int) $row->id,
+                'nama_lahan' => $this->safeText($row->nama_lahan),
+                'nama_pupuk' => $this->safeText($row->nama_pupuk),
+                'tipe_pupuk' => $this->safeText($row->tipe_pupuk),
+                'tanggal_pemupukan' => $row->tanggal_pemupukan,
+                'takaran' => (float) $row->takaran,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $paginator
+        ]);
     }
 
     private function safeText($value): ?string

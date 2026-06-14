@@ -289,11 +289,30 @@
                                         <td class="px-5 py-4 text-slate-700">{{ $ambil($panen, ['tanggal_tanam']) }}</td>
                                         <td class="px-5 py-4 text-slate-700">{{ $ambil($panen, ['tanggal_panen']) }}</td>
                                         <td class="px-5 py-4"><p class="font-extrabold text-primary-700">{{ $angka($ambil($panen, ['hasil_panen'], 0)) }} Ton</p></td>
-                                        <td class="px-5 py-4"><span class="px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">{{ $ambil($panen, ['status_verifikasi'], 'PENDING') }}</span></td>
                                         <td class="px-5 py-4">
+                                            <div class="flex flex-col gap-1">
+                                                <span class="w-fit px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
+                                                    {{ $ambil($panen, ['status_verifikasi'], 'PENDING') }}
+                                                </span>
+                                                @if(!empty($ambil($panen, ['catatan_verifikasi'])))
+                                                    <span class="text-xs text-slate-500 max-w-[150px] break-words">
+                                                        Catatan: {{ $ambil($panen, ['catatan_verifikasi']) }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </td>
+                                        <td class="px-5 py-4 text-right">
                                             <div class="flex justify-end gap-2">
-                                                <form method="POST" action="{{ url('/petugas/verifikasi-panen/' . $ambil($panen, ['id']) . '/diterima') }}">@csrf<button class="px-4 py-2 rounded-xl bg-green-50 text-green-700 border border-green-200 font-bold hover:bg-green-600 hover:text-white transition">Setujui</button></form>
-                                                <form method="POST" action="{{ url('/petugas/verifikasi-panen/' . $ambil($panen, ['id']) . '/ditolak') }}">@csrf<button class="px-4 py-2 rounded-xl bg-red-50 text-red-600 border border-red-200 font-bold hover:bg-red-600 hover:text-white transition">Tolak</button></form>
+                                                <form method="POST" action="{{ url('/petugas/verifikasi-panen/' . $ambil($panen, ['id']) . '/diterima') }}" onsubmit="return confirm('Setujui laporan panen ini?');">
+                                                    @csrf
+                                                    <button class="px-4 py-2 rounded-xl bg-green-50 text-green-700 border border-green-200 font-bold hover:bg-green-600 hover:text-white transition">Setujui</button>
+                                                </form>
+                                                <button type="button"
+                                                        class="btnTolakPanen px-4 py-2 rounded-xl bg-red-50 text-red-600 border border-red-200 font-bold hover:bg-red-600 hover:text-white transition"
+                                                        data-reject-url="{{ url('/petugas/verifikasi-panen/' . $ambil($panen, ['id']) . '/ditolak') }}"
+                                                        data-nama="Laporan Panen {{ $ambil($panen, ['nama_lahan','lahan.nama_lahan']) }} - {{ $ambil($panen, ['nama_petani','petani.nama_lengkap']) }}">
+                                                    Tolak
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -718,6 +737,12 @@
                 document.querySelectorAll('.btnTolakLahan').forEach(button => {
                     button.addEventListener('click', function () {
                         openReject(this.dataset.rejectUrl || '', this.dataset.nama || 'Pengajuan lahan');
+                    });
+                });
+
+                document.querySelectorAll('.btnTolakPanen').forEach(button => {
+                    button.addEventListener('click', function () {
+                        openReject(this.dataset.rejectUrl || '', this.dataset.nama || 'Laporan panen');
                     });
                 });
 

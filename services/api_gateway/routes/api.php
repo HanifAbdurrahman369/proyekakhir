@@ -214,6 +214,21 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/bibit/{any?
     return proxyRequest($request, $serviceMap['farming'], $path);
 })->where('any', '.*');
 
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/jenis-pupuk/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    $path = trim('jenis-pupuk/' . $any, '/');
+    return proxyRequest($request, $serviceMap['farming'], $path);
+})->where('any', '.*');
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/my-siklus-tanam/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    $path = trim('my-siklus-tanam/' . $any, '/');
+    return proxyRequest($request, $serviceMap['farming'], $path);
+})->where('any', '.*');
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/siklus-pupuk/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    $path = trim('siklus-pupuk/' . $any, '/');
+    return proxyRequest($request, $serviceMap['farming'], $path);
+})->where('any', '.*');
+
 Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/lahan/{any?}', function (Request $request, $any = '') use ($serviceMap) {
     $path = trim('lahan/' . $any, '/');
     return proxyRequest($request, $serviceMap['farming'], $path);

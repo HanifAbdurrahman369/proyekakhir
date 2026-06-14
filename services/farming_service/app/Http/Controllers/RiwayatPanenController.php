@@ -11,7 +11,7 @@ class RiwayatPanenController extends Controller
     {
         $user = $request->attributes->get('auth');
 
-$perPage = $request->get('per_page', 5);
+$perPage = $request->get('per_page', 3);
 
 $data = SiklusTanam::with([
         'lahan:id,nama_lahan,luas_lahan_hektar',
@@ -32,6 +32,7 @@ $data = SiklusTanam::with([
         'hasil_panen' => $item->hasil_panen,
         'status_aktif' => $item->status_aktif,
         'status_verifikasi' => $item->status_verifikasi,
+        'catatan_verifikasi' => $item->catatan_verifikasi,
         'created_by' => $item->created_by,
         'lahan' => $item->lahan,
         'bibit' => $item->bibit,
