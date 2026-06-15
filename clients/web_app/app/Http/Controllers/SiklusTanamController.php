@@ -296,4 +296,85 @@ class SiklusTanamController extends Controller
             ->withInput()
             ->with('error', $response->json('message') ?? 'Gagal menyimpan catatan pemupukan.');
     }
+
+    public function createLaporPanen()
+    {
+        $token = session('token');
+
+        if (!$token) {
+            return redirect('/login')
+                ->with('error', 'Session login habis, silakan login kembali.');
+        }
+
+        $lahanResponse = Http::withToken($token)
+            ->acceptJson()
+            ->get($this->gatewayUrl() . '/api/lahan/dropdown');
+
+        $bibitResponse = Http::withToken($token)
+            ->acceptJson()
+            ->get($this->gatewayUrl() . '/api/bibit');
+
+        $siklusResponse = Http::withToken($token)
+            ->acceptJson()
+            ->get($this->gatewayUrl() . '/api/my-siklus-tanam');
+
+        $lahan = [];
+        $bibit = [];
+        $siklusTanam = [];
+
+        if ($lahanResponse->successful()) {
+            $lahan = $lahanResponse->json()['data'] ?? [];
+        }
+
+        if ($bibitResponse->successful()) {
+            $bibit = $bibitResponse->json()['data'] ?? [];
+        }
+
+        if ($siklusResponse->successful()) {
+            $siklusTanam = $siklusResponse->json()['data'] ?? [];
+        }
+
+        return view('partials.sidebar.lapor-panen', compact(
+            'lahan',
+            'bibit',
+            'siklusTanam'
+        ));
+    }
+
+    public function storeLaporPanen(Request $request)
+    {
+        $request->validate([
+            'siklus_tanam_id' => 'required',
+            'tanggal_panen' => 'required|date',
+            'hasil_panen' => 'required|numeric|min:0',
+            'estimasi_panen' => 'nullable|integer',
+        ]);
+
+        $token = session('token');
+
+        if (!$token) {
+            return redirect()
+                ->back()
+                ->with('error', 'Token tidak ditemukan. Silakan login ulang.');
+        }
+
+        $response = Http::withToken($token)
+            ->post($this->gatewayUrl() . '/api/lapor-panen', [
+                'siklus_tanam_id' => $request->siklus_tanam_id,
+                'tanggal_panen' => $request->tanggal_panen,
+                'hasil_panen' => $request->hasil_panen,
+                'estimasi_panen' => $request->estimasi_panen,
+            ]);
+
+        if ($response->successful()) {
+            return redirect()
+                ->route('riwayat.panen')
+                ->with('success', 'Laporan hasil panen berhasil dikirim dan menunggu verifikasi petugas.');
+        }
+
+        return redirect()
+            ->back()
+            ->withInput()
+            ->with('error', $response->json('message') ?? 'Gagal menyimpan laporan hasil panen.');
+    }
 }

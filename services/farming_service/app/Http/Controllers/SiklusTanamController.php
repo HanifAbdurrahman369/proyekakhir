@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\SiklusTanam;
 use App\Models\LahanSawah;
+use App\Models\LaporPanen;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -81,6 +82,63 @@ class SiklusTanamController extends Controller
             'message' => 'Laporan hasil panen berhasil dikirim dan menunggu verifikasi petugas',
             'data' => $this->ambilDetailHasilPanen((int) $data->id)
         ], 201, [], JSON_INVALID_UTF8_SUBSTITUTE);
+    }
+
+    public function storeLaporPanen(Request $request)
+    {
+        $request->validate([
+            'siklus_tanam_id' => 'required|integer',
+            'tanggal_panen' => 'required|date',
+            'hasil_panen' => 'required|numeric|min:0',
+            'estimasi_panen' => 'nullable|integer',
+        ]);
+
+        $user = $request->attributes->get('auth');
+        $userId = $user->sub ?? $user->id ?? null;
+
+        if (!$userId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token pengguna tidak valid.'
+            ], 401);
+        }
+
+        $siklus = SiklusTanam::where('id', $request->siklus_tanam_id)
+            ->where('created_by', $userId)
+            ->first();
+
+        if (!$siklus) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Siklus tanam tidak ditemukan atau bukan milik Anda.'
+            ], 403);
+        }
+
+        $data = LaporPanen::create([
+            'siklus_tanam_id' => $request->siklus_tanam_id,
+            'tanggal_panen' => $request->tanggal_panen,
+            'hasil_panen' => $request->hasil_panen,
+            'estimasi_panen' => $request->estimasi_panen,
+            'status_verifikasi' => 'PENDING',
+            'created_by' => $userId,
+        ]);
+
+        $petani = DB::table('users')->where('id', $userId)->first();
+        $lahan = LahanSawah::find($siklus->lahan_id);
+
+        $this->buatNotifikasiPetugas(
+            'Laporan Panen Baru',
+            'Petani ' . ($petani->nama_lengkap ?? '-') . ' mengirim laporan panen untuk lahan ' . ($lahan->nama_lahan ?? '-') . '. Segera lakukan verifikasi.',
+            'lapor_panen',
+            (int) $data->id,
+            '/verifikasi-data-petani?tipe=panen&id=' . $data->id
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Laporan panen berhasil dikirim dan menunggu verifikasi petugas',
+            'data' => $data
+        ], 201);
     }
 
     public function show($id)
@@ -167,10 +225,9 @@ class SiklusTanamController extends Controller
     public function getPendingVerifications()
     {
         $data = $this->queryHasilPanenAman()
-            ->where('st.status_verifikasi', 'PENDING')
-            ->whereNotNull('st.hasil_panen')
-            ->orderByDesc('st.created_at')
-            ->orderByDesc('st.id')
+            ->where('lp.status_verifikasi', 'PENDING')
+            ->orderByDesc('lp.created_at')
+            ->orderByDesc('lp.id')
             ->get()
             ->map(fn ($row) => $this->formatHasilPanen($row))
             ->values();
@@ -203,7 +260,7 @@ class SiklusTanamController extends Controller
     public function approve($id)
     {
         $result = DB::transaction(function () use ($id) {
-            $data = SiklusTanam::where('id', $id)->lockForUpdate()->first();
+            $data = LaporPanen::where('id', $id)->lockForUpdate()->first();
 
             if (!$data) {
                 return [
@@ -215,29 +272,17 @@ class SiklusTanamController extends Controller
                 ];
             }
 
-            if ($data->hasil_panen === null || $data->tanggal_panen === null) {
-                return [
-                    'status' => 422,
-                    'body' => [
-                        'success' => false,
-                        'message' => 'Data belum memiliki tanggal panen atau hasil panen.',
-                    ],
-                ];
-            }
-
             $data->update([
                 'status_verifikasi' => 'DITERIMA',
-                'status_aktif' => 'NONAKTIF',
             ]);
 
-            $this->sinkronkanInfoLahanDariPanenTerakhir((int) $data->lahan_id);
-            $this->tandaiNotifikasiPanenTerbaca((int) $data->id);
+            $this->tandaiNotifikasiPanenTerbaca((int) $data->id, 'lapor_panen');
 
             return [
                 'status' => 200,
                 'body' => [
                     'success' => true,
-                    'message' => 'Hasil panen berhasil disetujui. Status panen menjadi DITERIMA dan info lahan sawah sudah diperbarui.',
+                    'message' => 'Laporan panen berhasil disetujui.',
                     'data' => $this->ambilDetailHasilPanen((int) $data->id),
                 ],
             ];
@@ -248,7 +293,7 @@ class SiklusTanamController extends Controller
 
     public function reject($id)
     {
-        $data = SiklusTanam::find($id);
+        $data = LaporPanen::find($id);
 
         if (!$data) {
             return response()->json([
@@ -269,11 +314,11 @@ class SiklusTanamController extends Controller
             'catatan_verifikasi' => request()->input('alasan_penolakan') ?? request()->input('catatan_verifikasi')
         ]);
 
-        $this->tandaiNotifikasiPanenTerbaca((int) $data->id);
+        $this->tandaiNotifikasiPanenTerbaca((int) $data->id, 'lapor_panen');
 
         return response()->json([
             'success' => true,
-            'message' => 'Hasil panen berhasil ditolak',
+            'message' => 'Laporan panen berhasil ditolak',
             'data' => $this->ambilDetailHasilPanen((int) $data->id),
         ], 200, [], JSON_INVALID_UTF8_SUBSTITUTE);
     }
@@ -306,26 +351,28 @@ class SiklusTanamController extends Controller
 
     private function queryHasilPanenAman()
     {
-        return DB::table('siklus_tanam as st')
+        return DB::table('lapor_panen as lp')
+            ->join('siklus_tanam as st', 'st.id', '=', 'lp.siklus_tanam_id')
             ->join('lahan_sawah as ls', 'ls.id', '=', 'st.lahan_id')
             ->leftJoin('users as u', 'u.id', '=', 'st.created_by')
             ->leftJoin('jenis_bibit as jb', 'jb.id', '=', 'st.bibit_id')
             ->leftJoin('kecamatan as kc', 'kc.id', '=', 'ls.kecamatan_id')
             ->leftJoin('kelurahan as kl', 'kl.id', '=', 'ls.kelurahan_id')
             ->select([
-                'st.id',
+                'lp.id',
+                'lp.siklus_tanam_id',
                 'st.lahan_id',
                 'st.bibit_id',
                 'st.tanggal_tanam',
-                'st.estimasi_panen',
+                'lp.estimasi_panen',
                 'st.status_aktif',
-                'st.tanggal_panen',
-                'st.hasil_panen',
-                'st.status_verifikasi',
-                'st.catatan_verifikasi',
-                'st.created_by',
-                'st.created_at',
-                'st.updated_at',
+                'lp.tanggal_panen',
+                'lp.hasil_panen',
+                'lp.status_verifikasi',
+                'lp.catatan_verifikasi',
+                'lp.created_by',
+                'lp.created_at',
+                'lp.updated_at',
                 'ls.nama_lahan',
                 'ls.pemilik_lahan',
                 'ls.luas_lahan_hektar',
@@ -347,7 +394,7 @@ class SiklusTanamController extends Controller
 
     private function ambilDetailHasilPanen(int $id): ?array
     {
-        $row = $this->queryHasilPanenAman()->where('st.id', $id)->first();
+        $row = $this->queryHasilPanenAman()->where('lp.id', $id)->first();
 
         return $row ? $this->formatHasilPanen($row) : null;
     }
@@ -362,6 +409,7 @@ class SiklusTanamController extends Controller
 
         return [
             'id' => (int) $row->id,
+            'siklus_tanam_id' => (int) ($row->siklus_tanam_id ?? 0),
             'lahan_id' => (int) $row->lahan_id,
             'bibit_id' => (int) $row->bibit_id,
             'tanggal_tanam' => $row->tanggal_tanam,
@@ -484,13 +532,13 @@ class SiklusTanamController extends Controller
         }
     }
 
-    private function tandaiNotifikasiPanenTerbaca(int $siklusId): void
+    private function tandaiNotifikasiPanenTerbaca(int $id, string $refType = 'siklus_tanam'): void
     {
         try {
             if ($this->kolomAda('notifikasi', 'ref_type') && $this->kolomAda('notifikasi', 'ref_id')) {
                 DB::table('notifikasi')
-                    ->where('ref_type', 'siklus_tanam')
-                    ->where('ref_id', $siklusId)
+                    ->where('ref_type', $refType)
+                    ->where('ref_id', $id)
                     ->update([
                         'is_read' => 1,
                         'updated_at' => now(),
@@ -545,7 +593,12 @@ class SiklusTanamController extends Controller
             ->map(function ($item) {
                 return [
                     'id' => $item->id,
+                    'lahan_id' => $item->lahan_id,
+                    'bibit_id' => $item->bibit_id,
                     'tanggal_tanam' => $item->tanggal_tanam,
+                    'estimasi_panen' => $item->estimasi_panen,
+                    'tanggal_panen' => $item->tanggal_panen,
+                    'hasil_panen' => $item->hasil_panen,
                     'nama_lahan' => $item->lahan->nama_lahan ?? '-',
                     'nama_bibit' => $item->bibit->nama_bibit ?? '-',
                     'status_verifikasi' => $item->status_verifikasi,

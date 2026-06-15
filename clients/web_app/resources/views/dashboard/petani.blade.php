@@ -21,7 +21,12 @@
             <span>🌾</span> Tambah Lahan
         </a>
 
-        <a href="{{ route('input.panen') }}"
+        <a href="{{ route('lapor.tanam') }}"
+           class="btn-green inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition">
+            <span>🌾</span> Lapor Hasil Tanam
+        </a>
+
+        <a href="{{ route('lapor.panen') }}"
            class="btn-green inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition">
             <span>🌾</span> Lapor Hasil Panen
         </a>
@@ -37,7 +42,7 @@
                 {{ $lahan['total'] ?? count($lahan['data'] ?? []) }}
                 <span class="text-xs font-semibold text-slate-500">Lahan</span>
             </p>
-            <p class="text-[9px] text-slate-500 mt-1">Terdaftar di sistem SiTani</p>
+            <p class="text-[9px] text-slate-500 mt-1">Terdaftar pada sistem</p>
         </div>
         <div class="w-10 h-10 rounded-xl bg-[#edf8dc] text-[#3E7D00] flex items-center justify-center shrink-0">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -56,7 +61,7 @@
                 {{ number_format($totalProduksi, 2) }}
                 <span class="text-xs font-semibold text-white/70">Ton</span>
             </p>
-            <p class="text-[9px] text-white/65 mt-1">Akumulasi hasil panen riil</p>
+            <p class="text-[9px] text-white/65 mt-1">Akumulasi hasil panen</p>
         </div>
         <div class="relative z-10 w-10 h-10 rounded-xl bg-white/20 text-white flex items-center justify-center shrink-0">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

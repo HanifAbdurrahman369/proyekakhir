@@ -116,9 +116,11 @@ Route::middleware(['role:1'])->group(function () {
     Route::post('/lahan/store', [LahanSawahController::class, 'storeLahan'])->name('lahan.store');
     Route::get('/lahan/{id}/edit', [LahanSawahController::class, 'edit'])->name('lahan.edit');
     Route::put('/lahan/{id}/resubmit', [LahanSawahController::class, 'resubmitLahan'])->name('lahan.resubmit');
-    Route::get('/input-panen', [SiklusTanamController::class, 'create'])->name('input.panen');
+    Route::get('/lapor-tanam', [SiklusTanamController::class, 'create'])->name('lapor.tanam');
     Route::get('/riwayat-panen', [SiklusTanamController::class, 'riwayatPanen'])->name('riwayat.panen');
-    Route::post('/input-panen', [SiklusTanamController::class, 'store'])->name('input.panen.store');
+    Route::post('/lapor-tanam', [SiklusTanamController::class, 'store'])->name('lapor.tanam.store');
+    Route::get('/lapor-panen', [SiklusTanamController::class, 'createLaporPanen'])->name('lapor.panen');
+    Route::post('/lapor-panen', [SiklusTanamController::class, 'storeLaporPanen'])->name('lapor.panen.store');
     Route::post('/input-pemupukan', [SiklusTanamController::class, 'storePemupukan'])->name('input.pemupukan.store');
     Route::get('/panen/{id}/edit', [SiklusTanamController::class, 'edit'])->name('panen.edit');
     Route::put('/panen/{id}/update', [SiklusTanamController::class, 'update'])->name('panen.update');

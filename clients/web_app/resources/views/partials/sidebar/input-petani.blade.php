@@ -213,7 +213,7 @@
 
                     {{-- FORM BODY --}}
                     <div class="p-5">
-                        <form action="{{ route('input.panen.store') }}" method="POST">
+                        <form action="{{ route('lapor.tanam.store') }}" method="POST">
                             @csrf
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
