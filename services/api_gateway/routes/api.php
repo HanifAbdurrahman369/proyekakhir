@@ -95,7 +95,7 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/login', fun
 });
 
 Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/register', function (Request $request) use ($serviceMap) {
-    return proxyRequest($request, $serviceMap['auth'], 'register');
+    return proxyRequest($request, $serviceMap['user'], 'register');
 });
 
 Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/forgot-password', function (Request $request) use ($serviceMap) {
@@ -119,6 +119,10 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/reset-passw
 | /api/auth/register
 |--------------------------------------------------------------------------
 */
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/auth/register', function (Request $request) use ($serviceMap) {
+    return proxyRequest($request, $serviceMap['user'], 'register');
+});
 
 Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/auth/{any?}', function (Request $request, $any = '') use ($serviceMap) {
     return proxyRequest($request, $serviceMap['auth'], $any);

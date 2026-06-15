@@ -197,22 +197,81 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
-        $response = Http::post($this->gatewayUrl() . '/api/register', [
-            'nama_lengkap' => $request->nama_lengkap,
-            'email' => $request->email,
-            'password' => $request->password,
-            'password_confirmation' => $request->password_confirmation,
-            'no_hp' => $request->nomor_handphone,
-            'alamat' => $request->alamat,
+        $validator = Validator::make($request->all(), [
+            'nama_lengkap' => 'required|string|max:255',
+            'email' => 'required|email',
+            'jenis_kelompok' => 'required|in:kelompok_tani,brigade_pangan',
+            'password' => 'required|string|min:6|confirmed',
+        ], [
+            'nama_lengkap.required' => 'Nama lengkap wajib diisi.',
+            'email.required' => 'Gmail wajib diisi.',
+            'email.email' => 'Format Gmail tidak valid.',
+            'jenis_kelompok.required' => 'Silakan pilih Kelompok Tani atau Brigade Pangan.',
+            'jenis_kelompok.in' => 'Pilihan keanggotaan tidak valid.',
+            'password.required' => 'Password wajib diisi.',
+            'password.min' => 'Password minimal 6 karakter.',
+            'password.confirmed' => 'Konfirmasi password tidak cocok.',
         ]);
 
-        if ($response->successful()) {
-            return redirect('/login')->with('success', 'Registrasi berhasil, silakan login');
+        if ($validator->fails()) {
+            return back()
+                ->withErrors($validator)
+                ->withInput($request->except(['password', 'password_confirmation']));
         }
 
-        return back()->withErrors([
-            'register' => 'Gagal melakukan registrasi'
-        ]);
+        try {
+            $response = Http::withoutVerifying()
+                ->timeout(10)
+                ->post($this->gatewayUrl() . '/api/register', [
+                    'nama_lengkap' => $request->nama_lengkap,
+                    'email' => $request->email,
+                    'jenis_kelompok' => $request->jenis_kelompok,
+                    'password' => $request->password,
+                    'password_confirmation' => $request->password_confirmation,
+                ]);
+        } catch (\Throwable $e) {
+            return back()
+                ->withErrors([
+                    'register' => 'Koneksi ke backend terputus: ' . $e->getMessage()
+                ])
+                ->withInput($request->except(['password', 'password_confirmation']));
+        }
+
+        if ($response->successful()) {
+            $loginResponse = Http::withoutVerifying()
+                ->timeout(10)
+                ->post($this->gatewayUrl() . '/api/login', [
+                    'email' => $request->email,
+                    'password' => $request->password,
+                ]);
+
+            if ($loginResponse->successful()) {
+                $data = $loginResponse->json();
+
+                session([
+                    'token' => $data['token'],
+                    'user' => $data['user'],
+                    'role_id' => $data['user']['role_id'],
+                ]);
+
+                return redirect('/dashboard-petani')
+                    ->with('success', 'Registrasi berhasil. Selamat datang di dashboard petani.');
+            }
+
+            return redirect('/login')->with('success', 'Registrasi berhasil, silakan login.');
+        }
+
+        $responseData = $response->json();
+        $message = $responseData['message'] ?? 'Gagal melakukan registrasi.';
+        $errors = ['register' => $message];
+
+        if (!empty($responseData['errors']) && is_array($responseData['errors'])) {
+            $errors = array_merge($errors, $responseData['errors']);
+        }
+
+        return back()
+            ->withErrors($errors)
+            ->withInput($request->except(['password', 'password_confirmation']));
     }
 
     public function forgotPassword()

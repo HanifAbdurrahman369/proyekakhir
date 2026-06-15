@@ -61,6 +61,7 @@ class UserController extends Controller
             'email' => $user->email,
             'password' => $user->password,
             'role_id' => $user->role_id,
+            'kelompok_id' => $user->kelompok_id,
             'nama_lengkap' => $user->nama_lengkap
         ]);
     }
@@ -84,9 +85,31 @@ class UserController extends Controller
                 'nama_lengkap' => 'required|string|max:255',
                 'email' => 'required|email|unique:users,email',
                 'password' => 'required|string|min:6|confirmed',
-                'no_hp' => 'nullable|string|max:20',
-                'alamat' => 'nullable|string|max:500'
+                'jenis_kelompok' => 'required|in:kelompok_tani,brigade_pangan',
+            ], [
+                'jenis_kelompok.required' => 'Silakan pilih Kelompok Tani atau Brigade Pangan.',
+                'jenis_kelompok.in' => 'Pilihan keanggotaan tidak valid.',
             ]);
+
+            $kolomKelompok = $validated['jenis_kelompok'] === 'brigade_pangan'
+                ? 'brigade_pangan'
+                : 'kelompok_tani';
+
+            $kelompok = DB::table('kelompok')
+                ->whereRaw('LOWER(TRIM(nama)) = ?', [mb_strtolower(trim($validated['nama_lengkap']))])
+                ->where($kolomKelompok, 'iya')
+                ->first();
+
+            if (!$kelompok) {
+                return response()->json([
+                    'message' => 'Mohon maaf, data Anda belum terdaftar pada database Kelompok Tani atau Brigade Pangan. Silakan hubungi petugas untuk memastikan pendataan keanggotaan terlebih dahulu.',
+                    'errors' => [
+                        'nama_lengkap' => [
+                            'Data petani tidak ditemukan pada kategori keanggotaan yang dipilih.'
+                        ],
+                    ],
+                ], 422);
+            }
 
             /*
             =====================================
@@ -112,13 +135,14 @@ class UserController extends Controller
 
             $user = User::create([
                 'role_id' => $petaniRole->id,
+                'kelompok_id' => $kelompok->id,
                 'nama_lengkap' => $validated['nama_lengkap'],
                 'email' => $validated['email'],
                 'password' => Hash::make(
                     $validated['password']
                 ),
-                'no_hp' => $validated['no_hp'] ?? null,
-                'alamat' => $validated['alamat'] ?? null
+                'no_hp' => $kelompok->nomor_hp ?? null,
+                'alamat' => $kelompok->alamat ?? null
             ]);
 
             return response()->json([
@@ -129,7 +153,12 @@ class UserController extends Controller
                     'email' => $user->email,
                     'role' => 'petani',
                     'no_hp' => $user->no_hp,
-                    'alamat' => $user->alamat
+                    'alamat' => $user->alamat,
+                    'kelompok' => [
+                        'id' => $kelompok->id,
+                        'jenis' => $validated['jenis_kelompok'],
+                        'nama' => $kelompok->nama,
+                    ],
                 ]
             ], 201);
 

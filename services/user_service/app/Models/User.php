@@ -16,6 +16,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'role_id',
+        'kelompok_id',
         'nama_lengkap',
         'email',
         'password',
@@ -53,5 +54,10 @@ class User extends Authenticatable
          $this->notify(
              new ResetPasswordNotification($url)
          );
+     }
+
+     public function kelompok()
+     {
+         return $this->belongsTo(Kelompok::class, 'kelompok_id');
      }
 }

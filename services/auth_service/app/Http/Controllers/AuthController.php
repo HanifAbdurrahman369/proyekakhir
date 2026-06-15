@@ -56,6 +56,7 @@ $validated = $request->validate([
             'sub' => $user['id'],
             'email' => $user['email'],
             'role_id' => $user['role_id'],
+            'kelompok_id' => $user['kelompok_id'] ?? null,
             'iat' => time(),
             'exp' => time() + (24 * 60 * 60)
         ];
@@ -73,7 +74,8 @@ $validated = $request->validate([
                 'id' => $user['id'],
                 'nama_lengkap' => $user['nama_lengkap'],
                 'email' => $user['email'],
-                'role_id' => $user['role_id']
+                'role_id' => $user['role_id'],
+                'kelompok_id' => $user['kelompok_id'] ?? null
             ]
         ]);
     }

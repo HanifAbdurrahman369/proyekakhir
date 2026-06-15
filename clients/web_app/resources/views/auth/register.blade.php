@@ -44,32 +44,24 @@
     </div>
 
     <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-2">Email</label>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">Gmail</label>
         <input type="email"
                name="email"
                value="{{ old('email') }}"
-               placeholder="nama@email.com"
+               placeholder="nama@gmail.com"
                class="auth-input w-full px-4 py-3.5 border border-slate-200 rounded-2xl text-sm bg-white outline-none transition placeholder-slate-300 @error('email') border-red-400 @enderror"
                required>
     </div>
 
     <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-2">Nomor Handphone</label>
-        <input type="text"
-               name="nomor_handphone"
-               value="{{ old('nomor_handphone') }}"
-               placeholder="08xxxxxxxxxx"
-               class="auth-input w-full px-4 py-3.5 border border-slate-200 rounded-2xl text-sm bg-white outline-none transition placeholder-slate-300 @error('nomor_handphone') border-red-400 @enderror"
-               required>
-    </div>
-
-    <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-2">Alamat</label>
-        <textarea name="alamat"
-                  rows="3"
-                  placeholder="Masukkan alamat lengkap"
-                  class="auth-input w-full px-4 py-3.5 border border-slate-200 rounded-2xl text-sm bg-white outline-none transition placeholder-slate-300 resize-none @error('alamat') border-red-400 @enderror"
-                  required>{{ old('alamat') }}</textarea>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">Terdaftar Sebagai</label>
+        <select name="jenis_kelompok"
+                class="auth-input w-full px-4 py-3.5 border border-slate-200 rounded-2xl text-sm bg-white outline-none transition @error('jenis_kelompok') border-red-400 @enderror"
+                required>
+            <option value="">Pilih sumber data petani</option>
+            <option value="kelompok_tani" @selected(old('jenis_kelompok') === 'kelompok_tani')>Kelompok Tani</option>
+            <option value="brigade_pangan" @selected(old('jenis_kelompok') === 'brigade_pangan')>Brigade Pangan</option>
+        </select>
     </div>
 
     <div>
@@ -78,7 +70,7 @@
             <input id="registerPassword"
                    type="password"
                    name="password"
-                   placeholder="Min. 8 karakter"
+                   placeholder="Min. 6 karakter"
                    class="auth-input w-full px-4 pr-12 py-3.5 border border-slate-200 rounded-2xl text-sm bg-white outline-none transition placeholder-slate-300 @error('password') border-red-400 @enderror"
                    required>
 
