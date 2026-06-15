@@ -95,6 +95,7 @@ class LahanSawahController extends Controller
             ]);
 
         if ($response->successful()) {
+            session()->forget('total_lahan');
             return back()->with('success', 'Lahan berhasil diajukan');
         }
 
@@ -121,6 +122,7 @@ class LahanSawahController extends Controller
             ]);
 
         if ($response->successful()) {
+            session()->forget('total_lahan');
             return redirect('/dashboard-petani')->with('success', 'Pengajuan lahan berhasil diperbaiki dan dikirim ulang.');
         }
 

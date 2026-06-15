@@ -5,6 +5,25 @@
     $iconBase = 'w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition';
     $iconActive = 'bg-[#3E7D00] text-white';
     $iconIdle = 'bg-slate-100 text-slate-500 group-hover:bg-[#edf8dc] group-hover:text-[#3E7D00]';
+
+    $totalLahan = session('total_lahan');
+    if ($totalLahan === null) {
+        $token = session('token');
+        if ($token) {
+            try {
+                $response = \Illuminate\Support\Facades\Http::withToken($token)
+                    ->acceptJson()
+                    ->get('http://127.0.0.1:8003/api/lahan', ['page' => 1]);
+                if ($response->successful()) {
+                    $totalLahan = $response->json()['data']['total'] ?? count($response->json()['data']['data'] ?? []);
+                    session(['total_lahan' => $totalLahan]);
+                }
+            } catch (\Throwable $e) {
+                $totalLahan = 0;
+            }
+        }
+    }
+    $lahanLabel = ($totalLahan > 1) ? 'Lahan Bersama' : 'Lahan Saya';
 @endphp
 
 <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-[.18em] px-3 py-2 mt-1">Lahan & Produksi</p>
@@ -13,7 +32,7 @@
     <span class="{{ $iconBase }} {{ request()->is('dashboard-petani') ? $iconActive : $iconIdle }}">
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
     </span>
-    <span>Lahan Saya</span>
+    <span>{{ $lahanLabel }}</span>
 </a>
 
 <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-[.18em] px-3 py-2 mt-4">Aktivitas</p>

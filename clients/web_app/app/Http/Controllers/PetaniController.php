@@ -42,6 +42,8 @@ class PetaniController extends Controller
 
     if ($response->successful()) {
         $lahan = $response->json()['data'];
+        $totalLahan = $lahan['total'] ?? count($lahan['data'] ?? []);
+        session(['total_lahan' => $totalLahan]);
     }
 
     if ($produksiResponse->successful()) {

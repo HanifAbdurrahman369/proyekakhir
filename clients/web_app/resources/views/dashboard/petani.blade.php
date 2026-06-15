@@ -1,12 +1,17 @@
+@php
+    $totalLahan = $lahan['total'] ?? count($lahan['data'] ?? []);
+    $lahanTitle = $totalLahan > 1 ? 'Lahan Bersama' : 'Lahan Saya';
+@endphp
+
 @extends('layouts.app')
 
-@section('title', 'Lahan Saya')
+@section('title', $lahanTitle)
 
 @section('content')
 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-7">
     <div>
         <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-bold bg-[#edf8dc] text-[#3E7D00] border border-[#dfeccc]">Dashboard Petani</span>
-        <h1 class="text-lg font-bold text-[#14280b] mt-2 sm:text-xl tracking-tight">Lahan Saya</h1>
+        <h1 class="text-lg font-bold text-[#14280b] mt-2 sm:text-xl tracking-tight">{{ $lahanTitle }}</h1>
         <p class="text-xs text-slate-500 mt-0.5">Pantau data lahan, riwayat produksi, dan pelaporan hasil panen Anda.</p>
     </div>
 
@@ -23,9 +28,9 @@
     </div>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4.5 mb-6">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
     <!-- Card 1: Total Lahan Terdaftar -->
-    <div class="glass-card rounded-[20px] p-4.5 flex items-center justify-between">
+    <div class="glass-card rounded-[20px] p-5 flex items-center justify-between">
         <div>
             <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Lahan Terdaftar</p>
             <p class="text-xl font-bold text-[#14280b] mt-1.5">
@@ -42,7 +47,7 @@
     </div>
 
     <!-- Card 2: Total Produksi Tahun Ini -->
-    <div class="rounded-[20px] p-4.5 text-white overflow-hidden relative flex items-center justify-between"
+    <div class="rounded-[20px] p-5 text-white overflow-hidden relative flex items-center justify-between"
          style="background:linear-gradient(145deg,#203c10,#3E7D00); box-shadow:0 10px 25px rgba(32,60,16,.15);">
         <div class="absolute -right-6 -bottom-6 w-20 h-20 rounded-full bg-white/10"></div>
         <div class="relative z-10">
@@ -61,7 +66,7 @@
     </div>
 
     <!-- Card 3: Catatan Pendampingan -->
-    <div class="glass-card rounded-[20px] p-4.5 flex items-center justify-between">
+    <div class="glass-card rounded-[20px] p-5 flex items-center justify-between">
         <div>
             <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Catatan Pendampingan</p>
             <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">
