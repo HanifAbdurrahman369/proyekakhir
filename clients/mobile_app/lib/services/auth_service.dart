@@ -1,0 +1,78 @@
+import 'package:dio/dio.dart';
+import '../core/constants/api_endpoints.dart';
+import '../core/network/api_client.dart';
+import '../models/user.dart';
+
+class AuthService {
+  final ApiClient _apiClient;
+
+  AuthService(this._apiClient);
+
+  /// Mengirim request login ke backend
+  Future<Map<String, dynamic>> login(String email, String password) async {
+    try {
+      final response = await _apiClient.dio.post(
+        ApiEndpoints.login,
+        data: {
+          'email': email,
+          'password': password,
+        },
+      );
+      
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      final message = e.response?.data['message'] ?? 'Gagal melakukan login. Silakan periksa jaringan Anda.';
+      throw Exception(message);
+    }
+  }
+
+  /// Mengirim request registrasi baru (sebagai petani) ke backend
+  Future<Map<String, dynamic>> register({
+    required String namaLengkap,
+    required String email,
+    required String password,
+    required String passwordConfirmation,
+    String? noHp,
+    String? alamat,
+  }) async {
+    try {
+      final response = await _apiClient.dio.post(
+        ApiEndpoints.register,
+        data: {
+          'nama_lengkap': namaLengkap,
+          'email': email,
+          'password': password,
+          'password_confirmation': passwordConfirmation,
+          'no_hp': noHp,
+          'alamat': alamat,
+        },
+      );
+      
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      final errorData = e.response?.data;
+      String errorMsg = 'Registrasi gagal.';
+      
+      if (errorData != null && errorData['errors'] != null) {
+        final errors = errorData['errors'] as Map<String, dynamic>;
+        errorMsg = errors.values.map((e) => (e as List).join(', ')).join('\n');
+      } else if (errorData != null && errorData['message'] != null) {
+        errorMsg = errorData['message'];
+      }
+      
+      throw Exception(errorMsg);
+    }
+  }
+
+  /// Mengambil data profil user yang aktif menggunakan token
+  Future<User> getProfile() async {
+    try {
+      final response = await _apiClient.dio.get(ApiEndpoints.profile);
+      final userData = response.data['user'];
+      return User.fromJson(userData as Map<String, dynamic>);
+    } on DioException catch (e) {
+      final message = e.response?.data['message'] ?? 'Gagal memuat profil pengguna.';
+      throw Exception(message);
+    }
+  }
+}
