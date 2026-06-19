@@ -15,11 +15,13 @@ class SiklusTanam extends Model
         'bibit_id',
         'tanggal_tanam',
         'estimasi_panen',
+        'estimasi_tanggal_panen',
         'status_aktif',
         'tanggal_panen',
         'hasil_panen',
         'status_verifikasi',
         'created_by',
+        'peran_pelapor',
         'verified_by',
         'verified_at',
         'catatan_verifikasi',
@@ -28,6 +30,7 @@ class SiklusTanam extends Model
     protected $casts = [
         'hasil_panen' => 'float',
         'tanggal_tanam' => 'date',
+        'estimasi_tanggal_panen' => 'date',
         'tanggal_panen' => 'date',
         'verified_at' => 'datetime',
     ];

@@ -27,9 +27,9 @@ class LahanSimulasiSeeder extends Seeder
         DB::table('roles')->truncate();
 
         // 3. INSERT DATA INDUK (Wajib ada agar lahan sawah bisa di-insert)
-        DB::table('roles')->insert(['id' => 1, 'nama_role' => 'petani']);
+        DB::table('roles')->insert(['id' => 1, 'nama_role' => 'kelompok_tani']);
         DB::table('users')->insert([
-            'id' => 1, 'role_id' => 1, 'role' => 'petani', 
+            'id' => 1, 'role_id' => 1, 'role' => 'kelompok_tani',
             'nama_lengkap' => 'Petani Simulasi', 'email' => 'petani@simulasi.com', 
             'password' => bcrypt('password')
         ]);
@@ -41,7 +41,10 @@ class LahanSimulasiSeeder extends Seeder
         
         DB::table('kategori_lahan')->insert(['id' => 1, 'nama_kategori' => 'Lahan Sawah Rawa', 'deskripsi' => 'Rawa Pasang Surut']);
         DB::table('tipe_lahan')->insert(['id' => 1, 'nama_tipe' => 'Lahan Sawah', 'deskripsi' => 'Lahan sawah rawa untuk simulasi']);
-        DB::table('jenis_bibit')->insert(['id' => 1, 'nama_bibit' => 'Siam Mayang', 'varietas' => 'Lokal', 'masa_tanam_hari' => 120]);
+        DB::table('jenis_bibit')->insert([
+            ['id' => 1, 'nama_bibit' => 'Siam Mayang', 'varietas' => 'Lokal', 'masa_tanam_hari' => 270],
+            ['id' => 2, 'nama_bibit' => 'Inpara 3', 'varietas' => 'Unggul', 'masa_tanam_hari' => 120],
+        ]);
 
         // ========================================================================
         // 4. INSERT DATA LAHAN SAWAH (POLYGON KOTAK FIKTIF DI BARITO KUALA)

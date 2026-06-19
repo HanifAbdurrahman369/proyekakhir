@@ -6,8 +6,9 @@
     $iconActive = 'bg-[#3E7D00] text-white';
     $iconIdle = 'bg-slate-100 text-slate-500 group-hover:bg-[#edf8dc] group-hover:text-[#3E7D00]';
 
+    $roleId = (int) session('role_id');
     $totalLahan = session('total_lahan');
-    if ($totalLahan === null) {
+    if ($roleId === 1 && $totalLahan === null) {
         $token = session('token');
         if ($token) {
             try {
@@ -23,7 +24,7 @@
             }
         }
     }
-    $lahanLabel = ($totalLahan > 1) ? 'Lahan Bersama' : 'Lahan Saya';
+    $lahanLabel = $roleId === 5 ? 'Proses Tanam' : (($totalLahan > 1) ? 'Lahan Saya' : 'Lahan Saya');
 @endphp
 
 <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-[.18em] px-3 py-2 mt-1">Lahan & Produksi</p>
@@ -44,12 +45,14 @@
     <span>Lapor Tanam</span>
 </a>
 
+@if($roleId === 1)
 <a href="{{ route('lapor.panen') }}" class="{{ $menuBase }} {{ request()->is('lapor-panen*') ? $menuActive : $menuIdle }}">
     <span class="{{ $iconBase }} {{ request()->is('lapor-panen*') ? $iconActive : $iconIdle }}">
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 15c-1.1 0-2 .9-2 2v3c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h3V4H5C2.8 4 1 5.8 1 8v12c0 2.2 1.8 4 4 4h10c2.2 0 4-1.8 4-4v-3c0-1.1-.9-2-2-2zm-3-4V3c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h6c1.1 0 2-.9 2-2zm-2 0H8V3h6v8z"/></svg>
     </span>
     <span>Lapor Panen</span>
 </a>
+@endif
 
 <a href="{{ route('riwayat.panen') }}" class="{{ $menuBase }} {{ request()->is('riwayat-panen*') ? $menuActive : $menuIdle }}">
     <span class="{{ $iconBase }} {{ request()->is('riwayat-panen*') ? $iconActive : $iconIdle }}">

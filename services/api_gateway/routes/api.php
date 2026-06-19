@@ -41,7 +41,7 @@ function proxyRequest(Request $request, string $serviceUrl, string $path)
     $options = [
         'headers' => $headers,
         'query'   => $request->query(),
-        'timeout' => 5,
+        'timeout' => 60,
     ];
 
     if (!in_array($request->method(), ['GET', 'HEAD'])) {

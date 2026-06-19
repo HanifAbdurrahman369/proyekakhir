@@ -2,47 +2,73 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SiklusTanam;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class RiwayatPanenController extends Controller
 {
     public function index(Request $request)
     {
-        $user = $request->attributes->get('auth');
+        $auth = $request->attributes->get('auth');
+        $userId = (int) ($auth->sub ?? $auth->id ?? 0);
+        $roleId = (int) ($auth->role_id ?? $auth->role ?? 0);
 
-$perPage = $request->get('per_page', 3);
+        if (!$userId || !in_array($roleId, [1, 5], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Riwayat panen hanya tersedia untuk Kelompok Tani dan Brigade Pangan.',
+            ], 403);
+        }
 
-$data = SiklusTanam::with([
-        'lahan:id,nama_lahan,luas_lahan_hektar',
-        'bibit:id,nama_bibit'
-    ])
-    ->where('created_by', $user->sub)
-    ->latest()
-    ->paginate($perPage, ['*'], 'riwayat_page');
-            $data->getCollection()->transform(function ($item) {
+        $query = DB::table('riwayat_panen as rp')
+            ->leftJoin('users as pemilik', 'pemilik.id', '=', 'rp.pemilik_user_id')
+            ->leftJoin('users as penggarap', 'penggarap.id', '=', 'rp.penggarap_user_id')
+            ->select([
+                'rp.*',
+                'pemilik.nama_lengkap as nama_pemilik',
+                'penggarap.nama_lengkap as nama_penggarap',
+            ])
+            ->whereDate('rp.tanggal_panen', '<=', now()->toDateString());
 
-    return [
-        'id' => $item->id,
-        'lahan_id' => $item->lahan_id,
-        'bibit_id' => $item->bibit_id,
-        'tanggal_tanam' => $item->tanggal_tanam,
-        'tanggal_panen' => $item->tanggal_panen,
-        'estimasi_panen' => $item->estimasi_panen,
-        'hasil_panen' => $item->hasil_panen,
-        'status_aktif' => $item->status_aktif,
-        'status_verifikasi' => $item->status_verifikasi,
-        'catatan_verifikasi' => $item->catatan_verifikasi,
-        'created_by' => $item->created_by,
-        'lahan' => $item->lahan,
-        'bibit' => $item->bibit,
-    ];
+        if ($roleId === 1) {
+            $query->where('rp.pemilik_user_id', $userId);
+        } else {
+            $query->where('rp.penggarap_user_id', $userId);
+        }
 
-});
+        $perPage = min(50, max(1, (int) $request->get('per_page', 10)));
+        $data = $query
+            ->orderByDesc('rp.tanggal_panen')
+            ->orderByDesc('rp.id')
+            ->paginate($perPage, ['*'], 'riwayat_page');
 
-        return response()->json([
-            'success' => true,
-            'data' => $data
+        $data->getCollection()->transform(fn ($item) => [
+            'id' => (int) $item->id,
+            'siklus_tanam_id' => (int) $item->siklus_tanam_id,
+            'lahan_id' => (int) $item->lahan_id,
+            'bibit_id' => (int) $item->bibit_id,
+            'tanggal_tanam' => $item->tanggal_tanam,
+            'tanggal_panen' => $item->tanggal_panen,
+            'hasil_panen' => (float) $item->hasil_panen_ton,
+            'hasil_panen_ton' => (float) $item->hasil_panen_ton,
+            'luas_lahan_hektar' => (float) $item->luas_lahan_ha,
+            'produktivitas_ton_ha' => (float) $item->produktivitas_ton_ha,
+            'status_aktif' => 'NONAKTIF',
+            'status_verifikasi' => $item->status_verifikasi,
+            'nama_pemilik' => $item->nama_pemilik,
+            'nama_penggarap' => $item->nama_penggarap,
+            'lahan' => [
+                'id' => (int) $item->lahan_id,
+                'nama_lahan' => $item->nama_lahan,
+                'luas_lahan_hektar' => (float) $item->luas_lahan_ha,
+            ],
+            'bibit' => [
+                'id' => (int) $item->bibit_id,
+                'nama_bibit' => $item->nama_bibit,
+                'varietas' => $item->varietas,
+            ],
         ]);
-     }
-  }
+
+        return response()->json(['success' => true, 'data' => $data]);
+    }
+}

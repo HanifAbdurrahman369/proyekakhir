@@ -13,27 +13,14 @@ class RoleSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('roles')->insert([
-            [
-                'nama_role' => 'petani',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_role' => 'petugas',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_role' => 'penjabat',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_role' => 'admin',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-        ]);
+        foreach ([
+            1 => 'kelompok_tani',
+            2 => 'petugas',
+            3 => 'pejabat',
+            4 => 'admin',
+            5 => 'brigade_pangan',
+        ] as $id => $namaRole) {
+            DB::table('roles')->updateOrInsert(['id' => $id], ['nama_role' => $namaRole]);
+        }
     }
 }

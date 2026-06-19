@@ -91,13 +91,10 @@ class UserController extends Controller
                 'jenis_kelompok.in' => 'Pilihan keanggotaan tidak valid.',
             ]);
 
-            $kolomKelompok = $validated['jenis_kelompok'] === 'brigade_pangan'
-                ? 'brigade_pangan'
-                : 'kelompok_tani';
-
             $kelompok = DB::table('kelompok')
                 ->whereRaw('LOWER(TRIM(nama)) = ?', [mb_strtolower(trim($validated['nama_lengkap']))])
-                ->where($kolomKelompok, 'iya')
+                ->where('jenis_kelompok', $validated['jenis_kelompok'])
+                ->where('status_keanggotaan', 'AKTIF')
                 ->first();
 
             if (!$kelompok) {
@@ -117,13 +114,13 @@ class UserController extends Controller
             =====================================
             */
 
-            $petaniRole = DB::table('roles')
-                ->where('nama_role', 'petani')
+            $role = DB::table('roles')
+                ->where('nama_role', $validated['jenis_kelompok'])
                 ->first();
 
-            if (!$petaniRole) {
+            if (!$role) {
                 return response()->json([
-                    'message' => 'Role petani tidak ditemukan'
+                    'message' => 'Role keanggotaan petani tidak ditemukan'
                 ], 500);
             }
 
@@ -134,7 +131,7 @@ class UserController extends Controller
             */
 
             $user = User::create([
-                'role_id' => $petaniRole->id,
+                'role_id' => $role->id,
                 'kelompok_id' => $kelompok->id,
                 'nama_lengkap' => $validated['nama_lengkap'],
                 'email' => $validated['email'],
@@ -146,18 +143,21 @@ class UserController extends Controller
             ]);
 
             return response()->json([
-                'message' => 'Registrasi berhasil sebagai petani',
+                'message' => 'Registrasi berhasil sebagai ' . str_replace('_', ' ', $validated['jenis_kelompok']),
                 'user' => [
                     'id' => $user->id,
                     'nama_lengkap' => $user->nama_lengkap,
                     'email' => $user->email,
-                    'role' => 'petani',
+                    'role_id' => (int) $role->id,
+                    'role' => $validated['jenis_kelompok'],
                     'no_hp' => $user->no_hp,
                     'alamat' => $user->alamat,
                     'kelompok' => [
                         'id' => $kelompok->id,
                         'jenis' => $validated['jenis_kelompok'],
                         'nama' => $kelompok->nama,
+                        'kode_anggota' => $kelompok->kode_anggota,
+                        'nama_kelompok' => $kelompok->nama_kelompok,
                     ],
                 ]
             ], 201);

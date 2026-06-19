@@ -29,7 +29,7 @@
             <a href="{{ route('map.full') }}" class="text-slate-500 hover:text-emerald-600 transition-colors">MAP EKSPLORASI</a>
             
             <a href="/login" class="bg-emerald-600 hover:bg-emerald-700 text-white px-7 py-2.5 rounded-xl shadow-[0_8px_20px_rgba(16,185,129,0.3)] hover:shadow-[0_10px_25px_rgba(16,185,129,0.4)] transition-all hover:-translate-y-0.5">
-                Login Sistem
+                Login
             </a>
         </div>
     </nav>

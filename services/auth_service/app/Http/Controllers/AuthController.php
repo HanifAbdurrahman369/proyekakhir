@@ -6,41 +6,37 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Hash;
 use Firebase\JWT\JWT;
+use App\Models\User;
 
 class AuthController extends Controller
 {
     public function login(Request $request)
     {
-$validated = $request->validate([
-    'email' => 'required|email',
-    'password' => 'required|string',
-]);
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string',
+        ]);
+
         /*
         ===================================
-        2. BYPASS SSL LOCAL UNTUK USER SERVICE
+        CARI USER LANGSUNG KE DATABASE
+        (LEBIH CEPAT DARIPADA HTTP CALL)
         ===================================
         */
-        $response = Http::withoutVerifying()->post(
-            'http://127.0.0.1:8002/api/find-user',
-            [
-                'email' => $validated['email']
-            ]
-        );
+        $user = User::where('email', $validated['email'])->first();
 
-        if ($response->failed()) {
+        if (!$user) {
             return response()->json([
                 'message' => 'Email tidak ditemukan di sistem'
             ], 404);
         }
-
-        $user = $response->json();
 
         /*
         ===================================
         CEK PASSWORD
         ===================================
         */
-        if (!Hash::check($validated['password'], $user['password'])) {
+        if (!Hash::check($validated['password'], $user->password)) {
             return response()->json([
                 'message' => 'Password yang Anda masukkan salah'
             ], 401);
@@ -53,10 +49,10 @@ $validated = $request->validate([
         */
         $payload = [
             'iss' => 'auth-service',
-            'sub' => $user['id'],
-            'email' => $user['email'],
-            'role_id' => $user['role_id'],
-            'kelompok_id' => $user['kelompok_id'] ?? null,
+            'sub' => $user->id,
+            'email' => $user->email,
+            'role_id' => $user->role_id,
+            'kelompok_id' => $user->kelompok_id ?? null,
             'iat' => time(),
             'exp' => time() + (24 * 60 * 60)
         ];
@@ -71,11 +67,11 @@ $validated = $request->validate([
             'message' => 'Login berhasil',
             'token' => $token,
             'user' => [
-                'id' => $user['id'],
-                'nama_lengkap' => $user['nama_lengkap'],
-                'email' => $user['email'],
-                'role_id' => $user['role_id'],
-                'kelompok_id' => $user['kelompok_id'] ?? null
+                'id' => $user->id,
+                'nama_lengkap' => $user->nama_lengkap,
+                'email' => $user->email,
+                'role_id' => $user->role_id,
+                'kelompok_id' => $user->kelompok_id ?? null
             ]
         ]);
     }

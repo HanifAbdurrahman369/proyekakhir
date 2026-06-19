@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 
 class PublicApiController extends Controller
 {
@@ -117,11 +119,12 @@ class PublicApiController extends Controller
                     'luas_lahan_hektar' => (float) $row->luas_lahan_hektar,
                     'luas_ha' => (float) $row->luas_lahan_hektar,
 
-                    'hasil_panen_ton' => (float) $row->total_panen_diterima,
-                    'hasil_panen' => (float) $row->total_panen_diterima,
+                    'hasil_panen_ton' => (float) ($row->hasil_panen_ton ?? 0),
+                    'hasil_panen' => (float) ($row->hasil_panen_ton ?? 0),
 
-                    'produktivitas_ton_ha' => (float) (($row->luas_lahan_hektar ?? 0) > 0 ? round($row->total_panen_diterima / $row->luas_lahan_hektar, 2) : 0),
-                    'produktivitas' => (float) (($row->luas_lahan_hektar ?? 0) > 0 ? round($row->total_panen_diterima / $row->luas_lahan_hektar, 2) : 0),
+                    'produktivitas_ton_ha' => (float) ($row->produktivitas_ton_ha ?? 0),
+                    'produktivitas' => (float) ($row->produktivitas_ton_ha ?? 0),
+                    'total_panen_historis_ton' => (float) $row->total_panen_diterima,
 
                     'alamat_detail' => $row->alamat_detail,
                     'latitude' => $row->latitude ? (float) $row->latitude : null,
@@ -157,10 +160,19 @@ class PublicApiController extends Controller
 
     private function panenDiterimaPerLahanQuery()
     {
+        if (Schema::hasTable('riwayat_panen')) {
+            return DB::table('riwayat_panen')
+                ->select('lahan_id', DB::raw('COALESCE(SUM(hasil_panen_ton),0) as total_panen'))
+                ->where('status_verifikasi', 'DITERIMA')
+                ->whereDate('tanggal_panen', '<=', now()->toDateString())
+                ->groupBy('lahan_id');
+        }
+
         return DB::table('siklus_tanam')
             ->select('lahan_id', DB::raw('COALESCE(SUM(hasil_panen),0) as total_panen'))
             ->where('status_verifikasi', 'DITERIMA')
             ->whereNotNull('hasil_panen')
+            ->whereDate('tanggal_panen', '<=', now()->toDateString())
             ->groupBy('lahan_id');
     }
 
@@ -203,16 +215,41 @@ class PublicApiController extends Controller
 
     private function chartProduktivitasLahan()
     {
+        if (Schema::hasTable('riwayat_panen')) {
+            return DB::table('riwayat_panen as rp')
+                ->join('lahan_sawah as ls', 'ls.id', '=', 'rp.lahan_id')
+                ->leftJoin('kecamatan', 'ls.kecamatan_id', '=', 'kecamatan.id')
+                ->where('rp.status_verifikasi', 'DITERIMA')
+                ->whereDate('rp.tanggal_panen', '<=', now()->toDateString())
+                ->where('ls.status_verifikasi', 'DITERIMA')
+                ->select(
+                    'kecamatan.nama_kecamatan as nama_lahan',
+                    DB::raw('ROUND(SUM(rp.hasil_panen_ton), 2) as total_panen'),
+                    DB::raw('ROUND(SUM(rp.luas_lahan_ha), 2) as total_luas_panen'),
+                    DB::raw('CASE WHEN SUM(rp.luas_lahan_ha) > 0 THEN ROUND(SUM(rp.hasil_panen_ton) / SUM(rp.luas_lahan_ha), 2) ELSE 0 END as produktivitas_ton_ha')
+                )
+                ->groupBy('kecamatan.nama_kecamatan')
+                ->orderBy('kecamatan.nama_kecamatan')
+                ->get()
+                ->map(function ($row) {
+                    $row->periode_label = $row->nama_lahan ?: 'Belum Ditentukan';
+                    $row->nama_lahan = $row->periode_label;
+                    return $row;
+                });
+        }
+
         return $this->lahanPublikQuery()
+            ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
             ->leftJoinSub($this->panenDiterimaPerLahanQuery(), 'panen_lahan', function ($join) {
                 $join->on('panen_lahan.lahan_id', '=', 'lahan_sawah.id');
             })
             ->select(
-                'lahan_sawah.nama_lahan',
-                DB::raw('COALESCE(panen_lahan.total_panen,0) as total_panen'),
-                DB::raw('CASE WHEN lahan_sawah.luas_lahan_hektar > 0 THEN ROUND(COALESCE(panen_lahan.total_panen,0) / lahan_sawah.luas_lahan_hektar, 2) ELSE 0 END as produktivitas_ton_ha')
+                'kecamatan.nama_kecamatan as nama_lahan',
+                DB::raw('SUM(COALESCE(panen_lahan.total_panen,0)) as total_panen'),
+                DB::raw('CASE WHEN SUM(lahan_sawah.luas_lahan_hektar) > 0 THEN ROUND(SUM(COALESCE(panen_lahan.total_panen,0)) / SUM(lahan_sawah.luas_lahan_hektar), 2) ELSE 0 END as produktivitas_ton_ha')
             )
-            ->orderBy('lahan_sawah.nama_lahan')
+            ->groupBy('kecamatan.nama_kecamatan')
+            ->orderBy('kecamatan.nama_kecamatan')
             ->get();
     }
 

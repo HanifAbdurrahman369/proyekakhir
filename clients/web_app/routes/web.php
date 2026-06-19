@@ -70,7 +70,7 @@ Route::get('/statistik', function () {
 3. PENGALIHAN DASHBOARD MULTI-ROLE (Dipanggil Setelah Login)
 ===================================================================
 */
-Route::get('/dashboard-petani', [PetaniController::class, 'index'])->middleware('role:1');
+Route::get('/dashboard-petani', [PetaniController::class, 'index'])->middleware('role:1,5');
 
 // Memastikan "case 2: return redirect('/dashboard-petugas');" bekerja sempurna dan memuat data peta
 Route::get('/dashboard-petugas', [PetugasController::class, 'index'])->middleware('role:2');
@@ -107,21 +107,28 @@ Route::middleware(['role:2'])->group(function () {
 
 /*
 ===================================================================
-5. OPERASIONAL PETANI (ROLE: 1) - Siklus Tanam
+5. OPERASIONAL PETANI - Kelompok Tani dan Brigade Pangan
 ===================================================================
 */
-Route::middleware(['role:1'])->group(function () {
+Route::middleware(['role:1,5'])->group(function () {
     Route::get('/dashboard-petani', [PetaniController::class, 'index']);
+    Route::get('/lapor-tanam', [SiklusTanamController::class, 'create'])->name('lapor.tanam');
+    Route::post('/lapor-tanam', [SiklusTanamController::class, 'store'])->name('lapor.tanam.store');
+    Route::get('/lapor-tanam/{id}/edit', [SiklusTanamController::class, 'editTanam'])->name('lapor.tanam.edit');
+    Route::put('/lapor-tanam/{id}', [SiklusTanamController::class, 'updateTanam'])->name('lapor.tanam.update');
+    Route::delete('/lapor-tanam/{id}', [SiklusTanamController::class, 'destroyTanam'])->name('lapor.tanam.destroy');
+    Route::get('/riwayat-panen', [SiklusTanamController::class, 'riwayatPanen'])->name('riwayat.panen');
+    Route::post('/input-pemupukan', [SiklusTanamController::class, 'storePemupukan'])->name('input.pemupukan.store');
+});
+
+Route::middleware(['role:1'])->group(function () {
     Route::get('/tambah-lahan', [LahanSawahController::class, 'create'])->name('tambah.lahan');
     Route::post('/lahan/store', [LahanSawahController::class, 'storeLahan'])->name('lahan.store');
     Route::get('/lahan/{id}/edit', [LahanSawahController::class, 'edit'])->name('lahan.edit');
     Route::put('/lahan/{id}/resubmit', [LahanSawahController::class, 'resubmitLahan'])->name('lahan.resubmit');
-    Route::get('/lapor-tanam', [SiklusTanamController::class, 'create'])->name('lapor.tanam');
-    Route::get('/riwayat-panen', [SiklusTanamController::class, 'riwayatPanen'])->name('riwayat.panen');
-    Route::post('/lapor-tanam', [SiklusTanamController::class, 'store'])->name('lapor.tanam.store');
+    Route::delete('/lahan/{id}', [LahanSawahController::class, 'destroyLahan'])->name('lahan.destroy');
     Route::get('/lapor-panen', [SiklusTanamController::class, 'createLaporPanen'])->name('lapor.panen');
     Route::post('/lapor-panen', [SiklusTanamController::class, 'storeLaporPanen'])->name('lapor.panen.store');
-    Route::post('/input-pemupukan', [SiklusTanamController::class, 'storePemupukan'])->name('input.pemupukan.store');
     Route::get('/panen/{id}/edit', [SiklusTanamController::class, 'edit'])->name('panen.edit');
     Route::put('/panen/{id}/update', [SiklusTanamController::class, 'update'])->name('panen.update');
 });

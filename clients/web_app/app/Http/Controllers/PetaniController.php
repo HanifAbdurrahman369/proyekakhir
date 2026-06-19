@@ -18,12 +18,16 @@ class PetaniController extends Controller
     public function index(Request $request)
     {
         $token = session('token');
+        $roleId = (int) session('role_id');
 
-    $response = Http::withToken($token)
-        ->acceptJson()
-        ->get($this->gatewayUrl . '/api/lahan', [
-            'page' => $request->page ?? 1,
-        ]);
+    $response = null;
+    if ($roleId === 1) {
+        $response = Http::withToken($token)
+            ->acceptJson()
+            ->get($this->gatewayUrl . '/api/lahan', [
+                'page' => $request->page ?? 1,
+            ]);
+    }
 
     $produksiResponse = Http::withToken($token)
         ->acceptJson()
@@ -36,11 +40,16 @@ class PetaniController extends Controller
             'per_page' => 3,
         ]);
 
-    $lahan = [];
+    $siklusResponse = Http::withToken($token)
+        ->acceptJson()
+        ->get($this->gatewayUrl . '/api/my-siklus-tanam');
+
+    $lahan = ['data' => [], 'total' => 0, 'current_page' => 1, 'last_page' => 1];
     $totalProduksi = 0;
     $riwayat = [];
+    $siklusTanam = [];
 
-    if ($response->successful()) {
+    if ($response && $response->successful()) {
         $lahan = $response->json()['data'];
         $totalLahan = $lahan['total'] ?? count($lahan['data'] ?? []);
         session(['total_lahan' => $totalLahan]);
@@ -54,9 +63,15 @@ class PetaniController extends Controller
         $riwayat = $riwayatResponse->json()['data'] ?? [];
     }
 
+    if ($siklusResponse->successful()) {
+        $siklusTanam = $siklusResponse->json()['data'] ?? [];
+    }
+
+    $roleName = $roleId === 5 ? 'Brigade Pangan' : 'Kelompok Tani';
+
             return view(
                 'dashboard.petani',
-                compact('lahan', 'totalProduksi', 'riwayat')
+                compact('lahan', 'totalProduksi', 'riwayat', 'siklusTanam', 'roleId', 'roleName')
             );
         }
 }

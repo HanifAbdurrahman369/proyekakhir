@@ -131,4 +131,20 @@ class LahanSawahController extends Controller
             ->with('error', $response->json('message') ?? 'Gagal mengajukan ulang lahan.');
     }
 
+    public function destroyLahan($id)
+    {
+        $response = Http::withToken(session('token'))
+            ->acceptJson()
+            ->delete($this->gatewayUrl() . '/api/lahan/' . $id);
+
+        if ($response->successful()) {
+            session()->forget('total_lahan');
+        }
+
+        return redirect('/dashboard-petani')->with(
+            $response->successful() ? 'success' : 'error',
+            $response->json('message') ?? ($response->successful() ? 'Pengajuan lahan dihapus.' : 'Pengajuan lahan gagal dihapus.')
+        );
+    }
+
 }

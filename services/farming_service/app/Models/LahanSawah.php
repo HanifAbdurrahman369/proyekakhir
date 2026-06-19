@@ -20,6 +20,8 @@ class LahanSawah extends Model
         'tahun_lbs',
         'luas_lahan_hektar',
         'hasil_panen_ton',
+        'hasil_panen_siklus_id',
+        'riwayat_panen_terakhir_id',
         'produktivitas_ton_ha',
         'alamat_detail',
         'koordinat_tengah',
@@ -35,17 +37,27 @@ class LahanSawah extends Model
         'updated_at',
     ];
 
-protected $hidden = [
-    'polygon_area',
-];
+    protected $hidden = [
+        'polygon_area',
+    ];
 
-public function kecamatanLahan()
-{
-    return $this->belongsTo(\App\Models\Kecamatan::class, 'kecamatan_id');
-}
+    public function kecamatanLahan()
+    {
+        return $this->belongsTo(\App\Models\Kecamatan::class, 'kecamatan_id');
+    }
 
-public function kelurahanLahan()
-{
-    return $this->belongsTo(\App\Models\Kelurahan::class, 'kelurahan_id');
-}
+    public function kelurahanLahan()
+    {
+        return $this->belongsTo(\App\Models\Kelurahan::class, 'kelurahan_id');
+    }
+
+    public function riwayatPanen()
+    {
+        return $this->hasMany(RiwayatPanen::class, 'lahan_id');
+    }
+
+    public function riwayatPanenTerakhir()
+    {
+        return $this->belongsTo(RiwayatPanen::class, 'riwayat_panen_terakhir_id');
+    }
 }

@@ -11,7 +11,7 @@
             <p class="text-5xl font-black text-slate-800" id="stat-kecamatan">...</p>
         </div>
         <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 text-center flex flex-col justify-center group">
-            <p class="text-slate-400 text-sm font-bold uppercase tracking-widest mb-4 group-hover:text-emerald-500 transition-colors">Total Kelurahan</p>
+            <p class="text-slate-400 text-sm font-bold uppercase tracking-widest mb-4 group-hover:text-emerald-500 transition-colors">Kelurahan / Desa</p>
             <p class="text-5xl font-black text-slate-800" id="stat-kelurahan">...</p>
         </div>
         <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 text-center flex flex-col justify-center group">
@@ -42,7 +42,7 @@
 
         <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 transition-all hover:border-indigo-100">
             <h3 class="text-slate-800 font-bold text-xl mb-8 flex items-center gap-3">
-                <span class="w-2.5 h-8 bg-indigo-500 rounded-full"></span> Tren Produktivitas Lahan
+                <span class="w-2.5 h-8 bg-indigo-500 rounded-full"></span> Produktivitas Padi
             </h3>
             <div class="relative w-full h-[300px]"><canvas id="lineChart"></canvas></div>
         </div>
@@ -341,7 +341,7 @@
                     labels: data.chart_panen_kecamatan.map(i => i.nama_kecamatan),
                     datasets: [{ data: data.chart_panen_kecamatan.map(i => i.total_panen), backgroundColor: colors.green.fill, borderRadius: 8 }]
                 },
-                options: { ...config, scales: { x: { grid: { display: false } } } }
+                options: { ...config, scales: { x: { grid: { display: false }, display: true } } }
             });
         }
 
@@ -365,10 +365,10 @@
             new Chart(document.getElementById('lineChart').getContext('2d'), {
                 type: 'line',
                 data: {
-                    labels: data.chart_produktivitas_lahan.map(i => i.nama_lahan),
-                    datasets: [{ label: 'Produktivitas', data: data.chart_produktivitas_lahan.map(i => i.produktivitas_ton_ha), borderColor: colors.indigo.border, backgroundColor: grad, fill: true, tension: 0.4, pointRadius: 4 }]
+                    labels: data.chart_produktivitas_lahan.map(i => i.periode_label || i.periode || i.nama_lahan),
+                    datasets: [{ label: 'Produktivitas Padi', data: data.chart_produktivitas_lahan.map(i => i.produktivitas_ton_ha), borderColor: colors.indigo.border, backgroundColor: grad, fill: true, tension: 0.4, pointRadius: 4 }]
                 },
-                options: { ...config, scales: { x: { display: false } } }
+                options: { ...config, scales: { x: { display: true } } }
             });
         }
 

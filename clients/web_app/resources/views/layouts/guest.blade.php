@@ -43,11 +43,8 @@
     <main class="auth-grid min-h-screen flex items-center justify-center px-5 py-10">
         <section class="w-full max-w-[460px]">
             <div class="text-center mb-7">
-                <div class="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
-                     style="background: linear-gradient(135deg, #5EA500, #35530E); box-shadow: 0 14px 34px rgba(94,165,0,.28);">
-                    <svg class="w-7 h-7 text-white" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 0 0 8 20C19 20 22 3 22 3c-1 2-8 2-8 2s4-4-3 1C7 9 7 15 7 15s0-3 3-5.31C13.77 7.73 17 8 17 8Z"/>
-                    </svg>
+                <div class="mx-auto w-16 h-16 flex items-center justify-center mb-4">
+                    <img src="{{ asset('storage/logo.png') }}" class="w-full h-full object-contain" alt="Logo">
                 </div>
 
                 <p class="text-sm font-semibold tracking-wide" style="color:#497D00;">

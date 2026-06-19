@@ -2,18 +2,20 @@
     $roleId = (int) session('role_id');
 
     $roleLabel = match ($roleId) {
-        1 => 'Petani',
+        1 => 'Kelompok Tani',
         2 => 'Petugas',
         3 => 'Pejabat',
         4 => 'Admin',
+        5 => 'Brigade Pangan',
         default => 'Pengguna',
     };
 
     $roleInitial = match ($roleId) {
-        1 => 'PT',
+        1 => 'KT',
         2 => 'PG',
         3 => 'PJ',
         4 => 'AD',
+        5 => 'BP',
         default => 'US',
     };
 
@@ -39,11 +41,8 @@
             </button>
 
             <a href="/" class="flex items-center gap-3 min-w-0">
-                <div class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
-                     style="background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.22);">
-                    <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 0 0 8 20C19 20 22 3 22 3c-1 2-8 2-8 2s4-4-3 1C7 9 7 15 7 15s0-3 3-5.31C13.77 7.73 17 8 17 8Z"/>
-                    </svg>
+                <div class="w-11 h-11 flex items-center justify-center shrink-0">
+                    <img src="{{ asset('storage/logo.png') }}" class="w-full h-full object-contain filter drop-shadow-md brightness-110" alt="Logo">
                 </div>
 
                 <div class="min-w-0">

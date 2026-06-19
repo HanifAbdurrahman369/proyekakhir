@@ -49,11 +49,10 @@ function sigpalaKecamatanStyle(feature) {
     const color = sigpalaKecamatanColor(feature);
     return {
         color,
-        weight: 2,
-        opacity: 0.96,
+        weight: 2.5,
+        opacity: 1,
         fillColor: color,
-        fillOpacity: 0.07,
-        dashArray: "7 5"
+        fillOpacity: 0.15
     };
 }
 
@@ -73,11 +72,10 @@ function sigpalaKabupatenStyle(feature) {
     const props = feature?.properties || {};
     return {
         color: props.warna_peta || "#203c10",
-        weight: 2.8,
-        opacity: 0.92,
+        weight: 3.5,
+        opacity: 1,
         fillColor: props.fill_color || "transparent",
-        fillOpacity: Number(props.fill_opacity ?? 0),
-        dashArray: "10 6"
+        fillOpacity: Number(props.fill_opacity ?? 0)
     };
 }
 
@@ -363,6 +361,31 @@ document.addEventListener("DOMContentLoaded", function () {
                 width: 100% !important;
             }
         }
+        /* Custom Kelurahan Select */
+        .kelurahan-select-control {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 8px 12px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--slate-100);
+            font-family: 'Poppins', sans-serif;
+            margin-top: 24px !important;
+            margin-right: 24px !important;
+        }
+
+        .kelurahan-select-control select {
+            border: 1px solid var(--slate-200);
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            color: var(--slate-700);
+            outline: none;
+            background: white;
+            cursor: pointer;
+            min-width: 180px;
+        }
     `;
 
     if (isFullMap) {
@@ -405,7 +428,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const overlayMaps = {
         "🏙️ Kabupaten": kabGroup,
         "🏢 Kecamatan": kecGroup,
-        "🏡 Kelurahan": kelGroup,
         "<span style='color: #16a34a; font-weight: bold;'>🌾 Lahan Sawah</span>": lahanGroup
     };
 
@@ -413,6 +435,24 @@ document.addEventListener("DOMContentLoaded", function () {
         collapsed: true,
         position: 'topright'
     }).addTo(map);
+
+    // Custom Kelurahan Control
+    let geojsonKelurahanData = null;
+    let kelurahanLayer = null;
+
+    const kelurahanControl = L.control({position: 'topright'});
+    kelurahanControl.onAdd = function (map) {
+        const div = L.DomUtil.create('div', 'kelurahan-select-control leaflet-bar');
+        div.innerHTML = `
+            <div style="font-size:11px; font-weight:bold; color:var(--slate-500); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">Batas Kelurahan</div>
+            <select id="kelurahan-filter">
+                <option value="all">Semua Kelurahan</option>
+            </select>
+        `;
+        L.DomEvent.disableClickPropagation(div);
+        return div;
+    };
+    kelurahanControl.addTo(map);
 
     // 4. Ambil Batas Kabupaten Barito Kuala
     fetch(`${apiBase}/batas-wilayah`)
@@ -442,6 +482,89 @@ document.addEventListener("DOMContentLoaded", function () {
             }).addTo(kecGroup);
         })
         .catch(err => console.error("API Batas Kecamatan bermasalah"));
+
+    // 4c. Ambil Batas Kelurahan dan populate select
+    fetch(`${apiBase}/batas-kelurahan`)
+        .then(res => res.json())
+        .then(data => {
+            geojsonKelurahanData = data.data || data;
+            
+            // Populate select
+            const selectKelurahan = document.getElementById('kelurahan-filter');
+            if (selectKelurahan && geojsonKelurahanData.features) {
+                // Sort features alphabetically by kelurahan name
+                const sortedFeatures = [...geojsonKelurahanData.features].sort((a, b) => {
+                    const nameA = (a.properties.nama_kelurahan || a.properties.kelurahan || '').toLowerCase();
+                    const nameB = (b.properties.nama_kelurahan || b.properties.kelurahan || '').toLowerCase();
+                    return nameA.localeCompare(nameB);
+                });
+
+                sortedFeatures.forEach(feature => {
+                    const name = feature.properties.nama_kelurahan || feature.properties.kelurahan;
+                    if (name) {
+                        const option = document.createElement('option');
+                        option.value = name;
+                        option.textContent = name;
+                        selectKelurahan.appendChild(option);
+                    }
+                });
+
+                // Initial render of all kelurahan
+                renderKelurahan('all');
+
+                // Add event listener
+                selectKelurahan.addEventListener('change', function(e) {
+                    renderKelurahan(e.target.value);
+                });
+            }
+        })
+        .catch(err => console.error("API Batas Kelurahan bermasalah"));
+
+    function renderKelurahan(selectedName) {
+        if (kelurahanLayer) {
+            kelGroup.removeLayer(kelurahanLayer);
+        }
+
+        let featuresToRender = geojsonKelurahanData.features;
+        if (selectedName !== 'all') {
+            featuresToRender = featuresToRender.filter(f => {
+                const name = f.properties.nama_kelurahan || f.properties.kelurahan;
+                return name === selectedName;
+            });
+        }
+
+        kelurahanLayer = L.geoJSON(featuresToRender, {
+            interactive: false,
+            style: {
+                color: "#eab308", // Yellow color for kelurahan
+                weight: 1.5,
+                opacity: 0.8,
+                fillColor: "#fef08a",
+                fillOpacity: 0.1
+            },
+            onEachFeature: function(feature, layer) {
+                const props = feature?.properties || {};
+                const label = props.nama_kelurahan || props.kelurahan || props.label;
+                if (!label) return;
+
+                layer.bindTooltip(label, {
+                    permanent: false,
+                    direction: "center",
+                    className: "sigpala-kecamatan-label" // reuse style
+                });
+            }
+        }).addTo(kelGroup);
+        
+        // Add kelGroup to map if it's not already
+        if (!map.hasLayer(kelGroup)) {
+            kelGroup.addTo(map);
+        }
+
+        // Auto zoom if a specific kelurahan is selected
+        if (selectedName !== 'all' && kelurahanLayer.getBounds().isValid()) {
+            map.fitBounds(kelurahanLayer.getBounds(), { padding: [20, 20], maxZoom: 14 });
+        }
+    }
 
     // 5. Ambil Lahan Sawah
   // 5. Ambil Lahan Sawah

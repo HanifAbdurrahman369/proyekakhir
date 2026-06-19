@@ -30,7 +30,7 @@ class CheckAdminToken
             return response()->json(['message' => 'Akses ditolak: Token tidak sah atau kedaluwarsa'], 401);
         }
 
-        // 4. Jika token sah, cek apakah pemiliknya adalah Admin (Misal: role_id == 1)
+        // Role admin menggunakan ID 4.
         // Sesuaikan angka 1 dengan ID Role Admin di tabel database Anda.
         if (!isset($result['data']['role_id']) || $result['data']['role_id'] != 4) {
             return response()->json(['message' => 'Akses ditolak: Anda tidak memiliki hak akses Admin'], 403);

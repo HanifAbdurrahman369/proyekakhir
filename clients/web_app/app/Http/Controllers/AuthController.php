@@ -16,8 +16,8 @@ class AuthController extends Controller
 
     private function generateMathCaptcha(Request $request): void
     {
-        $angkaPertama = random_int(1, 20);
-        $angkaKedua = random_int(1, 20);
+        $angkaPertama = random_int(1, 15);
+        $angkaKedua = random_int(1, 15);
 
         $request->session()->put('math_captcha_question', "{$angkaPertama} + {$angkaKedua}");
         $request->session()->put('math_captcha_answer', $angkaPertama + $angkaKedua);
@@ -144,6 +144,7 @@ class AuthController extends Controller
 
             switch ((int) $data['user']['role_id']) {
                 case 1:
+                case 5:
                     return redirect('/dashboard-petani');
                 case 2:
                     return redirect('/dashboard-petugas');
@@ -255,7 +256,7 @@ class AuthController extends Controller
                 ]);
 
                 return redirect('/dashboard-petani')
-                    ->with('success', 'Registrasi berhasil. Selamat datang di dashboard petani.');
+                    ->with('success', 'Registrasi berhasil. Selamat datang di dashboard ' . str_replace('_', ' ', $request->jenis_kelompok) . '.');
             }
 
             return redirect('/login')->with('success', 'Registrasi berhasil, silakan login.');

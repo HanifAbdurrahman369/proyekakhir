@@ -20,7 +20,8 @@
                     @case(4) Administrator @break
                     @case(3) Pejabat @break
                     @case(2) Petugas Lapangan @break
-                    @case(1) Petani @break
+                    @case(1) Kelompok Tani @break
+                    @case(5) Brigade Pangan @break
                     @default Pengguna
                 @endswitch
             </p>
@@ -33,7 +34,7 @@
                 @include('partials.sidebar.menu-pejabat')
             @elseif(session('role_id') == 2)
                 @include('partials.sidebar.menu-petugas')
-            @elseif(session('role_id') == 1)
+            @elseif(in_array((int) session('role_id'), [1, 5], true))
                 @include('partials.sidebar.menu-petani')
             @endif
         </div>

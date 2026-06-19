@@ -109,10 +109,11 @@
                         <td class="px-6 py-4">{{ $user['email'] }}</td>
                         <td class="px-6 py-4">
                             @switch($user['role_id'])
-                                @case(1) <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded text-[11px] font-bold">Petani</span> @break
+                                @case(1) <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded text-[11px] font-bold">Kelompok Tani</span> @break
                                 @case(2) <span class="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-[11px] font-bold">Petugas</span> @break
                                 @case(3) <span class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-[11px] font-bold">Pejabat</span> @break
                                 @case(4) <span class="px-2 py-0.5 bg-red-100 text-red-800 rounded text-[11px] font-bold">Admin</span> @break
+                                @case(5) <span class="px-2 py-0.5 bg-cyan-100 text-cyan-800 rounded text-[11px] font-bold">Brigade Pangan</span> @break
                                 @default <span class="px-2 py-0.5 bg-slate-100 text-slate-800 rounded text-[11px] font-bold">Role {{ $user['role_id'] }}</span>
                             @endswitch
                         </td>
@@ -157,7 +158,8 @@
                             <option value="4">Admin</option>
                             <option value="3">Pejabat</option>
                             <option value="2">Petugas</option>
-                            <option value="1">Petani</option>
+                            <option value="1">Kelompok Tani</option>
+                            <option value="5">Brigade Pangan</option>
                         </select>
                     </div>
                 </div>
@@ -212,7 +214,8 @@
                             <option value="4">Admin</option>
                             <option value="3">Pejabat</option>
                             <option value="2">Petugas</option>
-                            <option value="1">Petani</option>
+                            <option value="1">Kelompok Tani</option>
+                            <option value="5">Brigade Pangan</option>
                         </select>
                     </div>
                 </div>

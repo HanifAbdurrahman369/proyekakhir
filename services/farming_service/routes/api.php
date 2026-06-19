@@ -65,6 +65,7 @@ Route::middleware(\App\Http\Middleware\JwtMiddleware::class)->group(function () 
     Route::get('/lahan/dropdown', [LahanSawahController::class, 'dropdown']);
     Route::post('/lahan', [LahanSawahController::class, 'store']);
     Route::put('/lahan/{id}/resubmit', [LahanSawahController::class, 'resubmit']);
+    Route::delete('/lahan/{id}', [LahanSawahController::class, 'destroy']);
     Route::get('/lahan/{id}', [LahanSawahController::class, 'show']);
 
     /*
@@ -96,6 +97,8 @@ Route::middleware(\App\Http\Middleware\JwtMiddleware::class)->group(function () 
     Route::get('/activities', [SiklusTanamController::class, 'index']);
     Route::post('/activities', [SiklusTanamController::class, 'store']);
     Route::post('/lapor-panen', [SiklusTanamController::class, 'storeLaporPanen']);
+    Route::get('/lapor-panen/{id}', [SiklusTanamController::class, 'showLaporPanen']);
+    Route::put('/lapor-panen/{id}', [SiklusTanamController::class, 'updateLaporPanen']);
     Route::get('/total-produksi', [SiklusTanamController::class, 'totalProduksi']);
     Route::get('/activities/{id}', [SiklusTanamController::class, 'show']);
     Route::put('/activities/{id}', [SiklusTanamController::class, 'update']);

@@ -18,11 +18,14 @@ class LaporPanen extends Model
         'status_verifikasi',
         'catatan_verifikasi',
         'created_by',
+        'verified_by',
+        'verified_at',
     ];
 
     protected $casts = [
         'hasil_panen' => 'float',
         'tanggal_panen' => 'date',
+        'verified_at' => 'datetime',
     ];
 
     public function siklusTanam()

@@ -1,255 +1,140 @@
-@php
-    $totalLahan = $lahan['total'] ?? count($lahan['data'] ?? []);
-    $lahanTitle = $totalLahan > 1 ? 'Lahan Bersama' : 'Lahan Saya';
-@endphp
-
 @extends('layouts.app')
 
-@section('title', $lahanTitle)
+@php
+    $roleId = $roleId ?? (int) session('role_id');
+    $roleName = $roleName ?? ($roleId === 5 ? 'Brigade Pangan' : 'Kelompok Tani');
+    $prosesAktif = collect($siklusTanam ?? [])->where('status_aktif', 'AKTIF');
+    $totalLahan = (int) ($lahan['total'] ?? count($lahan['data'] ?? []));
+@endphp
+
+@section('title', 'Dashboard ' . $roleName)
 
 @section('content')
-<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-7">
-    <div>
-        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-bold bg-[#edf8dc] text-[#3E7D00] border border-[#dfeccc]">Dashboard Petani</span>
-        <h1 class="text-lg font-bold text-[#14280b] mt-2 sm:text-xl tracking-tight">{{ $lahanTitle }}</h1>
-        <p class="text-xs text-slate-500 mt-0.5">Pantau data lahan, riwayat produksi, dan pelaporan hasil panen Anda.</p>
-    </div>
-
-    <div class="flex flex-wrap gap-2.5">
-        <a href="{{ route('tambah.lahan') }}"
-            class="btn-green inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition">
-            <span>🌾</span> Tambah Lahan
-        </a>
-
-        <a href="{{ route('lapor.tanam') }}"
-           class="btn-green inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition">
-            <span>🌾</span> Lapor Hasil Tanam
-        </a>
-
-        <a href="{{ route('lapor.panen') }}"
-           class="btn-green inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition">
-            <span>🌾</span> Lapor Hasil Panen
-        </a>
-    </div>
-</div>
-
-<div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
-    <!-- Card 1: Total Lahan Terdaftar -->
-    <div class="glass-card rounded-[20px] p-5 flex items-center justify-between">
+<div class="space-y-6">
+    <header class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Lahan Terdaftar</p>
-            <p class="text-xl font-bold text-[#14280b] mt-1.5">
-                {{ $lahan['total'] ?? count($lahan['data'] ?? []) }}
-                <span class="text-xs font-semibold text-slate-500">Lahan</span>
-            </p>
-            <p class="text-[9px] text-slate-500 mt-1">Terdaftar pada sistem</p>
+            <span class="inline-flex rounded-full border border-[#dfeccc] bg-[#edf8dc] px-3 py-1 text-[11px] font-bold text-[#3E7D00]">{{ $roleName }}</span>
+            <h1 class="mt-2 text-2xl sm:text-3xl font-extrabold text-[#14280b] tracking-tight">Dashboard aktivitas pertanian</h1>
+            <p class="mt-1 text-sm text-slate-500 leading-relaxed">Pantau proses tanam, pemupukan, dan riwayat panen yang terhubung dengan akun Anda.</p>
         </div>
-        <div class="w-10 h-10 rounded-xl bg-[#edf8dc] text-[#3E7D00] flex items-center justify-center shrink-0">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-            </svg>
-        </div>
-    </div>
-
-    <!-- Card 2: Total Produksi Tahun Ini -->
-    <div class="rounded-[20px] p-5 text-white overflow-hidden relative flex items-center justify-between"
-         style="background:linear-gradient(145deg,#203c10,#3E7D00); box-shadow:0 10px 25px rgba(32,60,16,.15);">
-        <div class="absolute -right-6 -bottom-6 w-20 h-20 rounded-full bg-white/10"></div>
-        <div class="relative z-10">
-            <p class="text-[10px] text-white/75 font-bold uppercase tracking-wider">Total Produksi Tahun Ini</p>
-            <p class="text-xl font-bold text-white mt-1.5">
-                {{ number_format($totalProduksi, 2) }}
-                <span class="text-xs font-semibold text-white/70">Ton</span>
-            </p>
-            <p class="text-[9px] text-white/65 mt-1">Akumulasi hasil panen</p>
-        </div>
-        <div class="relative z-10 w-10 h-10 rounded-xl bg-white/20 text-white flex items-center justify-center shrink-0">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
-            </svg>
-        </div>
-    </div>
-
-    <!-- Card 3: Catatan Pendampingan -->
-    <div class="glass-card rounded-[20px] p-5 flex items-center justify-between">
-        <div>
-            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Catatan Pendampingan</p>
-            <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">
-                Hubungi petugas jika ada kendala data lahan atau laporan hasil panen.
-            </p>
-        </div>
-        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center shrink-0 ml-3">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-        </div>
-    </div>
-</div>
-
-<div class="glass-card rounded-[20px] p-5">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
-        <div>
-            <h3 class="font-bold text-[#14280b] text-base">
-                Informasi Lahan Utama
-            </h3>
-
-            <p class="text-xs text-slate-500 mt-0.5">
-                Data ringkas lahan yang terdaftar pada sistem.
-            </p>
-        </div>
-    </div>
-
- <div class="space-y-4">
-
-    @forelse($lahan['data'] ?? [] as $item)
-
-    <div class="rounded-xl border border-[#e7efd8] p-3">
-
-        <div class="flex justify-between items-center mb-3">
-
-            <h3 class="font-semibold text-sm text-[#14280b]">
-                {{ $item['nama_lahan'] }}
-            </h3>
-
-            @if($item['status_verifikasi'] == 'DITERIMA')
-
-                <span class="w-fit px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    Terverifikasi
-                </span>
-
-            @elseif($item['status_verifikasi'] == 'PENDING')
-
-                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-yellow-50 text-yellow-700 border border-yellow-200">
-                    Menunggu
-                </span>
-
-            @else
-
-                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-red-50 text-red-700 border border-red-200">
-                    Ditolak
-                </span>
-
+        <div class="flex flex-wrap gap-2">
+            @if($roleId === 1)
+                <a href="{{ route('tambah.lahan') }}" class="rounded-[26px] border border-[#3E7D00] bg-white px-5 py-2.5 text-xs font-semibold text-[#3E7D00] hover:bg-[#edf8dc] transition shadow-[0_14px_38px_rgba(32,60,16,.06)]">Tambah Lahan</a>
             @endif
-
+            <a href="{{ route('lapor.tanam') }}" class="rounded-[26px] bg-[#3E7D00] px-5 py-2.5 text-xs font-semibold text-white hover:bg-[#2f5c12] transition shadow-[0_14px_38px_rgba(32,60,16,.06)]">Lapor Tanam</a>
+            @if($roleId === 1)
+                <a href="{{ route('lapor.panen') }}" class="rounded-[26px] bg-[#203c10] px-5 py-2.5 text-xs font-semibold text-white hover:bg-[#14280b] transition shadow-[0_14px_38px_rgba(32,60,16,.06)]">Lapor Hasil Panen</a>
+            @endif
         </div>
+    </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-2.5">
+    @if(session('success'))
+        <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-700">{{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+        <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700">{{ session('error') }}</div>
+    @endif
 
-            {{-- Luas Lahan --}}
-            <div class="rounded-xl p-2.5 bg-[#f7fced] border border-[#e7efd8]">
+    <section class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div class="rounded-lg border border-[#e7efd8] bg-white p-5">
+            <p class="text-[10px] font-bold uppercase text-slate-400">{{ $roleId === 5 ? 'Proses Aktif' : 'Lahan Terdaftar' }}</p>
+            <p class="mt-2 text-2xl font-bold text-[#14280b]">{{ $roleId === 5 ? $prosesAktif->count() : $totalLahan }}</p>
+            <p class="mt-1 text-[11px] text-slate-500">{{ $roleId === 5 ? 'Siklus tanam yang sedang digarap' : 'Pengajuan lahan pada akun Anda' }}</p>
+        </div>
+        <div class="rounded-lg bg-[#203c10] p-5 text-white">
+            <p class="text-[10px] font-bold uppercase text-white/70">Produksi Tahun Ini</p>
+            <p class="mt-2 text-2xl font-bold">{{ number_format((float) $totalProduksi, 2, ',', '.') }} <span class="text-xs text-white/70">Ton</span></p>
+            <p class="mt-1 text-[11px] text-white/65">Hanya hasil panen yang telah disetujui petugas</p>
+        </div>
+        <div class="rounded-lg border border-[#e7efd8] bg-[#f7fced] p-5">
+            <p class="text-[10px] font-bold uppercase text-[#3E7D00]">Aturan Masa Tanam</p>
+            <p class="mt-2 text-sm font-bold text-[#14280b]">{{ $roleId === 5 ? 'Oktober - Januari' : 'Januari - September' }}</p>
+            <p class="mt-1 text-[11px] text-slate-500">{{ $roleId === 5 ? 'Bibit unggul untuk lahan Kelompok Tani induk' : 'Bibit lokal sebagai pemilik lahan' }}</p>
+        </div>
+    </section>
 
-                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
-                    Luas Lahan
-                </p>
-
-                <p class="text-xs font-bold text-[#14280b] mt-0.5">
-                    {{ $item['luas_lahan_hektar'] }}
-                    <span class="text-[9px] text-slate-400">Ha</span>
-                </p>
-
+    <section class="border border-[#e7efd8] bg-white">
+        <div class="flex items-center justify-between border-b border-[#e7efd8] px-5 py-4">
+            <div>
+                <h2 class="text-sm font-bold text-[#14280b]">Padi dalam masa tanam</h2>
+                <p class="mt-1 text-[11px] text-slate-500">Progres dihitung otomatis sampai estimasi masa panen.</p>
             </div>
+            <span class="text-xs font-bold text-[#3E7D00]">{{ $prosesAktif->count() }} aktif</span>
+        </div>
+        <div class="divide-y divide-[#edf4df]">
+            @forelse($prosesAktif as $siklus)
+                <article class="p-5">
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <h3 class="text-sm font-bold text-[#14280b]">{{ $siklus['nama_lahan'] }}</h3>
+                            <p class="mt-1 text-[11px] text-slate-500">{{ $siklus['nama_bibit'] }} · {{ $siklus['peran_pelapor'] === 'brigade_pangan' ? 'Dikelola Brigade Pangan' : 'Dikelola Kelompok Tani' }}</p>
+                        </div>
+                        <span class="w-fit rounded-full bg-[#edf8dc] px-2.5 py-1 text-[10px] font-bold text-[#3E7D00]">Panen {{ \Carbon\Carbon::parse($siklus['estimasi_tanggal_panen'])->format('d M Y') }}</span>
+                    </div>
+                    <div class="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
+                        <div class="h-full rounded-full bg-[#5EA500]" style="width: {{ $siklus['progress_persen'] }}%"></div>
+                    </div>
+                    <div class="mt-2 flex justify-between text-[10px] font-semibold text-slate-500">
+                        <span>{{ $siklus['progress_persen'] }}% masa tanam</span>
+                        <span>{{ $siklus['hari_tersisa'] }} hari tersisa</span>
+                    </div>
+                    @if($roleId === 1 && $siklus['can_report_harvest'])
+                        <div class="mt-3"><a href="{{ route('lapor.panen') }}" class="text-xs font-bold text-[#3E7D00] hover:underline">Input hasil panen</a></div>
+                    @endif
+                </article>
+            @empty
+                <p class="px-5 py-10 text-center text-xs text-slate-500">Belum ada proses tanam aktif.</p>
+            @endforelse
+        </div>
+    </section>
 
-            {{-- Pemilik --}}
-            <div class="rounded-xl p-2.5 bg-white border border-[#e7efd8]">
-
-                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
-                    Pemilik
-                </p>
-
-                <p class="text-xs font-semibold text-[#14280b] mt-0.5">
-                    {{ $item['pemilik_lahan'] ?? '-' }}
-                </p>
-
+    @if($roleId === 1)
+        <section class="border border-[#e7efd8] bg-white">
+            <div class="border-b border-[#e7efd8] px-5 py-4">
+                <h2 class="text-sm font-bold text-[#14280b]">Daftar lahan milik Kelompok Tani</h2>
+                <p class="mt-1 text-[11px] text-slate-500">Status pengajuan dan catatan verifikasi petugas.</p>
             </div>
-
-            {{-- Lokasi lebih panjang --}}
-            <div class="md:col-span-2 rounded-xl p-2.5 bg-white border border-[#e7efd8]">
-
-                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
-                    Lokasi
-                </p>
-
-                <p class="text-xs leading-4 font-medium text-[#14280b] mt-0.5">
-                    {{ $item['alamat_detail'] }}
-                </p>
-
+            <div class="divide-y divide-[#edf4df]">
+                @forelse($lahan['data'] ?? [] as $item)
+                    @php
+                        $status = $item['status_verifikasi'] ?? 'PENDING';
+                        $statusClass = $status === 'DITERIMA' ? 'bg-emerald-50 text-emerald-700' : ($status === 'DITOLAK' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700');
+                    @endphp
+                    <article class="p-5">
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                                <h3 class="text-sm font-bold text-[#14280b]">{{ $item['nama_lahan'] }}</h3>
+                                <p class="mt-1 text-[11px] text-slate-500">{{ $item['alamat_detail'] ?? '-' }} · {{ $item['luas_lahan_hektar'] ?? 0 }} Ha</p>
+                            </div>
+                            <span class="w-fit rounded-full px-2.5 py-1 text-[10px] font-bold {{ $statusClass }}">{{ str_replace('_', ' ', $status) }}</span>
+                        </div>
+                        @if($status === 'DITOLAK')
+                            <div class="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                                <p>{{ $item['alasan_penolakan'] ?? $item['catatan_verifikasi'] ?? 'Pengajuan perlu diperbaiki.' }}</p>
+                                <a href="{{ route('lahan.edit', $item['id']) }}" class="mt-2 inline-block font-bold hover:underline">Perbaiki pengajuan</a>
+                            </div>
+                        @endif
+                        @if(in_array($status, ['PENDING', 'DITOLAK'], true))
+                            <form action="{{ route('lahan.destroy', $item['id']) }}" method="POST" class="mt-3" onsubmit="return confirm('Hapus pengajuan lahan ini?')">
+                                @csrf @method('DELETE')
+                                <button class="rounded-lg border border-red-200 px-3 py-1.5 text-[11px] font-bold text-red-600 hover:bg-red-50">Hapus Pengajuan</button>
+                            </form>
+                        @endif
+                    </article>
+                @empty
+                    <p class="px-5 py-10 text-center text-xs text-slate-500">Belum ada lahan yang diajukan.</p>
+                @endforelse
             </div>
-
-            {{-- Catatan Verifikasi & Alasan Penolakan --}}
-            @if(($item['status_verifikasi'] ?? '') === 'DITOLAK')
-                <div class="md:col-span-2 rounded-xl p-2.5 bg-white border border-[#e7efd8]">
-                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
-                        Catatan Verifikasi
-                    </p>
-                    <p class="text-xs font-medium text-[#14280b] mt-0.5 leading-relaxed">
-                        {{ $item['catatan_verifikasi'] ?? '-' }}
-                    </p>
-                </div>
-
-                <div class="md:col-span-2 rounded-xl p-2.5 bg-red-50 border border-red-200">
-                    <p class="text-[9px] text-red-500 font-bold uppercase tracking-wider">
-                        Alasan Penolakan
-                    </p>
-                    <p class="text-xs text-red-700 mt-0.5 leading-relaxed">
-                        {{ $item['alasan_penolakan'] ?? 'Petugas belum menambahkan alasan penolakan.' }}
-                    </p>
-                    <div class="mt-2">
-                        <a href="{{ route('lahan.edit', $item['id']) }}"
-                           class="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-white text-red-700 border border-red-200 text-[10px] font-bold hover:bg-red-700 hover:text-white transition-all duration-300 shadow-sm hover:shadow">
-                            Perbaiki Pengajuan
-                        </a>
+            @if(($lahan['last_page'] ?? 1) > 1)
+                <div class="flex items-center justify-between border-t border-[#e7efd8] px-5 py-3 text-xs">
+                    <span>Halaman {{ $lahan['current_page'] }} dari {{ $lahan['last_page'] }}</span>
+                    <div class="flex gap-2">
+                        @if(!empty($lahan['prev_page_url']))<a class="font-bold text-[#3E7D00]" href="?page={{ $lahan['current_page'] - 1 }}">Sebelumnya</a>@endif
+                        @if(!empty($lahan['next_page_url']))<a class="font-bold text-[#3E7D00]" href="?page={{ $lahan['current_page'] + 1 }}">Selanjutnya</a>@endif
                     </div>
                 </div>
-            @else
-                <div class="md:col-span-4 rounded-xl p-2.5 bg-white border border-[#e7efd8]">
-                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
-                        Catatan Verifikasi
-                    </p>
-                    <p class="text-xs font-medium text-[#14280b] mt-0.5 leading-relaxed">
-                        {{ $item['catatan_verifikasi'] ?? 'Belum ada catatan verifikasi.' }}
-                    </p>
-                </div>
             @endif
-
-        </div>
-
-    </div>
-
-    @empty
-
-    <div class="text-center py-8 text-xs text-gray-500">
-        Belum ada data lahan.
-    </div>
-
-    @endforelse
-
- </div>
-
-
- <div class="flex justify-between items-center mt-6">
-
-    @if(!empty($lahan['prev_page_url']))
-        <a href="{{ url()->current() }}?page={{ $lahan['current_page'] - 1 }}"
-           class="px-3.5 py-1.5 rounded-xl bg-gray-200 hover:bg-gray-300 text-xs font-semibold">
-            ← Sebelumnya
-        </a>
-    @else
-        <div></div>
+        </section>
     @endif
-
-    <span class="text-xs text-gray-500">
-        Halaman {{ $lahan['current_page'] }}
-        dari {{ $lahan['last_page'] }}
-    </span>
-
-    @if(!empty($lahan['next_page_url']))
-        <a href="{{ url()->current() }}?page={{ $lahan['current_page'] + 1 }}"
-           class="px-3.5 py-1.5 rounded-xl bg-green-600 text-white hover:bg-green-700 text-xs font-semibold">
-            Selanjutnya →
-        </a>
-    @endif
-
- </div>
-
 </div>
 @endsection

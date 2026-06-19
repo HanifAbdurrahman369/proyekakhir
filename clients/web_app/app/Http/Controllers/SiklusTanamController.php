@@ -65,7 +65,7 @@ class SiklusTanamController extends Controller
             $siklusTanam = $siklusResponse->json()['data'] ?? [];
         }
 
-        return view('partials.sidebar.input-petani', compact(
+        return view('partials.sidebar.lapor-tanam', compact(
             'lahan',
             'bibit',
             'pupuk',
@@ -77,16 +77,19 @@ class SiklusTanamController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'lahan_id' => 'required',
-            'bibit_id' => 'required',
-            'tanggal_tanam' => 'required',
-            'estimasi_panen' => 'required',
-            'tanggal_panen' => 'required',
-            'hasil_panen' => 'required',
+            'lahan_id' => 'required|integer',
+            'bibit_id' => 'required|integer',
+            'tanggal_tanam' => 'required|date|before_or_equal:today',
+            'estimasi_hari_tanam' => 'required|integer|min:1',
+            'pupuk_id' => 'required|integer',
+            'takaran' => 'required|numeric|min:0.01',
+        ], [
+            'estimasi_hari_tanam.required' => 'Estimasi hari tanam wajib diisi.',
+            'pupuk_id.required' => 'Catatan pemupukan (jenis pupuk) wajib diisi.',
+            'takaran.required' => 'Takaran pupuk wajib diisi.',
         ]);
 
-       $token = session('token'); 
-        // atau Auth guard custom jika Anda simpan di user model
+        $token = session('token'); 
 
         if (!$token) {
             return redirect()
@@ -102,22 +105,92 @@ class SiklusTanamController extends Controller
                 'lahan_id' => $request->lahan_id,
                 'bibit_id' => $request->bibit_id,
                 'tanggal_tanam' => $request->tanggal_tanam,
-                'estimasi_panen' => $request->estimasi_panen,
-                'tanggal_panen' => $request->tanggal_panen,
-                'hasil_panen' => $request->hasil_panen,
+                'estimasi_hari_tanam' => $request->estimasi_hari_tanam,
             ]);
 
-
         if ($response->successful()) {
+            $siklusData = $response->json('data');
+            $siklusId = $siklusData['id'] ?? null;
+
+            if ($siklusId) {
+                // Submit catatan pemupukan
+                $pupukResponse = Http::withToken($token)
+                    ->post($this->gatewayUrl() . '/api/siklus-pupuk', [
+                        'siklus_tanam_id' => $siklusId,
+                        'pupuk_id' => $request->pupuk_id,
+                        'tanggal_pemupukan' => $request->tanggal_tanam,
+                        'takaran' => $request->takaran,
+                    ]);
+                
+                if (!$pupukResponse->successful()) {
+                    return redirect()
+                        ->back()
+                        ->with('error', 'Laporan tanam berhasil, namun catatan pemupukan gagal disimpan: ' . ($pupukResponse->json('message') ?? ''));
+                }
+            }
 
             return redirect()
                 ->back()
-                ->with('success', 'Aktivitas tanam berhasil disimpan');
+                ->with('success', $response->json('message') ?? 'Laporan tanam dan pemupukan berhasil disimpan.');
         }
 
         return redirect()
             ->back()
-            ->with('error', 'Gagal menyimpan data aktivitas tanam');
+            ->withInput()
+            ->with('error', $response->json('message') ?? 'Gagal menyimpan laporan tanam.');
+    }
+
+    public function editTanam($id)
+    {
+        $token = session('token');
+        $detail = Http::withToken($token)->acceptJson()->get($this->gatewayUrl() . '/api/activities/' . $id);
+        if (!$detail->successful()) {
+            return redirect()->route('lapor.tanam')->with('error', $detail->json('message') ?? 'Laporan tanam tidak ditemukan.');
+        }
+
+        $lahanResponse = Http::withToken($token)->acceptJson()->get($this->gatewayUrl() . '/api/lahan/dropdown');
+        $bibitResponse = Http::withToken($token)->acceptJson()->get($this->gatewayUrl() . '/api/bibit');
+        $pupukResponse = Http::withToken($token)->acceptJson()->get($this->gatewayUrl() . '/api/jenis-pupuk');
+        $siklusResponse = Http::withToken($token)->acceptJson()->get($this->gatewayUrl() . '/api/my-siklus-tanam');
+
+        return view('partials.sidebar.lapor-tanam', [
+            'editTanam' => $detail->json('data'),
+            'lahan' => $lahanResponse->successful() ? ($lahanResponse->json('data') ?? []) : [],
+            'bibit' => $bibitResponse->successful() ? ($bibitResponse->json('data') ?? []) : [],
+            'pupuk' => $pupukResponse->successful() ? ($pupukResponse->json('data') ?? []) : [],
+            'siklusTanam' => $siklusResponse->successful() ? ($siklusResponse->json('data') ?? []) : [],
+        ]);
+    }
+
+    public function updateTanam(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'lahan_id' => 'required|integer',
+            'bibit_id' => 'required|integer',
+            'tanggal_tanam' => 'required|date|before_or_equal:today',
+        ]);
+
+        $response = Http::withToken(session('token'))
+            ->acceptJson()
+            ->put($this->gatewayUrl() . '/api/activities/' . $id, $validated);
+
+        if ($response->successful()) {
+            return redirect()->route('lapor.tanam')->with('success', $response->json('message'));
+        }
+
+        return back()->withInput()->with('error', $response->json('message') ?? 'Laporan tanam gagal diperbarui.');
+    }
+
+    public function destroyTanam($id)
+    {
+        $response = Http::withToken(session('token'))
+            ->acceptJson()
+            ->delete($this->gatewayUrl() . '/api/activities/' . $id);
+
+        return redirect()->route('lapor.tanam')->with(
+            $response->successful() ? 'success' : 'error',
+            $response->json('message') ?? ($response->successful() ? 'Laporan tanam dihapus.' : 'Laporan tanam gagal dihapus.')
+        );
     }
 
     public function riwayatPanen(Request $request)
@@ -179,7 +252,7 @@ class SiklusTanamController extends Controller
 
         $detailResponse = Http::withToken($token)
             ->acceptJson()
-            ->get($this->gatewayUrl() . '/api/activities/' . $id);
+            ->get($this->gatewayUrl() . '/api/lapor-panen/' . $id);
 
         if (!$detailResponse->successful()) {
             return redirect()->route('riwayat.panen')
@@ -212,20 +285,12 @@ class SiklusTanamController extends Controller
             $editPanen['tanggal_panen'] = \Carbon\Carbon::parse($editPanen['tanggal_panen'])->format('Y-m-d');
         }
 
-        return view('partials.sidebar.input-petani', compact(
-            'lahan',
-            'bibit',
-            'editPanen'
-        ));
+        return view('partials.sidebar.lapor-panen', compact('lahan', 'bibit', 'editPanen'));
     }
 
     public function update(Request $request, $id)
     {
         $request->validate([
-            'lahan_id' => 'required',
-            'bibit_id' => 'required',
-            'tanggal_tanam' => 'required',
-            'estimasi_panen' => 'required',
             'tanggal_panen' => 'required',
             'hasil_panen' => 'required',
         ]);
@@ -239,11 +304,7 @@ class SiklusTanamController extends Controller
         }
 
         $response = Http::withToken($token)
-            ->put($this->gatewayUrl() . '/api/activities/' . $id, [
-                'lahan_id' => $request->lahan_id,
-                'bibit_id' => $request->bibit_id,
-                'tanggal_tanam' => $request->tanggal_tanam,
-                'estimasi_panen' => $request->estimasi_panen,
+            ->put($this->gatewayUrl() . '/api/lapor-panen/' . $id, [
                 'tanggal_panen' => $request->tanggal_panen,
                 'hasil_panen' => $request->hasil_panen,
             ]);
@@ -251,13 +312,13 @@ class SiklusTanamController extends Controller
         if ($response->successful()) {
             return redirect()
                 ->route('riwayat.panen')
-                ->with('success', 'Data aktivitas tanam berhasil diperbaiki dan diajukan ulang.');
+                ->with('success', 'Laporan panen berhasil diperbaiki dan diajukan ulang.');
         }
 
         return redirect()
             ->back()
             ->withInput()
-            ->with('error', $response->json('message') ?? 'Gagal memperbarui data aktivitas tanam');
+            ->with('error', $response->json('message') ?? 'Gagal memperbarui laporan panen');
     }
 
     public function storePemupukan(Request $request)

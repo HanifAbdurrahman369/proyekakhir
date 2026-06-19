@@ -14,6 +14,13 @@ class LahanSawahController extends Controller
     public function index(Request $request)
     {
         $user = $request->attributes->get('auth');
+        if ((int) ($user->role_id ?? 0) !== 1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Manajemen lahan hanya tersedia untuk Kelompok Tani sebagai pemilik lahan.',
+            ], 403);
+        }
+
         $select = [
             'id',
             'user_id',
@@ -58,10 +65,22 @@ class LahanSawahController extends Controller
     public function dropdown(Request $request)
     {
         $user = $request->attributes->get('auth');
+        $userId = (int) ($user->sub ?? 0);
+        $roleId = (int) ($user->role_id ?? 0);
 
-        $data = LahanSawah::where('user_id', $user->sub)
-            ->where('status_verifikasi', 'DITERIMA')
-            ->select('id', 'nama_lahan')
+        if (!in_array($roleId, [1, 5], true)) {
+            return response()->json(['success' => false, 'message' => 'Akses daftar lahan ditolak.'], 403);
+        }
+
+        $query = LahanSawah::where('status_verifikasi', 'DITERIMA');
+        if ($roleId === 1) {
+            $query->where('user_id', $userId);
+        } else {
+            $query->whereIn('user_id', $this->pemilikIdsUntukBrigade($userId));
+        }
+
+        $data = $query
+            ->select('id', 'nama_lahan', 'pemilik_lahan', 'luas_lahan_hektar')
             ->orderBy('nama_lahan')
             ->get()
             ->values()
@@ -155,8 +174,10 @@ class LahanSawahController extends Controller
         $roleId = (int) ($user->role_id ?? $user->role ?? 0);
         $isOwner = (int) $data->user_id === (int) $user->sub;
         $isPrivileged = in_array($roleId, [2, 3, 4], true);
+        $isAssignedBrigade = $roleId === 5
+            && $this->pemilikIdsUntukBrigade((int) $user->sub)->contains((int) $data->user_id);
 
-        if (!$isOwner && !$isPrivileged) {
+        if (!$isOwner && !$isPrivileged && !$isAssignedBrigade) {
             return response()->json([
                 'success' => false,
                 'message' => 'Anda tidak memiliki akses ke data lahan ini'
@@ -173,6 +194,12 @@ class LahanSawahController extends Controller
     public function store(Request $request)
     {
         $user = $request->attributes->get('auth');
+        if ((int) ($user->role_id ?? 0) !== 1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pengajuan lahan baru hanya dapat dibuat oleh Kelompok Tani.',
+            ], 403);
+        }
 
         $request->validate([
             'kecamatan_id' => 'required',
@@ -364,6 +391,12 @@ class LahanSawahController extends Controller
     public function resubmit(Request $request, $id)
     {
         $user = $request->attributes->get('auth');
+        if ((int) ($user->role_id ?? 0) !== 1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Perbaikan pengajuan lahan hanya dapat dilakukan oleh Kelompok Tani.',
+            ], 403);
+        }
 
         $request->validate([
             'kecamatan_id' => 'required',
@@ -437,6 +470,51 @@ class LahanSawahController extends Controller
             'message' => 'Pengajuan lahan berhasil diperbaiki dan dikirim ulang',
             'data' => $data->fresh()
         ]);
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        $user = $request->attributes->get('auth');
+        if ((int) ($user->role_id ?? 0) !== 1) {
+            return response()->json(['success' => false, 'message' => 'Penghapusan lahan hanya tersedia untuk Kelompok Tani.'], 403);
+        }
+
+        $data = LahanSawah::where('id', $id)->where('user_id', $user->sub)->first();
+        if (!$data) {
+            return response()->json(['success' => false, 'message' => 'Pengajuan lahan tidak ditemukan.'], 404);
+        }
+
+        if ($data->status_verifikasi === 'DITERIMA') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lahan yang sudah diterima menjadi data legal dan tidak dapat dihapus oleh pemilik.',
+            ], 422);
+        }
+
+        $this->tandaiNotifikasiLahanTerbaca((int) $data->id);
+        $data->delete();
+
+        return response()->json(['success' => true, 'message' => 'Pengajuan lahan berhasil dihapus.']);
+    }
+
+    private function pemilikIdsUntukBrigade(int $userId)
+    {
+        $indukId = DB::table('users as u')
+            ->join('kelompok as k', 'k.id', '=', 'u.kelompok_id')
+            ->where('u.id', $userId)
+            ->where('k.jenis_kelompok', 'brigade_pangan')
+            ->where('k.status_keanggotaan', 'AKTIF')
+            ->value('k.kelompok_tani_induk_id');
+
+        if (!$indukId) {
+            return collect();
+        }
+
+        return DB::table('users')
+            ->where('role_id', 1)
+            ->where('kelompok_id', $indukId)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id);
     }
 
     private function buatNotifikasiPetugas(string $judul, string $pesan, ?string $refType = null, ?int $refId = null, ?string $targetUrl = null): void
