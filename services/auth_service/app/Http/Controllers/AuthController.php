@@ -52,7 +52,7 @@ class AuthController extends Controller
             'sub' => $user->id,
             'email' => $user->email,
             'role_id' => $user->role_id,
-            'kelompok_id' => $user->kelompok_id ?? null,
+            'komunitas_id' => $user->komunitas_id ?? null,
             'iat' => time(),
             'exp' => time() + (24 * 60 * 60)
         ];
@@ -71,7 +71,7 @@ class AuthController extends Controller
                 'nama_lengkap' => $user->nama_lengkap,
                 'email' => $user->email,
                 'role_id' => $user->role_id,
-                'kelompok_id' => $user->kelompok_id ?? null
+                'komunitas_id' => $user->komunitas_id ?? null
             ]
         ]);
     }

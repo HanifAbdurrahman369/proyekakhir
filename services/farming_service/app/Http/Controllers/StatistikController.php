@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SiklusTanam;
+use App\Models\LaporPanen;
 use App\Models\LahanSawah;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -35,9 +35,9 @@ class StatistikController extends Controller
     {
         $this->authorizePejabat($request);
 
-        $produksiPejabat = SiklusTanam::whereNotNull('hasil_panen')
-            ->where('status_verifikasi', 'DITERIMA')
-            ->sum('hasil_panen');
+        $produksiPejabat = LaporPanen::where('status_verifikasi', 'DITERIMA')
+            ->whereDate('tanggal_panen', '<=', now()->toDateString())
+            ->sum('hasil_panen_ton');
 
         return response()->json([
             'success' => true,
@@ -72,14 +72,15 @@ class StatistikController extends Controller
     {
         $this->authorizePejabat($request);
 
-        $data = DB::table('siklus_tanam')
-            ->join('lahan_sawah', 'siklus_tanam.lahan_id', '=', 'lahan_sawah.id')
+        $data = DB::table('panen_padi')
+            ->join('lahan_sawah', 'panen_padi.lahan_id', '=', 'lahan_sawah.id')
             ->join('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
-            ->where('siklus_tanam.status_verifikasi', 'DITERIMA')
+            ->where('panen_padi.status_verifikasi', 'DITERIMA')
+            ->whereDate('panen_padi.tanggal_panen', '<=', now()->toDateString())
             ->select(
                 'kecamatan.id',
                 'kecamatan.nama_kecamatan',
-                DB::raw('SUM(siklus_tanam.hasil_panen) as produksi_pejabat')
+                DB::raw('SUM(panen_padi.hasil_panen_ton) as produksi_pejabat')
             )
             ->groupBy(
                 'kecamatan.id',
@@ -131,14 +132,14 @@ class StatistikController extends Controller
     {
         $this->authorizePejabat($request);
 
-        $data = DB::table('siklus_tanam')
+        $data = DB::table('panen_padi')
             ->selectRaw("
                 MONTH(tanggal_panen) as bulan,
-                SUM(hasil_panen) as total_produksi
+                SUM(hasil_panen_ton) as total_produksi
             ")
             ->whereNotNull('tanggal_panen')
-            ->whereNotNull('hasil_panen')
             ->where('status_verifikasi', 'DITERIMA')
+            ->whereDate('tanggal_panen', '<=', now()->toDateString())
             ->groupBy(DB::raw('MONTH(tanggal_panen)'))
             ->orderBy('bulan')
             ->get();
@@ -166,13 +167,14 @@ class StatistikController extends Controller
     {
         $this->authorizePejabat($request);
 
-        $data = DB::table('siklus_tanam')
-            ->join('lahan_sawah', 'siklus_tanam.lahan_id', '=', 'lahan_sawah.id')
+        $data = DB::table('panen_padi')
+            ->join('lahan_sawah', 'panen_padi.lahan_id', '=', 'lahan_sawah.id')
             ->join('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
-            ->where('siklus_tanam.status_verifikasi', 'DITERIMA')
+            ->where('panen_padi.status_verifikasi', 'DITERIMA')
+            ->whereDate('panen_padi.tanggal_panen', '<=', now()->toDateString())
             ->select(
                 'kecamatan.nama_kecamatan',
-                DB::raw('SUM(siklus_tanam.hasil_panen) as produksi_pejabat')
+                DB::raw('SUM(panen_padi.hasil_panen_ton) as produksi_pejabat')
             )
             ->groupBy('kecamatan.nama_kecamatan')
             ->orderByDesc('produksi_pejabat')

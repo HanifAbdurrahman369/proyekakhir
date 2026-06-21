@@ -34,8 +34,56 @@
         </div>
     @endif
 
+    <!-- Alur Pelaporan Tanam -->
+    <div class="mb-8">
+        <h2 class="text-lg font-bold text-slate-800 text-center mb-6">Panduan 3 Langkah Memulai Masa Tanam</h2>
+        
+        <div class="relative flex flex-col md:flex-row justify-between items-center md:items-start gap-6 md:gap-4">
+            <!-- Line connector for desktop -->
+            <div class="hidden md:block absolute top-6 left-[15%] right-[15%] h-1 bg-slate-200 -z-10 rounded-full overflow-hidden">
+                <div class="h-full bg-emerald-500 w-full animate-[shimmer_3s_infinite] origin-left" style="background: linear-gradient(90deg, transparent, rgba(16,185,129,0.5), transparent); background-size: 200% 100%;"></div>
+            </div>
+
+            <!-- Step 1 -->
+            <div class="flex flex-col items-center text-center w-full md:w-1/3 group">
+                <div class="w-12 h-12 rounded-2xl bg-white border-2 border-emerald-500 text-emerald-600 shadow-lg flex items-center justify-center font-black text-xl mb-3 relative group-hover:-translate-y-1 transition-transform duration-300">
+                    1
+                    <div class="absolute inset-0 bg-emerald-50 rounded-2xl scale-0 group-hover:scale-100 transition-transform duration-300 -z-10"></div>
+                </div>
+                <h3 class="font-bold text-slate-800 text-sm mb-1">Pilih Sawah & Bibit</h3>
+                <p class="text-xs text-slate-500">Pilih lahan sawah terverifikasi dan jenis varietas bibit yang akan ditanam.</p>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="flex flex-col items-center text-center w-full md:w-1/3 group">
+                <div class="w-12 h-12 rounded-2xl bg-white border-2 border-emerald-500 text-emerald-600 shadow-lg flex items-center justify-center font-black text-xl mb-3 relative group-hover:-translate-y-1 transition-transform duration-300">
+                    2
+                    <div class="absolute inset-0 bg-emerald-50 rounded-2xl scale-0 group-hover:scale-100 transition-transform duration-300 -z-10"></div>
+                </div>
+                <h3 class="font-bold text-slate-800 text-sm mb-1">Info Pemupukan</h3>
+                <p class="text-xs text-slate-500">Masukkan takaran awal pupuk yang diberikan sebelum proses tanam dimulai.</p>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="flex flex-col items-center text-center w-full md:w-1/3 group">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 flex items-center justify-center mb-3 relative group-hover:scale-110 transition-transform duration-300">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <h3 class="font-bold text-emerald-600 text-sm mb-1">Mulai Tanam</h3>
+                <p class="text-xs text-slate-500">Laporan tersimpan dan progres masa tanam akan dihitung secara otomatis.</p>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+
     <section class="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div class="border border-[#e7efd8] bg-white lg:col-span-12">
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden lg:col-span-12">
             <div class="border-b border-[#e7efd8] px-5 py-4">
                 <h2 class="text-sm font-bold text-[#14280b]">{{ $isEdit ? 'Informasi tanam yang diperbarui' : 'Informasi Tanam & Pemupukan Baru' }}</h2>
                 <p class="mt-1 text-[11px] text-slate-500">Pilih lahan, bibit, estimasi panen, serta informasi awal pemupukan sebelum tanam dimulai.</p>
@@ -51,7 +99,7 @@
                         
                         <div>
                             <label class="mb-1.5 block text-xs font-bold text-slate-700">Lahan sawah</label>
-                            <select name="lahan_id" required class="w-full rounded-lg border-slate-300 text-sm focus:border-[#5EA500] focus:ring-[#5EA500]">
+                            <select name="lahan_id" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#5EA500] focus:border-[#5EA500] focus:outline-none focus:ring-2 focus:ring-[#5EA500]/20">
                                 <option value="">Pilih lahan terverifikasi</option>
                                 @foreach($lahan ?? [] as $item)
                                     <option value="{{ $item['id'] }}" @selected((string) old('lahan_id', $editTanam['lahan_id'] ?? '') === (string) $item['id'])>
@@ -65,7 +113,7 @@
                         </div>
                         <div>
                             <label class="mb-1.5 block text-xs font-bold text-slate-700">Jenis bibit</label>
-                            <select name="bibit_id" required id="bibit-select" class="w-full rounded-lg border-slate-300 text-sm focus:border-[#5EA500] focus:ring-[#5EA500]">
+                            <select name="bibit_id" required id="bibit-select" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#5EA500] focus:border-[#5EA500] focus:outline-none focus:ring-2 focus:ring-[#5EA500]/20">
                                 <option value="">Pilih bibit</option>
                                 @foreach($bibit ?? [] as $item)
                                     <option value="{{ $item['id'] }}" data-hari="{{ $item['masa_tanam_hari'] }}" @selected((string) old('bibit_id', $editTanam['bibit_id'] ?? '') === (string) $item['id'])>
@@ -79,14 +127,14 @@
                                 <label class="mb-1.5 block text-xs font-bold text-slate-700">Tanggal tanam</label>
                                 <input type="date" name="tanggal_tanam" max="{{ date('Y-m-d') }}" required
                                        value="{{ old('tanggal_tanam', $editTanam['tanggal_tanam'] ?? date('Y-m-d')) }}"
-                                       class="w-full rounded-lg border-slate-300 text-sm focus:border-[#5EA500] focus:ring-[#5EA500]">
+                                       class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#5EA500] focus:border-[#5EA500] focus:outline-none focus:ring-2 focus:ring-[#5EA500]/20">
                             </div>
                             <div>
                                 <label class="mb-1.5 block text-xs font-bold text-slate-700">Estimasi Tanam (Hari)</label>
                                 <input type="number" name="estimasi_hari_tanam" id="estimasi-hari" min="1" required
                                        value="{{ old('estimasi_hari_tanam', $editTanam['estimasi_panen'] ?? '') }}"
                                        placeholder="Cth: 120"
-                                       class="w-full rounded-lg border-slate-300 text-sm focus:border-[#5EA500] focus:ring-[#5EA500]">
+                                       class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#5EA500] focus:border-[#5EA500] focus:outline-none focus:ring-2 focus:ring-[#5EA500]/20">
                                 <p class="mt-1 text-[10px] text-slate-500">Estimasi masa panen (hari)</p>
                             </div>
                         </div>
@@ -98,16 +146,27 @@
                         
                         <div>
                             <label class="mb-1.5 block text-xs font-bold text-slate-700">Jenis pupuk awal</label>
-                            <select name="pupuk_id" required class="w-full rounded-lg border-slate-300 bg-white text-sm focus:border-[#5EA500] focus:ring-[#5EA500]">
+                            <select name="pupuk_id" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#5EA500] focus:border-[#5EA500] focus:outline-none focus:ring-2 focus:ring-[#5EA500]/20">
                                 <option value="">Pilih pupuk</option>
                                 @foreach($pupuk ?? [] as $item)
-                                    <option value="{{ $item['id'] }}">{{ $item['nama_pupuk'] }} - {{ $item['tipe'] }}</option>
+                                    <option value="{{ $item['id'] }}" @selected((string) old('pupuk_id', $editTanam['pupuk_id'] ?? '') === (string) $item['id'])>
+                                        {{ $item['nama_pupuk'] }} - {{ $item['tipe_pupuk'] ?? $item['tipe'] ?? 'Umum' }}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
                         <div>
+                            <label class="mb-1.5 block text-xs font-bold text-slate-700">Tanggal pemupukan awal</label>
+                            <input type="date" name="tanggal_pemupukan" max="{{ date('Y-m-d') }}" required
+                                   value="{{ old('tanggal_pemupukan', $editTanam['tanggal_pemupukan'] ?? date('Y-m-d')) }}"
+                                   class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#5EA500] focus:border-[#5EA500] focus:outline-none focus:ring-2 focus:ring-[#5EA500]/20">
+                            <p class="mt-1 text-[10px] text-slate-500">Tanggal tidak boleh lebih awal dari tanggal tanam.</p>
+                        </div>
+                        <div>
                             <label class="mb-1.5 block text-xs font-bold text-slate-700">Takaran (kg)</label>
-                            <input type="number" name="takaran" min="0.01" step="0.01" required placeholder="Cth: 20" class="w-full rounded-lg border-slate-300 bg-white text-sm focus:border-[#5EA500] focus:ring-[#5EA500]">
+                            <input type="number" name="takaran" min="0.01" step="0.01" required placeholder="Cth: 20"
+                                   value="{{ old('takaran', $editTanam['takaran'] ?? '') }}"
+                                   class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#5EA500] focus:border-[#5EA500] focus:outline-none focus:ring-2 focus:ring-[#5EA500]/20">
                             <p class="mt-1 text-[10px] text-slate-500">Jumlah pupuk untuk awal tanam</p>
                         </div>
                     </div>
@@ -142,7 +201,7 @@
         });
     </script>
 
-    <section class="border border-[#e7efd8] bg-white">
+    <section class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden mt-6">
         <div class="border-b border-[#e7efd8] px-5 py-4">
             <h2 class="text-sm font-bold text-[#14280b]">Proses tanam berjalan</h2>
             <p class="mt-1 text-[11px] text-slate-500">Perkembangan dihitung dari tanggal tanam sampai estimasi panen.</p>
@@ -157,6 +216,13 @@
                                 <span class="rounded-full bg-[#edf8dc] px-2 py-0.5 text-[10px] font-bold text-[#3E7D00]">{{ $siklus['nama_bibit'] }}</span>
                             </div>
                             <p class="mt-1 text-[11px] text-slate-500">Tanam {{ \Carbon\Carbon::parse($siklus['tanggal_tanam'])->format('d M Y') }} · Estimasi {{ \Carbon\Carbon::parse($siklus['estimasi_tanggal_panen'])->format('d M Y') }}</p>
+                            @if(!empty($siklus['pemupukan_awal']))
+                                <p class="mt-1 text-[11px] text-slate-500">
+                                    Pemupukan awal: {{ $siklus['pemupukan_awal']['nama_pupuk'] ?? '-' }}
+                                    · {{ number_format((float) ($siklus['pemupukan_awal']['takaran'] ?? 0), 2, ',', '.') }} kg
+                                    · {{ \Carbon\Carbon::parse($siklus['pemupukan_awal']['tanggal_pemupukan'])->format('d M Y') }}
+                                </p>
+                            @endif
                         </div>
                         @if($siklus['can_edit'] || $siklus['can_delete'])
                             <div class="flex gap-2">

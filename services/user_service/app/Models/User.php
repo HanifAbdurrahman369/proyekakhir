@@ -16,7 +16,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'role_id',
-        'kelompok_id',
+        'komunitas_id',
         'nama_lengkap',
         'email',
         'password',
@@ -56,8 +56,8 @@ class User extends Authenticatable
          );
      }
 
-     public function kelompok()
+     public function komunitas()
      {
-         return $this->belongsTo(Kelompok::class, 'kelompok_id');
+         return $this->belongsTo(Kelompok::class, 'komunitas_id');
      }
 }

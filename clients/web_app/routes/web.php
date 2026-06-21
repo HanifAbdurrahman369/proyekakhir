@@ -111,7 +111,7 @@ Route::middleware(['role:2'])->group(function () {
 ===================================================================
 */
 Route::middleware(['role:1,5'])->group(function () {
-    Route::get('/dashboard-petani', [PetaniController::class, 'index']);
+    Route::get('/dashboard-petani', [PetaniController::class, 'index'])->name('petani.dashboard');
     Route::get('/lapor-tanam', [SiklusTanamController::class, 'create'])->name('lapor.tanam');
     Route::post('/lapor-tanam', [SiklusTanamController::class, 'store'])->name('lapor.tanam.store');
     Route::get('/lapor-tanam/{id}/edit', [SiklusTanamController::class, 'editTanam'])->name('lapor.tanam.edit');

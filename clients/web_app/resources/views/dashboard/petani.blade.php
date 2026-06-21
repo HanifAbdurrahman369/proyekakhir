@@ -35,25 +35,25 @@
         <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700">{{ session('error') }}</div>
     @endif
 
-    <section class="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div class="rounded-lg border border-[#e7efd8] bg-white p-5">
-            <p class="text-[10px] font-bold uppercase text-slate-400">{{ $roleId === 5 ? 'Proses Aktif' : 'Lahan Terdaftar' }}</p>
-            <p class="mt-2 text-2xl font-bold text-[#14280b]">{{ $roleId === 5 ? $prosesAktif->count() : $totalLahan }}</p>
-            <p class="mt-1 text-[11px] text-slate-500">{{ $roleId === 5 ? 'Siklus tanam yang sedang digarap' : 'Pengajuan lahan pada akun Anda' }}</p>
+    <section class="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md">
+            <p class="text-xs font-bold uppercase text-slate-500">{{ $roleId === 5 ? 'Proses Aktif' : 'Lahan Terdaftar' }}</p>
+            <p class="mt-2 text-3xl font-bold text-[#14280b]">{{ $roleId === 5 ? $prosesAktif->count() : $totalLahan }}</p>
+            <p class="mt-1 text-xs text-slate-500">{{ $roleId === 5 ? 'Siklus tanam yang sedang digarap' : 'Pengajuan lahan pada akun Anda' }}</p>
         </div>
-        <div class="rounded-lg bg-[#203c10] p-5 text-white">
-            <p class="text-[10px] font-bold uppercase text-white/70">Produksi Tahun Ini</p>
-            <p class="mt-2 text-2xl font-bold">{{ number_format((float) $totalProduksi, 2, ',', '.') }} <span class="text-xs text-white/70">Ton</span></p>
-            <p class="mt-1 text-[11px] text-white/65">Hanya hasil panen yang telah disetujui petugas</p>
+        <div class="rounded-2xl bg-[#203c10] p-5 text-white shadow-sm transition-all hover:shadow-md">
+            <p class="text-xs font-bold uppercase text-white/80">Produksi Tahun Ini</p>
+            <p class="mt-2 text-3xl font-bold">{{ number_format((float) $totalProduksi, 2, ',', '.') }} <span class="text-sm font-normal text-white/70">Ton</span></p>
+            <p class="mt-1 text-xs text-white/70">Hanya hasil panen yang telah disetujui petugas</p>
         </div>
-        <div class="rounded-lg border border-[#e7efd8] bg-[#f7fced] p-5">
-            <p class="text-[10px] font-bold uppercase text-[#3E7D00]">Aturan Masa Tanam</p>
-            <p class="mt-2 text-sm font-bold text-[#14280b]">{{ $roleId === 5 ? 'Oktober - Januari' : 'Januari - September' }}</p>
-            <p class="mt-1 text-[11px] text-slate-500">{{ $roleId === 5 ? 'Bibit unggul untuk lahan Kelompok Tani induk' : 'Bibit lokal sebagai pemilik lahan' }}</p>
+        <div class="rounded-2xl border border-slate-200 bg-[#f7fced] p-5 shadow-sm transition-all hover:shadow-md">
+            <p class="text-xs font-bold uppercase text-[#3E7D00]">Aturan Masa Tanam</p>
+            <p class="mt-2 text-lg font-bold text-[#14280b]">{{ $roleId === 5 ? 'Oktober - Januari' : 'Januari - September' }}</p>
+            <p class="mt-1 text-xs text-slate-600">{{ $roleId === 5 ? 'Bibit unggul untuk lahan Kelompok Tani induk' : 'Bibit lokal sebagai pemilik lahan' }}</p>
         </div>
     </section>
 
-    <section class="border border-[#e7efd8] bg-white">
+    <section class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <div class="flex items-center justify-between border-b border-[#e7efd8] px-5 py-4">
             <div>
                 <h2 class="text-sm font-bold text-[#14280b]">Padi dalam masa tanam</h2>
@@ -89,7 +89,7 @@
     </section>
 
     @if($roleId === 1)
-        <section class="border border-[#e7efd8] bg-white">
+        <section class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
             <div class="border-b border-[#e7efd8] px-5 py-4">
                 <h2 class="text-sm font-bold text-[#14280b]">Daftar lahan milik Kelompok Tani</h2>
                 <p class="mt-1 text-[11px] text-slate-500">Status pengajuan dan catatan verifikasi petugas.</p>

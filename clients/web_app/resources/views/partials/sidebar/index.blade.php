@@ -29,13 +29,13 @@
 
         <div class="space-y-1.5">
             @if(session('role_id') == 4)
-                @include('partials.sidebar.menu-admin')
+                @include('partials.sidebar.admin.menu-admin')
             @elseif(session('role_id') == 3)
-                @include('partials.sidebar.menu-pejabat')
+                @include('partials.sidebar.pejabat.menu-pejabat')
             @elseif(session('role_id') == 2)
-                @include('partials.sidebar.menu-petugas')
+                @include('partials.sidebar.petugas.menu-petugas')
             @elseif(in_array((int) session('role_id'), [1, 5], true))
-                @include('partials.sidebar.menu-petani')
+                @include('partials.sidebar.petani.menu-petani')
             @endif
         </div>
     </div>

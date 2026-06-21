@@ -11,17 +11,16 @@ class LahanSawah extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'user_id',
+        'pemilik_id',
+        'petani_id',
         'kecamatan_id',
         'kelurahan_id',
         'tipe_lahan_id',
         'nama_lahan',
-        'pemilik_lahan',
         'tahun_lbs',
         'luas_lahan_hektar',
         'hasil_panen_ton',
-        'hasil_panen_siklus_id',
-        'riwayat_panen_terakhir_id',
+        'panen_terakhir_id',
         'produktivitas_ton_ha',
         'alamat_detail',
         'koordinat_tengah',
@@ -58,6 +57,16 @@ class LahanSawah extends Model
 
     public function riwayatPanenTerakhir()
     {
-        return $this->belongsTo(RiwayatPanen::class, 'riwayat_panen_terakhir_id');
+        return $this->belongsTo(RiwayatPanen::class, 'panen_terakhir_id');
+    }
+
+    public function pemilik()
+    {
+        return $this->belongsTo(User::class, 'pemilik_id');
+    }
+
+    public function petani()
+    {
+        return $this->belongsTo(User::class, 'petani_id');
     }
 }

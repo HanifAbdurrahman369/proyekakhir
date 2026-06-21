@@ -1,26 +1,18 @@
 @extends('layouts.app')
 
-@section('title', 'Riwayat Panen')
+@section('title', 'Riwayat Aktivitas')
 
 @section('content')
 
 <div class="max-w-7xl mx-auto space-y-8">
 
-    <div class="bg-white p-6 rounded-xl shadow">
-
-        {{-- HEADER --}}
-        <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-
-            <div>
-                <h1 class="text-lg font-bold text-primary-900">
-                    Riwayat Panen
-                </h1>
-
-                <p class="text-xs text-gray-500 mt-0.5">
-                    Daftar aktivitas tanam dan hasil panen petani.
-                </p>
-            </div>
+    {{-- HEADER --}}
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-extrabold text-[#14280b] tracking-tight">Riwayat Aktivitas</h1>
+            <p class="text-sm text-slate-500 mt-1">Daftar riwayat pengajuan lahan, pemupukan, hingga hasil panen Anda.</p>
         </div>
+    </div>
 
         {{-- ALERT SUCCESS --}}
         @if(session('success'))
@@ -35,16 +27,77 @@
 
         {{-- ALERT ERROR --}}
         @if(session('error'))
-
             <div class="mb-4 p-3.5 rounded-2xl bg-red-100 text-red-700 border border-red-200 text-xs font-semibold">
-
                 {{ session('error') }}
-
             </div>
-
         @endif
 
-        {{-- TABLE --}}
+    {{-- CARD BARU: RIWAYAT LAHAN --}}
+    <div class="bg-white p-6 rounded-xl shadow">
+        <div class="mb-6">
+            <h2 class="text-lg font-bold text-primary-900">Riwayat Pengajuan Lahan</h2>
+            <p class="text-xs text-gray-500 mt-0.5">Catatan riwayat pengajuan lahan sawah baru Anda beserta statusnya.</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse">
+                <thead>
+                    <tr class="bg-green-50 text-left text-xs uppercase tracking-wider text-gray-600">
+                        <th class="p-3 border-b">No</th>
+                        <th class="p-3 border-b">Nama Lahan</th>
+                        <th class="p-3 border-b">Alamat Detail</th>
+                        <th class="p-3 border-b">Luas (Ha)</th>
+                        <th class="p-3 border-b">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse(($riwayatLahan['data'] ?? []) as $lahan)
+                        @php
+                            $statusRaw = $lahan['status_verifikasi'] ?? 'PENDING';
+                            $statusSpasial = $lahan['status_spasial'] ?? 'BELUM_DIPETAKAN';
+                            $statusText = $statusRaw;
+                            if ($statusRaw === 'DITERIMA') {
+                                $statusText = $statusSpasial === 'SUDAH_DIPETAKAN' ? 'TERVERIFIKASI' : 'DISETUJUI';
+                            }
+                            $statusClass = $statusRaw === 'DITERIMA' ? 'bg-emerald-50 text-emerald-700' : ($statusRaw === 'DITOLAK' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700');
+                        @endphp
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="p-3 border-b text-xs text-gray-700">{{ (($riwayatLahan['current_page'] ?? 1) - 1) * ($riwayatLahan['per_page'] ?? 10) + $loop->iteration }}</td>
+                            <td class="p-3 border-b text-xs font-semibold text-gray-800">{{ $lahan['nama_lahan'] }}</td>
+                            <td class="p-3 border-b text-xs text-gray-700">{{ $lahan['alamat_detail'] ?? '-' }}</td>
+                            <td class="p-3 border-b text-xs text-gray-700">{{ $lahan['luas_lahan_hektar'] ?? 0 }}</td>
+                            <td class="p-3 border-b text-xs"><span class="px-2 py-1 rounded-full font-bold {{ $statusClass }}">{{ str_replace('_', ' ', $statusText) }}</span></td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="p-6 text-center text-xs text-gray-500">Belum ada catatan pengajuan lahan baru.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        @if(!empty($riwayatLahan) && isset($riwayatLahan['current_page']))
+            <div class="flex justify-between items-center mt-6">
+                @if($riwayatLahan['current_page'] > 1)
+                    <a href="{{ route('riwayat.panen', ['lahan_page' => $riwayatLahan['current_page'] - 1, 'pupuk_page' => request('pupuk_page', 1), 'page' => request('page', 1)]) }}" class="px-3.5 py-1.5 rounded-xl bg-gray-200 hover:bg-gray-300 text-xs font-semibold">← Sebelumnya</a>
+                @else
+                    <div></div>
+                @endif
+                <span class="text-xs text-gray-500">Halaman {{ $riwayatLahan['current_page'] }} dari {{ $riwayatLahan['last_page'] }}</span>
+                @if($riwayatLahan['current_page'] < $riwayatLahan['last_page'])
+                    <a href="{{ route('riwayat.panen', ['lahan_page' => $riwayatLahan['current_page'] + 1, 'pupuk_page' => request('pupuk_page', 1), 'page' => request('page', 1)]) }}" class="px-3.5 py-1.5 rounded-xl bg-green-600 text-white hover:bg-green-700 text-xs font-semibold">Selanjutnya →</a>
+                @else
+                    <div></div>
+                @endif
+            </div>
+        @endif
+    </div>
+
+    {{-- CARD: RIWAYAT PANEN --}}
+    <div class="bg-white p-6 rounded-xl shadow">
+        <div class="mb-6">
+            <h2 class="text-lg font-bold text-primary-900">Riwayat Panen</h2>
+            <p class="text-xs text-gray-500 mt-0.5">Daftar aktivitas tanam dan hasil panen petani.</p>
+        </div>
         <div class="overflow-x-auto">
 
             <table class="w-full border-collapse">
@@ -202,7 +255,8 @@
                     <a href="{{ route('riwayat.panen', [
                         'page' => $riwayat['current_page'] - 1,
                         'search' => request('search'),
-                        'pupuk_page' => request('pupuk_page', 1)
+                        'pupuk_page' => request('pupuk_page', 1),
+                        'lahan_page' => request('lahan_page', 1)
                     ]) }}"
                        class="px-3.5 py-1.5 rounded-xl bg-gray-200 hover:bg-gray-300 text-xs font-semibold">
 
@@ -228,7 +282,8 @@
                     <a href="{{ route('riwayat.panen', [
                         'page' => $riwayat['current_page'] + 1,
                         'search' => request('search'),
-                        'pupuk_page' => request('pupuk_page', 1)
+                        'pupuk_page' => request('pupuk_page', 1),
+                        'lahan_page' => request('lahan_page', 1)
                     ]) }}"
                        class="px-3.5 py-1.5 rounded-xl bg-green-600 text-white hover:bg-green-700 text-xs font-semibold">
 
@@ -253,7 +308,7 @@
 
         <div class="mb-6">
             <h2 class="text-lg font-bold text-primary-900">
-                Riwayat Pemupukan Lahan
+                Riwayat Tanam & Pemupukan
             </h2>
 
             <p class="text-xs text-gray-500 mt-0.5">
@@ -356,7 +411,8 @@
 
                     <a href="{{ route('riwayat.panen', [
                         'pupuk_page' => $riwayatPupuk['current_page'] - 1,
-                        'page' => request('page', 1)
+                        'page' => request('page', 1),
+                        'lahan_page' => request('lahan_page', 1)
                     ]) }}"
                        class="px-3.5 py-1.5 rounded-xl bg-gray-200 hover:bg-gray-300 text-xs font-semibold">
 
@@ -381,7 +437,8 @@
 
                     <a href="{{ route('riwayat.panen', [
                         'pupuk_page' => $riwayatPupuk['current_page'] + 1,
-                        'page' => request('page', 1)
+                        'page' => request('page', 1),
+                        'lahan_page' => request('lahan_page', 1)
                     ]) }}"
                        class="px-3.5 py-1.5 rounded-xl bg-green-600 text-white hover:bg-green-700 text-xs font-semibold">
 

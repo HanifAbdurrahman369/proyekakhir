@@ -23,12 +23,12 @@ class LahanSawahController extends Controller
 
         $select = [
             'id',
-            'user_id',
+            'pemilik_id',
+            'petani_id',
             'kecamatan_id',
             'kelurahan_id',
             'tipe_lahan_id',
             'nama_lahan',
-            'pemilik_lahan',
             'luas_lahan_hektar',
             'alamat_detail',
             'status_verifikasi',
@@ -42,7 +42,12 @@ class LahanSawahController extends Controller
             $select[] = 'catatan_verifikasi';
         }
 
-        $data = LahanSawah::where('user_id', $user->sub)
+        if (Schema::hasColumn('lahan_sawah', 'polygon_geojson')) {
+            $select[] = 'polygon_geojson';
+            $select[] = 'status_spasial';
+        }
+
+        $data = LahanSawah::with('pemilik:id,nama_lengkap')->where('pemilik_id', $user->sub)
             ->select($select)
             ->orderByRaw("CASE status_verifikasi WHEN 'PENDING' THEN 1 WHEN 'DITOLAK' THEN 2 WHEN 'DITERIMA' THEN 3 ELSE 4 END")
             ->orderByDesc('id')
@@ -51,6 +56,8 @@ class LahanSawahController extends Controller
         $offset = ($data->currentPage() - 1) * $data->perPage();
         $data->getCollection()->transform(function ($row, $index) use ($offset) {
             $row->nomor_urut = $offset + $index + 1;
+            $row->user_id = $row->pemilik_id;
+            $row->pemilik_lahan = $row->pemilik?->nama_lengkap;
 
             return $row;
         });
@@ -74,18 +81,20 @@ class LahanSawahController extends Controller
 
         $query = LahanSawah::where('status_verifikasi', 'DITERIMA');
         if ($roleId === 1) {
-            $query->where('user_id', $userId);
+            $query->where('pemilik_id', $userId);
         } else {
-            $query->whereIn('user_id', $this->pemilikIdsUntukBrigade($userId));
+            $query->where('petani_id', $userId);
         }
 
-        $data = $query
-            ->select('id', 'nama_lahan', 'pemilik_lahan', 'luas_lahan_hektar')
+        $data = $query->with('pemilik:id,nama_lengkap')
+            ->select('id', 'pemilik_id', 'petani_id', 'nama_lahan', 'luas_lahan_hektar')
             ->orderBy('nama_lahan')
             ->get()
             ->values()
             ->map(function ($row, $index) {
                 $row->nomor_urut = $index + 1;
+                $row->user_id = $row->pemilik_id;
+                $row->pemilik_lahan = $row->pemilik?->nama_lengkap;
 
                 return $row;
             });
@@ -99,13 +108,13 @@ class LahanSawahController extends Controller
 
     public function accepted()
     {
-        $data = LahanSawah::with(['kecamatanLahan', 'kelurahanLahan'])
+        $data = LahanSawah::with(['kecamatanLahan', 'kelurahanLahan', 'pemilik:id,nama_lengkap'])
             ->where('status_verifikasi', 'DITERIMA')
             ->select(
                 'id',
-                'user_id',
+                'pemilik_id',
+                'petani_id',
                 'nama_lahan',
-                'pemilik_lahan',
                 'kecamatan_id',
                 'kelurahan_id',
                 'luas_lahan_hektar',
@@ -117,6 +126,8 @@ class LahanSawahController extends Controller
             ->values()
             ->map(function ($row, $index) {
                 $row->nomor_urut = $index + 1;
+                $row->user_id = $row->pemilik_id;
+                $row->pemilik_lahan = $row->pemilik?->nama_lengkap;
 
                 return $row;
             });
@@ -131,13 +142,15 @@ class LahanSawahController extends Controller
     public function pending()
     {
         $data = LahanSawah::query()
-            ->leftJoin('users', 'lahan_sawah.user_id', '=', 'users.id')
+            ->leftJoin('users', 'lahan_sawah.pemilik_id', '=', 'users.id')
             ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
             ->leftJoin('kelurahan', 'lahan_sawah.kelurahan_id', '=', 'kelurahan.id')
             ->where('lahan_sawah.status_verifikasi', 'PENDING')
             ->select(
                 'lahan_sawah.*',
+                'lahan_sawah.pemilik_id as user_id',
                 'users.nama_lengkap as nama_petani',
+                'users.nama_lengkap as pemilik_lahan',
                 'users.email as email_petani',
                 'kecamatan.nama_kecamatan',
                 'kelurahan.nama_kelurahan'
@@ -161,7 +174,7 @@ class LahanSawahController extends Controller
     public function show(Request $request, $id)
     {
         $user = $request->attributes->get('auth');
-        $data = LahanSawah::with(['kecamatanLahan', 'kelurahanLahan'])
+        $data = LahanSawah::with(['kecamatanLahan', 'kelurahanLahan', 'pemilik', 'petani'])
             ->find($id);
 
         if (!$data) {
@@ -172,10 +185,9 @@ class LahanSawahController extends Controller
         }
 
         $roleId = (int) ($user->role_id ?? $user->role ?? 0);
-        $isOwner = (int) $data->user_id === (int) $user->sub;
+        $isOwner = (int) $data->pemilik_id === (int) $user->sub;
         $isPrivileged = in_array($roleId, [2, 3, 4], true);
-        $isAssignedBrigade = $roleId === 5
-            && $this->pemilikIdsUntukBrigade((int) $user->sub)->contains((int) $data->user_id);
+        $isAssignedBrigade = $roleId === 5 && (int) $data->petani_id === (int) $user->sub;
 
         if (!$isOwner && !$isPrivileged && !$isAssignedBrigade) {
             return response()->json([
@@ -183,6 +195,9 @@ class LahanSawahController extends Controller
                 'message' => 'Anda tidak memiliki akses ke data lahan ini'
             ], 403);
         }
+
+        $data->user_id = $data->pemilik_id;
+        $data->pemilik_lahan = $data->pemilik?->nama_lengkap;
 
         return response()->json([
             'success' => true,
@@ -207,10 +222,12 @@ class LahanSawahController extends Controller
             'tipe_lahan_id' => 'required',
             'nama_lahan' => 'required|string|max:100',
             'alamat_detail' => 'required|string|max:150',
+            'luas_lahan_hektar' => 'required|numeric|min:0.01',
         ]);
 
         $payload = [
-            'user_id' => $user->sub,
+            'pemilik_id' => $user->sub,
+            'petani_id' => $user->sub,
             'kecamatan_id' => $request->kecamatan_id,
             'kelurahan_id' => $request->kelurahan_id,
             'tipe_lahan_id' => $request->tipe_lahan_id,
@@ -219,13 +236,13 @@ class LahanSawahController extends Controller
 
             'status_verifikasi' => 'PENDING',
 
-            'pemilik_lahan' => $request->pemilik_lahan ?? null,
             'tahun_lbs' => $request->tahun_lbs ?? '2024',
-            'luas_lahan_hektar' => $request->luas_lahan_hektar ?? 0,
+            'luas_lahan_hektar' => $request->luas_lahan_hektar,
             'hasil_panen_ton' => 0,
             'produktivitas_ton_ha' => 0,
-            'latitude' => $request->latitude ?? null,
-            'longitude' => $request->longitude ?? null,
+            'latitude' => null,
+            'longitude' => null,
+            'butuh_bantuan_pemetaan' => false,
             'foto_lahan' => $request->foto_lahan ?? null,
         ];
 
@@ -278,6 +295,16 @@ class LahanSawahController extends Controller
             ], 400);
         }
 
+        if ($request->filled('petani_id') && !DB::table('users')
+            ->where('id', $request->input('petani_id'))
+            ->whereIn('role_id', [1, 5])
+            ->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Petani penggarap wajib berasal dari Kelompok Tani atau Brigade Pangan.',
+            ], 422);
+        }
+
         $updateData = [
             'status_verifikasi' => 'DITERIMA',
         ];
@@ -303,7 +330,7 @@ class LahanSawahController extends Controller
         }
 
         $fieldOpsional = [
-            'pemilik_lahan',
+            'petani_id',
             'tipe_lahan_id',
             'tahun_lbs',
             'luas_lahan_hektar',
@@ -404,11 +431,11 @@ class LahanSawahController extends Controller
             'tipe_lahan_id' => 'required',
             'nama_lahan' => 'required|string|max:100',
             'alamat_detail' => 'required|string|max:150',
-            'pemilik_lahan' => 'nullable|string|max:100',
+            'luas_lahan_hektar' => 'required|numeric|min:0.01',
         ]);
 
         $data = LahanSawah::where('id', $id)
-            ->where('user_id', $user->sub)
+            ->where('pemilik_id', $user->sub)
             ->first();
 
         if (!$data) {
@@ -431,8 +458,11 @@ class LahanSawahController extends Controller
             'tipe_lahan_id' => $request->tipe_lahan_id,
             'nama_lahan' => $request->nama_lahan,
             'alamat_detail' => $request->alamat_detail,
-            'pemilik_lahan' => $request->pemilik_lahan ?? null,
+            'tahun_lbs' => $request->tahun_lbs ?? '2024',
+            'luas_lahan_hektar' => $request->luas_lahan_hektar,
             'status_verifikasi' => 'PENDING',
+            'alasan_penolakan' => null,
+            'butuh_bantuan_pemetaan' => false,
         ];
 
         if (Schema::hasColumn('lahan_sawah', 'alasan_penolakan')) {
@@ -479,7 +509,7 @@ class LahanSawahController extends Controller
             return response()->json(['success' => false, 'message' => 'Penghapusan lahan hanya tersedia untuk Kelompok Tani.'], 403);
         }
 
-        $data = LahanSawah::where('id', $id)->where('user_id', $user->sub)->first();
+        $data = LahanSawah::where('id', $id)->where('pemilik_id', $user->sub)->first();
         if (!$data) {
             return response()->json(['success' => false, 'message' => 'Pengajuan lahan tidak ditemukan.'], 404);
         }
@@ -495,26 +525,6 @@ class LahanSawahController extends Controller
         $data->delete();
 
         return response()->json(['success' => true, 'message' => 'Pengajuan lahan berhasil dihapus.']);
-    }
-
-    private function pemilikIdsUntukBrigade(int $userId)
-    {
-        $indukId = DB::table('users as u')
-            ->join('kelompok as k', 'k.id', '=', 'u.kelompok_id')
-            ->where('u.id', $userId)
-            ->where('k.jenis_kelompok', 'brigade_pangan')
-            ->where('k.status_keanggotaan', 'AKTIF')
-            ->value('k.kelompok_tani_induk_id');
-
-        if (!$indukId) {
-            return collect();
-        }
-
-        return DB::table('users')
-            ->where('role_id', 1)
-            ->where('kelompok_id', $indukId)
-            ->pluck('id')
-            ->map(fn ($id) => (int) $id);
     }
 
     private function buatNotifikasiPetugas(string $judul, string $pesan, ?string $refType = null, ?int $refId = null, ?string $targetUrl = null): void

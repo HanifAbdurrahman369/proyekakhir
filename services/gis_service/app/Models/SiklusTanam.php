@@ -6,8 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class SiklusTanam extends Model
 {
-protected $table = 'siklus_tanam';
+protected $table = 'tanam_padi';
 public function panen() {
-    return $this->hasOne(HasilPanen::class, 'siklus_tanam_id', 'id');
+    return $this->hasOne(HasilPanen::class, 'tanam_padi_id', 'id');
 }
 }

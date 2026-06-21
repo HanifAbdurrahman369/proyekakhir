@@ -6,15 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class RiwayatPanen extends Model
 {
-    protected $table = 'riwayat_panen';
+    protected $table = 'panen_padi';
 
     protected $fillable = [
-        'lapor_panen_id',
-        'siklus_tanam_id',
+        'tanam_padi_id',
         'lahan_id',
         'bibit_id',
-        'pemilik_user_id',
-        'penggarap_user_id',
+        'pemilik_id',
+        'petani_id',
         'diverifikasi_oleh',
         'nama_lahan',
         'nama_bibit',
@@ -44,7 +43,7 @@ class RiwayatPanen extends Model
 
     public function siklusTanam()
     {
-        return $this->belongsTo(SiklusTanam::class, 'siklus_tanam_id');
+        return $this->belongsTo(SiklusTanam::class, 'tanam_padi_id');
     }
 
     public function bibit()
@@ -52,8 +51,4 @@ class RiwayatPanen extends Model
         return $this->belongsTo(JenisBibit::class, 'bibit_id');
     }
 
-    public function laporanPanen()
-    {
-        return $this->belongsTo(LaporPanen::class, 'lapor_panen_id');
-    }
 }

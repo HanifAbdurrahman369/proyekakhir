@@ -20,20 +20,21 @@ class RiwayatPanenController extends Controller
             ], 403);
         }
 
-        $query = DB::table('riwayat_panen as rp')
-            ->leftJoin('users as pemilik', 'pemilik.id', '=', 'rp.pemilik_user_id')
-            ->leftJoin('users as penggarap', 'penggarap.id', '=', 'rp.penggarap_user_id')
+        $query = DB::table('panen_padi as rp')
+            ->leftJoin('users as pemilik', 'pemilik.id', '=', 'rp.pemilik_id')
+            ->leftJoin('users as penggarap', 'penggarap.id', '=', 'rp.petani_id')
             ->select([
                 'rp.*',
                 'pemilik.nama_lengkap as nama_pemilik',
                 'penggarap.nama_lengkap as nama_penggarap',
             ])
+            ->where('rp.status_verifikasi', 'DITERIMA')
             ->whereDate('rp.tanggal_panen', '<=', now()->toDateString());
 
         if ($roleId === 1) {
-            $query->where('rp.pemilik_user_id', $userId);
+            $query->where('rp.pemilik_id', $userId);
         } else {
-            $query->where('rp.penggarap_user_id', $userId);
+            $query->where('rp.petani_id', $userId);
         }
 
         $perPage = min(50, max(1, (int) $request->get('per_page', 10)));
@@ -44,7 +45,8 @@ class RiwayatPanenController extends Controller
 
         $data->getCollection()->transform(fn ($item) => [
             'id' => (int) $item->id,
-            'siklus_tanam_id' => (int) $item->siklus_tanam_id,
+            'siklus_tanam_id' => (int) $item->tanam_padi_id,
+            'tanam_padi_id' => (int) $item->tanam_padi_id,
             'lahan_id' => (int) $item->lahan_id,
             'bibit_id' => (int) $item->bibit_id,
             'tanggal_tanam' => $item->tanggal_tanam,

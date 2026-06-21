@@ -445,10 +445,14 @@
                                 </button>
                             </div>
 
+                            <div class="mb-4">
+                                <input type="text" id="spatialSearch" placeholder="Cari nama lahan, wilayah, atau pemilik..." class="w-full rounded-xl border border-primary-200 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white">
+                            </div>
+
                             <div>
                                 <div id="sourceListBaru" class="spatial-list space-y-2">
                                     @forelse($lahanBaruSpasial as $item)
-                                        <button type="button" class="spatial-row btnPilihLahan w-full rounded-2xl p-4 text-left transition hover:bg-primary-50" data-source="baru" data-lahan-id="{{ $ambil($item, ['id']) }}">
+                                        <button type="button" class="spatial-row btnPilihLahan w-full rounded-2xl p-4 text-left transition hover:bg-primary-50" data-source="baru" data-lahan-id="{{ $ambil($item, ['id']) }}" data-search="{{ strtolower($ambil($item, ['nama_lahan']) . ' ' . $ambil($item, ['nama_kecamatan']) . ' ' . $ambil($item, ['nama_kelurahan']) . ' ' . $ambil($item, ['pemilik_lahan','nama_petani'])) }}">
                                             <span class="flex items-start justify-between gap-3">
                                                 <span>
                                                     <span class="block font-extrabold text-primary-900">{{ $ambil($item, ['nama_lahan']) }}</span>
@@ -465,7 +469,7 @@
 
                                 <div id="sourceListLama" class="spatial-list space-y-2 hidden">
                                     @forelse($lahanLamaSpasial as $item)
-                                        <button type="button" class="spatial-row btnPilihLahan w-full rounded-2xl p-4 text-left transition hover:bg-primary-50" data-source="lama" data-lahan-id="{{ $ambil($item, ['id']) }}">
+                                        <button type="button" class="spatial-row btnPilihLahan w-full rounded-2xl p-4 text-left transition hover:bg-primary-50" data-source="lama" data-lahan-id="{{ $ambil($item, ['id']) }}" data-search="{{ strtolower($ambil($item, ['nama_lahan']) . ' ' . $ambil($item, ['nama_kecamatan']) . ' ' . $ambil($item, ['nama_kelurahan']) . ' ' . $ambil($item, ['pemilik_lahan','nama_petani'])) }}">
                                             <span class="flex items-start justify-between gap-3">
                                                 <span>
                                                     <span class="block font-extrabold text-primary-900">{{ $ambil($item, ['nama_lahan']) }}</span>
@@ -479,6 +483,9 @@
                                         <div class="rounded-2xl border border-primary-100 bg-white px-4 py-8 text-center text-sm text-slate-500">Belum ada lahan yang sudah memiliki polygon.</div>
                                     @endforelse
                                 </div>
+
+                                <!-- Pagination Controls -->
+                                <div id="spatialPagination" class="mt-4 flex flex-wrap justify-center gap-1"></div>
                             </div>
                         </div>
                     </section>
@@ -506,51 +513,68 @@
                     </section>
                 </div>
 
-                <div id="spatialWorkspace" class="spatial-workspace is-locked spatial-panel rounded-2xl p-5">
-                    <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 border-b border-primary-100 pb-4">
+                <div id="spatialWorkspace" class="spatial-workspace is-locked bg-white rounded-2xl shadow-sm border border-primary-100 overflow-hidden">
+                    <div class="px-6 py-5 bg-gradient-to-r from-primary-50 to-white border-b border-primary-100 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                         <div>
-                            <p id="selectedSourceLabel" class="text-xs text-primary-700 font-bold uppercase tracking-[0.18em]">Belum memilih lahan</p>
-                            <h2 id="selectedLahanTitle" class="text-xl font-extrabold text-primary-900 mt-1">Informasi Titik dan Batas Area</h2>
-                            <p id="selectedLahanMeta" class="text-sm text-slate-500 mt-1">Pilih lahan belum dipetakan atau lahan sudah dipetakan dari panel kiri untuk membuka formulir pemetaan.</p>
+                            <p id="selectedSourceLabel" class="text-xs text-primary-600 font-bold uppercase tracking-wider mb-1">Belum memilih lahan</p>
+                            <h2 id="selectedLahanTitle" class="text-2xl font-extrabold text-primary-900">Informasi Lahan Sawah</h2>
+                            <p id="selectedLahanMeta" class="text-sm text-slate-500 mt-1">Pilih lahan dari panel sebelah kiri untuk mulai mengatur titik dan batas area.</p>
                         </div>
-                        <span id="formModeBadge" class="w-fit px-3 py-1 rounded-full bg-slate-50 text-slate-500 text-xs font-bold border border-slate-200">Terkunci</span>
+                        <span id="formModeBadge" class="w-fit px-4 py-1.5 rounded-full bg-slate-100 text-slate-500 text-xs font-bold border border-slate-200 shadow-sm">Terkunci</span>
                     </div>
 
-                    <div class="spatial-empty-state py-12 text-center">
-                        <p class="text-primary-900 font-extrabold">Pilih salah satu lahan untuk mulai bekerja.</p>
-                        <p class="text-sm text-slate-500 mt-2">Form dibuat bertahap agar petugas dapat memeriksa sumber lahan, lokasi peta, lalu menyimpan perubahan dengan lebih rapi.</p>
+                    <div class="spatial-empty-state py-16 px-6 text-center">
+                        <div class="w-16 h-16 rounded-full bg-primary-50 flex items-center justify-center mx-auto mb-4 border border-primary-100">
+                            <svg class="w-8 h-8 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+                        </div>
+                        <p class="text-lg text-primary-900 font-extrabold">Pilih Lahan Sawah untuk Memulai</p>
+                        <p class="text-sm text-slate-500 mt-2 max-w-md mx-auto">Anda dapat memeriksa informasi lahan, menentukan titik pusat di peta, serta menggambar batas polygon area dengan akurat.</p>
                     </div>
 
-                    <div class="spatial-form-body pt-5">
-                        <form method="POST" action="{{ url('/petugas/spasial/simpan') }}" id="spasialForm" class="space-y-5">
+                    <div class="spatial-form-body p-6">
+                        <form method="POST" action="{{ url('/petugas/spasial/simpan') }}" id="spasialForm" class="space-y-8">
                             @csrf
                             <input type="hidden" name="_method" id="form_method" value="">
                             <input type="hidden" name="lahan_id" id="lahan_id">
                             <input type="hidden" name="user_id" id="user_id">
 
-                            <div class="spatial-form-section">
-                                <p class="text-xs font-extrabold text-primary-700 uppercase tracking-[0.18em] mb-4">Identitas Lahan</p>
-                                <div class="grid lg:grid-cols-2 gap-4">
-                                    <div class="spatial-field"><label class="block text-xs font-bold text-slate-500">Nama Lahan</label><input name="nama_lahan" id="nama_lahan" class="w-full" required></div>
-                                    <div class="spatial-field"><label class="block text-xs font-bold text-slate-500">Pemilik Lahan</label><input name="pemilik_lahan" id="pemilik_lahan" class="w-full"></div>
+                            <!-- Section: Identitas Lahan -->
+                            <div class="spatial-form-section bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                                <div class="flex items-center gap-2 mb-4 border-b border-slate-200 pb-3">
+                                    <div class="w-6 h-6 rounded-lg bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-xs">1</div>
+                                    <p class="text-sm font-extrabold text-primary-900 uppercase tracking-wide">Identitas Lahan</p>
+                                </div>
+                                <div class="grid lg:grid-cols-2 gap-5">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1.5">Nama Lahan</label>
+                                        <input name="nama_lahan" id="nama_lahan" class="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-all bg-white" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1.5">Pemilik Lahan</label>
+                                        <input id="pemilik_lahan" class="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm bg-slate-100 text-slate-600 cursor-not-allowed outline-none" readonly>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="spatial-form-section">
-                                <p class="text-xs font-extrabold text-primary-700 uppercase tracking-[0.18em] mb-4">Wilayah dan Klasifikasi</p>
-                                <div class="grid lg:grid-cols-2 gap-4">
-                                    <div class="spatial-field">
-                                        <label class="block text-xs font-bold text-slate-500">Kecamatan</label>
-                                        <select name="kecamatan_id" id="kecamatan_id" class="w-full" required>
+                            <!-- Section: Wilayah & Klasifikasi -->
+                            <div class="spatial-form-section bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                                <div class="flex items-center gap-2 mb-4 border-b border-slate-200 pb-3">
+                                    <div class="w-6 h-6 rounded-lg bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-xs">2</div>
+                                    <p class="text-sm font-extrabold text-primary-900 uppercase tracking-wide">Wilayah & Klasifikasi</p>
+                                </div>
+                                <div class="grid lg:grid-cols-2 gap-5 mb-5">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1.5">Kecamatan</label>
+                                        <select name="kecamatan_id" id="kecamatan_id" class="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-all bg-white" required>
                                             <option value="">Pilih kecamatan</option>
                                             @foreach(data_get($referensi, 'kecamatan', []) as $item)
                                                 <option value="{{ $ambil($item, ['id']) }}">{{ $ambil($item, ['nama_kecamatan','nama']) }}</option>
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="spatial-field">
-                                        <label class="block text-xs font-bold text-slate-500">Kelurahan</label>
-                                        <select name="kelurahan_id" id="kelurahan_id" class="w-full">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1.5">Kelurahan</label>
+                                        <select name="kelurahan_id" id="kelurahan_id" class="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-all bg-white">
                                             <option value="">Pilih kelurahan</option>
                                             @foreach(data_get($referensi, 'kelurahan', []) as $item)
                                                 <option value="{{ $ambil($item, ['id']) }}" data-kecamatan="{{ $ambil($item, ['kecamatan_id'], '') }}">{{ $ambil($item, ['nama_kelurahan','nama']) }}</option>
@@ -558,54 +582,82 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="grid lg:grid-cols-2 gap-4 mt-4">
-                                    <div class="spatial-field">
-                                        <label class="block text-xs font-bold text-slate-500">Tipe Lahan</label>
-                                        <select name="tipe_lahan_id" id="tipe_lahan_id" class="w-full">
+                                <div class="grid lg:grid-cols-2 gap-5">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1.5">Tipe Lahan</label>
+                                        <select name="tipe_lahan_id" id="tipe_lahan_id" class="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-all bg-white">
                                             <option value="">Pilih tipe lahan</option>
                                             @foreach(data_get($referensi, 'tipe_lahan', []) as $item)
                                                 <option value="{{ $ambil($item, ['id']) }}">{{ $ambil($item, ['nama_tipe','nama']) }}</option>
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="spatial-field"><label class="block text-xs font-bold text-slate-500">Tahun Basis</label><select name="tahun_lbs" id="tahun_lbs" class="w-full"><option value="2024">2024</option><option value="2017">2017</option></select></div>
-                                </div>
-                            </div>
-
-                            <div class="spatial-form-section">
-                                <p class="text-xs font-extrabold text-primary-700 uppercase tracking-[0.18em] mb-4">Ukuran dan Titik Tengah</p>
-                                <div class="grid lg:grid-cols-3 gap-4">
-                                <div class="spatial-field">
-                                    <label class="block text-xs font-bold text-slate-500">Luas Lahan (Ha)</label>
-                                    <input name="luas_lahan_hektar" id="luas_lahan_hektar" type="number" step="0.01" class="w-full" required>
-                                    <div class="mt-2 flex items-center justify-between gap-2">
-                                        <p id="areaEstimateText" class="text-xs text-slate-500">Luas dari peta belum tersedia.</p>
-                                        <button type="button" id="btnUseMapArea" class="hidden shrink-0 px-3 py-1 rounded-lg bg-primary-50 text-primary-700 border border-primary-100 text-xs font-bold">Gunakan</button>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1.5">Tahun Basis</label>
+                                        <select name="tahun_lbs" id="tahun_lbs" class="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-all bg-white">
+                                            <option value="2024">2024</option>
+                                            <option value="2017">2017</option>
+                                        </select>
                                     </div>
                                 </div>
-                                <div class="spatial-field"><label class="block text-xs font-bold text-slate-500">Latitude</label><input name="latitude" id="latitude" type="number" step="any" class="w-full" required></div>
-                                <div class="spatial-field"><label class="block text-xs font-bold text-slate-500">Longitude</label><input name="longitude" id="longitude" type="number" step="any" class="w-full" required></div>
+                            </div>
+
+                            <!-- Section: Data Spasial -->
+                            <div class="spatial-form-section bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                                <div class="flex items-center gap-2 mb-4 border-b border-slate-200 pb-3">
+                                    <div class="w-6 h-6 rounded-lg bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-xs">3</div>
+                                    <p class="text-sm font-extrabold text-primary-900 uppercase tracking-wide">Pemetaan & Spasial</p>
+                                </div>
+                                
+                                <div class="grid lg:grid-cols-3 gap-5 mb-5">
+                                    <div class="col-span-1 lg:col-span-3">
+                                        <label class="block text-xs font-bold text-slate-600 mb-1.5">Alamat Detail</label>
+                                        <textarea name="alamat_detail" id="alamat_detail" rows="2" class="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-all bg-white"></textarea>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1.5">Luas Lahan (Ha)</label>
+                                        <input name="luas_lahan_hektar" id="luas_lahan_hektar" type="number" step="0.01" class="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-all bg-white" required>
+                                        <div class="mt-2 flex items-center justify-between gap-2">
+                                            <p id="areaEstimateText" class="text-xs text-slate-500 font-medium">Luas peta belum tersedia.</p>
+                                            <button type="button" id="btnUseMapArea" class="hidden shrink-0 px-3 py-1 rounded-lg bg-primary-100 text-primary-700 hover:bg-primary-200 text-[10px] font-bold uppercase tracking-wider transition-colors">Gunakan</button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1.5">Latitude (Y)</label>
+                                        <input name="latitude" id="latitude" type="number" step="any" class="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-all bg-white" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1.5">Longitude (X)</label>
+                                        <input name="longitude" id="longitude" type="number" step="any" class="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-all bg-white" required>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 mb-1.5 flex justify-between items-center">
+                                        <span>Data Polygon Geometri (GeoJSON)</span>
+                                        <span id="polygonStatusText" class="text-[10px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Menunggu Input</span>
+                                    </label>
+                                    <textarea name="polygon_geojson" id="polygon_geojson" rows="3" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-xs font-mono bg-slate-100 text-slate-600 cursor-not-allowed outline-none" required readonly placeholder="Klik tombol Gambar Batas pada peta, lalu klik minimal 3 titik batas lahan."></textarea>
                                 </div>
                             </div>
 
-                            <div class="spatial-form-section">
-                                <p class="text-xs font-extrabold text-primary-700 uppercase tracking-[0.18em] mb-4">Alamat dan Batas Area</p>
-                                <div class="spatial-field"><label class="block text-xs font-bold text-slate-500">Alamat Detail</label><textarea name="alamat_detail" id="alamat_detail" rows="2" class="w-full"></textarea></div>
-                                <div class="spatial-field mt-4">
-                                    <label class="block text-xs font-bold text-slate-500">Data Batas Area Otomatis</label>
-                                    <textarea name="polygon_geojson" id="polygon_geojson" rows="3" class="w-full font-mono text-xs bg-slate-50" required readonly placeholder="Klik tombol Gambar Batas, lalu klik minimal 3 titik di peta."></textarea>
-                                    <p id="polygonStatusText" class="text-xs text-slate-500 mt-2">Belum ada batas area yang siap disimpan.</p>
-                                </div>
-                            </div>
-                            <div class="flex flex-col sm:flex-row gap-3">
-                                <button class="btn-green flex-1 rounded-2xl py-3 font-extrabold transition">Simpan Data Spasial</button>
-                                <button type="button" id="btnResetForm" class="px-5 py-3 rounded-2xl border border-primary-100 text-primary-700 font-bold hover:bg-primary-50 transition">Reset</button>
+                            <!-- Actions -->
+                            <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                                <button class="flex-1 px-6 py-3.5 rounded-xl bg-primary-600 text-white font-extrabold hover:bg-primary-700 shadow-sm transition-all focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                    Simpan Data Spasial
+                                </button>
+                                <button type="button" id="btnResetForm" class="px-6 py-3.5 rounded-xl border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-all">
+                                    Batal & Reset
+                                </button>
                             </div>
                         </form>
-                        <form method="POST" action="#" id="deleteSpasialForm" class="mt-3 hidden" onsubmit="return confirm('Kosongkan batas area lahan ini? Data lahan tetap tersimpan.');">
+                        
+                        <form method="POST" action="#" id="deleteSpasialForm" class="mt-4 hidden" onsubmit="return confirm('Apakah Anda yakin ingin mengosongkan batas area lahan ini? Data administrasi lahan tetap akan tersimpan.');">
                             @csrf
                             @method('DELETE')
-                            <button class="w-full px-5 py-3 rounded-2xl bg-red-50 text-red-600 border border-red-200 font-bold hover:bg-red-600 hover:text-white transition">Kosongkan Batas Area Lahan Terpilih</button>
+                            <button class="w-full px-6 py-3.5 rounded-xl bg-red-50 text-red-600 border border-red-200 font-bold hover:bg-red-600 hover:text-white transition-all">
+                                Kosongkan Batas Area Lahan Ini
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -718,6 +770,12 @@
 
                         activeRejectUrl = this.dataset.rejectUrl || '';
                         activeRejectName = data.nama_lahan || 'Pengajuan lahan';
+                        
+                        document.getElementById('detailKecamatan').textContent = data.nama_kecamatan || '-';
+                        document.getElementById('detailKelurahan').textContent = data.nama_kelurahan || '-';
+                        document.getElementById('detailLuas').textContent = data.luas_lahan_hektar ? `${data.luas_lahan_hektar} Ha` : '0 Ha';
+                        document.getElementById('detailAlamat').textContent = data.alamat_detail || 'Tidak ada alamat lengkap.';
+
                         if (approveForm) approveForm.action = this.dataset.approveUrl || '#';
                         if (detailRejectButton) detailRejectButton.dataset.rejectUrl = activeRejectUrl;
 
@@ -893,13 +951,80 @@
                     }
                 }
 
+                let currentSpatialSource = 'baru';
+                let spatialSearchQuery = '';
+                let currentSpatialPage = 1;
+                const itemsPerPage = 5;
+
+                function renderSpatialList() {
+                    const activeListId = currentSpatialSource === 'baru' ? 'sourceListBaru' : 'sourceListLama';
+                    const activeList = document.getElementById(activeListId);
+                    if (!activeList) return;
+
+                    const allItems = Array.from(activeList.querySelectorAll('.btnPilihLahan'));
+                    const filteredItems = allItems.filter(item => {
+                        const searchData = item.dataset.search || '';
+                        return searchData.includes(spatialSearchQuery);
+                    });
+
+                    const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+                    if (currentSpatialPage > totalPages && totalPages > 0) currentSpatialPage = totalPages;
+                    if (currentSpatialPage < 1) currentSpatialPage = 1;
+
+                    const startIndex = (currentSpatialPage - 1) * itemsPerPage;
+                    const endIndex = startIndex + itemsPerPage;
+
+                    allItems.forEach(item => item.classList.add('hidden'));
+
+                    filteredItems.slice(startIndex, endIndex).forEach(item => {
+                        item.classList.remove('hidden');
+                    });
+
+                    renderSpatialPagination(totalPages);
+                }
+
+                function renderSpatialPagination(totalPages) {
+                    const container = document.getElementById('spatialPagination');
+                    if (!container) return;
+                    container.innerHTML = '';
+
+                    if (totalPages <= 1) return;
+
+                    const createBtn = (text, page, isActive = false) => {
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.textContent = text;
+                        btn.className = `w-8 h-8 flex items-center justify-center rounded-xl text-xs font-bold transition-colors ${isActive ? 'bg-primary-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`;
+                        btn.addEventListener('click', () => {
+                            currentSpatialPage = page;
+                            renderSpatialList();
+                        });
+                        return btn;
+                    };
+
+                    for (let i = 1; i <= totalPages; i++) {
+                        container.appendChild(createBtn(i, i, i === currentSpatialPage));
+                    }
+                }
+
+                document.getElementById('spatialSearch')?.addEventListener('input', function(e) {
+                    spatialSearchQuery = e.target.value.toLowerCase();
+                    currentSpatialPage = 1;
+                    renderSpatialList();
+                });
+
                 function setSource(source) {
+                    currentSpatialSource = source;
+                    currentSpatialPage = 1;
+
                     document.querySelectorAll('.sourceToggle').forEach(button => {
                         button.classList.toggle('is-active', button.dataset.source === source);
                     });
 
                     document.getElementById('sourceListBaru')?.classList.toggle('hidden', source !== 'baru');
                     document.getElementById('sourceListLama')?.classList.toggle('hidden', source !== 'lama');
+
+                    renderSpatialList();
                 }
 
                 function setSelectedRow(id) {
@@ -1423,6 +1548,7 @@
 
                 filterKelurahan();
                 updateMapTools();
+                renderSpatialList(); // Initial render for pagination
             });
         </script>
     @endpush

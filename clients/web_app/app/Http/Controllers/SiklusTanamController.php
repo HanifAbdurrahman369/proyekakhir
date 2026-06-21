@@ -65,7 +65,7 @@ class SiklusTanamController extends Controller
             $siklusTanam = $siklusResponse->json()['data'] ?? [];
         }
 
-        return view('partials.sidebar.lapor-tanam', compact(
+        return view('partials.sidebar.petani.lapor-tanam', compact(
             'lahan',
             'bibit',
             'pupuk',
@@ -82,6 +82,7 @@ class SiklusTanamController extends Controller
             'tanggal_tanam' => 'required|date|before_or_equal:today',
             'estimasi_hari_tanam' => 'required|integer|min:1',
             'pupuk_id' => 'required|integer',
+            'tanggal_pemupukan' => 'required|date|after_or_equal:tanggal_tanam|before_or_equal:today',
             'takaran' => 'required|numeric|min:0.01',
         ], [
             'estimasi_hari_tanam.required' => 'Estimasi hari tanam wajib diisi.',
@@ -106,29 +107,12 @@ class SiklusTanamController extends Controller
                 'bibit_id' => $request->bibit_id,
                 'tanggal_tanam' => $request->tanggal_tanam,
                 'estimasi_hari_tanam' => $request->estimasi_hari_tanam,
+                'pupuk_id' => $request->pupuk_id,
+                'tanggal_pemupukan' => $request->tanggal_pemupukan,
+                'takaran' => $request->takaran,
             ]);
 
         if ($response->successful()) {
-            $siklusData = $response->json('data');
-            $siklusId = $siklusData['id'] ?? null;
-
-            if ($siklusId) {
-                // Submit catatan pemupukan
-                $pupukResponse = Http::withToken($token)
-                    ->post($this->gatewayUrl() . '/api/siklus-pupuk', [
-                        'siklus_tanam_id' => $siklusId,
-                        'pupuk_id' => $request->pupuk_id,
-                        'tanggal_pemupukan' => $request->tanggal_tanam,
-                        'takaran' => $request->takaran,
-                    ]);
-                
-                if (!$pupukResponse->successful()) {
-                    return redirect()
-                        ->back()
-                        ->with('error', 'Laporan tanam berhasil, namun catatan pemupukan gagal disimpan: ' . ($pupukResponse->json('message') ?? ''));
-                }
-            }
-
             return redirect()
                 ->back()
                 ->with('success', $response->json('message') ?? 'Laporan tanam dan pemupukan berhasil disimpan.');
@@ -153,7 +137,7 @@ class SiklusTanamController extends Controller
         $pupukResponse = Http::withToken($token)->acceptJson()->get($this->gatewayUrl() . '/api/jenis-pupuk');
         $siklusResponse = Http::withToken($token)->acceptJson()->get($this->gatewayUrl() . '/api/my-siklus-tanam');
 
-        return view('partials.sidebar.lapor-tanam', [
+        return view('partials.sidebar.petani.lapor-tanam', [
             'editTanam' => $detail->json('data'),
             'lahan' => $lahanResponse->successful() ? ($lahanResponse->json('data') ?? []) : [],
             'bibit' => $bibitResponse->successful() ? ($bibitResponse->json('data') ?? []) : [],
@@ -168,6 +152,10 @@ class SiklusTanamController extends Controller
             'lahan_id' => 'required|integer',
             'bibit_id' => 'required|integer',
             'tanggal_tanam' => 'required|date|before_or_equal:today',
+            'estimasi_hari_tanam' => 'required|integer|min:1',
+            'pupuk_id' => 'required|integer',
+            'tanggal_pemupukan' => 'required|date|after_or_equal:tanggal_tanam|before_or_equal:today',
+            'takaran' => 'required|numeric|min:0.01',
         ]);
 
         $response = Http::withToken(session('token'))
@@ -221,7 +209,7 @@ class SiklusTanamController extends Controller
         $pupukResponse = Http::withToken($token)
             ->acceptJson()
             ->get($this->gatewayUrl() . '/api/siklus-pupuk', [
-                'per_page' => 3,
+                'per_page' => 10,
                 'pupuk_page' => $request->query('pupuk_page', 1)
             ]);
 
@@ -230,7 +218,20 @@ class SiklusTanamController extends Controller
             $riwayatPupuk = $pupukResponse->json()['data'] ?? [];
         }
 
-        return view('partials.sidebar.riwayat-panen', compact('riwayat', 'riwayatPupuk'));
+        // Fetch Riwayat Lahan Baru
+        $lahanResponse = Http::withToken($token)
+            ->acceptJson()
+            ->get($this->gatewayUrl() . '/api/lahan', [
+                'per_page' => 10,
+                'page' => $request->query('lahan_page', 1)
+            ]);
+
+        $riwayatLahan = [];
+        if ($lahanResponse->successful()) {
+            $riwayatLahan = $lahanResponse->json()['data'] ?? [];
+        }
+
+        return view('partials.sidebar.petani.riwayat-panen', compact('riwayat', 'riwayatPupuk', 'riwayatLahan'));
     }
 
     public function edit($id)
@@ -285,7 +286,7 @@ class SiklusTanamController extends Controller
             $editPanen['tanggal_panen'] = \Carbon\Carbon::parse($editPanen['tanggal_panen'])->format('Y-m-d');
         }
 
-        return view('partials.sidebar.lapor-panen', compact('lahan', 'bibit', 'editPanen'));
+        return view('partials.sidebar.petani.lapor-panen', compact('lahan', 'bibit', 'editPanen'));
     }
 
     public function update(Request $request, $id)
@@ -395,7 +396,7 @@ class SiklusTanamController extends Controller
             $siklusTanam = $siklusResponse->json()['data'] ?? [];
         }
 
-        return view('partials.sidebar.lapor-panen', compact(
+        return view('partials.sidebar.petani.lapor-panen', compact(
             'lahan',
             'bibit',
             'siklusTanam'

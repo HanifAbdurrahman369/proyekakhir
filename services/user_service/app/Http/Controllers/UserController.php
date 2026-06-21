@@ -61,7 +61,7 @@ class UserController extends Controller
             'email' => $user->email,
             'password' => $user->password,
             'role_id' => $user->role_id,
-            'kelompok_id' => $user->kelompok_id,
+            'komunitas_id' => $user->komunitas_id,
             'nama_lengkap' => $user->nama_lengkap
         ]);
     }
@@ -91,13 +91,13 @@ class UserController extends Controller
                 'jenis_kelompok.in' => 'Pilihan keanggotaan tidak valid.',
             ]);
 
-            $kelompok = DB::table('kelompok')
+            $komunitas = DB::table('komunitas')
                 ->whereRaw('LOWER(TRIM(nama)) = ?', [mb_strtolower(trim($validated['nama_lengkap']))])
-                ->where('jenis_kelompok', $validated['jenis_kelompok'])
+                ->where('jenis_komunitas', $validated['jenis_kelompok'])
                 ->where('status_keanggotaan', 'AKTIF')
                 ->first();
 
-            if (!$kelompok) {
+            if (!$komunitas) {
                 return response()->json([
                     'message' => 'Mohon maaf, data Anda belum terdaftar pada database Kelompok Tani atau Brigade Pangan. Silakan hubungi petugas untuk memastikan pendataan keanggotaan terlebih dahulu.',
                     'errors' => [
@@ -132,14 +132,14 @@ class UserController extends Controller
 
             $user = User::create([
                 'role_id' => $role->id,
-                'kelompok_id' => $kelompok->id,
+                'komunitas_id' => $komunitas->id,
                 'nama_lengkap' => $validated['nama_lengkap'],
                 'email' => $validated['email'],
                 'password' => Hash::make(
                     $validated['password']
                 ),
-                'no_hp' => $kelompok->nomor_hp ?? null,
-                'alamat' => $kelompok->alamat ?? null
+                'no_hp' => $komunitas->nomor_hp ?? null,
+                'alamat' => $komunitas->alamat ?? null
             ]);
 
             return response()->json([
@@ -152,12 +152,11 @@ class UserController extends Controller
                     'role' => $validated['jenis_kelompok'],
                     'no_hp' => $user->no_hp,
                     'alamat' => $user->alamat,
-                    'kelompok' => [
-                        'id' => $kelompok->id,
+                    'komunitas' => [
+                        'id' => $komunitas->id,
                         'jenis' => $validated['jenis_kelompok'],
-                        'nama' => $kelompok->nama,
-                        'kode_anggota' => $kelompok->kode_anggota,
-                        'nama_kelompok' => $kelompok->nama_kelompok,
+                        'nama' => $komunitas->nama,
+                        'nama_komunitas' => $komunitas->nama_komunitas,
                     ],
                 ]
             ], 201);

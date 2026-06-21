@@ -55,17 +55,19 @@ class PublicApiController extends Controller
             ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
             ->leftJoin('kelurahan', 'lahan_sawah.kelurahan_id', '=', 'kelurahan.id')
             ->leftJoin('tipe_lahan', 'lahan_sawah.tipe_lahan_id', '=', 'tipe_lahan.id')
+            ->leftJoin('users as pemilik', 'lahan_sawah.pemilik_id', '=', 'pemilik.id')
             ->leftJoinSub($this->panenDiterimaPerLahanQuery(), 'panen_lahan', function ($join) {
                 $join->on('panen_lahan.lahan_id', '=', 'lahan_sawah.id');
             })
             ->select(
                 'lahan_sawah.id',
-                'lahan_sawah.user_id',
+                'lahan_sawah.pemilik_id',
+                'lahan_sawah.petani_id',
                 'lahan_sawah.kecamatan_id',
                 'lahan_sawah.kelurahan_id',
                 'lahan_sawah.tipe_lahan_id',
                 'lahan_sawah.nama_lahan',
-                'lahan_sawah.pemilik_lahan',
+                'pemilik.nama_lengkap as pemilik_lahan',
                 'lahan_sawah.tahun_lbs',
                 'lahan_sawah.luas_lahan_hektar',
                 'lahan_sawah.hasil_panen_ton',
@@ -103,7 +105,9 @@ class PublicApiController extends Controller
                 'properties' => [
                     'nomor_urut' => $index + 1,
                     'id' => $row->id,
-                    'user_id' => $row->user_id,
+                    'user_id' => $row->pemilik_id,
+                    'pemilik_id' => $row->pemilik_id,
+                    'petani_id' => $row->petani_id,
                     'kecamatan_id' => $row->kecamatan_id,
                     'kelurahan_id' => $row->kelurahan_id,
                     'tipe_lahan_id' => $row->tipe_lahan_id,
@@ -160,20 +164,17 @@ class PublicApiController extends Controller
 
     private function panenDiterimaPerLahanQuery()
     {
-        if (Schema::hasTable('riwayat_panen')) {
-            return DB::table('riwayat_panen')
+        if (Schema::hasTable('panen_padi')) {
+            return DB::table('panen_padi')
                 ->select('lahan_id', DB::raw('COALESCE(SUM(hasil_panen_ton),0) as total_panen'))
                 ->where('status_verifikasi', 'DITERIMA')
                 ->whereDate('tanggal_panen', '<=', now()->toDateString())
                 ->groupBy('lahan_id');
         }
 
-        return DB::table('siklus_tanam')
-            ->select('lahan_id', DB::raw('COALESCE(SUM(hasil_panen),0) as total_panen'))
-            ->where('status_verifikasi', 'DITERIMA')
-            ->whereNotNull('hasil_panen')
-            ->whereDate('tanggal_panen', '<=', now()->toDateString())
-            ->groupBy('lahan_id');
+        return DB::table('lahan_sawah')
+            ->select('id as lahan_id', DB::raw('0 as total_panen'))
+            ->whereRaw('1 = 0');
     }
 
     private function totalPanenDiterimaPublik(): float
@@ -215,8 +216,8 @@ class PublicApiController extends Controller
 
     private function chartProduktivitasLahan()
     {
-        if (Schema::hasTable('riwayat_panen')) {
-            return DB::table('riwayat_panen as rp')
+        if (Schema::hasTable('panen_padi')) {
+            return DB::table('panen_padi as rp')
                 ->join('lahan_sawah as ls', 'ls.id', '=', 'rp.lahan_id')
                 ->leftJoin('kecamatan', 'ls.kecamatan_id', '=', 'kecamatan.id')
                 ->where('rp.status_verifikasi', 'DITERIMA')

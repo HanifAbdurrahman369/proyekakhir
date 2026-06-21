@@ -38,7 +38,7 @@ class LahanSawahController extends Controller
         ['kecamatan' => $kecamatan, 'kelurahan' => $kelurahan, 'tipeLahan' => $tipeLahan] = $this->referensi();
 
         return view(
-            'partials.sidebar.tambah-lahan',
+            'partials.sidebar.petani.tambah-lahan',
             compact('kecamatan', 'kelurahan', 'tipeLahan')
         );
     }
@@ -68,7 +68,7 @@ class LahanSawahController extends Controller
         }
 
         return view(
-            'partials.sidebar.tambah-lahan',
+            'partials.sidebar.petani.tambah-lahan',
             compact('kecamatan', 'kelurahan', 'tipeLahan', 'editLahan')
         );
     }
@@ -90,8 +90,8 @@ class LahanSawahController extends Controller
                 'kecamatan_id' => $request->kecamatan_id,
                 'kelurahan_id' => $request->kelurahan_id,
                 'tipe_lahan_id' => $request->tipe_lahan_id,
-                'pemilik_lahan' => $request->pemilik_lahan,
                 'alamat_detail' => $request->alamat_detail,
+                'luas_lahan_hektar' => $request->luas_lahan_hektar,
             ]);
 
         if ($response->successful()) {
@@ -117,8 +117,8 @@ class LahanSawahController extends Controller
                 'kecamatan_id' => $request->kecamatan_id,
                 'kelurahan_id' => $request->kelurahan_id,
                 'tipe_lahan_id' => $request->tipe_lahan_id,
-                'pemilik_lahan' => $request->pemilik_lahan,
                 'alamat_detail' => $request->alamat_detail,
+                'luas_lahan_hektar' => $request->luas_lahan_hektar,
             ]);
 
         if ($response->successful()) {

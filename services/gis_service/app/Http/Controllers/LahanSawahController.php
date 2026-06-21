@@ -71,43 +71,10 @@ class LahanSawahController extends Controller
 
     public function store(Request $request)
     {
-        [$payload, $geometry] = $this->validasiPayloadSpasial($request, true);
-
-        $payload['status_verifikasi'] = 'DITERIMA';
-        $payload['status_spasial'] = 'SUDAH_DIPETAKAN';
-
-        if (Schema::hasColumn('lahan_sawah', 'created_at')) {
-            $payload['created_at'] = now();
-        }
-
-        if (Schema::hasColumn('lahan_sawah', 'updated_at')) {
-            $payload['updated_at'] = now();
-        }
-
-        try {
-            $id = DB::transaction(function () use ($payload, $geometry) {
-                $id = DB::table('lahan_sawah')->insertGetId(
-                    $this->filterExistingColumns('lahan_sawah', $payload)
-                );
-
-                $this->simpanPolygonWajib($id, $geometry);
-
-                return $id;
-            });
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Data spasial lahan berhasil dibuat.',
-                'data' => $this->getDetailLahan($id),
-            ], 201, [], JSON_INVALID_UTF8_SUBSTITUTE);
-        } catch (\Throwable $e) {
-            Log::error('Gagal membuat data spasial lahan: ' . $e->getMessage());
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal membuat data spasial lahan. Pastikan polygon valid dan kolom spasial tersedia.',
-            ], 422);
-        }
+        return response()->json([
+            'success' => false,
+            'message' => 'Lahan baru wajib diajukan oleh Kelompok Tani dan disetujui petugas sebelum dipetakan.',
+        ], 403);
     }
 
     public function update(Request $request, $id)
@@ -218,11 +185,12 @@ class LahanSawahController extends Controller
     {
         $request->validate([
             'user_id' => 'nullable|integer',
+            'pemilik_id' => 'nullable|integer',
+            'petani_id' => 'nullable|integer',
             'kecamatan_id' => 'required|integer',
             'kelurahan_id' => 'nullable|integer',
             'tipe_lahan_id' => 'nullable|integer',
             'nama_lahan' => 'required|string|max:100',
-            'pemilik_lahan' => 'nullable|string|max:100',
             'tahun_lbs' => 'nullable|in:2017,2024',
             'luas_lahan_hektar' => 'required|numeric|min:0.0001',
             'alamat_detail' => 'nullable|string|max:500',
@@ -238,14 +206,27 @@ class LahanSawahController extends Controller
 
         $lat = (float) $request->input('latitude');
         $lng = (float) $request->input('longitude');
+        $pemilikId = $request->input('pemilik_id', $request->input('user_id'));
+
+        if ($isCreate && !$pemilikId) {
+            throw ValidationException::withMessages(['pemilik_id' => 'Pemilik Kelompok Tani wajib dipilih.']);
+        }
+        if ($pemilikId && !DB::table('users')->where('id', $pemilikId)->where('role_id', 1)->exists()) {
+            throw ValidationException::withMessages(['pemilik_id' => 'Pemilik lahan wajib memiliki role Kelompok Tani.']);
+        }
+
+        $petaniId = $request->input('petani_id', $pemilikId);
+        if ($petaniId && !DB::table('users')->where('id', $petaniId)->whereIn('role_id', [1, 5])->exists()) {
+            throw ValidationException::withMessages(['petani_id' => 'Petani wajib berasal dari Kelompok Tani atau Brigade Pangan.']);
+        }
 
         $payload = [
-            'user_id' => $request->filled('user_id') ? $request->input('user_id') : null,
+            'pemilik_id' => $pemilikId,
+            'petani_id' => $petaniId,
             'kecamatan_id' => $request->input('kecamatan_id'),
             'kelurahan_id' => $request->input('kelurahan_id'),
             'tipe_lahan_id' => $request->input('tipe_lahan_id'),
             'nama_lahan' => $request->input('nama_lahan'),
-            'pemilik_lahan' => $request->input('pemilik_lahan'),
             'tahun_lbs' => $request->input('tahun_lbs', '2024'),
             'luas_lahan_hektar' => $request->input('luas_lahan_hektar'),
             'alamat_detail' => $request->input('alamat_detail'),
@@ -267,8 +248,11 @@ class LahanSawahController extends Controller
             $payload['spasial_updated_at'] = now();
         }
 
-        if (!$isCreate && !$request->filled('user_id')) {
-            unset($payload['user_id']);
+        if (!$isCreate && !$request->filled('user_id') && !$request->filled('pemilik_id')) {
+            unset($payload['pemilik_id']);
+        }
+        if (!$isCreate && !$request->filled('petani_id') && !$request->filled('user_id')) {
+            unset($payload['petani_id']);
         }
 
         return [$payload, $geometry];
@@ -335,7 +319,8 @@ class LahanSawahController extends Controller
     private function baseLahanQuery()
     {
         return DB::table('lahan_sawah')
-            ->leftJoin('users', 'lahan_sawah.user_id', '=', 'users.id')
+            ->leftJoin('users as pemilik', 'lahan_sawah.pemilik_id', '=', 'pemilik.id')
+            ->leftJoin('users as petani', 'lahan_sawah.petani_id', '=', 'petani.id')
             ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
             ->leftJoin('kelurahan', 'lahan_sawah.kelurahan_id', '=', 'kelurahan.id')
             ->leftJoin('tipe_lahan', 'lahan_sawah.tipe_lahan_id', '=', 'tipe_lahan.id')
@@ -346,12 +331,14 @@ class LahanSawahController extends Controller
     {
         $select = [
             'lahan_sawah.id',
-            'lahan_sawah.user_id',
+            'lahan_sawah.pemilik_id',
+            'lahan_sawah.pemilik_id as user_id',
+            'lahan_sawah.petani_id',
             'lahan_sawah.kecamatan_id',
             'lahan_sawah.kelurahan_id',
             'lahan_sawah.tipe_lahan_id',
             'lahan_sawah.nama_lahan',
-            'lahan_sawah.pemilik_lahan',
+            'pemilik.nama_lengkap as pemilik_lahan',
             'lahan_sawah.luas_lahan_hektar',
             'lahan_sawah.hasil_panen_ton',
             'lahan_sawah.produktivitas_ton_ha',
@@ -361,8 +348,8 @@ class LahanSawahController extends Controller
             'lahan_sawah.longitude',
             'lahan_sawah.foto_lahan',
             'lahan_sawah.status_verifikasi',
-            'users.nama_lengkap as nama_petani',
-            'users.email as email_petani',
+            'petani.nama_lengkap as nama_petani',
+            'petani.email as email_petani',
             'kecamatan.nama_kecamatan',
             'kelurahan.nama_kelurahan',
             'tipe_lahan.nama_tipe',

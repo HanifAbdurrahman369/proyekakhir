@@ -29,14 +29,32 @@
 
 <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-[.18em] px-3 py-2 mt-1">Lahan & Produksi</p>
 
-<a href="/dashboard-petani" class="{{ $menuBase }} {{ request()->is('dashboard-petani') ? $menuActive : $menuIdle }}">
+@if($roleId === 1)
+<a href="{{ route('petani.dashboard') }}" class="{{ $menuBase }} {{ request()->is('dashboard-petani') ? $menuActive : $menuIdle }}">
     <span class="{{ $iconBase }} {{ request()->is('dashboard-petani') ? $iconActive : $iconIdle }}">
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
     </span>
-    <span>{{ $lahanLabel }}</span>
+    <span>Lahan Sawah</span>
 </a>
+@else
+<a href="{{ route('petani.dashboard') }}" class="{{ $menuBase }} {{ request()->is('dashboard-petani') ? $menuActive : $menuIdle }}">
+    <span class="{{ $iconBase }} {{ request()->is('dashboard-petani') ? $iconActive : $iconIdle }}">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+    </span>
+    <span>Proses Tanam</span>
+</a>
+@endif
 
 <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-[.18em] px-3 py-2 mt-4">Aktivitas</p>
+
+@if($roleId === 1)
+<a href="{{ route('tambah.lahan') }}" class="{{ $menuBase }} {{ request()->is('tambah-lahan*') ? $menuActive : $menuIdle }}">
+    <span class="{{ $iconBase }} {{ request()->is('tambah-lahan*') ? $iconActive : $iconIdle }}">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+    </span>
+    <span>Daftar Lahan Sawah</span>
+</a>
+@endif
 
 <a href="{{ route('lapor.tanam') }}" class="{{ $menuBase }} {{ request()->is('lapor-tanam*') ? $menuActive : $menuIdle }}">
     <span class="{{ $iconBase }} {{ request()->is('lapor-tanam*') ? $iconActive : $iconIdle }}">
@@ -58,5 +76,5 @@
     <span class="{{ $iconBase }} {{ request()->is('riwayat-panen*') ? $iconActive : $iconIdle }}">
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
     </span>
-    <span>Riwayat Panen</span>
+    <span>Riwayat Aktivitas</span>
 </a>

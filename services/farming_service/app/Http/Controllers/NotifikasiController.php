@@ -109,7 +109,7 @@ class NotifikasiController extends Controller
                 ->where('status_verifikasi', 'PENDING')
                 ->count();
 
-            $pendingPanen = DB::table('lapor_panen')
+            $pendingPanen = DB::table('panen_padi')
                 ->where('status_verifikasi', 'PENDING')
                 ->count();
 

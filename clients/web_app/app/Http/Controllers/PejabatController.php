@@ -119,7 +119,7 @@ class PejabatController extends Controller
             report($e);
         }
 
-        return view('partials.sidebar.produksi-kecamatan', compact('data'));
+        return view('partials.sidebar.pejabat.produksi-kecamatan', compact('data'));
     }
 
     public function lahanKecamatan()
@@ -143,7 +143,7 @@ class PejabatController extends Controller
         }
 
         return view(
-            'partials.sidebar.lahan-kecamatan',
+            'partials.sidebar.pejabat.lahan-kecamatan',
             compact('data')
         );
     }
@@ -165,7 +165,7 @@ class PejabatController extends Controller
             report($e);
         }
 
-        $pdf = Pdf::loadView('partials.sidebar.produksi-kecamatan-pdf', compact('data'));
+        $pdf = Pdf::loadView('partials.sidebar.pejabat.produksi-kecamatan-pdf', compact('data'));
         return $pdf->download('rekap-produksi-kecamatan.pdf');
     }
 
@@ -186,7 +186,7 @@ class PejabatController extends Controller
             report($e);
         }
 
-        $pdf = Pdf::loadView('partials.sidebar.lahan-kecamatan-pdf', compact('data'));
+        $pdf = Pdf::loadView('partials.sidebar.pejabat.lahan-kecamatan-pdf', compact('data'));
         return $pdf->download('rekap-luas-lahan-kecamatan.pdf');
     }
 

@@ -6,32 +6,31 @@ use Illuminate\Database\Eloquent\Model;
 
 class Kelompok extends Model
 {
-    protected $table = 'kelompok';
+    protected $table = 'komunitas';
 
     protected $fillable = [
-        'kode_anggota',
         'nik',
-        'jenis_kelompok',
+        'jenis_komunitas',
         'nama',
-        'nama_kelompok',
+        'nama_komunitas',
         'nomor_hp',
         'alamat',
         'status_keanggotaan',
-        'kelompok_tani_induk_id',
+        'komunitas_induk_id',
     ];
 
     public function users()
     {
-        return $this->hasMany(User::class, 'kelompok_id');
+        return $this->hasMany(User::class, 'komunitas_id');
     }
 
     public function kelompokTaniInduk()
     {
-        return $this->belongsTo(self::class, 'kelompok_tani_induk_id');
+        return $this->belongsTo(self::class, 'komunitas_induk_id');
     }
 
     public function anggotaBrigade()
     {
-        return $this->hasMany(self::class, 'kelompok_tani_induk_id');
+        return $this->hasMany(self::class, 'komunitas_induk_id');
     }
 }

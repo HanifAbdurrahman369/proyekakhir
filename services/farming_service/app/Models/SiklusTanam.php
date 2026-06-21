@@ -6,33 +6,36 @@ use Illuminate\Database\Eloquent\Model;
 
 class SiklusTanam extends Model
 {
-    protected $table = 'siklus_tanam';
+    protected $table = 'tanam_padi';
     protected $primaryKey = 'id';
     public $timestamps = true;
 
     protected $fillable = [
         'lahan_id',
         'bibit_id',
+        'pupuk_id',
+        'petani_id',
         'tanggal_tanam',
-        'estimasi_panen',
+        'tanggal_pemupukan',
+        'takaran_pupuk_kg',
+        'pemupukan_dicatat_oleh',
+        'pemupukan_dicatat_at',
+        'estimasi_hari',
         'estimasi_tanggal_panen',
         'status_aktif',
-        'tanggal_panen',
-        'hasil_panen',
         'status_verifikasi',
-        'created_by',
-        'peran_pelapor',
-        'verified_by',
-        'verified_at',
+        'diverifikasi_oleh',
+        'diverifikasi_at',
         'catatan_verifikasi',
     ];
 
     protected $casts = [
-        'hasil_panen' => 'float',
         'tanggal_tanam' => 'date',
         'estimasi_tanggal_panen' => 'date',
-        'tanggal_panen' => 'date',
-        'verified_at' => 'datetime',
+        'tanggal_pemupukan' => 'date',
+        'takaran_pupuk_kg' => 'float',
+        'pemupukan_dicatat_at' => 'datetime',
+        'diverifikasi_at' => 'datetime',
     ];
 
     public function lahan()
@@ -45,8 +48,18 @@ class SiklusTanam extends Model
         return $this->belongsTo(JenisBibit::class, 'bibit_id');
     }
 
+    public function pupuk()
+    {
+        return $this->belongsTo(JenisPupuk::class, 'pupuk_id');
+    }
+
     public function petani()
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(User::class, 'petani_id');
+    }
+
+    public function panen()
+    {
+        return $this->hasOne(LaporPanen::class, 'tanam_padi_id');
     }
 }
