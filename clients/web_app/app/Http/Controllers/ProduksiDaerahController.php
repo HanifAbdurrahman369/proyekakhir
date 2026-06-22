@@ -21,7 +21,7 @@ class ProduksiDaerahController extends Controller
      */
     public function index(Request $request)
     {
-        return view('produksi-daerah');
+        return view('produksi-daerah', ['showTable' => true]);
     }
 
     /**

@@ -215,6 +215,8 @@ class PetugasController extends Controller
     {
         $pendingLahan = $this->getData('/lahan/pending', []);
         $panenPending = $this->getData('/panen/pending', []);
+        $spasialReferensi = $this->getData('/spasial-lahan/referensi', []);
+        $petani = $spasialReferensi['petani'] ?? [];
 
         return view('dashboard.petugas', [
             'page' => 'verifikasi-data-petani',
@@ -223,6 +225,7 @@ class PetugasController extends Controller
             'pendingPanen' => $panenPending,
             'highlightPanenId' => $request->query('id'),
             'highlightLahanId' => $request->query('lahan_id'),
+            'petani' => $petani,
         ]);
     }
 

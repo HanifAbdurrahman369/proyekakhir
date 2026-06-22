@@ -11,6 +11,13 @@
 
 @section('content')
 <div class="space-y-6">
+    @php
+        $currentMonth = (int) now()->format('n');
+        $isKelompokTaniAllowed = ($currentMonth >= 1 && $currentMonth <= 9);
+        $isBrigadePanganAllowed = in_array($currentMonth, [10, 11, 12, 1], true);
+        $isAllowedToPlant = ($roleId === 1 && $isKelompokTaniAllowed) || ($roleId === 5 && $isBrigadePanganAllowed);
+    @endphp
+
     <header class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
             <span class="inline-flex rounded-full border border-[#dfeccc] bg-[#edf8dc] px-3 py-1 text-[11px] font-bold text-[#3E7D00]">{{ $roleName }}</span>
@@ -21,12 +28,32 @@
             @if($roleId === 1)
                 <a href="{{ route('tambah.lahan') }}" class="rounded-[26px] border border-[#3E7D00] bg-white px-5 py-2.5 text-xs font-semibold text-[#3E7D00] hover:bg-[#edf8dc] transition shadow-[0_14px_38px_rgba(32,60,16,.06)]">Tambah Lahan</a>
             @endif
-            <a href="{{ route('lapor.tanam') }}" class="rounded-[26px] bg-[#3E7D00] px-5 py-2.5 text-xs font-semibold text-white hover:bg-[#2f5c12] transition shadow-[0_14px_38px_rgba(32,60,16,.06)]">Lapor Tanam</a>
+            
+            @if($isAllowedToPlant)
+                <a href="{{ route('lapor.tanam') }}" class="rounded-[26px] bg-[#3E7D00] px-5 py-2.5 text-xs font-semibold text-white hover:bg-[#2f5c12] transition shadow-[0_14px_38px_rgba(32,60,16,.06)]">Lapor Tanam</a>
+            @else
+                <button type="button" disabled class="rounded-[26px] bg-slate-300 px-5 py-2.5 text-xs font-semibold text-slate-500 cursor-not-allowed shadow-[0_14px_38px_rgba(32,60,16,.06)]" title="Masa tanam Anda sedang dikunci">Lapor Tanam (Kunci)</button>
+            @endif
+
             @if($roleId === 1)
                 <a href="{{ route('lapor.panen') }}" class="rounded-[26px] bg-[#203c10] px-5 py-2.5 text-xs font-semibold text-white hover:bg-[#14280b] transition shadow-[0_14px_38px_rgba(32,60,16,.06)]">Lapor Hasil Panen</a>
             @endif
         </div>
     </header>
+
+    @if(!$isAllowedToPlant)
+        <div class="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-amber-800 text-sm font-semibold flex items-start gap-3 shadow-sm">
+            <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <div>
+                <p class="font-bold">Masa Tanam Sedang Terkunci</p>
+                <p class="text-xs text-amber-700 mt-0.5 leading-relaxed">
+                    Saat ini (Bulan {{ now()->translatedFormat('F') }}) bukan jadwal masa tanam Anda. 
+                    Masa tanam untuk <strong>{{ $roleId === 5 ? 'Brigade Pangan adalah Oktober - Januari' : 'Kelompok Tani adalah Januari - September' }}</strong>. 
+                    Tombol lapor tanam dinonaktifkan sementara.
+                </p>
+            </div>
+        </div>
+    @endif
 
     @if(session('success'))
         <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-700">{{ session('success') }}</div>
@@ -87,12 +114,11 @@
             @endforelse
         </div>
     </section>
-
-    @if($roleId === 1)
+    @if(in_array($roleId, [1, 5], true))
         <section class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
             <div class="border-b border-[#e7efd8] px-5 py-4">
-                <h2 class="text-sm font-bold text-[#14280b]">Daftar lahan milik Kelompok Tani</h2>
-                <p class="mt-1 text-[11px] text-slate-500">Status pengajuan dan catatan verifikasi petugas.</p>
+                <h2 class="text-sm font-bold text-[#14280b]">{{ $roleId === 5 ? 'Daftar lahan garapan Brigade Pangan' : 'Daftar lahan milik Kelompok Tani' }}</h2>
+                <p class="mt-1 text-[11px] text-slate-500">{{ $roleId === 5 ? 'Daftar lahan yang Anda garap dan kelola.' : 'Status pengajuan dan catatan verifikasi petugas.' }}</p>
             </div>
             <div class="divide-y divide-[#edf4df]">
                 @forelse($lahan['data'] ?? [] as $item)
@@ -111,10 +137,12 @@
                         @if($status === 'DITOLAK')
                             <div class="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
                                 <p>{{ $item['alasan_penolakan'] ?? $item['catatan_verifikasi'] ?? 'Pengajuan perlu diperbaiki.' }}</p>
-                                <a href="{{ route('lahan.edit', $item['id']) }}" class="mt-2 inline-block font-bold hover:underline">Perbaiki pengajuan</a>
+                                @if($roleId === 1)
+                                    <a href="{{ route('lahan.edit', $item['id']) }}" class="mt-2 inline-block font-bold hover:underline">Perbaiki pengajuan</a>
+                                @endif
                             </div>
                         @endif
-                        @if(in_array($status, ['PENDING', 'DITOLAK'], true))
+                        @if($roleId === 1 && in_array($status, ['PENDING', 'DITOLAK'], true))
                             <form action="{{ route('lahan.destroy', $item['id']) }}" method="POST" class="mt-3" onsubmit="return confirm('Hapus pengajuan lahan ini?')">
                                 @csrf @method('DELETE')
                                 <button class="rounded-lg border border-red-200 px-3 py-1.5 text-[11px] font-bold text-red-600 hover:bg-red-50">Hapus Pengajuan</button>
@@ -122,7 +150,7 @@
                         @endif
                     </article>
                 @empty
-                    <p class="px-5 py-10 text-center text-xs text-slate-500">Belum ada lahan yang diajukan.</p>
+                    <p class="px-5 py-10 text-center text-xs text-slate-500">{{ $roleId === 5 ? 'Belum ada lahan yang ditugaskan.' : 'Belum ada lahan yang diajukan.' }}</p>
                 @endforelse
             </div>
             @if(($lahan['last_page'] ?? 1) > 1)

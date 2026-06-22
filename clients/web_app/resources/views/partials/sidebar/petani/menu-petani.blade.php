@@ -56,12 +56,28 @@
 </a>
 @endif
 
+@php
+    $currentMonth = (int) now()->format('n');
+    $isKelompokTaniAllowed = ($currentMonth >= 1 && $currentMonth <= 9);
+    $isBrigadePanganAllowed = in_array($currentMonth, [10, 11, 12, 1], true);
+    $isAllowedToPlant = ($roleId === 1 && $isKelompokTaniAllowed) || ($roleId === 5 && $isBrigadePanganAllowed);
+@endphp
+
+@if($isAllowedToPlant)
 <a href="{{ route('lapor.tanam') }}" class="{{ $menuBase }} {{ request()->is('lapor-tanam*') ? $menuActive : $menuIdle }}">
     <span class="{{ $iconBase }} {{ request()->is('lapor-tanam*') ? $iconActive : $iconIdle }}">
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 0 0 8 20C19 20 22 3 22 3c-1 2-8 2-8 2s4-4-3 1C7 9 7 15 7 15s0-3 3-5.31C13.77 7.73 17 8 17 8Z"/></svg>
     </span>
     <span>Lapor Tanam</span>
 </a>
+@else
+<div class="group flex items-center gap-2.5 px-3 py-2.5 rounded-2xl text-[13px] font-semibold text-slate-400 cursor-not-allowed opacity-50 select-none" title="Masa tanam Anda sedang dikunci">
+    <span class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-slate-100 text-slate-400">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 0 0 8 20C19 20 22 3 22 3c-1 2-8 2-8 2s4-4-3 1C7 9 7 15 7 15s0-3 3-5.31C13.77 7.73 17 8 17 8Z"/></svg>
+    </span>
+    <span>Lapor Tanam (Kunci)</span>
+</div>
+@endif
 
 @if($roleId === 1)
 <a href="{{ route('lapor.panen') }}" class="{{ $menuBase }} {{ request()->is('lapor-panen*') ? $menuActive : $menuIdle }}">

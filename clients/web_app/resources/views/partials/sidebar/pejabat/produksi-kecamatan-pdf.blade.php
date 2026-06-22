@@ -12,28 +12,62 @@
             font-size: 12px;
             line-height: 1.5;
         }
-        .header {
+        .header-banner {
+            border-bottom: 2px solid #3e7d00;
+            padding-bottom: 18px;
             margin-bottom: 30px;
-            border-bottom: 2px solid #3E7D00;
-            padding-bottom: 15px;
+            color: #1a1a1a;
         }
-        .header table {
+        .header-banner table {
             width: 100%;
+            border-collapse: collapse;
+            border: none;
         }
-        .header .title {
-            font-size: 24px;
+        .header-banner td {
+            border: none;
+            padding: 0;
+        }
+        .header-banner .logo-container {
+            width: 55px;
+            vertical-align: middle;
+        }
+        .header-banner .logo-container img {
+            width: 48px;
+            height: auto;
+            display: block;
+        }
+        .header-banner .title-container {
+            vertical-align: middle;
+            padding-left: 12px;
+        }
+        .header-banner .system-subtitle {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #555555;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            line-height: 1.2;
+        }
+        .header-banner .system-title {
+            font-size: 20px;
             font-weight: bold;
             color: #14280b;
+            line-height: 1.2;
+            margin-top: 2px;
         }
-        .header .subtitle {
-            font-size: 12px;
-            color: #555555;
-            margin-top: 5px;
-        }
-        .header .date {
+        .header-banner .info-container {
             text-align: right;
-            font-size: 11px;
-            color: #777777;
+            vertical-align: middle;
+            font-size: 10px;
+            color: #555555;
+            line-height: 1.4;
+        }
+        .header-banner .app-name {
+            font-weight: bold;
+            color: #3e7d00;
+            font-size: 18px;
+            margin-bottom: 2px;
+            letter-spacing: 0.5px;
         }
         .table-data {
             width: 100%;
@@ -84,16 +118,21 @@
 </head>
 <body>
 
-    <div class="header">
-        <table style="width: 100%; border: none;">
+    <div class="header-banner">
+        <table>
             <tr>
-                <td style="border: none; vertical-align: top;">
-                    <div class="title">SiTani</div>
-                    <div class="subtitle">Rekap Total Produksi Padi Per Kecamatan</div>
+                <td class="logo-container">
+                    <img src="{{ public_path('storage/logo.png') }}" alt="Logo">
                 </td>
-                <td class="date" style="border: none; vertical-align: top; text-align: right;">
-                    Tanggal Cetak: {{ now()->translatedFormat('d F Y H:i') }}<br>
-                    Sistem SIG-PALA
+                <td class="title-container">
+                    <div class="system-subtitle">Sistem Informasi</div>
+                    <div class="system-title">Dinas Pertanian</div>
+                </td>
+                <td class="info-container">
+                    <div>Rekap Total Produksi Padi Per Kecamatan</div>
+                    <div style="margin-top: 3px; color: #555555; font-weight: 500;">
+                        Tanggal Cetak: {{ now()->translatedFormat('d F Y H:i') }}
+                    </div>
                 </td>
             </tr>
         </table>

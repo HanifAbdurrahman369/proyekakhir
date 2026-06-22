@@ -91,6 +91,7 @@ class LahanSawahController extends Controller
         }
 
         $response = Http::withToken($token)
+            ->acceptJson()
             ->post($this->gatewayUrl() . '/api/lahan', [
                 'nama_lahan' => $request->nama_lahan,
                 'kecamatan_id' => $request->kecamatan_id,
@@ -98,6 +99,7 @@ class LahanSawahController extends Controller
                 'tipe_lahan_id' => $request->tipe_lahan_id,
                 'alamat_detail' => $request->alamat_detail,
                 'luas_lahan_hektar' => $request->luas_lahan_hektar,
+                'petani_id' => $request->petani_id,
             ]);
 
         if ($response->successful()) {
@@ -125,6 +127,7 @@ class LahanSawahController extends Controller
                 'tipe_lahan_id' => $request->tipe_lahan_id,
                 'alamat_detail' => $request->alamat_detail,
                 'luas_lahan_hektar' => $request->luas_lahan_hektar,
+                'petani_id' => $request->petani_id,
             ]);
 
         if ($response->successful()) {

@@ -21,7 +21,7 @@ class PetaniController extends Controller
         $roleId = (int) session('role_id');
 
         $response = null;
-        if ($roleId === 1) {
+        if (in_array($roleId, [1, 5], true)) {
             $response = Http::withToken($token)
                 ->acceptJson()
                 ->get($this->gatewayUrl . '/api/lahan', [

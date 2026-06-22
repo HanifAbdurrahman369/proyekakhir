@@ -9,6 +9,7 @@ use App\Http\Controllers\PetaniController;
 use App\Http\Controllers\LahanSawahController;
 use App\Http\Controllers\SiklusTanamController;
 use App\Http\Controllers\PejabatController;
+use App\Http\Controllers\ProduksiDaerahController;
 
 /*
 |--------------------------------------------------------------------------
@@ -82,6 +83,7 @@ Route::middleware(['role:3'])->group(function () {
     Route::get('/pejabat/produksi-kecamatan/pdf', [PejabatController::class, 'exportProduksiPDF'])->name('produksi.kecamatan.pdf');
     Route::get('/pejabat/lahan-kecamatan', [PejabatController::class, 'lahanKecamatan'])->name('lahan.kecamatan');
     Route::get('/pejabat/lahan-kecamatan/pdf', [PejabatController::class, 'exportLahanPDF'])->name('lahan.kecamatan.pdf');
+    Route::get('/laporan-produksi', [ProduksiDaerahController::class, 'index'])->name('laporan.produksi');
 });
 
 

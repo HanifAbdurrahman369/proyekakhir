@@ -18,6 +18,7 @@
     $lahanDiterima = $lahanDiterima ?? $lahan ?? [];
     $lahanBelumDipetakan = $lahanBelumDipetakan ?? [];
     $monitoring = $monitoring ?? [];
+    $petani = $petani ?? [];
 
     $ambil = function ($row, $keys, $default = '-') {
         foreach ((array) $keys as $key) {

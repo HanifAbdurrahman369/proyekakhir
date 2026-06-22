@@ -14,10 +14,11 @@ class LahanSawahController extends Controller
     public function index(Request $request)
     {
         $user = $request->attributes->get('auth');
-        if ((int) ($user->role_id ?? 0) !== 1) {
+        $roleId = (int) ($user->role_id ?? 0);
+        if (!in_array($roleId, [1, 5], true)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Manajemen lahan hanya tersedia untuk Kelompok Tani sebagai pemilik lahan.',
+                'message' => 'Manajemen lahan hanya tersedia untuk Kelompok Tani atau Brigade Pangan.',
             ], 403);
         }
 
@@ -47,8 +48,14 @@ class LahanSawahController extends Controller
             $select[] = 'status_spasial';
         }
 
-        $data = LahanSawah::with('pemilik:id,nama_lengkap')->where('pemilik_id', $user->sub)
-            ->select($select)
+        $query = LahanSawah::with('pemilik:id,nama_lengkap');
+        if ($roleId === 1) {
+            $query->where('pemilik_id', $user->sub);
+        } else {
+            $query->where('petani_id', $user->sub);
+        }
+
+        $data = $query->select($select)
             ->orderByRaw("CASE status_verifikasi WHEN 'PENDING' THEN 1 WHEN 'DITOLAK' THEN 2 WHEN 'DITERIMA' THEN 3 ELSE 4 END")
             ->orderByDesc('id')
             ->paginate(2);
