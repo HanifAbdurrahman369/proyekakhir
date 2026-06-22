@@ -24,34 +24,6 @@
                     <input type="text" id="search-lahan" placeholder="Cari nama lahan/pemilik..." class="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-3.5 top-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </div>
-                <button id="btn-toggle-filter" class="shrink-0 bg-white border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl shadow-sm font-medium text-sm hover:bg-slate-50 hover:text-emerald-700 transition-all flex items-center justify-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-                    Filter
-                </button>
-            </div>
-        </div>
-
-        <!-- Inline Filter Panel -->
-        <div id="filter-panel" class="hidden mb-6 p-4 rounded-2xl bg-slate-50 border border-slate-100 flex-col md:flex-row gap-4 items-end">
-            <div class="w-full md:w-1/3">
-                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Kecamatan</label>
-                <select id="filter-kecamatan" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none bg-white">
-                    <option value="">Semua Kecamatan</option>
-                </select>
-            </div>
-            <div class="w-full md:w-1/3">
-                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Jenis Lahan</label>
-                <select id="filter-tipe" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none bg-white">
-                    <option value="">Semua Jenis</option>
-                    <option value="Irigasi">Irigasi</option>
-                    <option value="Tadah Hujan">Tadah Hujan</option>
-                    <option value="Lebak">Lebak</option>
-                    <option value="Pasang Surut">Pasang Surut</option>
-                </select>
-            </div>
-            <div class="w-full md:w-auto flex gap-2">
-                <button id="btn-apply-filter" class="flex-1 md:flex-none bg-emerald-600 text-white hover:bg-emerald-700 font-semibold py-2 px-5 rounded-xl transition-colors text-sm">Terapkan</button>
-                <button id="btn-reset-filter" class="flex-1 md:flex-none bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 font-semibold py-2 px-4 rounded-xl transition-colors text-sm">Reset</button>
             </div>
         </div>
 

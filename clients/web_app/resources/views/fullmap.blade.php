@@ -18,8 +18,6 @@
     
     <style>
         /* CSS Tambahan Khusus Halaman Peta Publik */
-        .filter-panel { transform: translateX(-100%); transition: transform 0.3s ease; }
-        .filter-panel.open { transform: translateX(0); }
         .map-loading { backdrop-filter: blur(4px); }
     </style>
 </head>
@@ -38,16 +36,12 @@
 
     <!-- Top Bar (Back & Search) -->
     <div class="absolute top-6 left-0 right-0 z-[9990] flex justify-between items-start px-6 pointer-events-none">
-        <!-- Kiri: Tombol Back & Tombol Filter -->
+        <!-- Kiri: Tombol Back -->
         <div class="flex gap-3 pointer-events-auto">
             <a href="{{ url('/') }}" class="bg-white/95 backdrop-blur-md text-slate-700 px-6 py-3 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-slate-100 font-medium text-sm hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all duration-300 flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                 Kembali
             </a>
-            <button id="btn-toggle-filter" class="bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-[0_4px_20px_rgba(5,150,105,0.3)] font-medium text-sm hover:bg-emerald-700 transition-all duration-300 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-                Filter Lahan
-            </button>
         </div>
 
         <!-- Tengah: Search Bar -->
@@ -63,44 +57,9 @@
         </div>
         
         <!-- Kanan: Spacer -->
-        <div class="w-[200px] hidden lg:block"></div>
+        <div class="w-[100px] hidden lg:block"></div>
     </div>
 
-    <!-- Filter Panel (Kiri) -->
-    <div id="filter-panel" class="filter-panel absolute top-0 left-0 w-80 h-full bg-white/95 backdrop-blur-xl z-[9980] shadow-[10px_0_40px_rgba(0,0,0,0.1)] pt-28 pb-6 px-6 overflow-y-auto flex flex-col gap-6">
-        <div>
-            <h3 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-                Filter Spesifik
-            </h3>
-            
-            <div class="space-y-5">
-                <!-- Filter Kecamatan -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Kecamatan</label>
-                    <select id="filter-kecamatan" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none bg-white">
-                        <option value="">Semua Kecamatan</option>
-                    </select>
-                </div>
-
-                <!-- Filter Tipe Lahan -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Jenis Lahan</label>
-                    <select id="filter-tipe" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none bg-white">
-                        <option value="">Semua Jenis</option>
-                        <option value="Irigasi">Irigasi</option>
-                        <option value="Tadah Hujan">Tadah Hujan</option>
-                        <option value="Lebak">Lebak</option>
-                        <option value="Pasang Surut">Pasang Surut</option>
-                    </select>
-                </div>
-
-                <!-- Action -->
-                <button id="btn-apply-filter" class="w-full mt-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-600 hover:text-white font-semibold py-2.5 rounded-xl transition-colors">Terapkan Filter</button>
-                <button id="btn-reset-filter" class="w-full mt-2 text-slate-500 hover:text-slate-800 text-sm font-medium py-1">Reset</button>
-            </div>
-        </div>
-    </div>
 
     <!-- Legenda (Kanan Bawah) -->
     <div class="absolute bottom-6 left-6 z-[9000] bg-white/90 backdrop-blur-md border border-slate-200 p-4 rounded-2xl shadow-lg pointer-events-auto">

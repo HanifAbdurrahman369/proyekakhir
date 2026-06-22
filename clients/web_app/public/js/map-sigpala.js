@@ -361,31 +361,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 width: 100% !important;
             }
         }
-        /* Custom Kelurahan Select */
-        .kelurahan-select-control {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 8px 12px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            border: 1px solid var(--slate-100);
-            font-family: 'Poppins', sans-serif;
-            margin-top: 24px !important;
-            margin-right: 24px !important;
-        }
-
-        .kelurahan-select-control select {
-            border: 1px solid var(--slate-200);
-            border-radius: 8px;
-            padding: 6px 10px;
-            font-family: 'Poppins', sans-serif;
-            font-size: 13px;
-            color: var(--slate-700);
-            outline: none;
-            background: white;
-            cursor: pointer;
-            min-width: 180px;
-        }
+        /* Kelurahan control styles removed */
     `;
 
     if (isFullMap) {
@@ -415,7 +391,6 @@ document.addEventListener("DOMContentLoaded", function () {
     // 2. Layer Groups
     const kabGroup = L.layerGroup().addTo(map);
     const kecGroup = L.layerGroup().addTo(map);
-    const kelGroup = L.layerGroup();
     const lahanGroup = (typeof L.markerClusterGroup !== 'undefined') 
         ? L.markerClusterGroup({ disableClusteringAtZoom: 16 }) 
         : L.layerGroup();
@@ -439,23 +414,7 @@ document.addEventListener("DOMContentLoaded", function () {
         position: 'topright'
     }).addTo(map);
 
-    // Custom Kelurahan Control
-    let geojsonKelurahanData = null;
-    let kelurahanLayer = null;
-
-    const kelurahanControl = L.control({position: 'topright'});
-    kelurahanControl.onAdd = function (map) {
-        const div = L.DomUtil.create('div', 'kelurahan-select-control leaflet-bar');
-        div.innerHTML = `
-            <div style="font-size:11px; font-weight:bold; color:var(--slate-500); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">Batas Kelurahan</div>
-            <select id="kelurahan-filter">
-                <option value="all">Semua Kelurahan</option>
-            </select>
-        `;
-        L.DomEvent.disableClickPropagation(div);
-        return div;
-    };
-    kelurahanControl.addTo(map);
+    // Kelurahan Control removed
 
     // 4. Ambil Batas Kabupaten Barito Kuala
     fetch(`${apiBase}/batas-wilayah`)
@@ -484,108 +443,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 onEachFeature: sigpalaBindKecamatanLabel
             }).addTo(kecGroup);
 
-            // Populate Filter Kecamatan UI
-            const filterKecSelect = document.getElementById('filter-kecamatan');
-            if (filterKecSelect && featureCollection.features) {
-                const sortedKec = [...featureCollection.features].sort((a,b) => {
-                    const nA = (a.properties.nama_kecamatan || '').toLowerCase();
-                    const nB = (b.properties.nama_kecamatan || '').toLowerCase();
-                    return nA.localeCompare(nB);
-                });
-                sortedKec.forEach(f => {
-                    const name = f.properties.nama_kecamatan;
-                    if(name) {
-                        const opt = document.createElement('option');
-                        opt.value = name; opt.textContent = name;
-                        filterKecSelect.appendChild(opt);
-                    }
-                });
-            }
         })
         .catch(err => console.error("API Batas Kecamatan bermasalah"));
 
-    // 4c. Ambil Batas Kelurahan dan populate select
-    fetch(`${apiBase}/batas-kelurahan`)
-        .then(res => res.json())
-        .then(data => {
-            geojsonKelurahanData = data.data || data;
-            
-            // Populate select
-            const selectKelurahan = document.getElementById('kelurahan-filter');
-            if (selectKelurahan && geojsonKelurahanData.features) {
-                // Sort features alphabetically by kelurahan name
-                const sortedFeatures = [...geojsonKelurahanData.features].sort((a, b) => {
-                    const nameA = (a.properties.nama_kelurahan || a.properties.kelurahan || '').toLowerCase();
-                    const nameB = (b.properties.nama_kelurahan || b.properties.kelurahan || '').toLowerCase();
-                    return nameA.localeCompare(nameB);
-                });
-
-                sortedFeatures.forEach(feature => {
-                    const name = feature.properties.nama_kelurahan || feature.properties.kelurahan;
-                    if (name) {
-                        const option = document.createElement('option');
-                        option.value = name;
-                        option.textContent = name;
-                        selectKelurahan.appendChild(option);
-                    }
-                });
-
-                // Initial render of all kelurahan
-                renderKelurahan('all');
-
-                // Add event listener
-                selectKelurahan.addEventListener('change', function(e) {
-                    renderKelurahan(e.target.value);
-                });
-            }
-        })
-        .catch(err => console.error("API Batas Kelurahan bermasalah"));
-
-    function renderKelurahan(selectedName) {
-        if (kelurahanLayer) {
-            kelGroup.removeLayer(kelurahanLayer);
-        }
-
-        let featuresToRender = geojsonKelurahanData.features;
-        if (selectedName !== 'all') {
-            featuresToRender = featuresToRender.filter(f => {
-                const name = f.properties.nama_kelurahan || f.properties.kelurahan;
-                return name === selectedName;
-            });
-        }
-
-        kelurahanLayer = L.geoJSON(featuresToRender, {
-            interactive: false,
-            style: {
-                color: "#eab308", // Yellow color for kelurahan
-                weight: 1.5,
-                opacity: 0.8,
-                fillColor: "#fef08a",
-                fillOpacity: 0.1
-            },
-            onEachFeature: function(feature, layer) {
-                const props = feature?.properties || {};
-                const label = props.nama_kelurahan || props.kelurahan || props.label;
-                if (!label) return;
-
-                layer.bindTooltip(label, {
-                    permanent: false,
-                    direction: "center",
-                    className: "sigpala-kecamatan-label" // reuse style
-                });
-            }
-        }).addTo(kelGroup);
-        
-        // Add kelGroup to map if it's not already
-        if (!map.hasLayer(kelGroup)) {
-            kelGroup.addTo(map);
-        }
-
-        // Auto zoom if a specific kelurahan is selected
-        if (selectedName !== 'all' && kelurahanLayer.getBounds().isValid()) {
-            map.fitBounds(kelurahanLayer.getBounds(), { padding: [20, 20], maxZoom: 14 });
-        }
-    }
+    // Kelurahan fetch removed
 
     // 5. Ambil Lahan Sawah
     // 5. Ambil Lahan Sawah
@@ -642,78 +503,12 @@ document.addEventListener("DOMContentLoaded", function () {
         currentLahanLayer.addTo(lahanGroup);
     }
 
-    // ==========================================
-    // FILTER & SEARCH UI LOGIC
-    // ==========================================
-    const btnToggleFilter = document.getElementById('btn-toggle-filter');
-    const filterPanel = document.getElementById('filter-panel');
-    const filterKecamatan = document.getElementById('filter-kecamatan');
-    const filterTipe = document.getElementById('filter-tipe');
-    const btnApplyFilter = document.getElementById('btn-apply-filter');
-    const btnResetFilter = document.getElementById('btn-reset-filter');
+    // Filter removed
+
+    // Search Logic
     const searchInput = document.getElementById('search-lahan');
     const searchResults = document.getElementById('search-results');
 
-    // Toggle Filter Panel
-    if (btnToggleFilter && filterPanel) {
-        btnToggleFilter.addEventListener('click', () => {
-            if(filterPanel.classList.contains('hidden')) {
-                // For Dashboard
-                filterPanel.classList.remove('hidden');
-                filterPanel.classList.add('flex');
-            } else if (filterPanel.classList.contains('flex')) {
-                filterPanel.classList.remove('flex');
-                filterPanel.classList.add('hidden');
-            } else {
-                // For Public Map
-                filterPanel.classList.toggle('open');
-            }
-        });
-    }
-
-    // Apply Filter
-    if (btnApplyFilter) {
-        btnApplyFilter.addEventListener('click', () => {
-            const valKec = filterKecamatan ? filterKecamatan.value : '';
-            const valTipe = filterTipe ? filterTipe.value : '';
-
-            const filtered = allLahanFeatures.filter(f => {
-                const props = f.properties;
-                const matchKec = valKec === '' || (props.kecamatan || props.nama_kecamatan) === valKec;
-                const matchTipe = valTipe === '' || (props.tipe_lahan || props.nama_tipe) === valTipe;
-                return matchKec && matchTipe;
-            });
-
-            renderLahanLayer(filtered);
-
-            // Auto zoom if features exist
-            if (filtered.length > 0) {
-                // Need to use a temporary geojson to get bounds
-                const tempLayer = L.geoJSON(filtered);
-                map.fitBounds(tempLayer.getBounds(), { padding: [20,20] });
-            }
-            
-            if (filterPanel && filterPanel.classList.contains('open')) {
-                filterPanel.classList.remove('open');
-            }
-        });
-    }
-
-    // Reset Filter
-    if (btnResetFilter) {
-        btnResetFilter.addEventListener('click', () => {
-            if(filterKecamatan) filterKecamatan.value = '';
-            if(filterTipe) filterTipe.value = '';
-            renderLahanLayer(allLahanFeatures);
-            
-            // Refit map
-            if (currentLahanLayer && currentLahanLayer.getBounds().isValid()) {
-                map.fitBounds(currentLahanLayer.getBounds(), { padding: [20,20] });
-            }
-        });
-    }
-
-    // Search Logic
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
             const query = e.target.value.toLowerCase().trim();
