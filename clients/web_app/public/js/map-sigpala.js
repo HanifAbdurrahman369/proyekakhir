@@ -416,7 +416,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const kabGroup = L.layerGroup().addTo(map);
     const kecGroup = L.layerGroup().addTo(map);
     const kelGroup = L.layerGroup();
-    const lahanGroup = L.layerGroup().addTo(map);
+    const lahanGroup = (typeof L.markerClusterGroup !== 'undefined') 
+        ? L.markerClusterGroup({ disableClusteringAtZoom: 16 }) 
+        : L.layerGroup();
+    lahanGroup.addTo(map);
 
     // 3. Konfigurasi Layer Control
     const baseMaps = {
@@ -480,6 +483,24 @@ document.addEventListener("DOMContentLoaded", function () {
                 style: sigpalaKecamatanStyle,
                 onEachFeature: sigpalaBindKecamatanLabel
             }).addTo(kecGroup);
+
+            // Populate Filter Kecamatan UI
+            const filterKecSelect = document.getElementById('filter-kecamatan');
+            if (filterKecSelect && featureCollection.features) {
+                const sortedKec = [...featureCollection.features].sort((a,b) => {
+                    const nA = (a.properties.nama_kecamatan || '').toLowerCase();
+                    const nB = (b.properties.nama_kecamatan || '').toLowerCase();
+                    return nA.localeCompare(nB);
+                });
+                sortedKec.forEach(f => {
+                    const name = f.properties.nama_kecamatan;
+                    if(name) {
+                        const opt = document.createElement('option');
+                        opt.value = name; opt.textContent = name;
+                        filterKecSelect.appendChild(opt);
+                    }
+                });
+            }
         })
         .catch(err => console.error("API Batas Kecamatan bermasalah"));
 
@@ -567,96 +588,182 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // 5. Ambil Lahan Sawah
-  // 5. Ambil Lahan Sawah
+    // 5. Ambil Lahan Sawah
+    let allLahanFeatures = [];
+    let currentLahanLayer = null;
+
     fetch(`${apiBase}/map-lahan`)
         .then(res => res.json())
         .then(data => {
-            L.geoJSON(data, {
-                style: { color: "#16a34a", fillColor: "#22c55e", fillOpacity: 0.6 },
-                onEachFeature: function (feature, layer) {
-                    const props = feature.properties;
-                    const namaLahan = sigpalaDisplay(props.nama_lahan);
-                    const pemilik = sigpalaDisplay(props.pemilik || props.pemilik_lahan);
-                    const tipeLahan = sigpalaDisplay(props.tipe_lahan || props.nama_tipe, 'Belum Ditentukan');
-                    const tahunLbs = sigpalaDisplay(props.tahun_lbs);
-                    const wilayah = `${sigpalaDisplay(props.kecamatan)} / ${sigpalaDisplay(props.kelurahan)}`;
-                    const luasHa = sigpalaNumber(props.luas_ha || props.luas_lahan_hektar);
-                    const hasilPanen = sigpalaNumber(props.hasil_panen || props.hasil_panen_ton);
-                    const produktivitas = sigpalaNumber(props.produktivitas || props.produktivitas_ton_ha);
+            // Save features for filtering/searching
+            allLahanFeatures = data.features || data;
+            
+            renderLahanLayer(allLahanFeatures);
 
-                    layer.on('click', function () {
-                        sigpalaZoomToFeature(map, layer, feature);
-                    });
-                    // ============================================
-                    // POPUP REDESIGN — CLEAN GREEN CARD
-                    // ============================================
-                    const popupContent = `
-                        <div style="font-family:'Poppins',sans-serif; min-width:220px; overflow:hidden;">
-                            
-                            <!-- HEADER POPUP -->
-                            <div style="background:#16a34a; padding:14px 16px 12px;">
-                                <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
-                                    <div style="width:28px; height:28px; background:rgba(255,255,255,0.2); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;">🌾</div>
-                                    <div>
-                                        <p style="margin:0; font-size:13px; font-weight:700; color:#ffffff; line-height:1.3;">${namaLahan}</p>
-                                        <p style="margin:0; font-size:11px; color:rgba(255,255,255,0.75); font-weight:400;">${tipeLahan}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- BODY POPUP -->
-                            <div style="background:#ffffff; padding:12px 16px;">
-                                <div style="display:flex; align-items:center; gap:6px; margin-bottom:10px;">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                    <p style="margin:0; font-size:12px; color:#64748b; font-weight:400;">Pemilik: <span style="font-weight:600; color:#334155;">${pemilik}</span></p>
-                                </div>
-
-                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
-                                    <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:8px 10px; text-align:center;">
-                                        <p style="margin:0; font-size:10px; color:#16a34a; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Luas</p>
-                                        <p style="margin:0; font-size:14px; font-weight:700; color:#166534;">${luasHa} <span style="font-size:10px; font-weight:500;">Ha</span></p>
-                                    </div>
-                                    <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:8px 10px; text-align:center;">
-                                        <p style="margin:0; font-size:10px; color:#16a34a; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Panen</p>
-                                        <!-- MENGUBAH PROP MENJADI hasil_panen -->
-                                        <p style="margin:0; font-size:14px; font-weight:700; color:#166534;">${hasilPanen} <span style="font-size:10px; font-weight:500;">Ton</span></p>
-                                    </div>
-                                </div>
-
-                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:12px;">
-                                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:7px 9px;">
-                                        <p style="margin:0 0 2px; font-size:9px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Wilayah</p>
-                                        <p style="margin:0; font-size:11px; color:#334155; font-weight:600; line-height:1.35;">${wilayah}</p>
-                                    </div>
-                                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:7px 9px;">
-                                        <p style="margin:0 0 2px; font-size:9px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Basis / Produktivitas</p>
-                                        <p style="margin:0; font-size:11px; color:#334155; font-weight:600; line-height:1.35;">${tahunLbs} - ${produktivitas} Ton/Ha</p>
-                                    </div>
-                                </div>
-
-                                <button onclick='showDetail(${JSON.stringify(props).replace(/'/g, "&#39;")})' 
-                                    style="
-                                        width:100%; background:#16a34a; color:white;
-                                        border:none; padding:9px 0; border-radius:8px;
-                                        font-family:'Poppins',sans-serif; font-size:12px;
-                                        font-weight:600; cursor:pointer; letter-spacing:0.3px;
-                                        display:flex; align-items:center; justify-content:center; gap:6px;
-                                        transition:background 0.2s;
-                                    "
-                                    onmouseover="this.style.background='#15803d'"
-                                    onmouseout="this.style.background='#16a34a'"
-                                >
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                    Lihat Detail Lahan
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                    layer.bindPopup(popupContent, { maxWidth: 280 });
-                }
-            }).addTo(lahanGroup);
+            // Hide Loading Spinner
+            const mapLoading = document.getElementById('map-loading');
+            if (mapLoading) {
+                mapLoading.style.opacity = '0';
+                setTimeout(() => mapLoading.style.display = 'none', 500);
+            }
         })
-        .catch(err => console.error("API Lahan Sawah bermasalah"));
+        .catch(err => {
+            console.error("API Lahan Sawah bermasalah");
+            const mapLoading = document.getElementById('map-loading');
+            if (mapLoading) {
+                mapLoading.innerHTML = '<h3 class="text-red-600 font-bold">Gagal Memuat Peta</h3>';
+            }
+        });
+
+    // Render logic separated for Filter
+    function renderLahanLayer(features) {
+        lahanGroup.clearLayers();
+        
+        currentLahanLayer = L.geoJSON(features, {
+            style: { color: "#16a34a", fillColor: "#22c55e", fillOpacity: 0.6 },
+            onEachFeature: function (feature, layer) {
+                const props = feature.properties;
+                const namaLahan = sigpalaDisplay(props.nama_lahan);
+                const pemilik = sigpalaDisplay(props.pemilik || props.pemilik_lahan);
+                
+                // Binding Tooltip for Hover
+                layer.bindTooltip(`<b>${namaLahan}</b><br><span style="font-size:11px">Pemilik: ${pemilik}</span>`, {
+                    direction: 'top',
+                    className: 'sigpala-tooltip'
+                });
+
+                // Direct click to show detail panel (No more popup)
+                layer.on('click', function () {
+                    sigpalaZoomToFeature(map, layer, feature);
+                    showDetail(props);
+                });
+            }
+        });
+        currentLahanLayer.addTo(lahanGroup);
+    }
+
+    // ==========================================
+    // FILTER & SEARCH UI LOGIC
+    // ==========================================
+    const btnToggleFilter = document.getElementById('btn-toggle-filter');
+    const filterPanel = document.getElementById('filter-panel');
+    const filterKecamatan = document.getElementById('filter-kecamatan');
+    const filterTipe = document.getElementById('filter-tipe');
+    const btnApplyFilter = document.getElementById('btn-apply-filter');
+    const btnResetFilter = document.getElementById('btn-reset-filter');
+    const searchInput = document.getElementById('search-lahan');
+    const searchResults = document.getElementById('search-results');
+
+    // Toggle Filter Panel
+    if (btnToggleFilter && filterPanel) {
+        btnToggleFilter.addEventListener('click', () => {
+            if(filterPanel.classList.contains('hidden')) {
+                // For Dashboard
+                filterPanel.classList.remove('hidden');
+                filterPanel.classList.add('flex');
+            } else if (filterPanel.classList.contains('flex')) {
+                filterPanel.classList.remove('flex');
+                filterPanel.classList.add('hidden');
+            } else {
+                // For Public Map
+                filterPanel.classList.toggle('open');
+            }
+        });
+    }
+
+    // Apply Filter
+    if (btnApplyFilter) {
+        btnApplyFilter.addEventListener('click', () => {
+            const valKec = filterKecamatan ? filterKecamatan.value : '';
+            const valTipe = filterTipe ? filterTipe.value : '';
+
+            const filtered = allLahanFeatures.filter(f => {
+                const props = f.properties;
+                const matchKec = valKec === '' || (props.kecamatan || props.nama_kecamatan) === valKec;
+                const matchTipe = valTipe === '' || (props.tipe_lahan || props.nama_tipe) === valTipe;
+                return matchKec && matchTipe;
+            });
+
+            renderLahanLayer(filtered);
+
+            // Auto zoom if features exist
+            if (filtered.length > 0) {
+                // Need to use a temporary geojson to get bounds
+                const tempLayer = L.geoJSON(filtered);
+                map.fitBounds(tempLayer.getBounds(), { padding: [20,20] });
+            }
+            
+            if (filterPanel && filterPanel.classList.contains('open')) {
+                filterPanel.classList.remove('open');
+            }
+        });
+    }
+
+    // Reset Filter
+    if (btnResetFilter) {
+        btnResetFilter.addEventListener('click', () => {
+            if(filterKecamatan) filterKecamatan.value = '';
+            if(filterTipe) filterTipe.value = '';
+            renderLahanLayer(allLahanFeatures);
+            
+            // Refit map
+            if (currentLahanLayer && currentLahanLayer.getBounds().isValid()) {
+                map.fitBounds(currentLahanLayer.getBounds(), { padding: [20,20] });
+            }
+        });
+    }
+
+    // Search Logic
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            if(!searchResults) return; // if dashboard search results doesn't exist, we skip dropdown
+            
+            searchResults.innerHTML = '';
+            if (query.length < 2) {
+                searchResults.classList.add('hidden');
+                return;
+            }
+
+            const matches = allLahanFeatures.filter(f => {
+                const n = (f.properties.nama_lahan || '').toLowerCase();
+                const p = (f.properties.pemilik || f.properties.pemilik_lahan || '').toLowerCase();
+                return n.includes(query) || p.includes(query);
+            }).slice(0, 10); // max 10 results
+
+            if (matches.length > 0) {
+                matches.forEach(m => {
+                    const div = document.createElement('div');
+                    div.className = 'px-4 py-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-0';
+                    div.innerHTML = `
+                        <p class="font-bold text-sm text-slate-800">${sigpalaDisplay(m.properties.nama_lahan)}</p>
+                        <p class="text-xs text-slate-500">Pemilik: ${sigpalaDisplay(m.properties.pemilik || m.properties.pemilik_lahan)}</p>
+                    `;
+                    div.addEventListener('click', () => {
+                        searchResults.classList.add('hidden');
+                        searchInput.value = sigpalaDisplay(m.properties.nama_lahan);
+                        
+                        // Create a temporary layer to zoom to it
+                        const targetLayer = L.geoJSON(m);
+                        map.fitBounds(targetLayer.getBounds(), { maxZoom: 16 });
+                        showDetail(m.properties);
+                    });
+                    searchResults.appendChild(div);
+                });
+                searchResults.classList.remove('hidden');
+            } else {
+                searchResults.innerHTML = '<div class="px-4 py-3 text-sm text-slate-500">Tidak ada lahan ditemukan</div>';
+                searchResults.classList.remove('hidden');
+            }
+        });
+
+        // Hide search results when clicking outside
+        document.addEventListener('click', (e) => {
+            if (searchResults && !searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.classList.add('hidden');
+            }
+        });
+    }
 
     // // 6. Fetch Statistik
     // fetch('http://127.0.0.1:8000/api/statistik')

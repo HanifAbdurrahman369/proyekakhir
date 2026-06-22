@@ -30,16 +30,22 @@ class LahanSawahController extends Controller
             $this->gatewayUrl() . '/api/tipe-lahan'
         )->json()['data'] ?? [];
 
-        return compact('kecamatan', 'kelurahan', 'tipeLahan');
+        $spasialReferensi = Http::get(
+            $this->gatewayUrl() . '/api/spasial-lahan/referensi'
+        )->json()['data'] ?? [];
+
+        $petani = $spasialReferensi['petani'] ?? [];
+
+        return compact('kecamatan', 'kelurahan', 'tipeLahan', 'petani');
     }
 
     public function create()
     {
-        ['kecamatan' => $kecamatan, 'kelurahan' => $kelurahan, 'tipeLahan' => $tipeLahan] = $this->referensi();
+        ['kecamatan' => $kecamatan, 'kelurahan' => $kelurahan, 'tipeLahan' => $tipeLahan, 'petani' => $petani] = $this->referensi();
 
         return view(
             'partials.sidebar.petani.tambah-lahan',
-            compact('kecamatan', 'kelurahan', 'tipeLahan')
+            compact('kecamatan', 'kelurahan', 'tipeLahan', 'petani')
         );
     }
 
@@ -51,7 +57,7 @@ class LahanSawahController extends Controller
             return redirect('/login')->with('error', 'Login dulu');
         }
 
-        ['kecamatan' => $kecamatan, 'kelurahan' => $kelurahan, 'tipeLahan' => $tipeLahan] = $this->referensi();
+        ['kecamatan' => $kecamatan, 'kelurahan' => $kelurahan, 'tipeLahan' => $tipeLahan, 'petani' => $petani] = $this->referensi();
 
         $response = Http::withToken($token)
             ->acceptJson()
@@ -69,7 +75,7 @@ class LahanSawahController extends Controller
 
         return view(
             'partials.sidebar.petani.tambah-lahan',
-            compact('kecamatan', 'kelurahan', 'tipeLahan', 'editLahan')
+            compact('editLahan', 'kecamatan', 'kelurahan', 'tipeLahan', 'petani')
         );
     }
 

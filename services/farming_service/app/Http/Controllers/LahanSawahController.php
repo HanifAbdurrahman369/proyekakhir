@@ -220,6 +220,7 @@ class LahanSawahController extends Controller
             'kecamatan_id' => 'required',
             'kelurahan_id' => 'required',
             'tipe_lahan_id' => 'required',
+            'petani_id' => 'required|integer',
             'nama_lahan' => 'required|string|max:100',
             'alamat_detail' => 'required|string|max:150',
             'luas_lahan_hektar' => 'required|numeric|min:0.01',
@@ -227,7 +228,7 @@ class LahanSawahController extends Controller
 
         $payload = [
             'pemilik_id' => $user->sub,
-            'petani_id' => $user->sub,
+            'petani_id' => $request->petani_id,
             'kecamatan_id' => $request->kecamatan_id,
             'kelurahan_id' => $request->kelurahan_id,
             'tipe_lahan_id' => $request->tipe_lahan_id,
@@ -429,6 +430,7 @@ class LahanSawahController extends Controller
             'kecamatan_id' => 'required',
             'kelurahan_id' => 'required',
             'tipe_lahan_id' => 'required',
+            'petani_id' => 'required|integer',
             'nama_lahan' => 'required|string|max:100',
             'alamat_detail' => 'required|string|max:150',
             'luas_lahan_hektar' => 'required|numeric|min:0.01',
@@ -456,6 +458,7 @@ class LahanSawahController extends Controller
             'kecamatan_id' => $request->kecamatan_id,
             'kelurahan_id' => $request->kelurahan_id,
             'tipe_lahan_id' => $request->tipe_lahan_id,
+            'petani_id' => $request->petani_id,
             'nama_lahan' => $request->nama_lahan,
             'alamat_detail' => $request->alamat_detail,
             'tahun_lbs' => $request->tahun_lbs ?? '2024',

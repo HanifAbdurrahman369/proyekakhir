@@ -107,12 +107,16 @@ class PetugasController extends Controller
             'notifikasi' => is_countable($notifikasi) ? count($notifikasi) : 0,
         ];
 
+        $spasialReferensi = $this->getData('/spasial-lahan/referensi', []);
+        $petani = $spasialReferensi['petani'] ?? [];
+
         return view('dashboard.petugas', [
             'page' => 'dashboard',
             'stats' => $stats,
             'pendingLahan' => $pendingLahan,
             'pendingPanen' => $pendingPanen,
             'notifikasi' => $notifikasi,
+            'petani' => $petani,
         ]);
     }
 

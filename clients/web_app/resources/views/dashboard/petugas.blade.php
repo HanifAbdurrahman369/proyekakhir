@@ -197,6 +197,7 @@
                                             'luas_lahan_hektar' => $angka($ambil($item, ['luas_lahan_hektar'], 0)),
                                             'alamat_detail' => $ambil($item, ['alamat_detail'], ''),
                                             'status_verifikasi' => $ambil($item, ['status_verifikasi'], 'PENDING'),
+                                            'petani_id' => $ambil($item, ['petani_id']),
                                         ];
                                         $lahanDetailJson = htmlspecialchars(json_encode($lahanDetailPayload, JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8');
                                     @endphp
@@ -362,9 +363,17 @@
 
                             <div class="mt-6 flex flex-col sm:flex-row justify-end gap-3">
                                 <button type="button" id="detailRejectButton" class="px-5 py-3 rounded-2xl bg-red-50 text-red-600 border border-red-200 font-bold hover:bg-red-600 hover:text-white transition">Tolak</button>
-                                <form method="POST" action="#" id="detailApproveForm" onsubmit="return confirm('Setujui pengajuan lahan ini? Pastikan seluruh detail pengajuan sudah sesuai.');">
+                                <form method="POST" action="#" id="detailApproveForm" class="flex-1 sm:flex-none flex flex-col sm:flex-row gap-3 items-center" onsubmit="return confirm('Setujui pengajuan lahan ini? Pastikan seluruh detail pengajuan sudah sesuai.');">
                                     @csrf
-                                    <button class="w-full sm:w-auto px-5 py-3 rounded-2xl bg-green-50 text-green-700 border border-green-200 font-bold hover:bg-green-600 hover:text-white transition">Setujui Pengajuan</button>
+                                    <div class="w-full sm:w-auto">
+                                        <select name="petani_id" id="modal_petani_id" class="w-full rounded-2xl border border-primary-200 px-4 py-3 text-sm text-primary-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20" required>
+                                            <option value="">Pilih Penggarap</option>
+                                            @foreach($petani as $item)
+                                                <option value="{{ $item['id'] }}">{{ $item['nama_lengkap'] ?? $item['nama'] }} {{ isset($item['role_id']) && $item['role_id'] == 5 ? '(Brigade Pangan)' : '(Kelompok Tani)' }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <button class="w-full sm:w-auto px-5 py-3 rounded-2xl bg-green-50 text-green-700 border border-green-200 font-bold hover:bg-green-600 hover:text-white transition whitespace-nowrap">Setujui Pengajuan</button>
                                 </form>
                             </div>
                         </div>
@@ -778,6 +787,9 @@
 
                         if (approveForm) approveForm.action = this.dataset.approveUrl || '#';
                         if (detailRejectButton) detailRejectButton.dataset.rejectUrl = activeRejectUrl;
+
+                        const modalPetaniId = document.getElementById('modal_petani_id');
+                        if (modalPetaniId) modalPetaniId.value = data.petani_id || '';
 
                         setText('detailNamaLahan', data.nama_lahan);
                         setText('detailSubLahan', `${data.nama_kecamatan || '-'} / ${data.nama_kelurahan || '-'}`);

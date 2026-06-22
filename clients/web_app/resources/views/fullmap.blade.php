@@ -13,10 +13,117 @@
     @vite(['resources/css/app.css', 'resources/js/app.js']) 
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
     
-    </head>
+    <style>
+        /* CSS Tambahan Khusus Halaman Peta Publik */
+        .filter-panel { transform: translateX(-100%); transition: transform 0.3s ease; }
+        .filter-panel.open { transform: translateX(0); }
+        .map-loading { backdrop-filter: blur(4px); }
+    </style>
+</head>
 
 <body class="bg-slate-100 relative font-['Poppins']">
+
+    <!-- Loading Overlay -->
+    <div id="map-loading" class="map-loading absolute inset-0 z-[10000] bg-white/60 flex flex-col items-center justify-center transition-opacity duration-500">
+        <svg class="animate-spin h-12 w-12 text-emerald-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <h3 class="text-lg font-bold text-slate-800">Memuat Data Spasial...</h3>
+        <p class="text-sm text-slate-500 mt-1">Mengambil data titik dan poligon lahan.</p>
+    </div>
+
+    <!-- Top Bar (Back & Search) -->
+    <div class="absolute top-6 left-0 right-0 z-[9990] flex justify-between items-start px-6 pointer-events-none">
+        <!-- Kiri: Tombol Back & Tombol Filter -->
+        <div class="flex gap-3 pointer-events-auto">
+            <a href="{{ url('/') }}" class="bg-white/95 backdrop-blur-md text-slate-700 px-6 py-3 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-slate-100 font-medium text-sm hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all duration-300 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                Kembali
+            </a>
+            <button id="btn-toggle-filter" class="bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-[0_4px_20px_rgba(5,150,105,0.3)] font-medium text-sm hover:bg-emerald-700 transition-all duration-300 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                Filter Lahan
+            </button>
+        </div>
+
+        <!-- Tengah: Search Bar -->
+        <div class="pointer-events-auto relative w-full max-w-md hidden md:block">
+            <div class="relative">
+                <input type="text" id="search-lahan" placeholder="Cari nama lahan atau pemilik..." class="w-full bg-white/95 backdrop-blur-md border border-slate-200 text-slate-700 text-sm rounded-2xl pl-12 pr-4 py-3.5 shadow-[0_8px_30px_rgba(0,0,0,0.08)] focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-4 top-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+            <!-- Hasil Pencarian -->
+            <div id="search-results" class="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden hidden max-h-60 overflow-y-auto z-[9991]">
+                <!-- Results injected via JS -->
+            </div>
+        </div>
+        
+        <!-- Kanan: Spacer -->
+        <div class="w-[200px] hidden lg:block"></div>
+    </div>
+
+    <!-- Filter Panel (Kiri) -->
+    <div id="filter-panel" class="filter-panel absolute top-0 left-0 w-80 h-full bg-white/95 backdrop-blur-xl z-[9980] shadow-[10px_0_40px_rgba(0,0,0,0.1)] pt-28 pb-6 px-6 overflow-y-auto flex flex-col gap-6">
+        <div>
+            <h3 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                Filter Spesifik
+            </h3>
+            
+            <div class="space-y-5">
+                <!-- Filter Kecamatan -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Kecamatan</label>
+                    <select id="filter-kecamatan" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none bg-white">
+                        <option value="">Semua Kecamatan</option>
+                    </select>
+                </div>
+
+                <!-- Filter Tipe Lahan -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Jenis Lahan</label>
+                    <select id="filter-tipe" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none bg-white">
+                        <option value="">Semua Jenis</option>
+                        <option value="Irigasi">Irigasi</option>
+                        <option value="Tadah Hujan">Tadah Hujan</option>
+                        <option value="Lebak">Lebak</option>
+                        <option value="Pasang Surut">Pasang Surut</option>
+                    </select>
+                </div>
+
+                <!-- Action -->
+                <button id="btn-apply-filter" class="w-full mt-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-600 hover:text-white font-semibold py-2.5 rounded-xl transition-colors">Terapkan Filter</button>
+                <button id="btn-reset-filter" class="w-full mt-2 text-slate-500 hover:text-slate-800 text-sm font-medium py-1">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Legenda (Kanan Bawah) -->
+    <div class="absolute bottom-6 left-6 z-[9000] bg-white/90 backdrop-blur-md border border-slate-200 p-4 rounded-2xl shadow-lg pointer-events-auto">
+        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">Legenda Peta</h4>
+        <div class="space-y-2 text-sm text-slate-600">
+            <div class="flex items-center gap-2">
+                <div class="w-4 h-4 rounded border border-emerald-500 bg-emerald-500/40"></div>
+                <span>Area Lahan Sawah</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-4 h-4 rounded-full bg-orange-400 border-2 border-white shadow-sm flex items-center justify-center text-[8px] text-white font-bold">10</div>
+                <span>Klaster Lahan</span>
+            </div>
+            <div class="flex items-center gap-2 mt-2 pt-2 border-t border-slate-100">
+                <div class="w-5 h-0.5 bg-slate-800"></div>
+                <span>Batas Kabupaten</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-5 h-0.5 bg-blue-500 opacity-60"></div>
+                <span>Batas Kecamatan</span>
+            </div>
+        </div>
+    </div>
 
     <div class="relative w-full h-screen overflow-hidden">
         <div id="map" class="w-full h-full z-0"></div>
@@ -42,14 +149,11 @@
         </div>
     </div>
 
-    <a href="{{ url('/') }}" class="absolute top-6 left-24 z-[9999] bg-white/95 backdrop-blur-md text-slate-700 px-7 py-3 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-slate-100 font-medium text-base hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all duration-300 font-['Poppins']">
-        Kembali ke Dashboard
-    </a>
-
     <script>
         window.GATEWAY_URL = "{{ env('GATEWAY_URL', 'http://127.0.0.1:8003') }}";
     </script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
     <script src="{{ asset('js/map-sigpala.js') }}"></script>
 </body>
 </html>

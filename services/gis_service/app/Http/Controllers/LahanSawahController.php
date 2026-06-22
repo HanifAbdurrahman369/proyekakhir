@@ -476,13 +476,13 @@ class LahanSawahController extends Controller
             return [];
         }
 
-        $query = DB::table('users')->select('id', 'nama_lengkap', 'email');
+        $query = DB::table('users')->select('id', 'nama_lengkap', 'email', 'role_id');
 
         if (Schema::hasColumn('users', 'role_id')) {
-            $query->where('role_id', 1);
+            $query->whereIn('role_id', [1, 5]);
         }
 
-        return $query->orderBy('nama_lengkap')->get()->toArray();
+        return $query->orderBy('role_id')->orderBy('nama_lengkap')->get()->toArray();
     }
 
     private function ambilTabel(string $table, array $columns, string $orderBy): array
