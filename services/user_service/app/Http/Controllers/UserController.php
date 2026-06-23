@@ -135,9 +135,7 @@ class UserController extends Controller
                 'komunitas_id' => $komunitas->id,
                 'nama_lengkap' => $validated['nama_lengkap'],
                 'email' => $validated['email'],
-                'password' => Hash::make(
-                    $validated['password']
-                ),
+                'password' => $validated['password'],
                 'no_hp' => $komunitas->nomor_hp ?? null,
                 'alamat' => $komunitas->alamat ?? null
             ]);
@@ -216,7 +214,7 @@ public function resetPassword(Request $request)
         ),
         function ($user, $password) {
 
-            $user->password = Hash::make($password);
+            $user->password = $password;
 
             $user->save();
         }

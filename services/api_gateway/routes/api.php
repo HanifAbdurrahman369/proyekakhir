@@ -25,17 +25,14 @@ function proxyRequest(Request $request, string $serviceUrl, string $path)
 {
     $url = rtrim($serviceUrl, '/') . '/api/' . ltrim($path, '/');
 
-    $headers = collect($request->headers->all())
-        ->except(['host', 'content-length'])
-        ->mapWithKeys(fn ($value, $key) => [$key => implode(',', $value)])
-        ->toArray();
-
-    if ($authHeader = $request->header('Authorization')) {
-        $headers['Authorization'] = $authHeader;
-    }
-
-    if ($authHeader = $request->header('authorization')) {
-        $headers['Authorization'] = $authHeader;
+    $headers = [];
+    foreach ($request->headers->all() as $name => $values) {
+        $nameLower = strtolower($name);
+        if (in_array($nameLower, ['host', 'content-length'])) {
+            continue;
+        }
+        $normalizedName = str_replace(' ', '-', ucwords(str_replace('-', ' ', $nameLower)));
+        $headers[$normalizedName] = implode(',', $values);
     }
 
     $options = [

@@ -68,8 +68,7 @@ class AuthProvider extends ChangeNotifier {
     required String email,
     required String password,
     required String passwordConfirmation,
-    String? noHp,
-    String? alamat,
+    required String jenisKelompok,
   }) async {
     _isLoading = true;
     notifyListeners();
@@ -80,8 +79,7 @@ class AuthProvider extends ChangeNotifier {
         email: email,
         password: password,
         passwordConfirmation: passwordConfirmation,
-        noHp: noHp,
-        alamat: alamat,
+        jenisKelompok: jenisKelompok,
       );
     } finally {
       _isLoading = false;

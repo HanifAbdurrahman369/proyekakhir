@@ -30,31 +30,27 @@ class LandingScreen extends StatelessWidget {
         ),
         title: Row(
           children: [
-            Container(
+            Image.asset(
+              'assets/images/logo.png',
               width: 32,
               height: 32,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF5EA500), Color(0xFF35530E)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              alignment: Alignment.center,
-              child: const Icon(
-                Icons.eco_rounded,
-                color: Colors.white,
-                size: 18,
-              ),
+              fit: BoxFit.contain,
             ),
             const SizedBox(width: 8),
-            Text(
-              'SITANI',
-              style: GoogleFonts.outfit(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: const Color(0xFF0F172A),
+            RichText(
+              text: TextSpan(
+                style: GoogleFonts.outfit(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
+                  color: const Color(0xFF0F172A),
+                ),
+                children: const [
+                  TextSpan(text: 'SIG'),
+                  TextSpan(
+                    text: '-PALA',
+                    style: TextStyle(color: Color(0xFF10B981)),
+                  ),
+                ],
               ),
             ),
           ],
@@ -208,7 +204,7 @@ class LandingScreen extends StatelessWidget {
                             border: Border.all(color: const Color(0xFFDFECCC)),
                           ),
                           child: Text(
-                            '🌱 PLATFORM PERTANIAN PALA DIGITAL',
+                            '🌱 PLATFORM GEOSPASIAL PERTANIAN',
                             textAlign: TextAlign.center,
                             style: GoogleFonts.inter(
                               fontSize: 10,
@@ -219,59 +215,52 @@ class LandingScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        // Hero Icon
+                        // Hero Logo
                         Container(
                           width: 88,
                           height: 88,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF5EA500), Color(0xFF3E7D00)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF5EA500).withValues(alpha: 0.25),
-                                offset: const Offset(0, 8),
-                                blurRadius: 20,
-                              ),
-                            ],
-                          ),
                           alignment: Alignment.center,
-                          child: const Icon(
-                            Icons.agriculture_rounded,
-                            size: 44,
-                            color: Colors.white,
+                          child: Image.asset(
+                            'assets/images/logo.png',
+                            fit: BoxFit.contain,
                           ),
                         ),
                         const SizedBox(height: 24),
                         // Title
-                        Text(
-                          'Selamat Datang di SITANI',
+                        RichText(
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.outfit(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF0F172A),
-                            letterSpacing: 0.5,
+                          text: TextSpan(
+                            style: GoogleFonts.outfit(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF0F172A),
+                              letterSpacing: 0.5,
+                            ),
+                            children: const [
+                              TextSpan(text: 'Selamat Datang di '),
+                              TextSpan(text: 'SIG'),
+                              TextSpan(
+                                text: '-PALA',
+                                style: TextStyle(color: Color(0xFF10B981)),
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 8),
                         // Subtitle
                         Text(
-                          'Sistem Informasi Pertanian & Geografis Pala',
+                          'Sistem Informasi Geografis Produktivitas Lahan Rawa',
                           textAlign: TextAlign.center,
                           style: GoogleFonts.inter(
-                            fontSize: 14,
+                            fontSize: 13,
                             color: const Color(0xFF497D00),
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                         const SizedBox(height: 16),
                         // Description
                         Text(
-                          'Pantau spasial lahan pertanian pala, catat aktivitas harian tani, dan pantau hasil panen Anda secara digital.',
+                          'Pantau ketersediaan lahan sawah rawa secara spasial, riwayat aktivitas tanam, dan produktivitas hasil panen di Kabupaten Barito Kuala.',
                           textAlign: TextAlign.center,
                           style: GoogleFonts.inter(
                             fontSize: 13,
@@ -343,23 +332,23 @@ class LandingScreen extends StatelessWidget {
                   // Fitur Items List
                   _buildFeatureItem(
                     icon: Icons.map_rounded,
-                    title: 'Informasi Geografis (SIG-PALA)',
-                    description: 'Pemetaan lahan pala secara interaktif dan visualisasi batas wilayah spasial.',
+                    title: 'Peta Interaktif Geospasial',
+                    description: 'Eksplorasi batas wilayah hingga detail blok lahan sawah rawa secara visual dan real-time.',
                     iconColor: Colors.teal.shade700,
                   ),
                   const SizedBox(height: 14),
                   _buildFeatureItem(
-                    icon: Icons.history_edu_rounded,
-                    title: 'Riwayat & Manajemen Panen',
-                    description: 'Pencatatan data produksi hasil panen pala untuk analisis perkembangan berkala.',
+                    icon: Icons.bar_chart_rounded,
+                    title: 'Analisis Statistik Transparan',
+                    description: 'Akumulasi luasan sawah dan perkembangan pertanian disajikan transparan dalam grafik visual.',
                     iconColor: Colors.orange.shade800,
                   ),
                   const SizedBox(height: 14),
                   _buildFeatureItem(
-                    icon: Icons.notifications_active_rounded,
-                    title: 'Sistem Informasi Notifikasi',
-                    description: 'Dapatkan pemberitahuan langsung mengenai aktivitas pertanian dan info dinas terkait.',
-                    iconColor: Colors.red.shade700,
+                    icon: Icons.trending_up_rounded,
+                    title: 'Informasi Produktivitas Akurat',
+                    description: 'Melacak potensi dan realisasi hasil panen lahan sawah rawa dalam satuan Ton/Ha.',
+                    iconColor: Colors.green.shade800,
                   ),
                   const SizedBox(height: 32),
 

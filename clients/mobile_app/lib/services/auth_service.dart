@@ -32,8 +32,7 @@ class AuthService {
     required String email,
     required String password,
     required String passwordConfirmation,
-    String? noHp,
-    String? alamat,
+    required String jenisKelompok,
   }) async {
     try {
       final response = await _apiClient.dio.post(
@@ -43,8 +42,7 @@ class AuthService {
           'email': email,
           'password': password,
           'password_confirmation': passwordConfirmation,
-          'no_hp': noHp,
-          'alamat': alamat,
+          'jenis_kelompok': jenisKelompok,
         },
       );
       

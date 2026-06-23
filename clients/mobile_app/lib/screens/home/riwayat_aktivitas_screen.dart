@@ -1,0 +1,555 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../../providers/farming_provider.dart';
+
+class RiwayatAktivitasScreen extends StatefulWidget {
+  const RiwayatAktivitasScreen({super.key});
+
+  @override
+  State<RiwayatAktivitasScreen> createState() => _RiwayatAktivitasScreenState();
+}
+
+class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Memuat data awal dari backend saat halaman dibuka
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadLahanData(1);
+      _loadPanenData(1);
+      _loadPupukData(1);
+    });
+  }
+
+  void _loadLahanData(int page) {
+    context.read<FarmingProvider>().fetchRiwayatLahan(page: page);
+  }
+
+  void _loadPanenData(int page) {
+    context.read<FarmingProvider>().fetchRiwayatPanen(page: page);
+  }
+
+  void _loadPupukData(int page) {
+    context.read<FarmingProvider>().fetchRiwayatPupuk(page: page);
+  }
+
+  String _formatDateStr(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return '-';
+    try {
+      final parsed = DateTime.parse(dateStr);
+      final months = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+        'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'
+      ];
+      return '${parsed.day} ${months[parsed.month - 1]} ${parsed.year}';
+    } catch (_) {
+      return dateStr;
+    }
+  }
+
+  String _formatNumber(dynamic val) {
+    if (val == null) return '0';
+    if (val is num) {
+      return val.toStringAsFixed(2).replaceAll('.', ',').replaceFirst(RegExp(r',00$'), '');
+    }
+    return val.toString();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final farmingProvider = context.watch<FarmingProvider>();
+
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF4F9F4),
+        appBar: AppBar(
+          title: Text(
+            'Riwayat Aktivitas',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: Colors.green[800],
+          foregroundColor: Colors.white,
+          elevation: 2,
+          bottom: TabBar(
+            indicatorColor: Colors.white,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            labelStyle: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
+            unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
+            tabs: const [
+              Tab(text: 'Lahan'),
+              Tab(text: 'Panen'),
+              Tab(text: 'Pemupukan'),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            _buildLahanTab(farmingProvider),
+            _buildPanenTab(farmingProvider),
+            _buildPupukTab(farmingProvider),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ================= TAB 1: RIWAYAT LAHAN =================
+  Widget _buildLahanTab(FarmingProvider provider) {
+    if (provider.isRiwayatLahanLoading && provider.riwayatLahanData['data'].isEmpty) {
+      return const Center(child: CircularProgressIndicator(color: Colors.green));
+    }
+
+    final dataMap = provider.riwayatLahanData;
+    final list = dataMap['data'] as List<dynamic>? ?? [];
+    final currentPage = dataMap['current_page'] ?? 1;
+    final lastPage = dataMap['last_page'] ?? 1;
+
+    if (list.isEmpty) {
+      return _buildEmptyState('Belum ada catatan pengajuan lahan baru.');
+    }
+
+    return Column(
+      children: [
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () async => _loadLahanData(1),
+            color: Colors.green[800],
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: list.length,
+              itemBuilder: (context, index) {
+                final item = list[index];
+                final statusRaw = item['status_verifikasi'] ?? 'PENDING';
+                final statusSpasial = item['status_spasial'] ?? 'BELUM_DIPETAKAN';
+
+                String statusText = statusRaw;
+                if (statusRaw == 'DITERIMA') {
+                  statusText = statusSpasial == 'SUDAH_DIPETAKAN' ? 'TERVERIFIKASI' : 'DISETUJUI';
+                }
+
+                Color badgeBg;
+                Color badgeText;
+                if (statusRaw == 'DITERIMA') {
+                  badgeBg = const Color(0xFFEDF8DC);
+                  badgeText = const Color(0xFF3E7D00);
+                } else if (statusRaw == 'DITOLAK') {
+                  badgeBg = const Color(0xFFFEE2E2);
+                  badgeText = const Color(0xFFDC2626);
+                } else {
+                  badgeBg = const Color(0xFFFEF3C7);
+                  badgeText = const Color(0xFFD97706);
+                }
+
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  color: Colors.white,
+                  surfaceTintColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                item['nama_lahan'] ?? '-',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF1E293B),
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: badgeBg,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                statusText.replaceAll('_', ' '),
+                                style: GoogleFonts.inter(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: badgeText,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        _buildDetailRow(Icons.pin_drop_rounded, 'Alamat', item['alamat_detail'] ?? '-'),
+                        const SizedBox(height: 6),
+                        _buildDetailRow(Icons.square_foot_rounded, 'Luas Lahan', '${_formatNumber(item['luas_lahan_hektar'])} Ha'),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        _buildPaginationController(currentPage, lastPage, _loadLahanData),
+      ],
+    );
+  }
+
+  // ================= TAB 2: RIWAYAT PANEN =================
+  Widget _buildPanenTab(FarmingProvider provider) {
+    if (provider.isRiwayatPanenLoading && provider.riwayatPanenData['data'].isEmpty) {
+      return const Center(child: CircularProgressIndicator(color: Colors.green));
+    }
+
+    final dataMap = provider.riwayatPanenData;
+    final list = dataMap['data'] as List<dynamic>? ?? [];
+    final currentPage = dataMap['current_page'] ?? 1;
+    final lastPage = dataMap['last_page'] ?? 1;
+
+    if (list.isEmpty) {
+      return _buildEmptyState('Belum ada riwayat panen yang diinput.');
+    }
+
+    return Column(
+      children: [
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () async => _loadPanenData(1),
+            color: Colors.green[800],
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: list.length,
+              itemBuilder: (context, index) {
+                final item = list[index];
+                final statusRaw = item['status_verifikasi'] ?? 'PENDING';
+                final catatan = item['catatan_verifikasi'] ?? '';
+
+                Color badgeBg;
+                Color badgeText;
+                if (statusRaw == 'DITERIMA') {
+                  badgeBg = const Color(0xFFEDF8DC);
+                  badgeText = const Color(0xFF3E7D00);
+                } else if (statusRaw == 'DITOLAK') {
+                  badgeBg = const Color(0xFFFEE2E2);
+                  badgeText = const Color(0xFFDC2626);
+                } else {
+                  badgeBg = const Color(0xFFFEF3C7);
+                  badgeText = const Color(0xFFD97706);
+                }
+
+                final lahan = item['lahan'] as Map<String, dynamic>?;
+                final bibit = item['bibit'] as Map<String, dynamic>?;
+
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  color: Colors.white,
+                  surfaceTintColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                lahan?['nama_lahan'] ?? '-',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF1E293B),
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: badgeBg,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                statusRaw,
+                                style: GoogleFonts.inter(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: badgeText,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (lahan?['luas_lahan_hektar'] != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            'Luas Lahan: ${_formatNumber(lahan?['luas_lahan_hektar'])} Ha',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ],
+                        const Divider(height: 20, color: Color(0xFFF1F5F9)),
+                        _buildDetailRow(Icons.grass_rounded, 'Bibit', bibit?['nama_bibit'] ?? '-'),
+                        const SizedBox(height: 6),
+                        _buildDetailRow(Icons.calendar_month_rounded, 'Tgl Tanam', _formatDateStr(item['tanggal_tanam'])),
+                        const SizedBox(height: 6),
+                        _buildDetailRow(Icons.task_alt_rounded, 'Tgl Panen', _formatDateStr(item['tanggal_panen'])),
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Hasil Panen',
+                              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.grey[600]),
+                            ),
+                            Text(
+                              '${_formatNumber(item['hasil_panen'])} Ton',
+                              style: GoogleFonts.outfit(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF3E7D00),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (catatan.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: statusRaw == 'DITOLAK' ? const Color(0xFFFFF5F5) : const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: statusRaw == 'DITOLAK' ? const Color(0xFFFEE2E2) : const Color(0xFFE2E8F0),
+                              ),
+                            ),
+                            child: Text(
+                              'Catatan: $catatan',
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: statusRaw == 'DITOLAK' ? const Color(0xFF991B1B) : Colors.grey[700],
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        _buildPaginationController(currentPage, lastPage, _loadPanenData),
+      ],
+    );
+  }
+
+  // ================= TAB 3: RIWAYAT PEMUPUKAN =================
+  Widget _buildPupukTab(FarmingProvider provider) {
+    if (provider.isRiwayatPupukLoading && provider.riwayatPupukData['data'].isEmpty) {
+      return const Center(child: CircularProgressIndicator(color: Colors.green));
+    }
+
+    final dataMap = provider.riwayatPupukData;
+    final list = dataMap['data'] as List<dynamic>? ?? [];
+    final currentPage = dataMap['current_page'] ?? 1;
+    final lastPage = dataMap['last_page'] ?? 1;
+
+    if (list.isEmpty) {
+      return _buildEmptyState('Belum ada catatan pemupukan yang disimpan.');
+    }
+
+    return Column(
+      children: [
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () async => _loadPupukData(1),
+            color: Colors.green[800],
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: list.length,
+              itemBuilder: (context, index) {
+                final item = list[index];
+
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  color: Colors.white,
+                  surfaceTintColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item['nama_lahan'] ?? '-',
+                          style: GoogleFonts.outfit(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF1E293B),
+                          ),
+                        ),
+                        const Divider(height: 20, color: Color(0xFFF1F5F9)),
+                        _buildDetailRow(Icons.science_rounded, 'Jenis Pupuk', item['nama_pupuk'] ?? '-'),
+                        const SizedBox(height: 6),
+                        _buildDetailRow(Icons.category_rounded, 'Tipe Pupuk', item['tipe_pupuk'] ?? '-'),
+                        const SizedBox(height: 6),
+                        _buildDetailRow(Icons.calendar_month_rounded, 'Tgl Pemupukan', _formatDateStr(item['tanggal_pemupukan'])),
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Takaran Pupuk',
+                              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.grey[600]),
+                            ),
+                            Text(
+                              '${_formatNumber(item['takaran'])} Kg',
+                              style: GoogleFonts.outfit(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF0F766E),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        _buildPaginationController(currentPage, lastPage, _loadPupukData),
+      ],
+    );
+  }
+
+  // ================= UTILS WIDGET =================
+
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: Colors.grey[500]),
+        const SizedBox(width: 8),
+        Text(
+          '$label:',
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey[500],
+          ),
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            value,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF334155),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState(String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.history_rounded, size: 64, color: Colors.grey[300]),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: Colors.grey[500],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaginationController(int currentPage, int lastPage, Function(int) onPageChanged) {
+    if (lastPage <= 1) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          ElevatedButton.icon(
+            onPressed: currentPage > 1 ? () => onPageChanged(currentPage - 1) : null,
+            icon: const Icon(Icons.chevron_left_rounded, size: 18),
+            label: Text('Sebelumnya', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              elevation: 0,
+              backgroundColor: const Color(0xFFE2E8F0),
+              foregroundColor: const Color(0xFF334155),
+              disabledBackgroundColor: Colors.grey[100],
+              disabledForegroundColor: Colors.grey[400],
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+          Text(
+            'Halaman $currentPage dari $lastPage',
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[600],
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: currentPage < lastPage ? () => onPageChanged(currentPage + 1) : null,
+            icon: const Icon(Icons.chevron_right_rounded, size: 18),
+            label: Text('Selanjutnya', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              elevation: 0,
+              backgroundColor: const Color(0xFF3E7D00),
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: Colors.grey[100],
+              disabledForegroundColor: Colors.grey[400],
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

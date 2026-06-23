@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 import 'core/network/api_client.dart';
 import 'services/auth_service.dart';
 import 'providers/auth_provider.dart';
+import 'services/farming_service.dart';
+import 'providers/farming_provider.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/landing_screen.dart';
 
@@ -25,15 +27,23 @@ class MyApp extends StatelessWidget {
         Provider<ApiClient>(
           create: (_) => ApiClient(),
         ),
-        // 2. AuthService (Bergantung pada ApiClient)
+        // 2. AuthService & FarmingService
         ProxyProvider<ApiClient, AuthService>(
           update: (_, apiClient, _) => AuthService(apiClient),
         ),
-        // 3. AuthProvider (State Management, bergantung pada AuthService)
+        ProxyProvider<ApiClient, FarmingService>(
+          update: (_, apiClient, _) => FarmingService(apiClient),
+        ),
+        // 3. AuthProvider & FarmingProvider
         ChangeNotifierProxyProvider<AuthService, AuthProvider>(
           create: (context) => AuthProvider(context.read<AuthService>()),
           update: (_, authService, authProvider) =>
               authProvider ?? AuthProvider(authService),
+        ),
+        ChangeNotifierProxyProvider<FarmingService, FarmingProvider>(
+          create: (context) => FarmingProvider(context.read<FarmingService>()),
+          update: (_, farmingService, farmingProvider) =>
+              farmingProvider ?? FarmingProvider(farmingService),
         ),
       ],
       child: MaterialApp(
