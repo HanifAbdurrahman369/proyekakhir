@@ -39,7 +39,32 @@ class FarmingProvider extends ChangeNotifier {
   bool _isRiwayatPanenLoading = false;
   bool _isRiwayatPupukLoading = false;
 
+  // State Pejabat
+  double _produksiPejabat = 0.0;
+  double _totalLahanPejabat = 0.0;
+  Map<int, double> _produksiBulananPejabat = {};
+  List<dynamic> _produksiKecamatanPejabat = [];
+  List<dynamic> _lahanKecamatanPejabat = [];
+  bool _isPejabatLoading = false;
+
+  Map<String, dynamic>? _kabupatenBoundary;
+  Map<String, dynamic>? _kecamatanBoundaries;
+  Map<String, dynamic>? _lahanMapFeatures;
+  bool _isMapLoading = false;
+
   FarmingProvider(this._farmingService);
+
+  double get produksiPejabat => _produksiPejabat;
+  double get totalLahanPejabat => _totalLahanPejabat;
+  Map<int, double> get produksiBulananPejabat => _produksiBulananPejabat;
+  List<dynamic> get produksiKecamatanPejabat => _produksiKecamatanPejabat;
+  List<dynamic> get lahanKecamatanPejabat => _lahanKecamatanPejabat;
+  bool get isPejabatLoading => _isPejabatLoading;
+
+  Map<String, dynamic>? get kabupatenBoundary => _kabupatenBoundary;
+  Map<String, dynamic>? get kecamatanBoundaries => _kecamatanBoundaries;
+  Map<String, dynamic>? get lahanMapFeatures => _lahanMapFeatures;
+  bool get isMapLoading => _isMapLoading;
 
   bool get isLoading => _isLoading;
   Map<String, dynamic> get lahanData => _lahanData;
@@ -83,7 +108,7 @@ class FarmingProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final result = await _farmingService.getLahan(page: page);
+      final result = await _farmingService.getLahan(page: page, perPage: 4);
       _riwayatLahanData = result['data'] as Map<String, dynamic>;
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
@@ -309,6 +334,94 @@ class FarmingProvider extends ChangeNotifier {
       return false;
     } finally {
       _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Mengirim perbaikan lahan
+  Future<bool> resubmitLahan(int id, Map<String, dynamic> payload) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _farmingService.resubmitLahan(id, payload);
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Mengirim perbaikan hasil panen
+  Future<bool> updateLaporPanen(int id, Map<String, dynamic> payload) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _farmingService.updateLaporPanen(id, payload);
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Pejabat: Memuat semua data dashboard pejabat eksekutif sekaligus
+  Future<void> fetchPejabatDashboardData() async {
+    _isPejabatLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final results = await Future.wait([
+        _farmingService.getProduksiPejabat(),
+        _farmingService.getTotalLahanPejabat(),
+        _farmingService.getProduksiBulananPejabat(),
+        _farmingService.getProduksiKecamatanPejabat(),
+        _farmingService.getLahanKecamatanPejabat(),
+      ]);
+
+      _produksiPejabat = results[0] as double;
+      _totalLahanPejabat = results[1] as double;
+      _produksiBulananPejabat = results[2] as Map<int, double>;
+      _produksiKecamatanPejabat = results[3] as List<dynamic>;
+      _lahanKecamatanPejabat = results[4] as List<dynamic>;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      _isPejabatLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Pejabat: Memuat data sebaran spasial (batas wilayah kabupaten, kecamatan, dan lahan sawah)
+  Future<void> fetchMapData() async {
+    _isMapLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final results = await Future.wait([
+        _farmingService.getBatasWilayah(),
+        _farmingService.getBatasKecamatan(),
+        _farmingService.getMapLahan(),
+      ]);
+
+      _kabupatenBoundary = results[0] as Map<String, dynamic>;
+      _kecamatanBoundaries = results[1] as Map<String, dynamic>;
+      _lahanMapFeatures = results[2] as Map<String, dynamic>;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      _isMapLoading = false;
       notifyListeners();
     }
   }

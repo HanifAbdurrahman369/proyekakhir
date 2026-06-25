@@ -76,9 +76,10 @@ Route::get('/dashboard-petani', [PetaniController::class, 'index'])->middleware(
 // Memastikan "case 2: return redirect('/dashboard-petugas');" bekerja sempurna dan memuat data peta
 Route::get('/dashboard-petugas', [PetugasController::class, 'index'])->middleware('role:2');
 
+Route::get('/pejabat/cetak-laporan', [PejabatController::class, 'exportDashboardPDF'])->name('pejabat.cetak');
+
 Route::middleware(['role:3'])->group(function () {
     Route::get('/dashboard-pejabat', [PejabatController::class, 'index'])->name('dashboard.pejabat');
-    Route::get('/pejabat/cetak-laporan', [PejabatController::class, 'exportDashboardPDF'])->name('pejabat.cetak');
     Route::get('/pejabat/produksi-kecamatan', [PejabatController::class, 'produksiKecamatan'])->name('produksi.kecamatan');
     Route::get('/pejabat/produksi-kecamatan/pdf', [PejabatController::class, 'exportProduksiPDF'])->name('produksi.kecamatan.pdf');
     Route::get('/pejabat/lahan-kecamatan', [PejabatController::class, 'lahanKecamatan'])->name('lahan.kecamatan');

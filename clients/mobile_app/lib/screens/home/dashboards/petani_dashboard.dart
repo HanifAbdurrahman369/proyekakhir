@@ -3,6 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../models/user.dart';
 import '../../../providers/farming_provider.dart';
+import '../tambah_lahan_screen.dart';
+import '../lapor_tanam_screen.dart';
+import '../lapor_panen_screen.dart';
 
 class PetaniDashboard extends StatefulWidget {
   final User? user;
@@ -179,9 +182,16 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                     _buildActionButton(
                       label: 'Tambah Lahan',
                       onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Membuka Form Tambah Lahan...')),
-                        );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const TambahLahanScreen(),
+                          ),
+                        ).then((_) {
+                          if (mounted) {
+                            context.read<FarmingProvider>().fetchDashboardData(lahanPage: _currentLahanPage);
+                          }
+                        });
                       },
                       textColor: const Color(0xFF3E7D00),
                       bgColor: Colors.white,
@@ -193,9 +203,16 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                     label: isAllowedToPlant ? 'Lapor Tanam' : 'Lapor Tanam (Kunci)',
                     onPressed: isAllowedToPlant
                         ? () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Membuka Form Lapor Tanam...')),
-                            );
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LaporTanamScreen(),
+                              ),
+                            ).then((_) {
+                              if (mounted) {
+                                context.read<FarmingProvider>().fetchDashboardData(lahanPage: _currentLahanPage);
+                              }
+                            });
                           }
                         : null,
                     textColor: isAllowedToPlant ? Colors.white : Colors.grey.shade500,
@@ -206,9 +223,16 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                     _buildActionButton(
                       label: 'Lapor Hasil Panen',
                       onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Membuka Form Lapor Hasil Panen...')),
-                        );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LaporPanenScreen(),
+                          ),
+                        ).then((_) {
+                          if (mounted) {
+                            context.read<FarmingProvider>().fetchDashboardData(lahanPage: _currentLahanPage);
+                          }
+                        });
                       },
                       textColor: Colors.white,
                       bgColor: const Color(0xFF203C10),

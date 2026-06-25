@@ -58,7 +58,7 @@ class LahanSawahController extends Controller
         $data = $query->select($select)
             ->orderByRaw("CASE status_verifikasi WHEN 'PENDING' THEN 1 WHEN 'DITOLAK' THEN 2 WHEN 'DITERIMA' THEN 3 ELSE 4 END")
             ->orderByDesc('id')
-            ->paginate(2);
+            ->paginate($request->input('per_page', 2));
 
         $offset = ($data->currentPage() - 1) * $data->perPage();
         $data->getCollection()->transform(function ($row, $index) use ($offset) {

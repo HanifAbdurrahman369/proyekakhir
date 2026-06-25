@@ -192,7 +192,11 @@ class PejabatController extends Controller
 
     public function exportDashboardPDF(Request $request)
     {
-        $token = session('token');
+        $token = $request->query('token') ?? session('token');
+
+        if (!$token) {
+            abort(401, 'Unauthorized: Token tidak ditemukan');
+        }
 
         $produksiPejabat = 0;
         $totalLahan = 0;
@@ -200,17 +204,21 @@ class PejabatController extends Controller
         $topKecamatan = [];
 
         try {
-            // Total produksi
-            $produksi = Http::withToken($token)
+            // Total produksi (Sekaligus sebagai otorisasi/verifikasi token)
+            $produksi = Http::withoutVerifying()
+                ->withToken($token)
                 ->acceptJson()
                 ->get($this->gatewayUrl . '/api/produksi-pejabat');
 
-            if ($produksi->successful()) {
-                $produksiPejabat = $produksi->json('data.produksi_pejabat');
+            if ($produksi->failed()) {
+                abort(403, 'Akses ditolak atau token tidak valid');
             }
 
+            $produksiPejabat = $produksi->json('data.produksi_pejabat');
+
             // Total lahan
-            $lahan = Http::withToken($token)
+            $lahan = Http::withoutVerifying()
+                ->withToken($token)
                 ->acceptJson()
                 ->get($this->gatewayUrl . '/api/total-lahan');
 
@@ -219,7 +227,8 @@ class PejabatController extends Controller
             }
 
             // Produksi bulanan
-            $bulanan = Http::withToken($token)
+            $bulanan = Http::withoutVerifying()
+                ->withToken($token)
                 ->acceptJson()
                 ->get($this->gatewayUrl . '/api/produksi-bulanan');
 
@@ -231,7 +240,8 @@ class PejabatController extends Controller
             }
 
             // Top kecamatan
-            $top = Http::withToken($token)
+            $top = Http::withoutVerifying()
+                ->withToken($token)
                 ->acceptJson()
                 ->get($this->gatewayUrl . '/api/top-kecamatan');
 

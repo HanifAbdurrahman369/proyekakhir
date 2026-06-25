@@ -11,6 +11,7 @@ import 'riwayat_aktivitas_screen.dart';
 import 'tambah_lahan_screen.dart';
 import 'lapor_tanam_screen.dart';
 import 'lapor_panen_screen.dart';
+import 'sebaran_lahan_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -230,6 +231,39 @@ class HomeScreen extends StatelessWidget {
                         );
                       },
                     ),
+                  ] else if (roleId == 3) ...[
+                    // Category: LAPORAN EKSEKUTIF
+                    _buildCategoryHeader('LAPORAN EKSEKUTIF'),
+                    _buildDrawerItem(
+                      icon: Icons.dashboard_rounded,
+                      label: 'Statistik Utama',
+                      isSelected: true,
+                      onTap: () => Navigator.pop(context),
+                    ),
+                    _buildDrawerItem(
+                      icon: Icons.map_rounded,
+                      label: 'Sebaran Lahan',
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SebaranLahanScreen(),
+                          ),
+                        );
+                      },
+                    ),
+
+                    // Category: ANALISIS DATA
+                    _buildCategoryHeader('ANALISIS DATA'),
+                    _buildDrawerItem(
+                      icon: Icons.analytics_rounded,
+                      label: 'Produksi Daerah',
+                      onTap: () {
+                        Navigator.pop(context);
+                        _showProduksiDaerahInfoDialog(context);
+                      },
+                    ),
                   ] else ...[
                     // Default menu for other roles
                     _buildCategoryHeader('MENU UTAMA'),
@@ -319,16 +353,16 @@ class HomeScreen extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isSelected ? activeBg : Colors.transparent,
+      child: Material(
+        color: isSelected ? activeBg : Colors.transparent,
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          border: isSelected ? Border.all(color: const Color(0xFFDFECCC)) : null,
+          side: isSelected ? const BorderSide(color: Color(0xFFDFECCC)) : BorderSide.none,
         ),
+        clipBehavior: Clip.antiAlias,
         child: ListTile(
           dense: true,
           visualDensity: VisualDensity.compact,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           leading: Icon(icon, color: finalIconColor, size: 18),
           title: Text(
             label,
@@ -341,6 +375,32 @@ class HomeScreen extends StatelessWidget {
           onTap: onTap,
           enabled: !isLocked && onTap != null,
         ),
+      ),
+    );
+  }
+
+  void _showProduksiDaerahInfoDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Laporan Produksi Daerah',
+          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF14280B)),
+        ),
+        content: Text(
+          'Grafik tren produksi bulanan sudah tersedia di dashboard Statistik Utama. Untuk laporan analisis produksi daerah interaktif yang lebih lengkap (termasuk filter tipe lahan dan grafik produktivitas), silakan buka aplikasi SITANI versi Web.',
+          style: GoogleFonts.inter(fontSize: 14, height: 1.5, color: const Color(0xFF475569)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF3E7D00),
+            ),
+            child: Text('OK', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }

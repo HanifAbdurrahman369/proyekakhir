@@ -28,7 +28,6 @@ class RiwayatPanenController extends Controller
                 'pemilik.nama_lengkap as nama_pemilik',
                 'penggarap.nama_lengkap as nama_penggarap',
             ])
-            ->where('rp.status_verifikasi', 'DITERIMA')
             ->whereDate('rp.tanggal_panen', '<=', now()->toDateString());
 
         if ($roleId === 1) {
@@ -57,6 +56,7 @@ class RiwayatPanenController extends Controller
             'produktivitas_ton_ha' => (float) $item->produktivitas_ton_ha,
             'status_aktif' => 'NONAKTIF',
             'status_verifikasi' => $item->status_verifikasi,
+            'catatan_verifikasi' => $item->catatan_verifikasi ?? '',
             'nama_pemilik' => $item->nama_pemilik,
             'nama_penggarap' => $item->nama_penggarap,
             'lahan' => [
