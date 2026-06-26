@@ -25,7 +25,7 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
   final String _satelliteUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
   final String _topoUrl = 'https://a.tile.opentopomap.org/{z}/{x}/{y}.png';
 
-  String _selectedBaseMap = 'Peta Standar'; // 'Peta Standar', 'Citra Satelit', 'Peta Topografi'
+  String _selectedBaseMap = '🗺️ Peta Standar'; // 'Peta Standar', 'Citra Satelit', 'Peta Topografi'
   bool _showKabupatenLayer = true;
   bool _showKecamatanLayer = true;
   bool _showLahanSawahLayer = true;
@@ -459,9 +459,9 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                   mapController: _mapController,
                   options: MapOptions(
                     initialCenter: const LatLng(-3.120, 114.600), // Kab. Barito Kuala
-                    initialZoom: 10.0,
+                    initialZoom: 9.3,
                     maxZoom: 18.0,
-                    minZoom: 9.0,
+                    minZoom: 8.0,
                     onTap: (position, point) {
                       // Tutup info card jika mengetuk bagian peta kosong
                       if (_selectedEntity != null) {
@@ -474,9 +474,9 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                   children: [
                     // Layer Peta Dasar Dinamis
                     TileLayer(
-                      urlTemplate: _selectedBaseMap == 'Citra Satelit'
+                      urlTemplate: _selectedBaseMap.contains('Citra Satelit')
                           ? _satelliteUrl
-                          : _selectedBaseMap == 'Peta Topografi'
+                          : _selectedBaseMap.contains('Peta Topografi')
                               ? _topoUrl
                               : _osmUrl,
                       userAgentPackageName: 'com.sigpala.batola.mobile_app',

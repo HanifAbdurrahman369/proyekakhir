@@ -102,4 +102,17 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// Menangani aksi lupa password
+  Future<void> forgotPassword(String email) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await _authService.forgotPassword(email);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }

@@ -48,8 +48,8 @@ class User extends Authenticatable
      */
      public function sendPasswordResetNotification($token)
      {
-         // Menggunakan 127.0.0.1 agar lebih stabil antar-servis di Laragon
-         $url = 'http://127.0.0.1:8080/reset-password/' . $token . '?email=' . urlencode($this->email);
+         $baseUrl = env('WEB_APP_URL', 'http://127.0.0.1:8080');
+         $url = rtrim($baseUrl, '/') . '/reset-password/' . $token . '?email=' . urlencode($this->email);
 
          $this->notify(
              new ResetPasswordNotification($url)

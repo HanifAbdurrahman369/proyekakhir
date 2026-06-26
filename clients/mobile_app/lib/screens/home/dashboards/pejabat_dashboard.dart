@@ -318,8 +318,8 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // 1. Profile Card (Pejabat Dinas Style)
-            _buildProfileCard(),
-            const SizedBox(height: 24),
+            // _buildProfileCard(),
+            // const SizedBox(height: 24),
 
             // 2. Header Dashboard
             Row(
@@ -648,108 +648,4 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
       ),
     );
   }
-
-  Widget _buildProfileCard() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0284C7), Color(0xFF0369A1)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0284C7).withValues(alpha: 0.15),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 26,
-                backgroundColor: Colors.white24,
-                child: Text(
-                  widget.user != null && widget.user!.namaLengkap.isNotEmpty
-                      ? widget.user!.namaLengkap.substring(0, 1).toUpperCase()
-                      : 'P',
-                  style: GoogleFonts.outfit(
-                    fontSize: 22,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.user?.namaLengkap ?? 'Pejabat Dinas',
-                      style: GoogleFonts.outfit(
-                        fontSize: 18,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.white24,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        'Pejabat Dinas Pertanian',
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const Divider(color: Colors.white24, height: 24),
-          Row(
-            children: [
-              const Icon(Icons.email_outlined, color: Colors.white70, size: 16),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  widget.user?.email ?? '-',
-                  style: GoogleFonts.inter(color: Colors.white70, fontSize: 13),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          if (widget.user?.noHp != null && widget.user!.noHp!.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                const Icon(Icons.phone_outlined, color: Colors.white70, size: 16),
-                const SizedBox(width: 6),
-                Text(
-                  widget.user!.noHp!,
-                  style: GoogleFonts.inter(color: Colors.white70, fontSize: 13),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
 }

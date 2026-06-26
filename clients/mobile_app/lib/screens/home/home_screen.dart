@@ -12,6 +12,7 @@ import 'tambah_lahan_screen.dart';
 import 'lapor_tanam_screen.dart';
 import 'lapor_panen_screen.dart';
 import 'sebaran_lahan_screen.dart';
+import 'dashboards/produksi_daerah_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -87,7 +88,28 @@ class HomeScreen extends StatelessWidget {
     // Builder untuk Sidebar Drawer
     Widget buildDrawer(User? user) {
       final roleId = user?.roleId ?? 1;
-      final roleName = roleId == 5 ? 'Brigade Pangan' : 'Kelompok Tani';
+      
+      String roleName;
+      switch (roleId) {
+        case 1:
+          roleName = 'Kelompok Tani';
+          break;
+        case 2:
+          roleName = 'Petugas Lapangan';
+          break;
+        case 3:
+          roleName = 'Pejabat';
+          break;
+        case 4:
+          roleName = 'Administrator';
+          break;
+        case 5:
+          roleName = 'Brigade Pangan';
+          break;
+        default:
+          roleName = 'Pengguna';
+      }
+
       final currentMonth = DateTime.now().month;
       final isKelompokTaniAllowed = (currentMonth >= 1 && currentMonth <= 9);
       final isBrigadePanganAllowed = [10, 11, 12, 1].contains(currentMonth);
@@ -102,7 +124,13 @@ class HomeScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Drawer Header
-            UserAccountsDrawerHeader(
+            Container(
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top + 24,
+                bottom: 24,
+                left: 20,
+                right: 20,
+              ),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: [Color(0xFF3E7D00), Color(0xFF5EA500)],
@@ -110,34 +138,38 @@ class HomeScreen extends StatelessWidget {
                   end: Alignment.bottomRight,
                 ),
               ),
-              currentAccountPicture: CircleAvatar(
-                backgroundColor: Colors.white24,
-                child: Text(
-                  user != null && user.namaLengkap.isNotEmpty
-                      ? user.namaLengkap.substring(0, 1).toUpperCase()
-                      : 'U',
-                  style: GoogleFonts.outfit(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              accountName: Text(
-                user?.namaLengkap ?? 'Pengguna',
-                style: GoogleFonts.outfit(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              accountEmail: Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  CircleAvatar(
+                    radius: 32,
+                    backgroundColor: Colors.white24,
+                    child: Text(
+                      user != null && user.namaLengkap.isNotEmpty
+                          ? user.namaLengkap.substring(0, 1).toUpperCase()
+                          : 'U',
+                      style: GoogleFonts.outfit(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    user?.namaLengkap ?? 'Pengguna',
+                    style: GoogleFonts.outfit(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
                   Text(
                     user?.email ?? '-',
                     style: GoogleFonts.inter(fontSize: 12, color: Colors.white70),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
@@ -261,7 +293,12 @@ class HomeScreen extends StatelessWidget {
                       label: 'Produksi Daerah',
                       onTap: () {
                         Navigator.pop(context);
-                        _showProduksiDaerahInfoDialog(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ProduksiDaerahScreen(),
+                          ),
+                        );
                       },
                     ),
                   ] else ...[
@@ -296,9 +333,38 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F9F4),
       appBar: AppBar(
-        title: Text(
-          'Dashboard SITANI',
-          style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/images/logo.png',
+              height: 32,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Sistem Informasi',
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white70,
+                  ),
+                ),
+                Text(
+                  'Dinas Pertanian',
+                  style: GoogleFonts.outfit(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
         backgroundColor: Colors.green[800],
         foregroundColor: Colors.white,
@@ -375,32 +441,6 @@ class HomeScreen extends StatelessWidget {
           onTap: onTap,
           enabled: !isLocked && onTap != null,
         ),
-      ),
-    );
-  }
-
-  void _showProduksiDaerahInfoDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          'Laporan Produksi Daerah',
-          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF14280B)),
-        ),
-        content: Text(
-          'Grafik tren produksi bulanan sudah tersedia di dashboard Statistik Utama. Untuk laporan analisis produksi daerah interaktif yang lebih lengkap (termasuk filter tipe lahan dan grafik produktivitas), silakan buka aplikasi SITANI versi Web.',
-          style: GoogleFonts.inter(fontSize: 14, height: 1.5, color: const Color(0xFF475569)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF3E7D00),
-            ),
-            child: Text('OK', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
-          ),
-        ],
       ),
     );
   }

@@ -433,10 +433,16 @@ document.addEventListener("DOMContentLoaded", function () {
         .catch(err => console.error("API Batas Wilayah bermasalah"));
 
     // 4b. Ambil Batas Kecamatan
+    let allKecamatanFeatures = [];
+    let allLahanFeatures = [];
+    let uniqueKelurahans = [];
+    let currentLahanLayer = null;
+
     fetch(`${apiBase}/batas-kecamatan`)
         .then(res => res.json())
         .then(data => {
             const featureCollection = data.data || data;
+            allKecamatanFeatures = featureCollection.features || [];
             L.geoJSON(featureCollection, {
                 interactive: false,
                 style: sigpalaKecamatanStyle,
@@ -449,15 +455,30 @@ document.addEventListener("DOMContentLoaded", function () {
     // Kelurahan fetch removed
 
     // 5. Ambil Lahan Sawah
-    // 5. Ambil Lahan Sawah
-    let allLahanFeatures = [];
-    let currentLahanLayer = null;
-
     fetch(`${apiBase}/map-lahan`)
         .then(res => res.json())
         .then(data => {
             // Save features for filtering/searching
             allLahanFeatures = data.features || data;
+            
+            // Ekstrak kelurahan unik dari data lahan
+            const kelMap = {};
+            allLahanFeatures.forEach(f => {
+                const kel = f.properties.nama_kelurahan || f.properties.kelurahan;
+                const kec = f.properties.nama_kecamatan || f.properties.kecamatan;
+                if (kel) {
+                    const key = `${kel.toLowerCase().trim()}|${(kec || '').toLowerCase().trim()}`;
+                    if (!kelMap[key]) {
+                        kelMap[key] = {
+                            nama_kelurahan: kel,
+                            nama_kecamatan: kec || '',
+                            features: []
+                        };
+                    }
+                    kelMap[key].features.push(f);
+                }
+            });
+            uniqueKelurahans = Object.values(kelMap);
             
             renderLahanLayer(allLahanFeatures);
 
@@ -520,34 +541,134 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            const matches = allLahanFeatures.filter(f => {
+            // 1. Search Kecamatan matches
+            const kecamatanMatches = allKecamatanFeatures.filter(f => {
+                const name = (f.properties.nama_kecamatan || f.properties.kecamatan || f.properties.label || '').toLowerCase();
+                return name.includes(query);
+            });
+            const uniqueKecMatches = [];
+            const seenKec = new Set();
+            kecamatanMatches.forEach(f => {
+                const name = f.properties.nama_kecamatan || f.properties.kecamatan || f.properties.label;
+                if (name && !seenKec.has(name.toLowerCase())) {
+                    seenKec.add(name.toLowerCase());
+                    uniqueKecMatches.push(f);
+                }
+            });
+
+            // 2. Search Kelurahan matches
+            const kelurahanMatches = uniqueKelurahans.filter(k => {
+                return k.nama_kelurahan.toLowerCase().includes(query);
+            });
+
+            // 3. Search Lahan matches
+            const lahanMatches = allLahanFeatures.filter(f => {
                 const n = (f.properties.nama_lahan || '').toLowerCase();
                 const p = (f.properties.pemilik || f.properties.pemilik_lahan || '').toLowerCase();
                 return n.includes(query) || p.includes(query);
-            }).slice(0, 10); // max 10 results
+            });
+
+            const matches = [];
+
+            // Add Kecamatan (Max 3)
+            uniqueKecMatches.slice(0, 3).forEach(k => {
+                matches.push({
+                    type: 'kecamatan',
+                    title: k.properties.nama_kecamatan || k.properties.kecamatan || k.properties.label,
+                    subtitle: 'Kecamatan di Barito Kuala',
+                    feature: k
+                });
+            });
+
+            // Add Kelurahan (Max 3)
+            kelurahanMatches.slice(0, 3).forEach(k => {
+                matches.push({
+                    type: 'kelurahan',
+                    title: k.nama_kelurahan,
+                    subtitle: `Kelurahan di Kec. ${k.nama_kecamatan}`,
+                    kelurahanData: k
+                });
+            });
+
+            // Add Lahan (Max 6)
+            lahanMatches.slice(0, 6).forEach(l => {
+                matches.push({
+                    type: 'lahan',
+                    title: l.properties.nama_lahan,
+                    subtitle: `Lahan | Pemilik: ${l.properties.pemilik || l.properties.pemilik_lahan || '-'} | Kec. ${l.properties.nama_kecamatan || '-'}`,
+                    feature: l
+                });
+            });
 
             if (matches.length > 0) {
-                matches.forEach(m => {
+                matches.forEach(match => {
                     const div = document.createElement('div');
-                    div.className = 'px-4 py-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-0';
+                    div.className = 'px-4 py-3 hover:bg-emerald-50 cursor-pointer border-b border-slate-100 last:border-0 transition-colors flex items-center gap-3';
+                    
+                    let iconHtml = '';
+                    if (match.type === 'kecamatan') {
+                        iconHtml = `
+                            <div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                            </div>
+                        `;
+                    } else if (match.type === 'kelurahan') {
+                        iconHtml = `
+                            <div class="w-8 h-8 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                </svg>
+                            </div>
+                        `;
+                    } else {
+                        iconHtml = `
+                            <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m12.022 12.022l-.707.707M9 9h6v6H9V9z" />
+                                </svg>
+                            </div>
+                        `;
+                    }
+
                     div.innerHTML = `
-                        <p class="font-bold text-sm text-slate-800">${sigpalaDisplay(m.properties.nama_lahan)}</p>
-                        <p class="text-xs text-slate-500">Pemilik: ${sigpalaDisplay(m.properties.pemilik || m.properties.pemilik_lahan)}</p>
+                        ${iconHtml}
+                        <div class="flex-1 min-w-0">
+                            <p class="font-bold text-sm text-slate-800 truncate">${sigpalaDisplay(match.title)}</p>
+                            <p class="text-xs text-slate-500 truncate">${sigpalaDisplay(match.subtitle)}</p>
+                        </div>
                     `;
+
                     div.addEventListener('click', () => {
                         searchResults.classList.add('hidden');
-                        searchInput.value = sigpalaDisplay(m.properties.nama_lahan);
+                        searchInput.value = sigpalaDisplay(match.title);
                         
-                        // Create a temporary layer to zoom to it
-                        const targetLayer = L.geoJSON(m);
-                        map.fitBounds(targetLayer.getBounds(), { maxZoom: 16 });
-                        showDetail(m.properties);
+                        if (match.type === 'kecamatan') {
+                            const targetLayer = L.geoJSON(match.feature);
+                            if (targetLayer.getBounds().isValid()) {
+                                map.fitBounds(targetLayer.getBounds(), { padding: [36, 36] });
+                            }
+                            closeSidePanel();
+                        } else if (match.type === 'kelurahan') {
+                            const targetLayer = L.geoJSON(match.kelurahanData.features);
+                            if (targetLayer.getBounds().isValid()) {
+                                map.fitBounds(targetLayer.getBounds(), { padding: [36, 36] });
+                            }
+                            closeSidePanel();
+                        } else if (match.type === 'lahan') {
+                            const targetLayer = L.geoJSON(match.feature);
+                            if (targetLayer.getBounds().isValid()) {
+                                map.fitBounds(targetLayer.getBounds(), { maxZoom: 16 });
+                            }
+                            showDetail(match.feature.properties);
+                        }
                     });
                     searchResults.appendChild(div);
                 });
                 searchResults.classList.remove('hidden');
             } else {
-                searchResults.innerHTML = '<div class="px-4 py-3 text-sm text-slate-500">Tidak ada lahan ditemukan</div>';
+                searchResults.innerHTML = '<div class="px-4 py-3 text-sm text-slate-500">Tidak ada hasil ditemukan</div>';
                 searchResults.classList.remove('hidden');
             }
         });

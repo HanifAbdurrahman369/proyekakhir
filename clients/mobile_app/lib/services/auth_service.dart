@@ -73,4 +73,20 @@ class AuthService {
       throw Exception(message);
     }
   }
+
+  /// Mengirim request reset password (link email) ke backend
+  Future<Map<String, dynamic>> forgotPassword(String email) async {
+    try {
+      final response = await _apiClient.dio.post(
+        ApiEndpoints.forgotPassword,
+        data: {
+          'email': email,
+        },
+      );
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      final message = e.response?.data['message'] ?? 'Gagal mengirim link reset password. Silakan periksa jaringan Anda.';
+      throw Exception(message);
+    }
+  }
 }

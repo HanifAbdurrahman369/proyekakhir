@@ -15,8 +15,8 @@ class AdminDashboard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Profile Card
-          _buildProfileCard(),
-          const SizedBox(height: 28),
+          // _buildProfileCard(),
+          // const SizedBox(height: 28),
           
           // Statistics
           Text(
@@ -119,109 +119,6 @@ class AdminDashboard extends StatelessWidget {
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProfileCard() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF475569), Color(0xFF334155)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF475569).withValues(alpha: 0.2),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 30,
-                backgroundColor: Colors.white24,
-                child: Text(
-                  user != null && user!.namaLengkap.isNotEmpty
-                      ? user!.namaLengkap.substring(0, 1).toUpperCase()
-                      : 'A',
-                  style: GoogleFonts.outfit(
-                    fontSize: 26,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      user?.namaLengkap ?? 'Admin System',
-                      style: GoogleFonts.outfit(
-                        fontSize: 20,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white24,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        'Administrator',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const Divider(color: Colors.white30, height: 32),
-          Row(
-            children: [
-              const Icon(Icons.email_outlined, color: Colors.white70, size: 18),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  user?.email ?? '-',
-                  style: GoogleFonts.inter(color: Colors.white70, fontSize: 14),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          if (user?.noHp != null && user!.noHp!.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.phone_outlined, color: Colors.white70, size: 18),
-                const SizedBox(width: 8),
-                Text(
-                  user!.noHp!,
-                  style: GoogleFonts.inter(color: Colors.white70, fontSize: 14),
-                ),
-              ],
-            ),
-          ],
         ],
       ),
     );

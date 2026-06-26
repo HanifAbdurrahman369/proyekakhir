@@ -150,19 +150,28 @@ class PejabatController extends Controller
 
     public function exportProduksiPDF(Request $request)
     {
-        $token = session('token');
+        $token = $request->query('token') ?? session('token');
+
+        if (!$token) {
+            abort(401, 'Unauthorized: Token tidak ditemukan');
+        }
+
         $data = [];
 
         try {
-            $response = Http::withToken($token)
+            $response = Http::withoutVerifying()
+                ->withToken($token)
                 ->acceptJson()
                 ->get($this->gatewayUrl . '/api/produksi-kecamatan');
 
-            if ($response->successful()) {
-                $data = $response->json('data') ?? [];
+            if ($response->failed()) {
+                abort(403, 'Akses ditolak atau token tidak valid');
             }
+
+            $data = $response->json('data') ?? [];
         } catch (\Exception $e) {
             report($e);
+            abort(500, 'Terjadi kesalahan server internal');
         }
 
         $pdf = Pdf::loadView('partials.sidebar.pejabat.produksi-kecamatan-pdf', compact('data'));
@@ -171,19 +180,28 @@ class PejabatController extends Controller
 
     public function exportLahanPDF(Request $request)
     {
-        $token = session('token');
+        $token = $request->query('token') ?? session('token');
+
+        if (!$token) {
+            abort(401, 'Unauthorized: Token tidak ditemukan');
+        }
+
         $data = [];
 
         try {
-            $response = Http::withToken($token)
+            $response = Http::withoutVerifying()
+                ->withToken($token)
                 ->acceptJson()
                 ->get($this->gatewayUrl . '/api/lahan-kecamatan');
 
-            if ($response->successful()) {
-                $data = $response->json('data') ?? [];
+            if ($response->failed()) {
+                abort(403, 'Akses ditolak atau token tidak valid');
             }
+
+            $data = $response->json('data') ?? [];
         } catch (\Exception $e) {
             report($e);
+            abort(500, 'Terjadi kesalahan server internal');
         }
 
         $pdf = Pdf::loadView('partials.sidebar.pejabat.lahan-kecamatan-pdf', compact('data'));
@@ -260,5 +278,134 @@ class PejabatController extends Controller
             'produksiBulanan'
         ));
         return $pdf->download('laporan-statistik-eksekutif.pdf');
+    }
+
+    public function exportLahanSawahPDF(Request $request)
+    {
+        $token = $request->query('token') ?? session('token');
+        $data = [];
+
+        try {
+            $response = Http::withoutVerifying()
+                ->withToken($token)
+                ->acceptJson()
+                ->get($this->gatewayUrl . '/api/statistik');
+
+            if ($response->successful()) {
+                $data = $response->json('data.lahan_all') ?? [];
+            }
+        } catch (\Exception $e) {
+            report($e);
+        }
+
+        $pdf = Pdf::loadView('partials.sidebar.pejabat.lahan-sawah-pdf', compact('data'));
+        return $pdf->download('daftar-lahan-sawah.pdf');
+    }
+
+    public function exportLahanSawahExcel(Request $request)
+    {
+        $token = $request->query('token') ?? session('token');
+        $data = [];
+
+        try {
+            $response = Http::withoutVerifying()
+                ->withToken($token)
+                ->acceptJson()
+                ->get($this->gatewayUrl . '/api/statistik');
+
+            if ($response->successful()) {
+                $data = $response->json('data.lahan_all') ?? [];
+            }
+        } catch (\Exception $e) {
+            report($e);
+        }
+
+        return response()->view('partials.sidebar.pejabat.lahan-sawah-excel', compact('data'))
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header('Content-Disposition', 'attachment; filename="daftar-lahan-sawah.xls"');
+    }
+
+    public function exportProduksiExcel(Request $request)
+    {
+        $token = $request->query('token') ?? session('token');
+        $data = [];
+
+        try {
+            $response = Http::withoutVerifying()
+                ->withToken($token)
+                ->acceptJson()
+                ->get($this->gatewayUrl . '/api/produksi-kecamatan');
+
+            if ($response->successful()) {
+                $data = $response->json('data') ?? [];
+            }
+        } catch (\Exception $e) {
+            report($e);
+        }
+
+        return response()->view('partials.sidebar.pejabat.produksi-kecamatan-excel', compact('data'))
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header('Content-Disposition', 'attachment; filename="rekap-produksi-kecamatan.xls"');
+    }
+
+    public function exportProduksiKelurahanPDF(Request $request)
+    {
+        $token = $request->query('token') ?? session('token');
+        $kecamatan = $request->query('kecamatan');
+        $data = [];
+
+        try {
+            $response = Http::withoutVerifying()
+                ->withToken($token)
+                ->acceptJson()
+                ->get($this->gatewayUrl . '/api/statistik');
+
+            if ($response->successful()) {
+                $rekap = $response->json('data.tabel_rekap') ?? [];
+                if ($kecamatan) {
+                    $data = collect($rekap)->filter(function ($item) use ($kecamatan) {
+                        return strtolower($item['nama_kecamatan']) === strtolower($kecamatan);
+                    })->sortBy('nama_kelurahan')->values()->all();
+                } else {
+                    $data = collect($rekap)->sortBy('nama_kecamatan')->values()->all();
+                }
+            }
+        } catch (\Exception $e) {
+            report($e);
+        }
+
+        $pdf = Pdf::loadView('partials.sidebar.pejabat.produksi-kelurahan-pdf', compact('data', 'kecamatan'));
+        return $pdf->download('rekap-produksi-kelurahan-' . ($kecamatan ?: 'semua') . '.pdf');
+    }
+
+    public function exportProduksiKelurahanExcel(Request $request)
+    {
+        $token = $request->query('token') ?? session('token');
+        $kecamatan = $request->query('kecamatan');
+        $data = [];
+
+        try {
+            $response = Http::withoutVerifying()
+                ->withToken($token)
+                ->acceptJson()
+                ->get($this->gatewayUrl . '/api/statistik');
+
+            if ($response->successful()) {
+                $rekap = $response->json('data.tabel_rekap') ?? [];
+                if ($kecamatan) {
+                    $data = collect($rekap)->filter(function ($item) use ($kecamatan) {
+                        return strtolower($item['nama_kecamatan']) === strtolower($kecamatan);
+                    })->sortBy('nama_kelurahan')->values()->all();
+                } else {
+                    $data = collect($rekap)->sortBy('nama_kecamatan')->values()->all();
+                }
+            }
+        } catch (\Exception $e) {
+            report($e);
+        }
+
+        return response()->view('partials.sidebar.pejabat.produksi-kelurahan-excel', compact('data', 'kecamatan'))
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header('Content-Disposition', 'attachment; filename="rekap-produksi-kelurahan-' . ($kecamatan ?: 'semua') . '.xls"');
     }
 }

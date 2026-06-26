@@ -33,7 +33,7 @@ start "REPORTING SERVICE - 8006" cmd /k "cd /d C:\laragon\www\proyekakhir\servic
 
 timeout /t 2 >nul
 
-start "WEB APP - 8080" cmd /k "cd /d C:\laragon\www\proyekakhir\clients\web_app && php artisan serve --host=127.0.0.1 --port=8080"
+start "WEB APP - 8080" cmd /k "cd /d C:\laragon\www\proyekakhir\clients\web_app && php artisan serve --host=0.0.0.0 --port=8080"
 
 echo.
 echo ==================================================

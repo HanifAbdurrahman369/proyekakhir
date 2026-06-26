@@ -2,6 +2,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'auth/login_screen.dart';
+import 'home/sebaran_lahan_screen.dart';
+import 'home/dashboards/produksi_daerah_screen.dart';
 
 class LandingScreen extends StatelessWidget {
   const LandingScreen({super.key});
@@ -335,6 +337,14 @@ class LandingScreen extends StatelessWidget {
                     title: 'Peta Interaktif Geospasial',
                     description: 'Eksplorasi batas wilayah hingga detail blok lahan sawah rawa secara visual dan real-time.',
                     iconColor: Colors.teal.shade700,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SebaranLahanScreen(),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 14),
                   _buildFeatureItem(
@@ -342,13 +352,14 @@ class LandingScreen extends StatelessWidget {
                     title: 'Analisis Statistik Transparan',
                     description: 'Akumulasi luasan sawah dan perkembangan pertanian disajikan transparan dalam grafik visual.',
                     iconColor: Colors.orange.shade800,
-                  ),
-                  const SizedBox(height: 14),
-                  _buildFeatureItem(
-                    icon: Icons.trending_up_rounded,
-                    title: 'Informasi Produktivitas Akurat',
-                    description: 'Melacak potensi dan realisasi hasil panen lahan sawah rawa dalam satuan Ton/Ha.',
-                    iconColor: Colors.green.shade800,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ProduksiDaerahScreen(),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 32),
 
@@ -378,9 +389,9 @@ class LandingScreen extends StatelessWidget {
     required String title,
     required String description,
     required Color iconColor,
+    VoidCallback? onTap,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(20),
@@ -393,40 +404,61 @@ class LandingScreen extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(
-            backgroundColor: iconColor.withValues(alpha: 0.1),
-            radius: 24,
-            child: Icon(icon, color: iconColor, size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: GoogleFonts.outfit(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF0F172A),
+                CircleAvatar(
+                  backgroundColor: iconColor.withValues(alpha: 0.1),
+                  radius: 24,
+                  child: Icon(icon, color: iconColor, size: 24),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF0F172A),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        description,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: const Color(0xFF64748B),
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: const Color(0xFF64748B),
-                    height: 1.4,
+                if (onTap != null) ...[
+                  const SizedBox(width: 8),
+                  const Align(
+                    alignment: Alignment.center,
+                    child: Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      color: Color(0xFF64748B),
+                      size: 16,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

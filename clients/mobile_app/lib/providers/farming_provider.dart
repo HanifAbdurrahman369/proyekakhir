@@ -52,6 +52,20 @@ class FarmingProvider extends ChangeNotifier {
   Map<String, dynamic>? _lahanMapFeatures;
   bool _isMapLoading = false;
 
+  Map<String, dynamic>? _statistikData;
+  bool _isStatistikLoading = false;
+
+  // State Petugas
+  int _pendingLahanCount = 0;
+  int _pendingPanenCount = 0;
+  int _totalPendingCount = 0;
+  List<dynamic> _pendingLahanList = [];
+  List<dynamic> _pendingPanenList = [];
+  List<dynamic> _spasialLahanList = [];
+  List<dynamic> _acceptedLahanList = [];
+  List<dynamic> _monitoringList = [];
+  bool _isPetugasLoading = false;
+
   FarmingProvider(this._farmingService);
 
   double get produksiPejabat => _produksiPejabat;
@@ -65,6 +79,20 @@ class FarmingProvider extends ChangeNotifier {
   Map<String, dynamic>? get kecamatanBoundaries => _kecamatanBoundaries;
   Map<String, dynamic>? get lahanMapFeatures => _lahanMapFeatures;
   bool get isMapLoading => _isMapLoading;
+
+  Map<String, dynamic>? get statistikData => _statistikData;
+  bool get isStatistikLoading => _isStatistikLoading;
+
+  // Getters Petugas
+  int get pendingLahanCount => _pendingLahanCount;
+  int get pendingPanenCount => _pendingPanenCount;
+  int get totalPendingCount => _totalPendingCount;
+  List<dynamic> get pendingLahanList => _pendingLahanList;
+  List<dynamic> get pendingPanenList => _pendingPanenList;
+  List<dynamic> get spasialLahanList => _spasialLahanList;
+  List<dynamic> get acceptedLahanList => _acceptedLahanList;
+  List<dynamic> get monitoringList => _monitoringList;
+  bool get isPetugasLoading => _isPetugasLoading;
 
   bool get isLoading => _isLoading;
   Map<String, dynamic> get lahanData => _lahanData;
@@ -415,13 +443,233 @@ class FarmingProvider extends ChangeNotifier {
         _farmingService.getMapLahan(),
       ]);
 
-      _kabupatenBoundary = results[0] as Map<String, dynamic>;
-      _kecamatanBoundaries = results[1] as Map<String, dynamic>;
-      _lahanMapFeatures = results[2] as Map<String, dynamic>;
+      _kabupatenBoundary = results[0];
+      _kecamatanBoundaries = results[1];
+      _lahanMapFeatures = results[2];
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
     } finally {
       _isMapLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Pejabat: Memuat data statistik produksi daerah lengkap
+  Future<void> fetchStatistikData() async {
+    _isStatistikLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final result = await _farmingService.getStatistik();
+      _statistikData = result['data'] as Map<String, dynamic>;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      _isStatistikLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Petugas: Memuat data statistik antrean & data awal dashboard petugas
+  Future<void> fetchPetugasDashboardData() async {
+    _isPetugasLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final results = await Future.wait([
+        _farmingService.getPendingLahan(),
+        _farmingService.getPendingPanen(),
+        _farmingService.getPetaniSpasial(),
+        _farmingService.getAcceptedLahan(),
+        _farmingService.getMonitoring(),
+      ]);
+
+      _pendingLahanList = results[0];
+      _pendingPanenList = results[1];
+      _petaniSpasialList = results[2];
+      _acceptedLahanList = results[3];
+      _monitoringList = results[4];
+
+      _pendingLahanCount = _pendingLahanList.length;
+      _pendingPanenCount = _pendingPanenList.length;
+      _totalPendingCount = _pendingLahanCount + _pendingPanenCount;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      _isPetugasLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Petugas: Memuat ulang daftar lahan pending
+  Future<void> fetchPendingLahan() async {
+    _isPetugasLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _pendingLahanList = await _farmingService.getPendingLahan();
+      _pendingLahanCount = _pendingLahanList.length;
+      _totalPendingCount = _pendingLahanCount + _pendingPanenCount;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      _isPetugasLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Petugas: Memuat ulang daftar panen pending
+  Future<void> fetchPendingPanen() async {
+    _isPetugasLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _pendingPanenList = await _farmingService.getPendingPanen();
+      _pendingPanenCount = _pendingPanenList.length;
+      _totalPendingCount = _pendingLahanCount + _pendingPanenCount;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      _isPetugasLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Petugas: Memuat data spasial
+  Future<void> fetchSpasialLahan() async {
+    _isPetugasLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _spasialLahanList = await _farmingService.getSpasialLahan();
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      _isPetugasLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Petugas: Menyetujui pengajuan lahan baru
+  Future<bool> approveLahan(int id, int? petaniId) async {
+    _isPetugasLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _farmingService.approveLahan(id, petaniId);
+      // reload lists & counts
+      await fetchPetugasDashboardData();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _isPetugasLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Petugas: Menolak pengajuan lahan baru
+  Future<bool> rejectLahan(int id, String alasan) async {
+    _isPetugasLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _farmingService.rejectLahan(id, alasan);
+      // reload lists & counts
+      await fetchPetugasDashboardData();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _isPetugasLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Petugas: Memverifikasi laporan panen
+  Future<bool> verifikasiPanen(int id, String status, String? catatan) async {
+    _isPetugasLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _farmingService.verifikasiPanen(id, status, catatan);
+      // reload lists & counts
+      await fetchPetugasDashboardData();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _isPetugasLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Petugas: Memperbarui data spasial lahan
+  Future<bool> updateSpasialLahan(int id, Map<String, dynamic> data) async {
+    _isPetugasLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _farmingService.updateSpasialLahan(id, data);
+      await fetchSpasialLahan();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _isPetugasLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Petugas: Memuat data monitoring & accepted lands
+  Future<void> fetchMonitoringData() async {
+    _isPetugasLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final results = await Future.wait([
+        _farmingService.getAcceptedLahan(),
+        _farmingService.getMonitoring(),
+      ]);
+      _acceptedLahanList = results[0];
+      _monitoringList = results[1];
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      _isPetugasLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Petugas: Menyimpan parameter lingkungan
+  Future<bool> saveMonitoring(Map<String, dynamic> data) async {
+    _isPetugasLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _farmingService.saveMonitoring(data);
+      await fetchMonitoringData();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _isPetugasLoading = false;
       notifyListeners();
     }
   }

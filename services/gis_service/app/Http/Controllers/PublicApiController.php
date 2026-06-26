@@ -13,8 +13,8 @@ class PublicApiController extends Controller
     {
         $totalKecamatan = DB::table('kecamatan')->count();
         $totalKelurahan = DB::table('kelurahan')->count();
-        $totalLahanSawah = $this->lahanPublikQuery()->count();
-        $totalLuasHektar = $this->lahanPublikQuery()->sum('luas_lahan_hektar');
+        $totalLahanSawah = $this->lahanDiterimaQuery()->count();
+        $totalLuasHektar = $this->lahanDiterimaQuery()->sum('luas_lahan_hektar');
         $totalPanen = $this->totalPanenDiterimaPublik();
         $rekapRows = $this->buildTabelRekap();
 
@@ -29,13 +29,39 @@ class PublicApiController extends Controller
                     'total_luas_ha' => round((float) $totalLuasHektar, 2),
                     'total_panen_ton' => round((float) $totalPanen, 2),
                 ],
+                'kecamatan_all' => DB::table('kecamatan')
+                    ->select('nama_kecamatan')
+                    ->orderBy('nama_kecamatan')
+                    ->get(),
+                'kelurahan_all' => DB::table('kelurahan')
+                    ->leftJoin('kecamatan', 'kelurahan.kecamatan_id', '=', 'kecamatan.id')
+                    ->select('kelurahan.nama_kelurahan', 'kecamatan.nama_kecamatan')
+                    ->orderBy('kelurahan.nama_kelurahan')
+                    ->get(),
+                'lahan_all' => $this->lahanDiterimaQuery()
+                    ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
+                    ->leftJoin('kelurahan', 'lahan_sawah.kelurahan_id', '=', 'kelurahan.id')
+                    ->leftJoin('users as pemilik', 'lahan_sawah.pemilik_id', '=', 'pemilik.id')
+                    ->select(
+                        'lahan_sawah.id',
+                        'lahan_sawah.nama_lahan',
+                        'lahan_sawah.luas_lahan_hektar as luas',
+                        'kecamatan.nama_kecamatan',
+                        'kelurahan.nama_kelurahan',
+                        'pemilik.nama_lengkap as pemilik_nama'
+                    )
+                    ->orderBy('kecamatan.nama_kecamatan')
+                    ->orderBy('kelurahan.nama_kelurahan')
+                    ->orderBy('lahan_sawah.nama_lahan')
+                    ->get(),
+
                 'chart_panen_kecamatan' => $this->chartPanenKecamatan(),
 
                 'chart_luas_tipe_lahan' => $this->chartLuasTipeLahan(),
 
                 'chart_produktivitas_lahan' => $this->chartProduktivitasLahan(),
 
-                'chart_luas_kecamatan' => $this->lahanPublikQuery()
+                'chart_luas_kecamatan' => $this->lahanDiterimaQuery()
                     ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
                     ->select('kecamatan.nama_kecamatan', DB::raw('ROUND(COALESCE(SUM(lahan_sawah.luas_lahan_hektar),0), 2) as total_luas'))
                     ->groupBy('kecamatan.nama_kecamatan')
@@ -162,6 +188,12 @@ class PublicApiController extends Controller
             ->whereNotNull('lahan_sawah.polygon_area');
     }
 
+    private function lahanDiterimaQuery()
+    {
+        return DB::table('lahan_sawah')
+            ->where('lahan_sawah.status_verifikasi', 'DITERIMA');
+    }
+
     private function panenDiterimaPerLahanQuery()
     {
         if (Schema::hasTable('panen_padi')) {
@@ -179,7 +211,7 @@ class PublicApiController extends Controller
 
     private function totalPanenDiterimaPublik(): float
     {
-        return (float) $this->lahanPublikQuery()
+        return (float) $this->lahanDiterimaQuery()
             ->leftJoinSub($this->panenDiterimaPerLahanQuery(), 'panen_lahan', function ($join) {
                 $join->on('panen_lahan.lahan_id', '=', 'lahan_sawah.id');
             })
@@ -188,7 +220,7 @@ class PublicApiController extends Controller
 
     private function chartPanenKecamatan()
     {
-        return $this->lahanPublikQuery()
+        return $this->lahanDiterimaQuery()
             ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
             ->leftJoinSub($this->panenDiterimaPerLahanQuery(), 'panen_lahan', function ($join) {
                 $join->on('panen_lahan.lahan_id', '=', 'lahan_sawah.id');
@@ -201,7 +233,7 @@ class PublicApiController extends Controller
 
     private function chartLuasTipeLahan()
     {
-        return $this->lahanPublikQuery()
+        return $this->lahanDiterimaQuery()
             ->leftJoin('tipe_lahan', 'lahan_sawah.tipe_lahan_id', '=', 'tipe_lahan.id')
             ->select(
                 'lahan_sawah.tipe_lahan_id',
@@ -239,7 +271,7 @@ class PublicApiController extends Controller
                 });
         }
 
-        return $this->lahanPublikQuery()
+        return $this->lahanDiterimaQuery()
             ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
             ->leftJoinSub($this->panenDiterimaPerLahanQuery(), 'panen_lahan', function ($join) {
                 $join->on('panen_lahan.lahan_id', '=', 'lahan_sawah.id');
@@ -256,7 +288,7 @@ class PublicApiController extends Controller
 
     private function buildTabelRekap()
     {
-        $rows = $this->lahanPublikQuery()
+        $rows = $this->lahanDiterimaQuery()
             ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
             ->leftJoin('kelurahan', 'lahan_sawah.kelurahan_id', '=', 'kelurahan.id')
             ->leftJoin('tipe_lahan', 'lahan_sawah.tipe_lahan_id', '=', 'tipe_lahan.id')

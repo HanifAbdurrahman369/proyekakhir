@@ -313,4 +313,131 @@ class FarmingService {
       throw Exception(e.response?.data['message'] ?? 'Gagal memuat sebaran lahan sawah.');
     }
   }
+
+  /// Pejabat: Mengambil data statistik eksekutif lengkap (produksi daerah)
+  Future<Map<String, dynamic>> getStatistik() async {
+    try {
+      final response = await _apiClient.dio.get('/statistik');
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Gagal memuat data statistik daerah.');
+    }
+  }
+
+  /// Petugas: Mengambil daftar pengajuan lahan pending
+  Future<List<dynamic>> getPendingLahan() async {
+    try {
+      final response = await _apiClient.dio.get('/lahan/pending');
+      return response.data['data'] as List<dynamic>? ?? [];
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Gagal memuat pengajuan lahan pending.');
+    }
+  }
+
+  /// Petugas: Mengambil daftar laporan hasil panen pending
+  Future<List<dynamic>> getPendingPanen() async {
+    try {
+      final response = await _apiClient.dio.get('/panen/pending');
+      return response.data['data'] as List<dynamic>? ?? [];
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Gagal memuat laporan panen pending.');
+    }
+  }
+
+  /// Petugas: Menyetujui pengajuan lahan baru
+  Future<Map<String, dynamic>> approveLahan(int id, int? petaniId) async {
+    try {
+      final payload = <String, dynamic>{};
+      if (petaniId != null) {
+        payload['petani_id'] = petaniId;
+      }
+      final response = await _apiClient.dio.post('/lahan/$id/approve', data: payload);
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Gagal menyetujui pengajuan lahan.');
+    }
+  }
+
+  /// Petugas: Menolak pengajuan lahan baru
+  Future<Map<String, dynamic>> rejectLahan(int id, String alasanPenolakan) async {
+    try {
+      final response = await _apiClient.dio.post(
+        '/lahan/$id/reject',
+        data: {'alasan_penolakan': alasanPenolakan},
+      );
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Gagal menolak pengajuan lahan.');
+    }
+  }
+
+  /// Petugas: Memverifikasi laporan hasil panen (DITOLAK / DITERIMA)
+  Future<Map<String, dynamic>> verifikasiPanen(int id, String status, String? catatan) async {
+    try {
+      final response = await _apiClient.dio.post(
+        '/panen/$id/verifikasi',
+        data: {
+          'aksi': status,
+          'catatan_verifikasi': catatan ?? '',
+        },
+      );
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Gagal memverifikasi laporan panen.');
+    }
+  }
+
+  /// Petugas: Mengambil daftar spasial lahan sawah
+  Future<List<dynamic>> getSpasialLahan() async {
+    try {
+      final response = await _apiClient.dio.get(
+        '/spasial-lahan',
+        queryParameters: {'status': 'ALL', 'kabupaten': 'batola'},
+      );
+      return response.data['data'] as List<dynamic>? ?? [];
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Gagal memuat data spasial lahan.');
+    }
+  }
+
+  /// Petugas: Menyimpan/mengubah data spasial lahan
+  Future<Map<String, dynamic>> updateSpasialLahan(int id, Map<String, dynamic> payload) async {
+    try {
+      final response = await _apiClient.dio.put('/spasial-lahan/$id', data: payload);
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Gagal memperbarui data spasial.');
+    }
+  }
+
+  /// Petugas: Mengambil daftar lahan sawah terverifikasi (DITERIMA)
+  Future<List<dynamic>> getAcceptedLahan() async {
+    try {
+      final response = await _apiClient.dio.get('/lahan/accepted');
+      return response.data['data'] as List<dynamic>? ?? [];
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Gagal memuat lahan terverifikasi.');
+    }
+  }
+
+  /// Petugas: Mengambil riwayat monitoring parameter lingkungan
+  Future<List<dynamic>> getMonitoring() async {
+    try {
+      final response = await _apiClient.dio.get('/monitoring');
+      return response.data['data'] as List<dynamic>? ?? [];
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Gagal memuat parameter lingkungan.');
+    }
+  }
+
+  /// Petugas: Menyimpan parameter lingkungan baru
+  Future<Map<String, dynamic>> saveMonitoring(Map<String, dynamic> payload) async {
+    try {
+      final response = await _apiClient.dio.post('/monitoring', data: payload);
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Gagal menyimpan parameter lingkungan.');
+    }
+  }
 }
+

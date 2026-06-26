@@ -8,4 +8,5 @@ class ApiEndpoints {
   static const String login = '/login';
   static const String register = '/user/register'; // Melalui dynamic gateway proxy ke User Service
   static const String profile = '/auth/profile';  // Melalui gateway proxy ke Auth Service (dengan middleware JWT)
+  static const String forgotPassword = '/forgot-password';
 }

@@ -128,8 +128,8 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // 1. Profile Card
-            _buildProfileCard(user, roleName),
-            const SizedBox(height: 20),
+            // _buildProfileCard(user, roleName),
+            // const SizedBox(height: 20),
 
             // 2. Header Dashboard
             Column(
@@ -173,13 +173,12 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
             ),
             const SizedBox(height: 16),
 
-            // 3. Action Buttons Row (Web-like design)
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  if (roleId == 1) ...[
-                    _buildActionButton(
+            // 3. Action Buttons Row (Sejajar)
+            Row(
+              children: [
+                if (roleId == 1) ...[
+                  Expanded(
+                    child: _buildActionButton(
                       label: 'Tambah Lahan',
                       onPressed: () {
                         Navigator.push(
@@ -197,10 +196,13 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                       bgColor: Colors.white,
                       borderColor: const Color(0xFF3E7D00),
                     ),
-                    const SizedBox(width: 8),
-                  ],
-                  _buildActionButton(
-                    label: isAllowedToPlant ? 'Lapor Tanam' : 'Lapor Tanam (Kunci)',
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Expanded(
+                  child: _buildActionButton(
+                    label: 'Lapor Tanam',
+                    icon: isAllowedToPlant ? null : Icons.lock_outline_rounded,
                     onPressed: isAllowedToPlant
                         ? () {
                             Navigator.push(
@@ -218,10 +220,12 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                     textColor: isAllowedToPlant ? Colors.white : Colors.grey.shade500,
                     bgColor: isAllowedToPlant ? const Color(0xFF3E7D00) : Colors.grey[300]!,
                   ),
-                  if (roleId == 1) ...[
-                    const SizedBox(width: 8),
-                    _buildActionButton(
-                      label: 'Lapor Hasil Panen',
+                ),
+                if (roleId == 1) ...[
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildActionButton(
+                      label: 'Lapor Panen',
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -237,9 +241,9 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                       textColor: Colors.white,
                       bgColor: const Color(0xFF203C10),
                     ),
-                  ],
+                  ),
                 ],
-              ),
+              ],
             ),
             const SizedBox(height: 16),
 
@@ -333,134 +337,47 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
     );
   }
 
-  Widget _buildProfileCard(User? user, String roleName) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF3E7D00), Color(0xFF5EA500)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF3E7D00).withValues(alpha: 0.15),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 26,
-                backgroundColor: Colors.white24,
-                child: Text(
-                  user != null && user.namaLengkap.isNotEmpty
-                      ? user.namaLengkap.substring(0, 1).toUpperCase()
-                      : 'P',
-                  style: GoogleFonts.outfit(
-                    fontSize: 22,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      user?.namaLengkap ?? 'Petani',
-                      style: GoogleFonts.outfit(
-                        fontSize: 18,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.white24,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        roleName,
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const Divider(color: Colors.white24, height: 24),
-          Row(
-            children: [
-              const Icon(Icons.email_outlined, color: Colors.white70, size: 16),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  user?.email ?? '-',
-                  style: GoogleFonts.inter(color: Colors.white70, fontSize: 13),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          if (user?.noHp != null && user!.noHp!.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                const Icon(Icons.phone_outlined, color: Colors.white70, size: 16),
-                const SizedBox(width: 6),
-                Text(
-                  user.noHp!,
-                  style: GoogleFonts.inter(color: Colors.white70, fontSize: 13),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
   Widget _buildActionButton({
     required String label,
     required VoidCallback? onPressed,
     required Color textColor,
     required Color bgColor,
     Color? borderColor,
+    IconData? icon,
   }) {
     return OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
         foregroundColor: textColor,
         backgroundColor: bgColor,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(26),
+          borderRadius: BorderRadius.circular(16),
         ),
         side: borderColor != null ? BorderSide(color: borderColor, width: 1.5) : BorderSide.none,
         elevation: 0,
       ),
-      child: Text(
-        label,
-        style: GoogleFonts.inter(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-        ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 13, color: textColor),
+            const SizedBox(width: 4),
+          ],
+          Flexible(
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
