@@ -25,12 +25,6 @@
         </p>
     </div>
 
-    <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 animate-bounce cursor-pointer opacity-80 hover:opacity-100 transition-opacity">
-        <span class="text-emerald-200 text-xs font-bold tracking-[0.2em] uppercase">Jelajahi</span>
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-        </svg>
-    </div>
 </div>
 
 <div class="w-full py-24 px-6 md:px-12 lg:px-20 bg-white flex justify-center font-['Poppins']">
@@ -109,9 +103,45 @@
 </div>
 
 <div class="w-full py-24 px-6 md:px-12 lg:px-20 bg-slate-50/50 flex flex-col items-center font-['Poppins']">
+    <style>
+        .public-priority-map-grid {
+            display: grid;
+            min-height: 640px;
+        }
+
+        .public-priority-map-canvas {
+            height: min(560px, 68vh);
+            min-height: 430px;
+        }
+
+        .public-priority-map-panel {
+            min-height: 520px;
+        }
+
+        @media (min-width: 1024px) {
+            .public-priority-map-grid {
+                grid-template-columns: minmax(0, 1.45fr) minmax(360px, .95fr);
+            }
+
+            .public-priority-map-left {
+                border-right: 1px solid #ded5c7;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .public-priority-map-grid {
+                min-height: 0;
+            }
+
+            .public-priority-map-canvas {
+                height: 54vh;
+                min-height: 360px;
+            }
+        }
+    </style>
     
-    <div class="max-w-7xl w-full flex flex-col md:flex-row justify-between items-end gap-6 mb-10">
-        <div class="space-y-3">
+    <div class="max-w-7xl w-full flex flex-col md:flex-row justify-between items-end gap-6 mb-8">
+        <div class="space-y-3 max-w-2xl">
             <div class="flex items-center gap-3">
                 <div class="w-1 h-5 bg-emerald-500 rounded-full"></div>
                 <p class="text-emerald-600 text-[11px] font-bold tracking-[0.2em] uppercase">Peta Geospasial</p>
@@ -119,17 +149,52 @@
             <h2 class="text-slate-900 text-4xl sm:text-5xl font-extrabold tracking-tight">
                 Map <span class="text-emerald-600">Interaktif</span>
             </h2>
+            <p class="text-slate-500 text-sm sm:text-base font-medium leading-relaxed">
+                Peta ini membantu masyarakat melihat sebaran lahan sawah, batas kecamatan, dan gambaran produktivitas wilayah Barito Kuala secara mudah. Warna kecamatan mengikuti tingkat produktivitas dari data yang tersedia, sedangkan titik hijau menandai lokasi lahan sawah yang dapat dibuka untuk melihat detailnya.
+            </p>
         </div>
         <div class="md:text-right max-w-sm">
             <p class="text-slate-500 text-sm font-medium leading-relaxed">
-                Klik pada blok lahan di peta untuk melihat detail informasi wilayah, pemilik, dan data produktivitas terkait.
+                Klik area kecamatan untuk rekap produktivitas, atau klik titik lahan untuk melihat informasi lahan sawah.
             </p>
         </div>
     </div>
 
-    <div class="relative w-full max-w-7xl h-[650px] rounded-[3rem] shadow-[0_20px_60px_rgba(0,0,0,0.12)] overflow-hidden bg-white">
-        
-        <div id="map" class="w-full h-full z-0"></div>
+    <div class="max-w-7xl w-full grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div class="rounded-2xl border border-emerald-100 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+            <p class="text-[10px] font-extrabold tracking-[0.22em] uppercase text-emerald-600 mb-2">Warna Wilayah</p>
+            <p class="text-sm font-medium leading-relaxed text-slate-500">Area kecamatan diberi warna berdasarkan produktivitas agregat yang dihitung dari data backend GIS.</p>
+        </div>
+        <div class="rounded-2xl border border-emerald-100 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+            <p class="text-[10px] font-extrabold tracking-[0.22em] uppercase text-emerald-600 mb-2">Titik Lahan</p>
+            <p class="text-sm font-medium leading-relaxed text-slate-500">Titik hijau menunjukkan koordinat lahan sawah sehingga lokasi tetap terlihat walau peta sedang diperbesar jauh.</p>
+        </div>
+        <div class="rounded-2xl border border-emerald-100 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+            <p class="text-[10px] font-extrabold tracking-[0.22em] uppercase text-emerald-600 mb-2">Detail Informasi</p>
+            <p class="text-sm font-medium leading-relaxed text-slate-500">Panel detail menampilkan data kecamatan atau lahan secara bergantian agar informasi tetap jelas.</p>
+        </div>
+    </div>
+
+    <div class="relative w-full max-w-7xl overflow-hidden rounded-[2.5rem] border border-[#ebe2d4] bg-[#f8f3ea] shadow-[0_22px_70px_rgba(45,43,35,0.12)]">
+        <div class="public-priority-map-grid">
+            <div class="public-priority-map-left p-5 sm:p-7 lg:p-8">
+                <div class="mb-6 flex items-center justify-between gap-4 text-[10px] font-bold uppercase tracking-[0.32em] text-slate-600">
+                    <span class="inline-flex items-center gap-3">
+                        <span class="h-2 w-2 rounded-full bg-[#d4a43d]"></span>
+                        Live Preview
+                    </span>
+                    <span>17 Kecamatan</span>
+                </div>
+
+                <div class="public-priority-map-canvas relative overflow-hidden rounded-2xl border border-[#d8d0c2] bg-white">
+                    <div id="map" class="h-full w-full z-0"></div>
+                </div>
+            </div>
+
+            <div class="public-priority-map-panel bg-[#fbf7ef] p-5 sm:p-7 lg:p-8">
+                <aside id="map-insight-panel" data-map-priority-panel="embedded" class="h-full"></aside>
+            </div>
+        </div>
 
         <div id="side-panel" class="absolute top-0 right-[-420px] w-[380px] h-full bg-white/95 backdrop-blur-xl z-[1000] shadow-[-10px_0_40px_rgba(0,0,0,0.1)] transition-all duration-500 ease-in-out p-8 overflow-y-auto border-l border-slate-100">
             <div class="flex justify-between items-center mb-8">
@@ -158,7 +223,7 @@
 @include('statistik', ['showTable' => false])
 
     <script>
-        window.GATEWAY_URL = "{{ env('GATEWAY_URL', 'http://127.0.0.1:8000') }}";
+        window.GATEWAY_URL = "{{ env('GATEWAY_URL', 'http://127.0.0.1:8003') }}";
     </script>
     <script src="{{ asset('js/map-sigpala.js') }}"></script>
 

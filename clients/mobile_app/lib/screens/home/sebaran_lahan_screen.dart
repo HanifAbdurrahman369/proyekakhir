@@ -16,16 +16,18 @@ class SebaranLahanScreen extends StatefulWidget {
 class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
   final MapController _mapController = MapController();
   final TextEditingController _searchController = TextEditingController();
-  
+
   String _searchQuery = '';
   Map<String, dynamic>? _selectedEntity;
 
   // Konfigurasi URL Tile Server dinamis
   final String _osmUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-  final String _satelliteUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+  final String _satelliteUrl =
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
   final String _topoUrl = 'https://a.tile.opentopomap.org/{z}/{x}/{y}.png';
 
-  String _selectedBaseMap = 'Peta Standar'; // 'Peta Standar', 'Citra Satelit', 'Peta Topografi'
+  String _selectedBaseMap =
+      'Peta Standar'; // 'Peta Standar', 'Citra Satelit', 'Peta Topografi'
   bool _showKabupatenLayer = true;
   bool _showKecamatanLayer = true;
   bool _showLahanSawahLayer = true;
@@ -52,7 +54,9 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
 
   // Helper untuk membuka peta eksternal
   Future<void> _openExternalMap(double lat, double lng, String label) async {
-    final uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+    final uri = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
+    );
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
@@ -65,7 +69,10 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
   }
 
   String _formatNumber(double val) {
-    return val.toStringAsFixed(2).replaceAll('.', ',').replaceFirst(RegExp(r',00$'), '');
+    return val
+        .toStringAsFixed(2)
+        .replaceAll('.', ',')
+        .replaceFirst(RegExp(r',00$'), '');
   }
 
   String _cleanKecamatanName(String name) {
@@ -97,13 +104,13 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
         if (pt is! List || pt.length < 2) continue;
         double? val1;
         double? val2;
-        
+
         if (pt[0] is num) {
           val1 = (pt[0] as num).toDouble();
         } else {
           val1 = double.tryParse(pt[0].toString());
         }
-        
+
         if (pt[1] is num) {
           val2 = (pt[1] as num).toDouble();
         } else {
@@ -114,14 +121,14 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
           // Barito Kuala: Longitude ~114, Latitude ~ -3
           double lat = val2;
           double lng = val1;
-          
+
           // Jika koordinat terbalik: index 0 bernilai latitude (-10 s/d 10)
           // dan index 1 bernilai longitude (90 s/d 150)
           if (val1 >= -10 && val1 <= 10 && val2 >= 90 && val2 <= 150) {
             lat = val1;
             lng = val2;
           }
-          
+
           sumLat += lat;
           sumLng += lng;
           count++;
@@ -170,10 +177,12 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
     double totalPanen = 0.0;
     double avgProduktivitas = 0.0;
 
-    if (_selectedEntity != null && (_selectedEntity!['type'] == 'kecamatan' || _selectedEntity!['type'] == 'kelurahan')) {
+    if (_selectedEntity != null &&
+        (_selectedEntity!['type'] == 'kecamatan' ||
+            _selectedEntity!['type'] == 'kelurahan')) {
       final selType = _selectedEntity!['type'];
       final selName = _selectedEntity!['name'].toString();
-      
+
       final matched = rawFeatures.where((feat) {
         if (feat is! Map) return false;
         final p = feat['properties'] as Map? ?? {};
@@ -189,9 +198,13 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
       totalLahan = matched.length;
       for (var feat in matched) {
         final p = feat['properties'] as Map? ?? {};
-        totalLuas += double.tryParse(p['luas_lahan_hektar']?.toString() ?? '0') ?? 0.0;
-        totalPanen += double.tryParse(p['hasil_panen_ton']?.toString() ?? '0') ?? 0.0;
-        avgProduktivitas += double.tryParse(p['produktivitas_ton_ha']?.toString() ?? '0') ?? 0.0;
+        totalLuas +=
+            double.tryParse(p['luas_lahan_hektar']?.toString() ?? '0') ?? 0.0;
+        totalPanen +=
+            double.tryParse(p['hasil_panen_ton']?.toString() ?? '0') ?? 0.0;
+        avgProduktivitas +=
+            double.tryParse(p['produktivitas_ton_ha']?.toString() ?? '0') ??
+            0.0;
       }
       if (totalLahan > 0) {
         avgProduktivitas = avgProduktivitas / totalLahan;
@@ -201,14 +214,19 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
     // Terapkan filtering data untuk lahan sawah berdasarkan query pencarian saja (lahan, pemilik, kecamatan, kelurahan)
     for (var feat in rawFeatures) {
       if (feat is! Map) continue;
-      final props = (feat['properties'] is Map) ? feat['properties'] as Map : {};
+      final props = (feat['properties'] is Map)
+          ? feat['properties'] as Map
+          : {};
       final namaLahan = props['nama_lahan']?.toString() ?? '';
       final pemilik = props['pemilik_lahan']?.toString() ?? '';
-      final kec = (props['nama_kecamatan'] ?? props['kecamatan'])?.toString() ?? '';
-      final kel = (props['nama_kelurahan'] ?? props['kelurahan'])?.toString() ?? '';
+      final kec =
+          (props['nama_kecamatan'] ?? props['kecamatan'])?.toString() ?? '';
+      final kel =
+          (props['nama_kelurahan'] ?? props['kelurahan'])?.toString() ?? '';
 
       final query = _searchQuery.toLowerCase();
-      final matchSearch = query.isEmpty ||
+      final matchSearch =
+          query.isEmpty ||
           namaLahan.toLowerCase().contains(query) ||
           pemilik.toLowerCase().contains(query) ||
           kec.toLowerCase().contains(query) ||
@@ -223,9 +241,10 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
     List<Map<String, dynamic>> allSuggestions = [];
     if (_searchQuery.trim().length >= 2) {
       final query = _searchQuery.toLowerCase();
-      
+
       // 1. Kecamatan Suggestions
-      final kecFeatures = provider.kecamatanBoundaries?['features'] as List<dynamic>? ?? [];
+      final kecFeatures =
+          provider.kecamatanBoundaries?['features'] as List<dynamic>? ?? [];
       for (var feat in kecFeatures) {
         if (feat is! Map) continue;
         final props = feat['properties'] as Map? ?? {};
@@ -233,7 +252,10 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
         if (name.isNotEmpty && name.toLowerCase().contains(query)) {
           final geom = feat['geometry'] as Map?;
           if (geom != null) {
-            final centroid = _calculateCentroid(geom['coordinates'], geom['type']?.toString() ?? '');
+            final centroid = _calculateCentroid(
+              geom['coordinates'],
+              geom['type']?.toString() ?? '',
+            );
             allSuggestions.add({
               'type': 'kecamatan',
               'name': name,
@@ -253,10 +275,12 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
         final kecName = props['nama_kecamatan']?.toString() ?? '';
         final lat = double.tryParse(props['latitude']?.toString() ?? '');
         final lng = double.tryParse(props['longitude']?.toString() ?? '');
-        
+
         if (kelName.isNotEmpty) {
           if (lat != null && lng != null) {
-            kelurahanCoords.putIfAbsent(kelName, () => []).add(LatLng(lat, lng));
+            kelurahanCoords
+                .putIfAbsent(kelName, () => [])
+                .add(LatLng(lat, lng));
           }
           if (kecName.isNotEmpty) {
             kelurahanKecamatan[kelName] = kecName;
@@ -271,7 +295,10 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
             sumLat += latLng.latitude;
             sumLng += latLng.longitude;
           }
-          final centroid = LatLng(sumLat / latLngList.length, sumLng / latLngList.length);
+          final centroid = LatLng(
+            sumLat / latLngList.length,
+            sumLng / latLngList.length,
+          );
           allSuggestions.add({
             'type': 'kelurahan',
             'name': kelName,
@@ -292,7 +319,9 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
         final lat = double.tryParse(props['latitude']?.toString() ?? '');
         final lng = double.tryParse(props['longitude']?.toString() ?? '');
 
-        if (namaLahan.isNotEmpty && (namaLahan.toLowerCase().contains(query) || pemilik.toLowerCase().contains(query))) {
+        if (namaLahan.isNotEmpty &&
+            (namaLahan.toLowerCase().contains(query) ||
+                pemilik.toLowerCase().contains(query))) {
           if (lat != null && lng != null) {
             allSuggestions.add({
               'type': 'lahan',
@@ -327,11 +356,14 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
       );
 
       // 3. Render label nama kecamatan di tengah poligon masing-masing
-      final kecBoundaries = provider.kecamatanBoundaries?['features'] as List<dynamic>? ?? [];
+      final kecBoundaries =
+          provider.kecamatanBoundaries?['features'] as List<dynamic>? ?? [];
       for (var feat in kecBoundaries) {
         if (feat is! Map) continue;
         final geom = feat['geometry'] as Map?;
-        final props = (feat['properties'] is Map) ? feat['properties'] as Map : {};
+        final props = (feat['properties'] is Map)
+            ? feat['properties'] as Map
+            : {};
         if (geom == null) continue;
 
         final type = geom['type']?.toString() ?? '';
@@ -359,18 +391,24 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                   _mapController.move(centroid, 12.5);
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.85),
+                    color: Colors.white.withValues(alpha: 0.85),
                     borderRadius: BorderRadius.circular(6),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
                     ],
-                    border: Border.all(color: const Color(0xFF3E7D00).withOpacity(0.3), width: 0.5),
+                    border: Border.all(
+                      color: const Color(0xFF3E7D00).withValues(alpha: 0.3),
+                      width: 0.5,
+                    ),
                   ),
                   child: Text(
                     namaKecamatan,
@@ -396,7 +434,7 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
         final parsedLahanPolys = GeoJsonParser.parsePolygons(
           feat,
           defaultBorderColor: const Color(0xFF3E7D00),
-          defaultFillColor: const Color(0xFF3E7D00).withOpacity(0.35),
+          defaultFillColor: const Color(0xFF3E7D00).withValues(alpha: 0.35),
           borderThickness: 1.5,
         );
         lahanPolygons.addAll(parsedLahanPolys);
@@ -433,11 +471,21 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
         }
       }
       debugPrint('GIS DEBUG: rawFeatures count = ${rawFeatures.length}');
-      debugPrint('GIS DEBUG: filteredFeatures count = ${filteredFeatures.length}');
-      debugPrint('GIS DEBUG: parsed kabupatenPolygons count = ${kabupatenPolygons.length}');
-      debugPrint('GIS DEBUG: parsed kecamatanPolygons count = ${kecamatanPolygons.length}');
-      debugPrint('GIS DEBUG: parsed lahanPolygons count = ${lahanPolygons.length}');
-      debugPrint('GIS DEBUG: parsed lahanMarkers count = ${lahanMarkers.length}');
+      debugPrint(
+        'GIS DEBUG: filteredFeatures count = ${filteredFeatures.length}',
+      );
+      debugPrint(
+        'GIS DEBUG: parsed kabupatenPolygons count = ${kabupatenPolygons.length}',
+      );
+      debugPrint(
+        'GIS DEBUG: parsed kecamatanPolygons count = ${kecamatanPolygons.length}',
+      );
+      debugPrint(
+        'GIS DEBUG: parsed lahanPolygons count = ${lahanPolygons.length}',
+      );
+      debugPrint(
+        'GIS DEBUG: parsed lahanMarkers count = ${lahanMarkers.length}',
+      );
     }
 
     return Scaffold(
@@ -454,11 +502,16 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
         children: [
           // 1. Widget Peta Utama
           provider.isMapLoading
-              ? const Center(child: CircularProgressIndicator(color: Color(0xFF3E7D00)))
+              ? const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF3E7D00)),
+                )
               : FlutterMap(
                   mapController: _mapController,
                   options: MapOptions(
-                    initialCenter: const LatLng(-3.120, 114.600), // Kab. Barito Kuala
+                    initialCenter: const LatLng(
+                      -3.120,
+                      114.600,
+                    ), // Kab. Barito Kuala
                     initialZoom: 10.0,
                     maxZoom: 18.0,
                     minZoom: 9.0,
@@ -477,19 +530,19 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                       urlTemplate: _selectedBaseMap == 'Citra Satelit'
                           ? _satelliteUrl
                           : _selectedBaseMap == 'Peta Topografi'
-                              ? _topoUrl
-                              : _osmUrl,
+                          ? _topoUrl
+                          : _osmUrl,
                       userAgentPackageName: 'com.sigpala.batola.mobile_app',
                     ),
-                    
+
                     // Layer Batas Kecamatan (Warna-warni transparan)
                     if (_showKecamatanLayer)
                       PolygonLayer(polygons: kecamatanPolygons),
-                    
+
                     // Layer Batas Kabupaten Batola (Outline gelap)
                     if (_showKabupatenLayer)
                       PolygonLayer(polygons: kabupatenPolygons),
-                    
+
                     // Layer Poligon Lahan Sawah (Hijau)
                     if (_showLahanSawahLayer)
                       PolygonLayer(polygons: lahanPolygons),
@@ -497,13 +550,15 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                     // Layer Teks Label Nama Kecamatan
                     if (_showKecamatanLayer)
                       MarkerLayer(markers: kecamatanLabelMarkers),
-                    
+
                     // Layer Pin Lahan Sawah
                     if (_showLahanSawahLayer)
                       MarkerLayer(markers: lahanMarkers),
 
                     // Layer Pin Pencarian Terpilih (Kecamatan/Kelurahan)
-                    if (_selectedEntity != null && (_selectedEntity!['type'] == 'kecamatan' || _selectedEntity!['type'] == 'kelurahan'))
+                    if (_selectedEntity != null &&
+                        (_selectedEntity!['type'] == 'kecamatan' ||
+                            _selectedEntity!['type'] == 'kelurahan'))
                       MarkerLayer(
                         markers: [
                           Marker(
@@ -547,12 +602,23 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                           controller: _searchController,
                           style: GoogleFonts.inter(fontSize: 13),
                           decoration: InputDecoration(
-                            hintText: 'Cari lahan, pemilik, kecamatan, kelurahan...',
-                            hintStyle: GoogleFonts.inter(fontSize: 13, color: Colors.grey[500]),
-                            prefixIcon: const Icon(Icons.search, color: Color(0xFF3E7D00), size: 18),
+                            hintText:
+                                'Cari lahan, pemilik, kecamatan, kelurahan...',
+                            hintStyle: GoogleFonts.inter(
+                              fontSize: 13,
+                              color: Colors.grey[500],
+                            ),
+                            prefixIcon: const Icon(
+                              Icons.search,
+                              color: Color(0xFF3E7D00),
+                              size: 18,
+                            ),
                             border: InputBorder.none,
                             isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
                           ),
                         ),
                       ),
@@ -568,12 +634,16 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                         height: 38,
                         width: 38,
                         decoration: BoxDecoration(
-                          color: _showLayerPanel ? const Color(0xFF3E7D00) : const Color(0xFFF1F5F9),
+                          color: _showLayerPanel
+                              ? const Color(0xFF3E7D00)
+                              : const Color(0xFFF1F5F9),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
                           Icons.layers_rounded,
-                          color: _showLayerPanel ? Colors.white : const Color(0xFF3E7D00),
+                          color: _showLayerPanel
+                              ? Colors.white
+                              : const Color(0xFF3E7D00),
                           size: 20,
                         ),
                       ),
@@ -608,10 +678,11 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                       IconData iconData;
                       String titleText = item['name'];
                       String subtitleText = '';
-                      
+
                       if (item['type'] == 'lahan') {
                         iconData = Icons.landscape_outlined;
-                        subtitleText = 'Lahan Sawah • Pemilik: ${item['pemilik']} (${item['kecamatan']})';
+                        subtitleText =
+                            'Lahan Sawah • Pemilik: ${item['pemilik']} (${item['kecamatan']})';
                       } else if (item['type'] == 'kecamatan') {
                         iconData = Icons.business_outlined;
                         subtitleText = 'Kecamatan di Barito Kuala';
@@ -619,12 +690,16 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                         iconData = Icons.home_outlined;
                         subtitleText = 'Kelurahan di Kec. ${item['kecamatan']}';
                       }
-                      
+
                       return ListTile(
                         dense: true,
                         leading: CircleAvatar(
                           backgroundColor: const Color(0xFFF1F5F9),
-                          child: Icon(iconData, color: const Color(0xFF3E7D00), size: 18),
+                          child: Icon(
+                            iconData,
+                            color: const Color(0xFF3E7D00),
+                            size: 18,
+                          ),
                         ),
                         title: Text(
                           titleText,
@@ -650,9 +725,9 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                           } else if (item['type'] == 'lahan') {
                             zoomLevel = 16.5;
                           }
-                          
+
                           _mapController.move(loc, zoomLevel);
-                          
+
                           setState(() {
                             _selectedEntity = {
                               'type': item['type'],
@@ -661,14 +736,15 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                               'properties': item['type'] == 'lahan'
                                   ? item['properties']
                                   : (item['type'] == 'kecamatan'
-                                      ? {'nama_kecamatan': item['name']}
-                                      : {
-                                          'nama_kelurahan': item['name'],
-                                          'nama_kecamatan': item['kecamatan'] ?? '',
-                                        }),
+                                        ? {'nama_kecamatan': item['name']}
+                                        : {
+                                            'nama_kelurahan': item['name'],
+                                            'nama_kecamatan':
+                                                item['kecamatan'] ?? '',
+                                          }),
                             };
                           });
-                          
+
                           // Bersihkan pencarian & tutup keyboard
                           _searchController.clear();
                           FocusScope.of(context).unfocus();
@@ -693,7 +769,7 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
+                      color: Colors.black.withValues(alpha: 0.15),
                       blurRadius: 16,
                       offset: const Offset(0, -4),
                     ),
@@ -712,10 +788,13 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                             children: [
                               Text(
                                 _selectedEntity!['type'] == 'lahan'
-                                    ? ((_selectedEntity!['properties'] as Map?)?['nama_lahan']?.toString() ?? 'Lahan Tanpa Nama')
+                                    ? ((_selectedEntity!['properties']
+                                                  as Map?)?['nama_lahan']
+                                              ?.toString() ??
+                                          'Lahan Tanpa Nama')
                                     : (_selectedEntity!['type'] == 'kecamatan'
-                                        ? 'Kecamatan ${_selectedEntity!['name']}'
-                                        : 'Kelurahan ${_selectedEntity!['name']}'),
+                                          ? 'Kecamatan ${_selectedEntity!['name']}'
+                                          : 'Kelurahan ${_selectedEntity!['name']}'),
                                 style: GoogleFonts.outfit(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -727,8 +806,8 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                                 _selectedEntity!['type'] == 'lahan'
                                     ? 'Pemilik: ${(_selectedEntity!['properties'] as Map?)?['pemilik_lahan']?.toString() ?? '-'}'
                                     : (_selectedEntity!['type'] == 'kecamatan'
-                                        ? 'Wilayah Kecamatan di Barito Kuala'
-                                        : 'Kecamatan: ${(_selectedEntity!['properties'] as Map?)?['nama_kecamatan'] ?? '-'}'),
+                                          ? 'Wilayah Kecamatan di Barito Kuala'
+                                          : 'Kecamatan: ${(_selectedEntity!['properties'] as Map?)?['nama_kecamatan'] ?? '-'}'),
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
                                   color: Colors.grey[600],
@@ -744,12 +823,15 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                               _selectedEntity = null;
                             });
                           },
-                          icon: const Icon(Icons.close_rounded, color: Colors.grey),
+                          icon: const Icon(
+                            Icons.close_rounded,
+                            color: Colors.grey,
+                          ),
                         ),
                       ],
                     ),
                     const Divider(height: 20, color: Color(0xFFE2E8F0)),
-                    
+
                     if (_selectedEntity!['type'] == 'lahan') ...[
                       // Informasi Detail Spasial Lahan
                       Row(
@@ -758,14 +840,19 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                             child: _buildDetailItem(
                               icon: Icons.layers_outlined,
                               label: 'Tipe Lahan',
-                              value: (_selectedEntity!['properties'] as Map?)?['tipe_lahan']?.toString() ?? '-',
+                              value:
+                                  (_selectedEntity!['properties']
+                                          as Map?)?['tipe_lahan']
+                                      ?.toString() ??
+                                  '-',
                             ),
                           ),
                           Expanded(
                             child: _buildDetailItem(
                               icon: Icons.landscape_outlined,
                               label: 'Luas Lahan',
-                              value: '${_formatNumber(double.tryParse((_selectedEntity!['properties'] as Map?)?['luas_lahan_hektar']?.toString() ?? '0') ?? 0.0)} Ha',
+                              value:
+                                  '${_formatNumber(double.tryParse((_selectedEntity!['properties'] as Map?)?['luas_lahan_hektar']?.toString() ?? '0') ?? 0.0)} Ha',
                             ),
                           ),
                         ],
@@ -777,14 +864,16 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                             child: _buildDetailItem(
                               icon: Icons.grass_outlined,
                               label: 'Hasil Panen',
-                              value: '${_formatNumber(double.tryParse((_selectedEntity!['properties'] as Map?)?['hasil_panen_ton']?.toString() ?? '0') ?? 0.0)} Ton',
+                              value:
+                                  '${_formatNumber(double.tryParse((_selectedEntity!['properties'] as Map?)?['hasil_panen_ton']?.toString() ?? '0') ?? 0.0)} Ton',
                             ),
                           ),
                           Expanded(
                             child: _buildDetailItem(
                               icon: Icons.trending_up_rounded,
                               label: 'Produktivitas',
-                              value: '${_formatNumber(double.tryParse((_selectedEntity!['properties'] as Map?)?['produktivitas_ton_ha']?.toString() ?? '0') ?? 0.0)} Ton/Ha',
+                              value:
+                                  '${_formatNumber(double.tryParse((_selectedEntity!['properties'] as Map?)?['produktivitas_ton_ha']?.toString() ?? '0') ?? 0.0)} Ton/Ha',
                             ),
                           ),
                         ],
@@ -792,12 +881,19 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Icon(Icons.location_on_outlined, color: Colors.grey, size: 14),
+                          const Icon(
+                            Icons.location_on_outlined,
+                            color: Colors.grey,
+                            size: 14,
+                          ),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               '${(_selectedEntity!['properties'] as Map?)?['nama_kelurahan'] ?? '-'}, ${(_selectedEntity!['properties'] as Map?)?['nama_kecamatan'] ?? '-'}',
-                              style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600]),
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: Colors.grey[600],
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -838,7 +934,8 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                             child: _buildDetailItem(
                               icon: Icons.trending_up_rounded,
                               label: 'Rata-rata Produktivitas',
-                              value: '${_formatNumber(avgProduktivitas)} Ton/Ha',
+                              value:
+                                  '${_formatNumber(avgProduktivitas)} Ton/Ha',
                             ),
                           ),
                         ],
@@ -846,12 +943,19 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Icon(Icons.info_outline_rounded, color: Colors.grey, size: 14),
+                          const Icon(
+                            Icons.info_outline_rounded,
+                            color: Colors.grey,
+                            size: 14,
+                          ),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               'Data dikalkulasi berdasarkan sebaran spasial aktif.',
-                              style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600]),
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: Colors.grey[600],
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -860,19 +964,28 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                       ),
                     ],
                     const SizedBox(height: 16),
-                    
+
                     // Tombol Navigasi Google Maps Eksternal
                     ElevatedButton.icon(
                       onPressed: () {
                         if (_selectedEntity!['type'] == 'lahan') {
                           final props = _selectedEntity!['properties'] as Map?;
-                          final lat = double.tryParse(props?['latitude']?.toString() ?? '');
-                          final lng = double.tryParse(props?['longitude']?.toString() ?? '');
+                          final lat = double.tryParse(
+                            props?['latitude']?.toString() ?? '',
+                          );
+                          final lng = double.tryParse(
+                            props?['longitude']?.toString() ?? '',
+                          );
                           if (lat != null && lng != null) {
-                            _openExternalMap(lat, lng, props?['nama_lahan']?.toString() ?? 'Lahan');
+                            _openExternalMap(
+                              lat,
+                              lng,
+                              props?['nama_lahan']?.toString() ?? 'Lahan',
+                            );
                           }
                         } else {
-                          final LatLng loc = _selectedEntity!['location'] as LatLng;
+                          final LatLng loc =
+                              _selectedEntity!['location'] as LatLng;
                           _openExternalMap(
                             loc.latitude,
                             loc.longitude,
@@ -894,7 +1007,10 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                       icon: const Icon(Icons.directions_rounded, size: 18),
                       label: Text(
                         'Petunjuk Arah (Peta Google)',
-                        style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ],
@@ -913,7 +1029,7 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
-                color: Colors.white.withOpacity(0.95),
+                color: Colors.white.withValues(alpha: 0.95),
                 child: Container(
                   width: 210,
                   padding: const EdgeInsets.all(12),
@@ -926,7 +1042,11 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.layers_outlined, size: 18, color: Color(0xFF3E7D00)),
+                              const Icon(
+                                Icons.layers_outlined,
+                                size: 18,
+                                color: Color(0xFF3E7D00),
+                              ),
                               const SizedBox(width: 6),
                               Text(
                                 'LAYER PETA',
@@ -941,7 +1061,11 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                           IconButton(
                             constraints: const BoxConstraints(),
                             padding: EdgeInsets.zero,
-                            icon: const Icon(Icons.close, size: 16, color: Colors.grey),
+                            icon: const Icon(
+                              Icons.close,
+                              size: 16,
+                              color: Colors.grey,
+                            ),
                             onPressed: () {
                               setState(() {
                                 _showLayerPanel = false;
@@ -973,21 +1097,31 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      _buildLayerCheckbox('🏙️ Kabupaten', _showKabupatenLayer, (val) {
-                        setState(() {
-                          _showKabupatenLayer = val ?? false;
-                        });
-                      }),
-                      _buildLayerCheckbox('🏢 Kecamatan', _showKecamatanLayer, (val) {
+                      _buildLayerCheckbox(
+                        '🏙️ Kabupaten',
+                        _showKabupatenLayer,
+                        (val) {
+                          setState(() {
+                            _showKabupatenLayer = val ?? false;
+                          });
+                        },
+                      ),
+                      _buildLayerCheckbox('🏢 Kecamatan', _showKecamatanLayer, (
+                        val,
+                      ) {
                         setState(() {
                           _showKecamatanLayer = val ?? false;
                         });
                       }),
-                      _buildLayerCheckbox('🌾 Lahan Sawah', _showLahanSawahLayer, (val) {
-                        setState(() {
-                          _showLahanSawahLayer = val ?? false;
-                        });
-                      }),
+                      _buildLayerCheckbox(
+                        '🌾 Lahan Sawah',
+                        _showLahanSawahLayer,
+                        (val) {
+                          setState(() {
+                            _showLahanSawahLayer = val ?? false;
+                          });
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -1010,19 +1144,14 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
         padding: const EdgeInsets.symmetric(vertical: 4.0),
         child: Row(
           children: [
-            SizedBox(
-              height: 24,
-              width: 24,
-              child: Radio<String>(
-                value: title,
-                groupValue: _selectedBaseMap,
-                activeColor: const Color(0xFF3E7D00),
-                onChanged: (val) {
-                  setState(() {
-                    if (val != null) _selectedBaseMap = val;
-                  });
-                },
-              ),
+            Icon(
+              isSelected
+                  ? Icons.radio_button_checked_rounded
+                  : Icons.radio_button_unchecked_rounded,
+              size: 20,
+              color: isSelected
+                  ? const Color(0xFF3E7D00)
+                  : const Color(0xFF94A3B8),
             ),
             const SizedBox(width: 8),
             Text(
@@ -1039,7 +1168,11 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
     );
   }
 
-  Widget _buildLayerCheckbox(String title, bool value, ValueChanged<bool?> onChanged) {
+  Widget _buildLayerCheckbox(
+    String title,
+    bool value,
+    ValueChanged<bool?> onChanged,
+  ) {
     return InkWell(
       onTap: () => onChanged(!value),
       child: Padding(
@@ -1070,9 +1203,11 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
     );
   }
 
-
-
-  Widget _buildDetailItem({required IconData icon, required String label, required String value}) {
+  Widget _buildDetailItem({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1084,11 +1219,19 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
             children: [
               Text(
                 label,
-                style: GoogleFonts.inter(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold),
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Text(
                 value,
-                style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF1E293B), fontWeight: FontWeight.w700),
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: const Color(0xFF1E293B),
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
@@ -1115,9 +1258,10 @@ class GeoJsonParser {
       features = geojson['features'] ?? [];
     } else if (geojson['type'] == 'Feature') {
       features = [geojson];
-    } else if (geojson['type'] == 'Polygon' || geojson['type'] == 'MultiPolygon') {
+    } else if (geojson['type'] == 'Polygon' ||
+        geojson['type'] == 'MultiPolygon') {
       features = [
-        {'type': 'Feature', 'geometry': geojson, 'properties': {}}
+        {'type': 'Feature', 'geometry': geojson, 'properties': {}},
       ];
     }
 
@@ -1129,7 +1273,9 @@ class GeoJsonParser {
       final coords = geometry['coordinates'];
       if (coords is! List) continue;
 
-      final props = (feature['properties'] is Map) ? feature['properties'] as Map : {};
+      final props = (feature['properties'] is Map)
+          ? feature['properties'] as Map
+          : {};
       Color borderColor = defaultBorderColor;
       Color fillColor = defaultFillColor;
 
@@ -1138,8 +1284,10 @@ class GeoJsonParser {
         if (colorHex != null) {
           final color = _parseHexColor(colorHex.toString());
           if (color != null) {
-            borderColor = color.withOpacity(0.8);
-            fillColor = color.withOpacity(0.12); // Transparansi untuk kecamatan
+            borderColor = color.withValues(alpha: 0.8);
+            fillColor = color.withValues(
+              alpha: 0.12,
+            ); // Transparansi untuk kecamatan
           }
         }
       }
@@ -1188,13 +1336,13 @@ class GeoJsonParser {
       if (pt is! List || pt.length < 2) continue;
       double? val1;
       double? val2;
-      
+
       if (pt[0] is num) {
         val1 = (pt[0] as num).toDouble();
       } else {
         val1 = double.tryParse(pt[0].toString());
       }
-      
+
       if (pt[1] is num) {
         val2 = (pt[1] as num).toDouble();
       } else {
@@ -1205,14 +1353,14 @@ class GeoJsonParser {
         // Barito Kuala: Longitude ~114, Latitude ~ -3
         double lat = val2;
         double lng = val1;
-        
+
         // Jika koordinat terbalik: index 0 bernilai latitude (-10 s/d 10)
         // dan index 1 bernilai longitude (90 s/d 150)
         if (val1 >= -10 && val1 <= 10 && val2 >= 90 && val2 <= 150) {
           lat = val1;
           lng = val2;
         }
-        
+
         // Batasi range LatLng agar valid dan tidak crash pada latlong2
         if (lat < -90) lat = -90;
         if (lat > 90) lat = 90;

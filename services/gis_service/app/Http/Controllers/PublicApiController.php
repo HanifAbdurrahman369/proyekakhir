@@ -156,10 +156,7 @@ class PublicApiController extends Controller
     private function lahanPublikQuery()
     {
         return DB::table('lahan_sawah')
-            ->where('lahan_sawah.status_verifikasi', 'DITERIMA')
-            ->whereNotNull('lahan_sawah.latitude')
-            ->whereNotNull('lahan_sawah.longitude')
-            ->whereNotNull('lahan_sawah.polygon_area');
+            ->where('lahan_sawah.status_verifikasi', 'DITERIMA');
     }
 
     private function panenDiterimaPerLahanQuery()
@@ -387,13 +384,6 @@ class PublicApiController extends Controller
 
     public function getBatasKecamatan()
     {
-        $palette = [
-            '#15803d', '#0f766e', '#0369a1', '#7c3aed', '#c2410c',
-            '#be123c', '#047857', '#b45309', '#4338ca', '#0e7490',
-            '#65a30d', '#a21caf', '#1d4ed8', '#ca8a04', '#dc2626',
-            '#0891b2', '#4d7c0f',
-        ];
-
         $rows = DB::table('kecamatan')
             ->whereNotNull('polygon_geojson')
             ->where('polygon_geojson', '!=', '')
@@ -401,44 +391,234 @@ class PublicApiController extends Controller
             ->orderBy('id')
             ->get();
 
+        $agregatProduktivitas = $this->agregatProduktivitasKecamatan();
+        $ambangProduktivitas = $this->ambangProduktivitasKecamatan($agregatProduktivitas);
+        $distribusiProduktivitas = [
+            'tinggi' => 0,
+            'sedang' => 0,
+            'rendah' => 0,
+            'belum-data' => 0,
+        ];
         $features = [];
 
-        foreach ($rows as $index => $row) {
+        foreach ($rows as $row) {
             $geojson = json_decode($row->polygon_geojson, true);
 
             if (!is_array($geojson)) {
                 continue;
             }
 
+            $statistik = $agregatProduktivitas[$row->id] ?? [
+                'jumlah_lahan' => 0,
+                'total_luas_ha' => 0,
+                'total_luas_panen_ha' => 0,
+                'total_panen_ton' => 0,
+                'produktivitas_ton_ha' => 0,
+                'sumber_produktivitas' => 'Belum ada data',
+            ];
+            $kategori = $this->kategoriProduktivitasKecamatan(
+                (float) ($statistik['produktivitas_ton_ha'] ?? 0),
+                $ambangProduktivitas
+            );
+            $distribusiProduktivitas[$kategori['key']]++;
+
             $features = array_merge($features, $this->normalisasiFeatureKecamatan($geojson, [
                 'id' => $row->id,
                 'kecamatan_id' => $row->id,
                 'nama_kecamatan' => $row->nama_kecamatan,
                 'label' => $row->nama_kecamatan,
-                'warna_peta' => $palette[$index % count($palette)],
-                'fill_color' => $palette[$index % count($palette)],
+                'jumlah_lahan' => (int) $statistik['jumlah_lahan'],
+                'total_luas_ha' => round((float) $statistik['total_luas_ha'], 2),
+                'total_luas_panen_ha' => round((float) $statistik['total_luas_panen_ha'], 2),
+                'total_panen_ton' => round((float) $statistik['total_panen_ton'], 2),
+                'produktivitas_ton_ha' => round((float) $statistik['produktivitas_ton_ha'], 2),
+                'sumber_produktivitas' => $statistik['sumber_produktivitas'],
+                'kategori_produktivitas' => $kategori['key'],
+                'kategori_produktivitas_label' => $kategori['label'],
+                'priority_class' => $kategori['key'],
+                'warna_peta' => $kategori['stroke'],
+                'fill_color' => $kategori['fill'],
+                'fill_opacity' => $kategori['key'] === 'belum-data' ? 0.12 : 0.28,
             ]));
         }
+
+        $meta = [
+            'jumlah_kecamatan' => $rows->count(),
+            'jumlah_feature' => count($features),
+            'warna_diambil_dari' => 'properties.kategori_produktivitas/properties.fill_color',
+            'label_diambil_dari' => 'properties.nama_kecamatan',
+            'klasifikasi' => 'Tertile produktivitas_ton_ha per kecamatan dari data existing',
+            'ambang_produktivitas' => $ambangProduktivitas,
+            'distribusi_produktivitas' => $distribusiProduktivitas,
+        ];
 
         return response()->json([
             'success' => true,
             'type' => 'FeatureCollection',
             'features' => $features,
-            'meta' => [
-                'jumlah_kecamatan' => count($features),
-                'warna_diambil_dari' => 'properties.warna_peta',
-                'label_diambil_dari' => 'properties.nama_kecamatan',
-            ],
+            'meta' => $meta,
             'data' => [
                 'type' => 'FeatureCollection',
                 'features' => $features,
-                'meta' => [
-                    'jumlah_kecamatan' => count($features),
-                    'warna_diambil_dari' => 'properties.warna_peta',
-                    'label_diambil_dari' => 'properties.nama_kecamatan',
-                ],
+                'meta' => $meta,
             ],
         ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    }
+
+    private function agregatProduktivitasKecamatan(): array
+    {
+        $lahanRows = DB::table('lahan_sawah')
+            ->select(
+                'lahan_sawah.kecamatan_id',
+                DB::raw('COUNT(DISTINCT lahan_sawah.id) as jumlah_lahan'),
+                DB::raw('ROUND(COALESCE(SUM(lahan_sawah.luas_lahan_hektar),0), 2) as total_luas_ha'),
+                DB::raw('ROUND(COALESCE(SUM(lahan_sawah.hasil_panen_ton),0), 2) as total_panen_lahan'),
+                DB::raw('CASE WHEN SUM(COALESCE(lahan_sawah.hasil_panen_ton,0)) > 0 AND SUM(lahan_sawah.luas_lahan_hektar) > 0 THEN ROUND(SUM(COALESCE(lahan_sawah.hasil_panen_ton,0)) / SUM(lahan_sawah.luas_lahan_hektar), 2) WHEN AVG(NULLIF(lahan_sawah.produktivitas_ton_ha,0)) IS NOT NULL THEN ROUND(AVG(NULLIF(lahan_sawah.produktivitas_ton_ha,0)), 2) ELSE 0 END as produktivitas_lahan')
+            )
+            ->where('lahan_sawah.status_verifikasi', 'DITERIMA')
+            ->whereNotNull('lahan_sawah.kecamatan_id')
+            ->groupBy('lahan_sawah.kecamatan_id')
+            ->get()
+            ->keyBy('kecamatan_id');
+
+        $panenRows = collect();
+
+        if (Schema::hasTable('panen_padi')) {
+            $panenRows = DB::table('panen_padi as rp')
+                ->join('lahan_sawah as ls', 'ls.id', '=', 'rp.lahan_id')
+                ->where('rp.status_verifikasi', 'DITERIMA')
+                ->whereDate('rp.tanggal_panen', '<=', now()->toDateString())
+                ->where('ls.status_verifikasi', 'DITERIMA')
+                ->whereNotNull('ls.kecamatan_id')
+                ->select(
+                    'ls.kecamatan_id',
+                    DB::raw('COUNT(DISTINCT ls.id) as jumlah_lahan_panen'),
+                    DB::raw('ROUND(COALESCE(SUM(rp.hasil_panen_ton),0), 2) as total_panen_ton'),
+                    DB::raw('ROUND(COALESCE(SUM(rp.luas_lahan_ha),0), 2) as total_luas_panen_ha'),
+                    DB::raw('CASE WHEN SUM(COALESCE(rp.hasil_panen_ton,0)) > 0 AND SUM(rp.luas_lahan_ha) > 0 THEN ROUND(SUM(rp.hasil_panen_ton) / SUM(rp.luas_lahan_ha), 2) WHEN AVG(NULLIF(rp.produktivitas_ton_ha,0)) IS NOT NULL THEN ROUND(AVG(NULLIF(rp.produktivitas_ton_ha,0)), 2) ELSE 0 END as produktivitas_ton_ha')
+                )
+                ->groupBy('ls.kecamatan_id')
+                ->get()
+                ->keyBy('kecamatan_id');
+        }
+
+        return $lahanRows
+            ->keys()
+            ->merge($panenRows->keys())
+            ->filter()
+            ->unique()
+            ->mapWithKeys(function ($kecamatanId) use ($lahanRows, $panenRows) {
+                $lahan = $lahanRows->get($kecamatanId);
+                $panen = $panenRows->get($kecamatanId);
+                $pakaiPanen = $panen && (float) $panen->total_luas_panen_ha > 0;
+
+                $totalLuasHa = (float) ($lahan->total_luas_ha ?? 0);
+                $totalLuasPanenHa = $pakaiPanen ? (float) $panen->total_luas_panen_ha : $totalLuasHa;
+                $totalPanenTon = $pakaiPanen ? (float) $panen->total_panen_ton : (float) ($lahan->total_panen_lahan ?? 0);
+                $produktivitas = $pakaiPanen
+                    ? (float) $panen->produktivitas_ton_ha
+                    : (float) ($lahan->produktivitas_lahan ?? 0);
+
+                return [
+                    $kecamatanId => [
+                        'jumlah_lahan' => (int) ($lahan->jumlah_lahan ?? $panen->jumlah_lahan_panen ?? 0),
+                        'total_luas_ha' => $totalLuasHa,
+                        'total_luas_panen_ha' => $totalLuasPanenHa,
+                        'total_panen_ton' => $totalPanenTon,
+                        'produktivitas_ton_ha' => $produktivitas,
+                        'sumber_produktivitas' => $pakaiPanen ? 'panen_padi diterima' : 'lahan_sawah',
+                    ],
+                ];
+            })
+            ->all();
+    }
+
+    private function ambangProduktivitasKecamatan(array $agregatProduktivitas): array
+    {
+        $values = collect($agregatProduktivitas)
+            ->pluck('produktivitas_ton_ha')
+            ->map(fn ($value) => (float) $value)
+            ->filter(fn ($value) => $value > 0)
+            ->sort()
+            ->values();
+
+        return [
+            'rendah_maks' => $this->percentile($values, 33.33),
+            'sedang_maks' => $this->percentile($values, 66.67),
+            'jumlah_data' => $values->count(),
+        ];
+    }
+
+    private function percentile($values, float $percentile): ?float
+    {
+        $count = $values->count();
+
+        if ($count === 0) {
+            return null;
+        }
+
+        if ($count === 1) {
+            return round((float) $values->first(), 2);
+        }
+
+        $position = ($count - 1) * ($percentile / 100);
+        $lowerIndex = (int) floor($position);
+        $upperIndex = (int) ceil($position);
+        $lower = (float) $values->get($lowerIndex);
+        $upper = (float) $values->get($upperIndex);
+
+        if ($lowerIndex === $upperIndex) {
+            return round($lower, 2);
+        }
+
+        return round($lower + (($upper - $lower) * ($position - $lowerIndex)), 2);
+    }
+
+    private function kategoriProduktivitasKecamatan(float $produktivitas, array $ambang): array
+    {
+        $classes = [
+            'tinggi' => [
+                'label' => 'Produktivitas tinggi',
+                'stroke' => '#15803d',
+                'fill' => '#22c55e',
+            ],
+            'sedang' => [
+                'label' => 'Produktivitas sedang',
+                'stroke' => '#b45309',
+                'fill' => '#f59e0b',
+            ],
+            'rendah' => [
+                'label' => 'Produktivitas rendah',
+                'stroke' => '#b91c1c',
+                'fill' => '#ef4444',
+            ],
+            'belum-data' => [
+                'label' => 'Belum ada data',
+                'stroke' => '#64748b',
+                'fill' => '#94a3b8',
+            ],
+        ];
+
+        if ($produktivitas <= 0) {
+            return ['key' => 'belum-data'] + $classes['belum-data'];
+        }
+
+        $rendahMaks = $ambang['rendah_maks'] ?? null;
+        $sedangMaks = $ambang['sedang_maks'] ?? null;
+
+        if ($rendahMaks === null || $sedangMaks === null || abs($rendahMaks - $sedangMaks) < 0.01) {
+            return ['key' => 'sedang'] + $classes['sedang'];
+        }
+
+        if ($produktivitas <= $rendahMaks) {
+            return ['key' => 'rendah'] + $classes['rendah'];
+        }
+
+        if ($produktivitas <= $sedangMaks) {
+            return ['key' => 'sedang'] + $classes['sedang'];
+        }
+
+        return ['key' => 'tinggi'] + $classes['tinggi'];
     }
 
     private function normalisasiFeatureKecamatan(array $geojson, array $baseProperties): array

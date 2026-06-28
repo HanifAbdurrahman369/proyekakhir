@@ -19,6 +19,52 @@
     <style>
         /* CSS Tambahan Khusus Halaman Peta Publik */
         .map-loading { backdrop-filter: blur(4px); }
+        .fullmap-topbar {
+            align-items: flex-start;
+            display: flex;
+            gap: 16px;
+            justify-content: flex-start;
+            left: 24px;
+            pointer-events: none;
+            position: absolute;
+            top: 24px;
+            z-index: 11000;
+        }
+        .fullmap-back {
+            pointer-events: auto;
+        }
+        .fullmap-back {
+            align-items: center;
+            background: rgba(255,255,255,.96);
+            border: 1px solid rgba(226,232,240,.95);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(15,23,42,.12);
+            color: #334155;
+            display: inline-flex;
+            font-size: 13px;
+            font-weight: 700;
+            gap: 9px;
+            padding: 12px 16px;
+            text-decoration: none;
+            transition: all .2s ease;
+            white-space: nowrap;
+        }
+        .fullmap-back:hover {
+            background: #16a34a;
+            border-color: #16a34a;
+            color: #fff;
+        }
+        @media (max-width: 768px) {
+            .fullmap-topbar {
+                left: 14px;
+                top: 14px;
+            }
+            .fullmap-back {
+                border-radius: 14px;
+                font-size: 12px;
+                padding: 11px 12px;
+            }
+        }
     </style>
 </head>
 
@@ -34,55 +80,19 @@
         <p class="text-sm text-slate-500 mt-1">Mengambil data titik dan poligon lahan.</p>
     </div>
 
-    <!-- Top Bar (Back & Search) -->
-    <div class="absolute top-6 left-0 right-0 z-[9990] flex justify-between items-start px-6 pointer-events-none">
-        <!-- Kiri: Tombol Back -->
-        <div class="flex gap-3 pointer-events-auto">
-            <a href="{{ url('/') }}" class="bg-white/95 backdrop-blur-md text-slate-700 px-6 py-3 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-slate-100 font-medium text-sm hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all duration-300 flex items-center gap-2">
+    <!-- Top Bar -->
+    <div class="fullmap-topbar">
+        <div class="flex gap-3">
+            <a href="{{ url('/') }}" class="fullmap-back">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                Kembali
+                Kembali ke Dashboard
             </a>
         </div>
 
-        <!-- Tengah: Search Bar -->
-        <div class="pointer-events-auto relative w-full max-w-md hidden md:block">
-            <div class="relative">
-                <input type="text" id="search-lahan" placeholder="Cari nama lahan atau pemilik..." class="w-full bg-white/95 backdrop-blur-md border border-slate-200 text-slate-700 text-sm rounded-2xl pl-12 pr-4 py-3.5 shadow-[0_8px_30px_rgba(0,0,0,0.08)] focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-4 top-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-            </div>
-            <!-- Hasil Pencarian -->
-            <div id="search-results" class="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden hidden max-h-60 overflow-y-auto z-[9991]">
-                <!-- Results injected via JS -->
-            </div>
-        </div>
-        
-        <!-- Kanan: Spacer -->
-        <div class="w-[100px] hidden lg:block"></div>
     </div>
 
 
-    <!-- Legenda (Kanan Bawah) -->
-    <div class="absolute bottom-6 left-6 z-[9000] bg-white/90 backdrop-blur-md border border-slate-200 p-4 rounded-2xl shadow-lg pointer-events-auto">
-        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">Legenda Peta</h4>
-        <div class="space-y-2 text-sm text-slate-600">
-            <div class="flex items-center gap-2">
-                <div class="w-4 h-4 rounded border border-emerald-500 bg-emerald-500/40"></div>
-                <span>Area Lahan Sawah</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <div class="w-4 h-4 rounded-full bg-orange-400 border-2 border-white shadow-sm flex items-center justify-center text-[8px] text-white font-bold">10</div>
-                <span>Klaster Lahan</span>
-            </div>
-            <div class="flex items-center gap-2 mt-2 pt-2 border-t border-slate-100">
-                <div class="w-5 h-0.5 bg-slate-800"></div>
-                <span>Batas Kabupaten</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <div class="w-5 h-0.5 bg-blue-500 opacity-60"></div>
-                <span>Batas Kecamatan</span>
-            </div>
-        </div>
-    </div>
+    <div id="map-legend"></div>
 
     <div class="relative w-full h-screen overflow-hidden">
         <div id="map" class="w-full h-full z-0"></div>

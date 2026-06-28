@@ -40,8 +40,18 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
     try {
       final parsed = DateTime.parse(dateStr);
       final months = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-        'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'Mei',
+        'Jun',
+        'Jul',
+        'Ags',
+        'Sep',
+        'Okt',
+        'Nov',
+        'Des',
       ];
       return '${parsed.day} ${months[parsed.month - 1]} ${parsed.year}';
     } catch (_) {
@@ -52,7 +62,10 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
   String _formatNumber(dynamic val) {
     if (val == null) return '0';
     if (val is num) {
-      return val.toStringAsFixed(2).replaceAll('.', ',').replaceFirst(RegExp(r',00$'), '');
+      return val
+          .toStringAsFixed(2)
+          .replaceAll('.', ',')
+          .replaceFirst(RegExp(r',00$'), '');
     }
     return val.toString();
   }
@@ -77,8 +90,14 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
             indicatorColor: Colors.white,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
-            labelStyle: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
-            unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
+            labelStyle: GoogleFonts.inter(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
+            unselectedLabelStyle: GoogleFonts.inter(
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
             tabs: const [
               Tab(text: 'Lahan'),
               Tab(text: 'Panen'),
@@ -99,8 +118,11 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
 
   // ================= TAB 1: RIWAYAT LAHAN =================
   Widget _buildLahanTab(FarmingProvider provider) {
-    if (provider.isRiwayatLahanLoading && provider.riwayatLahanData['data'].isEmpty) {
-      return const Center(child: CircularProgressIndicator(color: Colors.green));
+    if (provider.isRiwayatLahanLoading &&
+        provider.riwayatLahanData['data'].isEmpty) {
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.green),
+      );
     }
 
     final dataMap = provider.riwayatLahanData;
@@ -124,12 +146,18 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
               itemBuilder: (context, index) {
                 final item = list[index];
                 final statusRaw = item['status_verifikasi'] ?? 'PENDING';
-                final statusSpasial = item['status_spasial'] ?? 'BELUM_DIPETAKAN';
-                final catatanLahan = item['catatan_verifikasi'] ?? item['alasan_penolakan'] ?? '';
+                final statusSpasial =
+                    item['status_spasial'] ?? 'BELUM_DIPETAKAN';
+                final catatanLahan =
+                    item['catatan_verifikasi'] ??
+                    item['alasan_penolakan'] ??
+                    '';
 
                 String statusText = statusRaw;
                 if (statusRaw == 'DITERIMA') {
-                  statusText = statusSpasial == 'SUDAH_DIPETAKAN' ? 'TERVERIFIKASI' : 'DISETUJUI';
+                  statusText = statusSpasial == 'SUDAH_DIPETAKAN'
+                      ? 'TERVERIFIKASI'
+                      : 'DISETUJUI';
                 }
 
                 Color badgeBg;
@@ -172,7 +200,10 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: badgeBg,
                                 borderRadius: BorderRadius.circular(12),
@@ -189,26 +220,40 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                           ],
                         ),
                         const SizedBox(height: 10),
-                        _buildDetailRow(Icons.pin_drop_rounded, 'Alamat', item['alamat_detail'] ?? '-'),
+                        _buildDetailRow(
+                          Icons.pin_drop_rounded,
+                          'Alamat',
+                          item['alamat_detail'] ?? '-',
+                        ),
                         const SizedBox(height: 6),
-                        _buildDetailRow(Icons.square_foot_rounded, 'Luas Lahan', '${_formatNumber(item['luas_lahan_hektar'])} Ha'),
+                        _buildDetailRow(
+                          Icons.square_foot_rounded,
+                          'Luas Lahan',
+                          '${_formatNumber(item['luas_lahan_hektar'])} Ha',
+                        ),
                         if (catatanLahan.toString().isNotEmpty) ...[
                           const SizedBox(height: 12),
                           Container(
                             width: double.infinity,
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: statusRaw == 'DITOLAK' ? const Color(0xFFFFF5F5) : const Color(0xFFF8FAFC),
+                              color: statusRaw == 'DITOLAK'
+                                  ? const Color(0xFFFFF5F5)
+                                  : const Color(0xFFF8FAFC),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: statusRaw == 'DITOLAK' ? const Color(0xFFFEE2E2) : const Color(0xFFE2E8F0),
+                                color: statusRaw == 'DITOLAK'
+                                    ? const Color(0xFFFEE2E2)
+                                    : const Color(0xFFE2E8F0),
                               ),
                             ),
                             child: Text(
                               'Catatan: $catatanLahan',
                               style: GoogleFonts.inter(
                                 fontSize: 11,
-                                color: statusRaw == 'DITOLAK' ? const Color(0xFF991B1B) : Colors.grey[700],
+                                color: statusRaw == 'DITOLAK'
+                                    ? const Color(0xFF991B1B)
+                                    : Colors.grey[700],
                                 fontStyle: FontStyle.italic,
                               ),
                             ),
@@ -219,18 +264,29 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton.icon(
-                              onPressed: () => _showResubmitLahanDialog(context, item),
-                              icon: const Icon(Icons.edit_note_rounded, size: 18),
+                              onPressed: () =>
+                                  _showResubmitLahanDialog(context, item),
+                              icon: const Icon(
+                                Icons.edit_note_rounded,
+                                size: 18,
+                              ),
                               label: Text(
                                 'Perbaiki Pengajuan Lahan',
-                                style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
+                                style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
                               ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF3E7D00),
                                 foregroundColor: Colors.white,
                                 elevation: 0,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
                               ),
                             ),
                           ),
@@ -250,8 +306,11 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
 
   // ================= TAB 2: RIWAYAT PANEN =================
   Widget _buildPanenTab(FarmingProvider provider) {
-    if (provider.isRiwayatPanenLoading && provider.riwayatPanenData['data'].isEmpty) {
-      return const Center(child: CircularProgressIndicator(color: Colors.green));
+    if (provider.isRiwayatPanenLoading &&
+        provider.riwayatPanenData['data'].isEmpty) {
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.green),
+      );
     }
 
     final dataMap = provider.riwayatPanenData;
@@ -320,7 +379,10 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: badgeBg,
                                 borderRadius: BorderRadius.circular(12),
@@ -347,18 +409,34 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                           ),
                         ],
                         const Divider(height: 20, color: Color(0xFFF1F5F9)),
-                        _buildDetailRow(Icons.grass_rounded, 'Bibit', bibit?['nama_bibit'] ?? '-'),
+                        _buildDetailRow(
+                          Icons.grass_rounded,
+                          'Bibit',
+                          bibit?['nama_bibit'] ?? '-',
+                        ),
                         const SizedBox(height: 6),
-                        _buildDetailRow(Icons.calendar_month_rounded, 'Tgl Tanam', _formatDateStr(item['tanggal_tanam'])),
+                        _buildDetailRow(
+                          Icons.calendar_month_rounded,
+                          'Tgl Tanam',
+                          _formatDateStr(item['tanggal_tanam']),
+                        ),
                         const SizedBox(height: 6),
-                        _buildDetailRow(Icons.task_alt_rounded, 'Tgl Panen', _formatDateStr(item['tanggal_panen'])),
+                        _buildDetailRow(
+                          Icons.task_alt_rounded,
+                          'Tgl Panen',
+                          _formatDateStr(item['tanggal_panen']),
+                        ),
                         const SizedBox(height: 10),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
                               'Hasil Panen',
-                              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.grey[600]),
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey[600],
+                              ),
                             ),
                             Text(
                               '${_formatNumber(item['hasil_panen'])} Ton',
@@ -376,17 +454,23 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: statusRaw == 'DITOLAK' ? const Color(0xFFFFF5F5) : const Color(0xFFF8FAFC),
+                              color: statusRaw == 'DITOLAK'
+                                  ? const Color(0xFFFFF5F5)
+                                  : const Color(0xFFF8FAFC),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: statusRaw == 'DITOLAK' ? const Color(0xFFFEE2E2) : const Color(0xFFE2E8F0),
+                                color: statusRaw == 'DITOLAK'
+                                    ? const Color(0xFFFEE2E2)
+                                    : const Color(0xFFE2E8F0),
                               ),
                             ),
                             child: Text(
                               'Catatan: $catatan',
                               style: GoogleFonts.inter(
                                 fontSize: 11,
-                                color: statusRaw == 'DITOLAK' ? const Color(0xFF991B1B) : Colors.grey[700],
+                                color: statusRaw == 'DITOLAK'
+                                    ? const Color(0xFF991B1B)
+                                    : Colors.grey[700],
                                 fontStyle: FontStyle.italic,
                               ),
                             ),
@@ -397,18 +481,29 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton.icon(
-                              onPressed: () => _showUpdatePanenDialog(context, item),
-                              icon: const Icon(Icons.edit_note_rounded, size: 18),
+                              onPressed: () =>
+                                  _showUpdatePanenDialog(context, item),
+                              icon: const Icon(
+                                Icons.edit_note_rounded,
+                                size: 18,
+                              ),
                               label: Text(
                                 'Perbaiki Laporan Panen',
-                                style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
+                                style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
                               ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF3E7D00),
                                 foregroundColor: Colors.white,
                                 elevation: 0,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
                               ),
                             ),
                           ),
@@ -428,8 +523,11 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
 
   // ================= TAB 3: RIWAYAT PEMUPUKAN =================
   Widget _buildPupukTab(FarmingProvider provider) {
-    if (provider.isRiwayatPupukLoading && provider.riwayatPupukData['data'].isEmpty) {
-      return const Center(child: CircularProgressIndicator(color: Colors.green));
+    if (provider.isRiwayatPupukLoading &&
+        provider.riwayatPupukData['data'].isEmpty) {
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.green),
+      );
     }
 
     final dataMap = provider.riwayatPupukData;
@@ -475,18 +573,34 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                           ),
                         ),
                         const Divider(height: 20, color: Color(0xFFF1F5F9)),
-                        _buildDetailRow(Icons.science_rounded, 'Jenis Pupuk', item['nama_pupuk'] ?? '-'),
+                        _buildDetailRow(
+                          Icons.science_rounded,
+                          'Jenis Pupuk',
+                          item['nama_pupuk'] ?? '-',
+                        ),
                         const SizedBox(height: 6),
-                        _buildDetailRow(Icons.category_rounded, 'Tipe Pupuk', item['tipe_pupuk'] ?? '-'),
+                        _buildDetailRow(
+                          Icons.category_rounded,
+                          'Tipe Pupuk',
+                          item['tipe_pupuk'] ?? '-',
+                        ),
                         const SizedBox(height: 6),
-                        _buildDetailRow(Icons.calendar_month_rounded, 'Tgl Pemupukan', _formatDateStr(item['tanggal_pemupukan'])),
+                        _buildDetailRow(
+                          Icons.calendar_month_rounded,
+                          'Tgl Pemupukan',
+                          _formatDateStr(item['tanggal_pemupukan']),
+                        ),
                         const SizedBox(height: 10),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
                               'Takaran Pupuk',
-                              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.grey[600]),
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey[600],
+                              ),
                             ),
                             Text(
                               '${_formatNumber(item['takaran'])} Kg',
@@ -566,7 +680,11 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
     );
   }
 
-  Widget _buildPaginationController(int currentPage, int lastPage, Function(int) onPageChanged) {
+  Widget _buildPaginationController(
+    int currentPage,
+    int lastPage,
+    Function(int) onPageChanged,
+  ) {
     if (lastPage <= 1) return const SizedBox.shrink();
 
     return Container(
@@ -579,9 +697,17 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           ElevatedButton.icon(
-            onPressed: currentPage > 1 ? () => onPageChanged(currentPage - 1) : null,
+            onPressed: currentPage > 1
+                ? () => onPageChanged(currentPage - 1)
+                : null,
             icon: const Icon(Icons.chevron_left_rounded, size: 18),
-            label: Text('Sebelumnya', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold)),
+            label: Text(
+              'Sebelumnya',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             style: ElevatedButton.styleFrom(
               elevation: 0,
               backgroundColor: const Color(0xFFE2E8F0),
@@ -589,7 +715,9 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
               disabledBackgroundColor: Colors.grey[100],
               disabledForegroundColor: Colors.grey[400],
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           ),
           Text(
@@ -601,9 +729,17 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
             ),
           ),
           ElevatedButton.icon(
-            onPressed: currentPage < lastPage ? () => onPageChanged(currentPage + 1) : null,
+            onPressed: currentPage < lastPage
+                ? () => onPageChanged(currentPage + 1)
+                : null,
             icon: const Icon(Icons.chevron_right_rounded, size: 18),
-            label: Text('Selanjutnya', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold)),
+            label: Text(
+              'Selanjutnya',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             style: ElevatedButton.styleFrom(
               elevation: 0,
               backgroundColor: const Color(0xFF3E7D00),
@@ -611,7 +747,9 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
               disabledBackgroundColor: Colors.grey[100],
               disabledForegroundColor: Colors.grey[400],
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           ),
         ],
@@ -619,17 +757,26 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
     );
   }
 
-  void _showResubmitLahanDialog(BuildContext context, Map<String, dynamic> item) {
+  void _showResubmitLahanDialog(
+    BuildContext context,
+    Map<String, dynamic> item,
+  ) {
     final farmingProvider = context.read<FarmingProvider>();
-    
+
     if (farmingProvider.kecamatanList.isEmpty) {
       farmingProvider.fetchLahanMetadata();
     }
 
     final formKey = GlobalKey<FormState>();
-    final namaLahanController = TextEditingController(text: item['nama_lahan'] ?? '');
-    final luasLahanController = TextEditingController(text: item['luas_lahan_hektar']?.toString() ?? '');
-    final alamatController = TextEditingController(text: item['alamat_detail'] ?? '');
+    final namaLahanController = TextEditingController(
+      text: item['nama_lahan'] ?? '',
+    );
+    final luasLahanController = TextEditingController(
+      text: item['luas_lahan_hektar']?.toString() ?? '',
+    );
+    final alamatController = TextEditingController(
+      text: item['alamat_detail'] ?? '',
+    );
 
     String? selectedKecId = item['kecamatan_id']?.toString();
     String? selectedKelId = item['kelurahan_id']?.toString();
@@ -643,7 +790,7 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             final provider = context.watch<FarmingProvider>();
-            
+
             if (provider.isLoading && provider.kecamatanList.isEmpty) {
               return const AlertDialog(
                 content: SizedBox(
@@ -659,15 +806,23 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
               return k['kecamatan_id'].toString() == selectedKecId;
             }).toList();
 
-            if (selectedKelId != null && !filteredKelurahan.any((k) => k['id'].toString() == selectedKelId)) {
+            if (selectedKelId != null &&
+                !filteredKelurahan.any(
+                  (k) => k['id'].toString() == selectedKelId,
+                )) {
               selectedKelId = null;
             }
 
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
               title: Text(
                 'Perbaiki Pengajuan Lahan',
-                style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF14280B)),
+                style: GoogleFonts.outfit(
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF14280B),
+                ),
               ),
               content: SizedBox(
                 width: double.maxFinite,
@@ -684,24 +839,39 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                           decoration: const InputDecoration(
                             labelText: 'Nama Lahan',
                             border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
                           ),
-                          validator: (value) => value == null || value.trim().isEmpty ? 'Nama lahan wajib diisi' : null,
+                          validator: (value) =>
+                              value == null || value.trim().isEmpty
+                              ? 'Nama lahan wajib diisi'
+                              : null,
                         ),
                         const SizedBox(height: 12),
                         DropdownButtonFormField<String>(
                           isExpanded: true,
-                          value: selectedKecId,
-                          style: GoogleFonts.inter(fontSize: 14, color: Colors.black),
+                          initialValue: selectedKecId,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: Colors.black,
+                          ),
                           decoration: const InputDecoration(
                             labelText: 'Kecamatan',
                             border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
                           ),
                           items: provider.kecamatanList.map((k) {
                             return DropdownMenuItem<String>(
                               value: k['id'].toString(),
-                              child: Text(k['nama_kecamatan'] ?? k['nama'] ?? '', overflow: TextOverflow.ellipsis),
+                              child: Text(
+                                k['nama_kecamatan'] ?? k['nama'] ?? '',
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             );
                           }).toList(),
                           onChanged: (val) {
@@ -710,22 +880,32 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                               selectedKelId = null;
                             });
                           },
-                          validator: (value) => value == null ? 'Kecamatan wajib dipilih' : null,
+                          validator: (value) =>
+                              value == null ? 'Kecamatan wajib dipilih' : null,
                         ),
                         const SizedBox(height: 12),
                         DropdownButtonFormField<String>(
                           isExpanded: true,
-                          value: selectedKelId,
-                          style: GoogleFonts.inter(fontSize: 14, color: Colors.black),
+                          initialValue: selectedKelId,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: Colors.black,
+                          ),
                           decoration: const InputDecoration(
                             labelText: 'Kelurahan',
                             border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
                           ),
                           items: filteredKelurahan.map((k) {
                             return DropdownMenuItem<String>(
                               value: k['id'].toString(),
-                              child: Text(k['nama_kelurahan'] ?? k['nama'] ?? '', overflow: TextOverflow.ellipsis),
+                              child: Text(
+                                k['nama_kelurahan'] ?? k['nama'] ?? '',
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             );
                           }).toList(),
                           onChanged: (val) {
@@ -733,22 +913,32 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                               selectedKelId = val;
                             });
                           },
-                          validator: (value) => value == null ? 'Kelurahan wajib dipilih' : null,
+                          validator: (value) =>
+                              value == null ? 'Kelurahan wajib dipilih' : null,
                         ),
                         const SizedBox(height: 12),
                         DropdownButtonFormField<String>(
                           isExpanded: true,
-                          value: selectedTipeLahanId,
-                          style: GoogleFonts.inter(fontSize: 14, color: Colors.black),
+                          initialValue: selectedTipeLahanId,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: Colors.black,
+                          ),
                           decoration: const InputDecoration(
                             labelText: 'Tipe Lahan',
                             border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
                           ),
                           items: provider.tipeLahanList.map((t) {
                             return DropdownMenuItem<String>(
                               value: t['id'].toString(),
-                              child: Text(t['nama_tipe'] ?? t['nama'] ?? '', overflow: TextOverflow.ellipsis),
+                              child: Text(
+                                t['nama_tipe'] ?? t['nama'] ?? '',
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             );
                           }).toList(),
                           onChanged: (val) {
@@ -756,22 +946,32 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                               selectedTipeLahanId = val;
                             });
                           },
-                          validator: (value) => value == null ? 'Tipe lahan wajib dipilih' : null,
+                          validator: (value) =>
+                              value == null ? 'Tipe lahan wajib dipilih' : null,
                         ),
                         const SizedBox(height: 12),
                         DropdownButtonFormField<String>(
                           isExpanded: true,
-                          value: selectedPetaniId,
-                          style: GoogleFonts.inter(fontSize: 14, color: Colors.black),
+                          initialValue: selectedPetaniId,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: Colors.black,
+                          ),
                           decoration: const InputDecoration(
                             labelText: 'Petani Penggarap',
                             border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
                           ),
                           items: provider.petaniSpasialList.map((p) {
                             return DropdownMenuItem<String>(
                               value: p['id'].toString(),
-                              child: Text(p['nama_lengkap'] ?? p['nama'] ?? '', overflow: TextOverflow.ellipsis),
+                              child: Text(
+                                p['nama_lengkap'] ?? p['nama'] ?? '',
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             );
                           }).toList(),
                           onChanged: (val) {
@@ -779,21 +979,31 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                               selectedPetaniId = val;
                             });
                           },
-                          validator: (value) => value == null ? 'Petani wajib dipilih' : null,
+                          validator: (value) =>
+                              value == null ? 'Petani wajib dipilih' : null,
                         ),
                         const SizedBox(height: 12),
                         TextFormField(
                           controller: luasLahanController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           style: GoogleFonts.inter(fontSize: 14),
                           decoration: const InputDecoration(
                             labelText: 'Luas Lahan (Ha)',
                             border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
                           ),
                           validator: (value) {
-                            if (value == null || value.trim().isEmpty) return 'Luas lahan wajib diisi';
-                            if (double.tryParse(value) == null) return 'Masukkan angka yang valid';
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Luas lahan wajib diisi';
+                            }
+                            if (double.tryParse(value) == null) {
+                              return 'Masukkan angka yang valid';
+                            }
                             return null;
                           },
                         ),
@@ -805,9 +1015,15 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                           decoration: const InputDecoration(
                             labelText: 'Alamat Detail',
                             border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
                           ),
-                          validator: (value) => value == null || value.trim().isEmpty ? 'Alamat wajib diisi' : null,
+                          validator: (value) =>
+                              value == null || value.trim().isEmpty
+                              ? 'Alamat wajib diisi'
+                              : null,
                         ),
                       ],
                     ),
@@ -817,7 +1033,10 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text('Batal', style: TextStyle(color: Colors.grey[600])),
+                  child: Text(
+                    'Batal',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
                 ),
                 ElevatedButton(
                   onPressed: provider.isLoading
@@ -828,25 +1047,38 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                             'nama_lahan': namaLahanController.text.trim(),
                             'kecamatan_id': int.tryParse(selectedKecId ?? ''),
                             'kelurahan_id': int.tryParse(selectedKelId ?? ''),
-                            'tipe_lahan_id': int.tryParse(selectedTipeLahanId ?? ''),
-                            'luas_lahan_hektar': double.tryParse(luasLahanController.text.trim()),
+                            'tipe_lahan_id': int.tryParse(
+                              selectedTipeLahanId ?? '',
+                            ),
+                            'luas_lahan_hektar': double.tryParse(
+                              luasLahanController.text.trim(),
+                            ),
                             'petani_id': int.tryParse(selectedPetaniId ?? ''),
                             'alamat_detail': alamatController.text.trim(),
                           };
-                          final success = await provider.resubmitLahan(item['id'], payload);
+                          final success = await provider.resubmitLahan(
+                            item['id'],
+                            payload,
+                          );
+                          if (!context.mounted) return;
                           if (success) {
                             Navigator.pop(context);
                             _loadLahanData(1);
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Perbaikan pengajuan lahan berhasil dikirim.'),
+                                content: Text(
+                                  'Perbaikan pengajuan lahan berhasil dikirim.',
+                                ),
                                 backgroundColor: Colors.green,
                               ),
                             );
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(provider.errorMessage ?? 'Gagal mengirim perbaikan.'),
+                                content: Text(
+                                  provider.errorMessage ??
+                                      'Gagal mengirim perbaikan.',
+                                ),
                                 backgroundColor: Colors.red,
                               ),
                             );
@@ -855,13 +1087,18 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3E7D00),
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                   child: provider.isLoading
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
                         )
                       : const Text('Kirim Perbaikan'),
                 ),
@@ -875,8 +1112,10 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
 
   void _showUpdatePanenDialog(BuildContext context, Map<String, dynamic> item) {
     final formKey = GlobalKey<FormState>();
-    final hasilController = TextEditingController(text: item['hasil_panen']?.toString() ?? '');
-    DateTime selectedDate = item['tanggal_panen'] != null 
+    final hasilController = TextEditingController(
+      text: item['hasil_panen']?.toString() ?? '',
+    );
+    DateTime selectedDate = item['tanggal_panen'] != null
         ? DateTime.tryParse(item['tanggal_panen'].toString()) ?? DateTime.now()
         : DateTime.now();
 
@@ -915,10 +1154,15 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
             }
 
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
               title: Text(
                 'Perbaiki Laporan Panen',
-                style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF14280B)),
+                style: GoogleFonts.outfit(
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF14280B),
+                ),
               ),
               content: Form(
                 key: formKey,
@@ -928,21 +1172,34 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                   children: [
                     Text(
                       'Lahan: ${item['lahan']?['nama_lahan'] ?? '-'}',
-                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey[700]),
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[700],
+                      ),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: hasilController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       style: GoogleFonts.inter(fontSize: 14),
                       decoration: const InputDecoration(
                         labelText: 'Hasil Panen (Ton)',
                         border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                       ),
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty) return 'Hasil panen wajib diisi';
-                        if (double.tryParse(value) == null) return 'Masukkan angka yang valid';
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Hasil panen wajib diisi';
+                        }
+                        if (double.tryParse(value) == null) {
+                          return 'Masukkan angka yang valid';
+                        }
                         return null;
                       },
                     ),
@@ -950,7 +1207,10 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                     InkWell(
                       onTap: pickDate,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey),
                           borderRadius: BorderRadius.circular(4),
@@ -965,7 +1225,11 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            const Icon(Icons.calendar_today_rounded, size: 18, color: Colors.grey),
+                            const Icon(
+                              Icons.calendar_today_rounded,
+                              size: 18,
+                              color: Colors.grey,
+                            ),
                           ],
                         ),
                       ),
@@ -976,7 +1240,10 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text('Batal', style: TextStyle(color: Colors.grey[600])),
+                  child: Text(
+                    'Batal',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
                 ),
                 ElevatedButton(
                   onPressed: provider.isLoading
@@ -984,23 +1251,35 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                       : () async {
                           if (!formKey.currentState!.validate()) return;
                           final payload = {
-                            'tanggal_panen': '${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}',
-                            'hasil_panen': double.tryParse(hasilController.text.trim()),
+                            'tanggal_panen':
+                                '${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}',
+                            'hasil_panen': double.tryParse(
+                              hasilController.text.trim(),
+                            ),
                           };
-                          final success = await provider.updateLaporPanen(item['id'], payload);
+                          final success = await provider.updateLaporPanen(
+                            item['id'],
+                            payload,
+                          );
+                          if (!context.mounted) return;
                           if (success) {
                             Navigator.pop(context);
                             _loadPanenData(1);
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Perbaikan laporan panen berhasil dikirim.'),
+                                content: Text(
+                                  'Perbaikan laporan panen berhasil dikirim.',
+                                ),
                                 backgroundColor: Colors.green,
                               ),
                             );
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(provider.errorMessage ?? 'Gagal mengirim perbaikan.'),
+                                content: Text(
+                                  provider.errorMessage ??
+                                      'Gagal mengirim perbaikan.',
+                                ),
                                 backgroundColor: Colors.red,
                               ),
                             );
@@ -1009,13 +1288,18 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3E7D00),
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                   child: provider.isLoading
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
                         )
                       : const Text('Kirim Perbaikan'),
                 ),

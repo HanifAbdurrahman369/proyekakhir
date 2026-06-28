@@ -52,6 +52,34 @@ class FarmingProvider extends ChangeNotifier {
   Map<String, dynamic>? _lahanMapFeatures;
   bool _isMapLoading = false;
 
+  // State Petugas
+  List<dynamic> _petugasPendingLahan = [];
+  List<dynamic> _petugasPendingPanen = [];
+  List<dynamic> _petugasNotifikasi = [];
+  Map<String, dynamic> _petugasPendingCounts = {
+    'pending_lahan': 0,
+    'pending_panen': 0,
+    'total_pending': 0,
+  };
+  int _petugasUnreadCount = 0;
+  bool _isPetugasLoading = false;
+  bool _isPetugasActionLoading = false;
+
+  Map<String, dynamic> _petugasSpasialReferensi = {
+    'petani': [],
+    'kecamatan': [],
+    'kelurahan': [],
+    'tipe_lahan': [],
+  };
+  List<dynamic> _petugasSpasialRows = [];
+  Map<String, dynamic> _petugasSpasialSummary = {
+    'total': 0,
+    'sudah_dipetakan': 0,
+    'belum_dipetakan': 0,
+    'persentase_lengkap': 0,
+  };
+  bool _isPetugasSpasialLoading = false;
+
   FarmingProvider(this._farmingService);
 
   double get produksiPejabat => _produksiPejabat;
@@ -65,6 +93,18 @@ class FarmingProvider extends ChangeNotifier {
   Map<String, dynamic>? get kecamatanBoundaries => _kecamatanBoundaries;
   Map<String, dynamic>? get lahanMapFeatures => _lahanMapFeatures;
   bool get isMapLoading => _isMapLoading;
+
+  List<dynamic> get petugasPendingLahan => _petugasPendingLahan;
+  List<dynamic> get petugasPendingPanen => _petugasPendingPanen;
+  List<dynamic> get petugasNotifikasi => _petugasNotifikasi;
+  Map<String, dynamic> get petugasPendingCounts => _petugasPendingCounts;
+  int get petugasUnreadCount => _petugasUnreadCount;
+  bool get isPetugasLoading => _isPetugasLoading;
+  bool get isPetugasActionLoading => _isPetugasActionLoading;
+  Map<String, dynamic> get petugasSpasialReferensi => _petugasSpasialReferensi;
+  List<dynamic> get petugasSpasialRows => _petugasSpasialRows;
+  Map<String, dynamic> get petugasSpasialSummary => _petugasSpasialSummary;
+  bool get isPetugasSpasialLoading => _isPetugasSpasialLoading;
 
   bool get isLoading => _isLoading;
   Map<String, dynamic> get lahanData => _lahanData;
@@ -180,22 +220,26 @@ class FarmingProvider extends ChangeNotifier {
       final results = await Future.wait([
         _farmingService.getKecamatan().catchError((e) {
           debugPrint('DEBUG ERROR getKecamatan: $e');
-          _errorMessage = '${_errorMessage != null ? '$_errorMessage\n' : ''}Kecamatan: ${e.toString().replaceAll('Exception: ', '')}';
+          _errorMessage =
+              '${_errorMessage != null ? '$_errorMessage\n' : ''}Kecamatan: ${e.toString().replaceAll('Exception: ', '')}';
           return [];
         }),
         _farmingService.getKelurahan().catchError((e) {
           debugPrint('DEBUG ERROR getKelurahan: $e');
-          _errorMessage = '${_errorMessage != null ? '$_errorMessage\n' : ''}Kelurahan: ${e.toString().replaceAll('Exception: ', '')}';
+          _errorMessage =
+              '${_errorMessage != null ? '$_errorMessage\n' : ''}Kelurahan: ${e.toString().replaceAll('Exception: ', '')}';
           return [];
         }),
         _farmingService.getTipeLahan().catchError((e) {
           debugPrint('DEBUG ERROR getTipeLahan: $e');
-          _errorMessage = '${_errorMessage != null ? '$_errorMessage\n' : ''}Tipe Lahan: ${e.toString().replaceAll('Exception: ', '')}';
+          _errorMessage =
+              '${_errorMessage != null ? '$_errorMessage\n' : ''}Tipe Lahan: ${e.toString().replaceAll('Exception: ', '')}';
           return [];
         }),
         _farmingService.getPetaniSpasial().catchError((e) {
           debugPrint('DEBUG ERROR getPetaniSpasial: $e');
-          _errorMessage = '${_errorMessage != null ? '$_errorMessage\n' : ''}Penggarap: ${e.toString().replaceAll('Exception: ', '')}';
+          _errorMessage =
+              '${_errorMessage != null ? '$_errorMessage\n' : ''}Penggarap: ${e.toString().replaceAll('Exception: ', '')}';
           return [];
         }),
       ]);
@@ -229,22 +273,26 @@ class FarmingProvider extends ChangeNotifier {
       final results = await Future.wait([
         _farmingService.getLahanDropdown().catchError((e) {
           debugPrint('DEBUG ERROR getLahanDropdown: $e');
-          _errorMessage = '${_errorMessage != null ? '$_errorMessage\n' : ''}Lahan: ${e.toString().replaceAll('Exception: ', '')}';
+          _errorMessage =
+              '${_errorMessage != null ? '$_errorMessage\n' : ''}Lahan: ${e.toString().replaceAll('Exception: ', '')}';
           return [];
         }),
         _farmingService.getBibit().catchError((e) {
           debugPrint('DEBUG ERROR getBibit: $e');
-          _errorMessage = '${_errorMessage != null ? '$_errorMessage\n' : ''}Bibit: ${e.toString().replaceAll('Exception: ', '')}';
+          _errorMessage =
+              '${_errorMessage != null ? '$_errorMessage\n' : ''}Bibit: ${e.toString().replaceAll('Exception: ', '')}';
           return [];
         }),
         _farmingService.getJenisPupuk().catchError((e) {
           debugPrint('DEBUG ERROR getJenisPupuk: $e');
-          _errorMessage = '${_errorMessage != null ? '$_errorMessage\n' : ''}Pupuk: ${e.toString().replaceAll('Exception: ', '')}';
+          _errorMessage =
+              '${_errorMessage != null ? '$_errorMessage\n' : ''}Pupuk: ${e.toString().replaceAll('Exception: ', '')}';
           return [];
         }),
         _farmingService.getMySiklusTanam().catchError((e) {
           debugPrint('DEBUG ERROR getMySiklusTanam: $e');
-          _errorMessage = '${_errorMessage != null ? '$_errorMessage\n' : ''}Siklus: ${e.toString().replaceAll('Exception: ', '')}';
+          _errorMessage =
+              '${_errorMessage != null ? '$_errorMessage\n' : ''}Siklus: ${e.toString().replaceAll('Exception: ', '')}';
           return [];
         }),
       ]);
@@ -415,13 +463,168 @@ class FarmingProvider extends ChangeNotifier {
         _farmingService.getMapLahan(),
       ]);
 
-      _kabupatenBoundary = results[0] as Map<String, dynamic>;
-      _kecamatanBoundaries = results[1] as Map<String, dynamic>;
-      _lahanMapFeatures = results[2] as Map<String, dynamic>;
+      _kabupatenBoundary = results[0];
+      _kecamatanBoundaries = results[1];
+      _lahanMapFeatures = results[2];
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
     } finally {
       _isMapLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchPetugasDashboardData() async {
+    _isPetugasLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final results = await Future.wait([
+        _farmingService.getPetugasPendingLahan(),
+        _farmingService.getPetugasPendingPanen(),
+        _farmingService.getPetugasNotifikasi(),
+      ]);
+
+      _petugasPendingLahan = results[0] as List<dynamic>;
+      _petugasPendingPanen = results[1] as List<dynamic>;
+      final notifikasiResult = results[2] as Map<String, dynamic>;
+      _petugasNotifikasi = notifikasiResult['data'] as List<dynamic>? ?? [];
+      _petugasUnreadCount =
+          int.tryParse(notifikasiResult['unread_count']?.toString() ?? '0') ??
+          0;
+      _petugasPendingCounts = Map<String, dynamic>.from(
+        notifikasiResult['pending_counts'] as Map? ??
+            {
+              'pending_lahan': _petugasPendingLahan.length,
+              'pending_panen': _petugasPendingPanen.length,
+              'total_pending':
+                  _petugasPendingLahan.length + _petugasPendingPanen.length,
+            },
+      );
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      _isPetugasLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> approvePetugasLahan(int id, {int? petaniId}) async {
+    return _runPetugasAction(
+      () => _farmingService.approvePetugasLahan(id, petaniId: petaniId),
+    );
+  }
+
+  Future<bool> rejectPetugasLahan(int id, String reason) async {
+    return _runPetugasAction(
+      () => _farmingService.rejectPetugasLahan(id, reason),
+    );
+  }
+
+  Future<bool> approvePetugasPanen(int id) async {
+    return _runPetugasAction(() => _farmingService.approvePetugasPanen(id));
+  }
+
+  Future<bool> rejectPetugasPanen(int id, String reason) async {
+    return _runPetugasAction(
+      () => _farmingService.rejectPetugasPanen(id, reason),
+    );
+  }
+
+  Future<bool> markPetugasNotifikasiRead(int id) async {
+    return _runPetugasAction(
+      () => _farmingService.markPetugasNotifikasiRead(id),
+    );
+  }
+
+  Future<bool> _runPetugasAction(
+    Future<Map<String, dynamic>> Function() action,
+  ) async {
+    _isPetugasActionLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await action();
+      await fetchPetugasDashboardData();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _isPetugasActionLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchPetugasSpasialData() async {
+    _isPetugasSpasialLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final results = await Future.wait([
+        _farmingService.getPetugasSpasialReferensi(),
+        _farmingService.getPetugasSpasialLahan(),
+        _farmingService.getBatasWilayah(),
+        _farmingService.getBatasKecamatan(),
+      ]);
+
+      _petugasSpasialReferensi = Map<String, dynamic>.from(results[0]);
+      final spasialResponse = results[1];
+      _petugasSpasialRows = spasialResponse['data'] as List<dynamic>? ?? [];
+      _petugasSpasialSummary = Map<String, dynamic>.from(
+        spasialResponse['summary'] as Map? ??
+            {
+              'total': _petugasSpasialRows.length,
+              'sudah_dipetakan': 0,
+              'belum_dipetakan': 0,
+              'persentase_lengkap': 0,
+            },
+      );
+      _kabupatenBoundary = results[2];
+      _kecamatanBoundaries = results[3];
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      _isPetugasSpasialLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> savePetugasSpasial(int id, Map<String, dynamic> payload) async {
+    _isPetugasActionLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _farmingService.savePetugasSpasialLahan(id, payload);
+      await fetchPetugasSpasialData();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _isPetugasActionLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> deletePetugasSpasial(int id) async {
+    _isPetugasActionLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _farmingService.deletePetugasSpasialLahan(id);
+      await fetchPetugasSpasialData();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _isPetugasActionLoading = false;
       notifyListeners();
     }
   }
