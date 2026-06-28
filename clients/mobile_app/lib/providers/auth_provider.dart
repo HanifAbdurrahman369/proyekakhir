@@ -115,4 +115,27 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// Menangani aksi atur ulang password
+  Future<void> resetPassword({
+    required String email,
+    required String token,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await _authService.resetPassword(
+        email: email,
+        token: token,
+        password: password,
+        passwordConfirmation: passwordConfirmation,
+      );
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }

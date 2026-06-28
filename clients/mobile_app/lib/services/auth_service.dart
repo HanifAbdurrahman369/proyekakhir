@@ -89,4 +89,28 @@ class AuthService {
       throw Exception(message);
     }
   }
+
+  /// Mengirim request reset password baru dengan token ke backend
+  Future<Map<String, dynamic>> resetPassword({
+    required String email,
+    required String token,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    try {
+      final response = await _apiClient.dio.post(
+        ApiEndpoints.resetPassword,
+        data: {
+          'email': email,
+          'token': token,
+          'password': password,
+          'password_confirmation': passwordConfirmation,
+        },
+      );
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      final message = e.response?.data['message'] ?? 'Gagal mengubah password. Silakan periksa token Anda.';
+      throw Exception(message);
+    }
+  }
 }

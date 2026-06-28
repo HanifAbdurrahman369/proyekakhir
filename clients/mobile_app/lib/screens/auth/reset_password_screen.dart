@@ -2,24 +2,44 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import 'login_screen.dart';
-import 'reset_password_screen.dart';
+import 'login_screen.dart'; // To reuse GridPainter
 
+class ResetPasswordScreen extends StatefulWidget {
+  final String? token;
+  final String? email;
 
-class ForgotPasswordScreen extends StatefulWidget {
-  const ForgotPasswordScreen({super.key});
+  const ResetPasswordScreen({
+    super.key,
+    this.token,
+    this.email,
+  });
 
   @override
-  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
 }
 
-class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  late final TextEditingController _emailController;
+  late final TextEditingController _tokenController;
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController = TextEditingController(text: widget.email);
+    _tokenController = TextEditingController(text: widget.token);
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
+    _tokenController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -28,10 +48,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     try {
-      await authProvider.forgotPassword(_emailController.text.trim());
+      await authProvider.resetPassword(
+        email: _emailController.text.trim(),
+        token: _tokenController.text.trim(),
+        password: _passwordController.text,
+        passwordConfirmation: _confirmPasswordController.text,
+      );
+
       if (mounted) {
         showDialog(
           context: context,
+          barrierDismissible: false,
           builder: (context) => AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: Row(
@@ -39,29 +66,25 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF3E7D00), size: 28),
                 const SizedBox(width: 8),
                 Text(
-                  'Email Terkirim',
+                  'Sukses',
                   style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             content: Text(
-              'Link reset password berhasil dikirim ke email Anda. Silakan periksa kotak masuk atau folder spam Anda.',
+              'Password berhasil diatur ulang. Silakan masuk kembali dengan password baru Anda.',
               style: GoogleFonts.inter(),
             ),
             actions: [
               TextButton(
                 onPressed: () {
-                  Navigator.pop(context); // close dialog
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ResetPasswordScreen(
-                        email: _emailController.text.trim(),
-                      ),
-                    ),
-                  );
+                  Navigator.pop(context); // Close dialog
+                  // Pop back to the Login Screen.
+                  // Since we could have come here from ForgotPasswordScreen or via Deep Link,
+                  // we pop until we reach the route that is LoginScreen or pop back home.
+                  Navigator.of(context).popUntil((route) => route.isFirst);
                 },
-                child: Text('OK', style: TextStyle(color: Colors.green[800], fontWeight: FontWeight.bold)),
+                child: Text('Login Sekarang', style: TextStyle(color: Colors.green[800], fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -102,6 +125,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   InputDecoration _inputDecoration({
     required String hint,
     required IconData icon,
+    Widget? suffixIcon,
   }) {
     return InputDecoration(
       hintText: hint,
@@ -110,6 +134,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         fontSize: 14,
       ),
       prefixIcon: Icon(icon, color: const Color(0xFF94A3B8)),
+      suffixIcon: suffixIcon,
       filled: true,
       fillColor: Colors.white,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -227,7 +252,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // Header Logo and Info
+                          // Header info
                           Column(
                             children: [
                               Container(
@@ -252,7 +277,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                'Lupa Password',
+                                'Atur Ulang Password',
                                 textAlign: TextAlign.center,
                                 style: GoogleFonts.outfit(
                                   fontSize: 26,
@@ -262,7 +287,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Masukkan email terdaftar Anda untuk menerima tautan (link) pengaturan ulang kata sandi.',
+                                'Silakan masukkan token reset yang Anda terima di email untuk memperbarui kata sandi.',
                                 textAlign: TextAlign.center,
                                 style: GoogleFonts.inter(
                                   fontSize: 14,
@@ -272,9 +297,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 32),
-                          
-                          // Form Card
+                          const SizedBox(height: 24),
+
+                          // Card form
                           Container(
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.95),
@@ -294,9 +319,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  // Email Label
+                                  // Email
                                   Text(
-                                    'Email',
+                                    'Alamat Email',
                                     style: GoogleFonts.inter(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
@@ -304,7 +329,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 8),
-                                  // Email Input
                                   TextFormField(
                                     controller: _emailController,
                                     keyboardType: TextInputType.emailAddress,
@@ -317,14 +341,120 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                       if (value == null || value.trim().isEmpty) {
                                         return 'Email tidak boleh kosong';
                                       }
-                                      if (!value.contains('@')) {
-                                        return 'Format email tidak valid';
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 16),
+
+                                  // Token Reset
+                                  Text(
+                                    'Token Reset',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFF334155),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextFormField(
+                                    controller: _tokenController,
+                                    style: GoogleFonts.inter(fontSize: 14),
+                                    decoration: _inputDecoration(
+                                      hint: 'Masukkan token reset',
+                                      icon: Icons.vpn_key_outlined,
+                                    ),
+                                    validator: (value) {
+                                      if (value == null || value.trim().isEmpty) {
+                                        return 'Token reset tidak boleh kosong';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 16),
+
+                                  // Password Baru
+                                  Text(
+                                    'Password Baru',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFF334155),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextFormField(
+                                    controller: _passwordController,
+                                    obscureText: _obscurePassword,
+                                    style: GoogleFonts.inter(fontSize: 14),
+                                    decoration: _inputDecoration(
+                                      hint: 'Minimal 6 karakter',
+                                      icon: Icons.lock_outline_rounded,
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          _obscurePassword
+                                              ? Icons.visibility_outlined
+                                              : Icons.visibility_off_outlined,
+                                          color: const Color(0xFF94A3B8),
+                                          size: 20,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            _obscurePassword = !_obscurePassword;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                    validator: (value) {
+                                      if (value == null || value.length < 6) {
+                                        return 'Kata sandi minimal 6 karakter';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 16),
+
+                                  // Konfirmasi Password Baru
+                                  Text(
+                                    'Konfirmasi Password Baru',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFF334155),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextFormField(
+                                    controller: _confirmPasswordController,
+                                    obscureText: _obscureConfirmPassword,
+                                    style: GoogleFonts.inter(fontSize: 14),
+                                    decoration: _inputDecoration(
+                                      hint: 'Ulangi password baru',
+                                      icon: Icons.lock_clock_outlined,
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          _obscureConfirmPassword
+                                              ? Icons.visibility_outlined
+                                              : Icons.visibility_off_outlined,
+                                          color: const Color(0xFF94A3B8),
+                                          size: 20,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            _obscureConfirmPassword = !_obscureConfirmPassword;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                    validator: (value) {
+                                      if (value != _passwordController.text) {
+                                        return 'Konfirmasi password tidak cocok';
                                       }
                                       return null;
                                     },
                                   ),
                                   const SizedBox(height: 24),
-                                  // Submit Button
+
+                                  // Submit button
                                   Container(
                                     height: 52,
                                     decoration: BoxDecoration(
@@ -358,7 +488,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                                   ),
                                                 )
                                               : Text(
-                                                  'Kirim Link Reset',
+                                                  'Atur Ulang Password',
                                                   style: GoogleFonts.inter(
                                                     fontSize: 15,
                                                     fontWeight: FontWeight.bold,
@@ -374,7 +504,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 24),
                           // Footer
                           Center(
                             child: Text(

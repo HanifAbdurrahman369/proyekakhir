@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:app_links/app_links.dart';
 
 // Imports
 import 'core/network/api_client.dart';
@@ -10,6 +12,8 @@ import 'services/farming_service.dart';
 import 'providers/farming_provider.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/landing_screen.dart';
+import 'screens/auth/reset_password_screen.dart';
+
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -66,8 +70,77 @@ class MyApp extends StatelessWidget {
 }
 
 /// Widget Wrapper untuk mengecek status autentikasi secara dinamis
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  late final AppLinks _appLinks;
+  StreamSubscription<Uri>? _linkSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _initDeepLinks();
+  }
+
+  void _initDeepLinks() async {
+    _appLinks = AppLinks();
+
+    // Tangani link jika aplikasi ditutup (cold start)
+    try {
+      final initialUri = await _appLinks.getInitialLink();
+      if (initialUri != null) {
+        _handleDeepLink(initialUri);
+      }
+    } catch (e) {
+      debugPrint('Error getting initial link: $e');
+    }
+
+    // Tangani link jika aplikasi sedang aktif atau berada di background
+    _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
+      _handleDeepLink(uri);
+    }, onError: (err) {
+      debugPrint('Error listening to uri link stream: $err');
+    });
+  }
+
+  void _handleDeepLink(Uri uri) {
+    debugPrint('Received Deep Link: $uri');
+    if (uri.scheme == 'sigpala' && uri.host == 'reset-password') {
+      final pathSegments = uri.pathSegments;
+      String token = pathSegments.isNotEmpty ? pathSegments.first : '';
+      String email = uri.queryParameters['email'] ?? '';
+
+      // Cek format alternatif query parameter: sigpala://reset-password?token={token}&email={email}
+      if (token.isEmpty) {
+        token = uri.queryParameters['token'] ?? '';
+      }
+
+      if (token.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ResetPasswordScreen(
+                token: token,
+                email: email,
+              ),
+            ),
+          );
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _linkSubscription?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
