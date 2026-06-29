@@ -181,21 +181,26 @@ class UserController extends Controller
             'email' => 'required|email'
         ]);
 
-    $status = Password::sendResetLink(
-        $request->only('email')
-    );
+        $status = Password::sendResetLink(
+            $request->only('email')
+        );
 
-    if ($status === Password::RESET_LINK_SENT) {
+        if ($status === Password::RESET_LINK_SENT) {
+            return response()->json([
+                'message' => 'Link reset password berhasil dikirim'
+            ]);
+        }
+
+        if ($status === Password::RESET_THROTTLED) {
+            return response()->json([
+                'message' => 'Mohon tunggu beberapa saat sebelum meminta link reset kembali (throttled).'
+            ], 429);
+        }
 
         return response()->json([
-            'message' => 'Link reset password berhasil dikirim'
-        ]);
+            'message' => 'Email tidak ditemukan'
+        ], 404);
     }
-
-    return response()->json([
-        'message' => 'Email tidak ditemukan'
-    ], 404);
-}
 
 public function resetPassword(Request $request)
 {
