@@ -24,7 +24,9 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
     super.initState();
     // Panggil API saat halaman pertama kali dibuka
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<FarmingProvider>().fetchDashboardData(lahanPage: _currentLahanPage);
+      context.read<FarmingProvider>().fetchDashboardData(
+        lahanPage: _currentLahanPage,
+      );
     });
   }
 
@@ -41,8 +43,18 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
     try {
       final parsed = DateTime.parse(dateStr);
       final months = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-        'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'Mei',
+        'Jun',
+        'Jul',
+        'Ags',
+        'Sep',
+        'Okt',
+        'Nov',
+        'Des',
       ];
       return '${parsed.day} ${months[parsed.month - 1]} ${parsed.year}';
     } catch (_) {
@@ -53,8 +65,18 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
   // Helper untuk format nama bulan Indonesia
   String _getIndonesianMonthName(int month) {
     final months = [
-      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
     ];
     return months[month - 1];
   }
@@ -75,22 +97,30 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
     final currentMonth = DateTime.now().month;
     final isKelompokTaniAllowed = (currentMonth >= 1 && currentMonth <= 9);
     final isBrigadePanganAllowed = [10, 11, 12, 1].contains(currentMonth);
-    final isAllowedToPlant = (roleId == 1 && isKelompokTaniAllowed) || (roleId == 5 && isBrigadePanganAllowed);
+    final isAllowedToPlant =
+        (roleId == 1 && isKelompokTaniAllowed) ||
+        (roleId == 5 && isBrigadePanganAllowed);
 
-    if (farmingProvider.isLoading && farmingProvider.lahanData['data'].isEmpty) {
+    if (farmingProvider.isLoading &&
+        farmingProvider.lahanData['data'].isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: Colors.green),
       );
     }
 
-    if (farmingProvider.errorMessage != null && farmingProvider.lahanData['data'].isEmpty) {
+    if (farmingProvider.errorMessage != null &&
+        farmingProvider.lahanData['data'].isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline_rounded, size: 48, color: Colors.red),
+              const Icon(
+                Icons.error_outline_rounded,
+                size: 48,
+                color: Colors.red,
+              ),
               const SizedBox(height: 16),
               Text(
                 farmingProvider.errorMessage!,
@@ -100,11 +130,18 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
-                  context.read<FarmingProvider>().fetchDashboardData(lahanPage: _currentLahanPage);
+                  context.read<FarmingProvider>().fetchDashboardData(
+                    lahanPage: _currentLahanPage,
+                  );
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.green[800]),
-                child: Text('Coba Lagi', style: GoogleFonts.inter(color: Colors.white)),
-              )
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green[800],
+                ),
+                child: Text(
+                  'Coba Lagi',
+                  style: GoogleFonts.inter(color: Colors.white),
+                ),
+              ),
             ],
           ),
         ),
@@ -118,7 +155,9 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
 
     return RefreshIndicator(
       onRefresh: () async {
-        await context.read<FarmingProvider>().fetchDashboardData(lahanPage: _currentLahanPage);
+        await context.read<FarmingProvider>().fetchDashboardData(
+          lahanPage: _currentLahanPage,
+        );
       },
       color: Colors.green[800],
       child: SingleChildScrollView(
@@ -136,7 +175,10 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEDF8DC),
                     border: Border.all(color: const Color(0xFFDFECCC)),
@@ -180,17 +222,17 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                   Expanded(
                     child: _buildActionButton(
                       label: 'Tambah Lahan',
-                      onPressed: () {
-                        Navigator.push(
+                      onPressed: () async {
+                        await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => const TambahLahanScreen(),
                           ),
-                        ).then((_) {
-                          if (mounted) {
-                            context.read<FarmingProvider>().fetchDashboardData(lahanPage: _currentLahanPage);
-                          }
-                        });
+                        );
+                        if (!context.mounted) return;
+                        context.read<FarmingProvider>().fetchDashboardData(
+                          lahanPage: _currentLahanPage,
+                        );
                       },
                       textColor: const Color(0xFF3E7D00),
                       bgColor: Colors.white,
@@ -204,39 +246,43 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                     label: 'Lapor Tanam',
                     icon: isAllowedToPlant ? null : Icons.lock_outline_rounded,
                     onPressed: isAllowedToPlant
-                        ? () {
-                            Navigator.push(
+                        ? () async {
+                            await Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => const LaporTanamScreen(),
                               ),
-                            ).then((_) {
-                              if (mounted) {
-                                context.read<FarmingProvider>().fetchDashboardData(lahanPage: _currentLahanPage);
-                              }
-                            });
+                            );
+                            if (!context.mounted) return;
+                            context.read<FarmingProvider>().fetchDashboardData(
+                              lahanPage: _currentLahanPage,
+                            );
                           }
                         : null,
-                    textColor: isAllowedToPlant ? Colors.white : Colors.grey.shade500,
-                    bgColor: isAllowedToPlant ? const Color(0xFF3E7D00) : Colors.grey[300]!,
+                    textColor: isAllowedToPlant
+                        ? Colors.white
+                        : Colors.grey.shade500,
+                    bgColor: isAllowedToPlant
+                        ? const Color(0xFF3E7D00)
+                        : Colors.grey[300]!,
                   ),
                 ),
                 if (roleId == 1) ...[
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildActionButton(
-                      label: 'Lapor Panen',
-                      onPressed: () {
-                        Navigator.push(
+                      label: 'Lapor Hasil Panen',
+                      onPressed: () async {
+                        await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => const LaporPanenScreen(),
                           ),
-                        ).then((_) {
-                          if (mounted) {
-                            context.read<FarmingProvider>().fetchDashboardData(lahanPage: _currentLahanPage);
-                          }
-                        });
+                        );
+                        if (!context.mounted) return;
+                        context.read<FarmingProvider>().fetchDashboardData(
+                          lahanPage: _currentLahanPage,
+                        );
                       },
                       textColor: Colors.white,
                       bgColor: const Color(0xFF203C10),
@@ -259,7 +305,11 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.warning_amber_rounded, color: Color(0xFFD97706), size: 20),
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Color(0xFFD97706),
+                      size: 20,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
@@ -294,15 +344,20 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
             // 5. Statistics Cards
             LayoutBuilder(
               builder: (context, constraints) {
-                final cardWidth = (constraints.maxWidth - 16) / 2; // 2 cards side-by-side
+                final cardWidth =
+                    (constraints.maxWidth - 16) / 2; // 2 cards side-by-side
                 return Wrap(
                   spacing: 16,
                   runSpacing: 16,
                   children: [
                     _buildStatCard(
                       title: roleId == 5 ? 'PROSES AKTIF' : 'LAHAN TERDAFTAR',
-                      value: roleId == 5 ? '${activeCycles.length}' : '$totalLahan',
-                      desc: roleId == 5 ? 'Siklus tanam yang sedang digarap' : 'Pengajuan lahan pada akun Anda',
+                      value: roleId == 5
+                          ? '${activeCycles.length}'
+                          : '$totalLahan',
+                      desc: roleId == 5
+                          ? 'Siklus tanam yang sedang digarap'
+                          : 'Pengajuan lahan pada akun Anda',
                       width: cardWidth,
                     ),
                     _buildStatCard(
@@ -314,8 +369,12 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                     ),
                     _buildStatCard(
                       title: 'ATURAN MASA TANAM',
-                      value: roleId == 5 ? 'Oktober - Januari' : 'Januari - September',
-                      desc: roleId == 5 ? 'Bibit unggul lahan Kelompok Tani induk' : 'Bibit lokal sebagai pemilik lahan',
+                      value: roleId == 5
+                          ? 'Oktober - Januari'
+                          : 'Januari - September',
+                      desc: roleId == 5
+                          ? 'Bibit unggul lahan Kelompok Tani induk'
+                          : 'Bibit lokal sebagai pemilik lahan',
                       width: constraints.maxWidth,
                       isLightGreen: true,
                     ),
@@ -330,12 +389,17 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
             const SizedBox(height: 24),
 
             // 7. Lahan List Section
-            _buildLahanListSection(lahanList, farmingProvider.lahanData, roleId),
+            _buildLahanListSection(
+              lahanList,
+              farmingProvider.lahanData,
+              roleId,
+            ),
           ],
         ),
       ),
     );
   }
+
 
   Widget _buildActionButton({
     required String label,
@@ -415,7 +479,9 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: cardBg,
-        border: borderCol != Colors.transparent ? Border.all(color: borderCol) : null,
+        border: borderCol != Colors.transparent
+            ? Border.all(color: borderCol)
+            : null,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -448,11 +514,7 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
           const SizedBox(height: 4),
           Text(
             desc,
-            style: GoogleFonts.inter(
-              fontSize: 11,
-              color: descCol,
-              height: 1.3,
-            ),
+            style: GoogleFonts.inter(fontSize: 11, color: descCol, height: 1.3),
           ),
         ],
       ),
@@ -480,7 +542,11 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.grass_rounded, color: Color(0xFF3E7D00), size: 18),
+                          const Icon(
+                            Icons.grass_rounded,
+                            color: Color(0xFF3E7D00),
+                            size: 18,
+                          ),
                           const SizedBox(width: 6),
                           Text(
                             'Padi dalam masa tanam',
@@ -506,7 +572,10 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEDF8DC),
                     borderRadius: BorderRadius.circular(12),
@@ -530,7 +599,10 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
               child: Center(
                 child: Text(
                   'Belum ada proses tanam aktif.',
-                  style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[500]),
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: Colors.grey[500],
+                  ),
                 ),
               ),
             )
@@ -539,10 +611,12 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: activeCycles.length,
-              separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              separatorBuilder: (context, index) =>
+                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
               itemBuilder: (context, index) {
                 final cycle = activeCycles[index];
-                final progress = double.tryParse(cycle['progress_persen'].toString()) ?? 0.0;
+                final progress =
+                    double.tryParse(cycle['progress_persen'].toString()) ?? 0.0;
                 final remainingDays = cycle['hari_tersisa'] ?? 0;
                 final isBrigade = cycle['peran_pelapor'] == 'brigade_pangan';
 
@@ -580,7 +654,10 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                           ),
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFEDF8DC),
                               borderRadius: BorderRadius.circular(8),
@@ -588,7 +665,11 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.calendar_today_rounded, size: 9, color: Color(0xFF3E7D00)),
+                                const Icon(
+                                  Icons.calendar_today_rounded,
+                                  size: 9,
+                                  color: Color(0xFF3E7D00),
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   'Panen ${_formatDateStr(cycle['estimasi_tanggal_panen'])}',
@@ -645,7 +726,11 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
     );
   }
 
-  Widget _buildLahanListSection(List<dynamic> lahanList, Map<String, dynamic> lahanData, int roleId) {
+  Widget _buildLahanListSection(
+    List<dynamic> lahanList,
+    Map<String, dynamic> lahanData,
+    int roleId,
+  ) {
     final currentPage = lahanData['current_page'] ?? 1;
     final lastPage = lahanData['last_page'] ?? 1;
 
@@ -664,7 +749,9 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  roleId == 5 ? 'Daftar lahan garapan Brigade Pangan' : 'Daftar lahan milik Kelompok Tani',
+                  roleId == 5
+                      ? 'Daftar lahan garapan Brigade Pangan'
+                      : 'Daftar lahan milik Kelompok Tani',
                   style: GoogleFonts.outfit(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -673,7 +760,9 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  roleId == 5 ? 'Daftar lahan yang Anda garap dan kelola.' : 'Status pengajuan dan catatan verifikasi petugas.',
+                  roleId == 5
+                      ? 'Daftar lahan yang Anda garap dan kelola.'
+                      : 'Status pengajuan dan catatan verifikasi petugas.',
                   style: GoogleFonts.inter(
                     fontSize: 10,
                     color: Colors.grey[500],
@@ -688,8 +777,13 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
               padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
               child: Center(
                 child: Text(
-                  roleId == 5 ? 'Belum ada lahan yang ditugaskan.' : 'Belum ada lahan yang diajukan.',
-                  style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[500]),
+                  roleId == 5
+                      ? 'Belum ada lahan yang ditugaskan.'
+                      : 'Belum ada lahan yang diajukan.',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: Colors.grey[500],
+                  ),
                 ),
               ),
             )
@@ -698,11 +792,12 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: lahanList.length,
-              separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              separatorBuilder: (context, index) =>
+                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
               itemBuilder: (context, index) {
                 final lahan = lahanList[index];
                 final status = lahan['status_verifikasi'] ?? 'PENDING';
-                
+
                 Color statusBg = const Color(0xFFFEF3C7);
                 Color statusTxt = const Color(0xFFD97706);
                 if (status == 'DITERIMA') {
@@ -749,7 +844,10 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: statusBg,
                               borderRadius: BorderRadius.circular(12),
@@ -779,7 +877,9 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                lahan['alasan_penolakan'] ?? lahan['catatan_verifikasi'] ?? 'Pengajuan perlu diperbaiki.',
+                                lahan['alasan_penolakan'] ??
+                                    lahan['catatan_verifikasi'] ??
+                                    'Pengajuan perlu diperbaiki.',
                                 style: GoogleFonts.inter(
                                   fontSize: 11,
                                   color: const Color(0xFFB91C1C),
@@ -805,7 +905,10 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                 children: [
                   Text(
                     'Halaman $currentPage dari $lastPage',
-                    style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600]),
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: Colors.grey[600],
+                    ),
                   ),
                   Row(
                     children: [

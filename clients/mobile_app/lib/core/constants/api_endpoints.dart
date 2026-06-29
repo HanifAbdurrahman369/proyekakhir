@@ -1,7 +1,7 @@
 class ApiEndpoints {
   // Gunakan IP default Android Emulator (10.0.2.2) untuk terhubung ke localhost PC.
   // Jika menggunakan device fisik atau emulator lain, ubah sesuai dengan IP PC Anda (misal: 192.168.1.x)
-  static const String baseUrl = 'http://192.168.1.9:8003/api';
+  static const String baseUrl = 'http://192.168.1.229:8003/api';
 
   // Auth & User Endpoints
   

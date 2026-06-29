@@ -13,6 +13,9 @@ import 'lapor_tanam_screen.dart';
 import 'lapor_panen_screen.dart';
 import 'sebaran_lahan_screen.dart';
 import 'dashboards/produksi_daerah_screen.dart';
+import 'petugas_notifikasi_screen.dart';
+import 'petugas_spasial_screen.dart';
+import 'petugas_verifikasi_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -41,7 +44,11 @@ class HomeScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline_rounded, size: 48, color: Colors.grey),
+                  const Icon(
+                    Icons.error_outline_rounded,
+                    size: 48,
+                    color: Colors.grey,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Role tidak teridentifikasi di sistem.',
@@ -64,9 +71,17 @@ class HomeScreen extends StatelessWidget {
       final confirm = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text('Logout', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-          content: Text('Apakah Anda yakin ingin keluar dari aplikasi?', style: GoogleFonts.inter()),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            'Logout',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+          ),
+          content: Text(
+            'Apakah Anda yakin ingin keluar dari aplikasi?',
+            style: GoogleFonts.inter(),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -88,32 +103,21 @@ class HomeScreen extends StatelessWidget {
     // Builder untuk Sidebar Drawer
     Widget buildDrawer(User? user) {
       final roleId = user?.roleId ?? 1;
-      
-      String roleName;
-      switch (roleId) {
-        case 1:
-          roleName = 'Kelompok Tani';
-          break;
-        case 2:
-          roleName = 'Petugas Lapangan';
-          break;
-        case 3:
-          roleName = 'Pejabat';
-          break;
-        case 4:
-          roleName = 'Administrator';
-          break;
-        case 5:
-          roleName = 'Brigade Pangan';
-          break;
-        default:
-          roleName = 'Pengguna';
-      }
+      final roleName = switch (roleId) {
+        1 => 'Kelompok Tani',
+        2 => 'Petugas Lapangan',
+        3 => 'Pejabat',
+        4 => 'Administrator',
+        5 => 'Brigade Pangan',
+        _ => 'Pengguna',
+      };
 
       final currentMonth = DateTime.now().month;
       final isKelompokTaniAllowed = (currentMonth >= 1 && currentMonth <= 9);
       final isBrigadePanganAllowed = [10, 11, 12, 1].contains(currentMonth);
-      final isAllowedToPlant = (roleId == 1 && isKelompokTaniAllowed) || (roleId == 5 && isBrigadePanganAllowed);
+      final isAllowedToPlant =
+          (roleId == 1 && isKelompokTaniAllowed) ||
+          (roleId == 5 && isBrigadePanganAllowed);
 
       // Hanya tampilkan menu petani jika peran adalah kelompok tani (1) atau brigade pangan (5)
       final isFarmerRole = (roleId == 1 || roleId == 5);
@@ -167,11 +171,17 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     user?.email ?? '-',
-                    style: GoogleFonts.inter(fontSize: 12, color: Colors.white70),
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: Colors.white70,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white24,
                       borderRadius: BorderRadius.circular(8),
@@ -221,8 +231,12 @@ class HomeScreen extends StatelessWidget {
                         },
                       ),
                     _buildDrawerItem(
-                      icon: isAllowedToPlant ? Icons.grass_rounded : Icons.lock_outline_rounded,
-                      label: isAllowedToPlant ? 'Lapor Tanam' : 'Lapor Tanam (Kunci)',
+                      icon: isAllowedToPlant
+                          ? Icons.grass_rounded
+                          : Icons.lock_outline_rounded,
+                      label: isAllowedToPlant
+                          ? 'Lapor Tanam'
+                          : 'Lapor Tanam (Kunci)',
                       isLocked: !isAllowedToPlant,
                       onTap: isAllowedToPlant
                           ? () {
@@ -230,7 +244,8 @@ class HomeScreen extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const LaporTanamScreen(),
+                                  builder: (context) =>
+                                      const LaporTanamScreen(),
                                 ),
                               );
                             }
@@ -258,7 +273,57 @@ class HomeScreen extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const RiwayatAktivitasScreen(),
+                            builder: (context) =>
+                                const RiwayatAktivitasScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ] else if (roleId == 2) ...[
+                    _buildCategoryHeader('OPERASIONAL PETUGAS'),
+                    _buildDrawerItem(
+                      icon: Icons.dashboard_rounded,
+                      label: 'Beranda Petugas',
+                      isSelected: true,
+                      onTap: () => Navigator.pop(context),
+                    ),
+                    _buildDrawerItem(
+                      icon: Icons.verified_user_rounded,
+                      label: 'Verifikasi Data',
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const PetugasVerifikasiScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildDrawerItem(
+                      icon: Icons.map_rounded,
+                      label: 'Manajemen Spasial',
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PetugasSpasialScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildDrawerItem(
+                      icon: Icons.notifications_active_rounded,
+                      label: 'Notifikasi',
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const PetugasNotifikasiScreen(),
                           ),
                         );
                       },
@@ -409,8 +474,11 @@ class HomeScreen extends StatelessWidget {
     final activeColor = const Color(0xFF3E7D00);
     final activeBg = const Color(0xFFEDF8DC);
 
-    Color finalIconColor = iconColor ?? (isSelected ? activeColor : const Color(0xFF64748B));
-    Color finalTextColor = textColor ?? (isSelected ? const Color(0xFF203C10) : const Color(0xFF334155));
+    Color finalIconColor =
+        iconColor ?? (isSelected ? activeColor : const Color(0xFF64748B));
+    Color finalTextColor =
+        textColor ??
+        (isSelected ? const Color(0xFF203C10) : const Color(0xFF334155));
 
     if (isLocked) {
       finalIconColor = const Color(0xFFCBD5E1);
@@ -423,7 +491,9 @@ class HomeScreen extends StatelessWidget {
         color: isSelected ? activeBg : Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: isSelected ? const BorderSide(color: Color(0xFFDFECCC)) : BorderSide.none,
+          side: isSelected
+              ? const BorderSide(color: Color(0xFFDFECCC))
+              : BorderSide.none,
         ),
         clipBehavior: Clip.antiAlias,
         child: ListTile(
@@ -444,4 +514,39 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
-}
+
+  void _showProduksiDaerahInfoDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Laporan Produksi Daerah',
+          style: GoogleFonts.outfit(
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF14280B),
+          ),
+        ),
+        content: Text(
+          'Grafik tren produksi bulanan sudah tersedia di dashboard Statistik Utama. Untuk laporan analisis produksi daerah interaktif yang lebih lengkap (termasuk filter tipe lahan dan grafik produktivitas), silakan buka aplikasi SITANI versi Web.',
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            height: 1.5,
+            color: const Color(0xFF475569),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF3E7D00),
+            ),
+            child: Text(
+              'OK',
+              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }}

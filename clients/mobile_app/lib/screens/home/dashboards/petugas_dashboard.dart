@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../models/user.dart';
 import '../../../providers/farming_provider.dart';
+import '../petugas_verifikasi_screen.dart';
 
 class PetugasDashboard extends StatefulWidget {
   final User? user;
@@ -56,6 +57,41 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
     super.dispose();
   }
 
+  Future<void> _refresh() =>
+      context.read<FarmingProvider>().fetchPetugasDashboardData();
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<FarmingProvider>();
+    if (provider.isPetugasLoading &&
+        provider.petugasPendingLahan.isEmpty &&
+        provider.petugasPendingPanen.isEmpty) {
+      return const Center(
+        child: CircularProgressIndicator(color: Color(0xFF3E7D00)),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      color: const Color(0xFF3E7D00),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildViewHeader(),
+            const SizedBox(height: 20),
+            if (provider.errorMessage != null)
+              _buildErrorBox(provider.errorMessage!)
+            else
+              _buildViewContent(provider),
+          ],
+        ),
+      ),
+    );
+  }
+
   // Helpers for formatters
   String _formatDateStr(String? dateStr) {
     if (dateStr == null || dateStr.isEmpty) return '-';
@@ -99,83 +135,6 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
         _tanggalCek = picked;
       });
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final provider = context.watch<FarmingProvider>();
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFF4F9F4),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          if (_currentView == 'dashboard' || _currentView == 'verifikasi') {
-            await provider.fetchPetugasDashboardData();
-          } else if (_currentView == 'spasial') {
-            await provider.fetchSpasialLahan();
-          } else if (_currentView == 'parameter') {
-            await provider.fetchMonitoringData();
-          }
-        },
-        color: Colors.green[800],
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Header Navigation Bar
-              _buildViewHeader(),
-              const SizedBox(height: 20),
-
-              // Error notification if any
-              if (provider.errorMessage != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red[50],
-                    border: Border.all(color: Colors.red[100]!),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.error_outline_rounded, color: Colors.red),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          provider.errorMessage!,
-                          style: GoogleFonts.inter(
-                            color: Colors.red[800],
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-
-              // Loaders
-              if (provider.isPetugasLoading && 
-                  ((_currentView == 'dashboard' && provider.totalPendingCount == 0) ||
-                   (_currentView == 'verifikasi' && provider.pendingLahanList.isEmpty && provider.pendingPanenList.isEmpty) ||
-                   (_currentView == 'spasial' && provider.spasialLahanList.isEmpty) ||
-                   (_currentView == 'parameter' && provider.acceptedLahanList.isEmpty)))
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 40.0),
-                    child: CircularProgressIndicator(color: Colors.green),
-                  ),
-                )
-              else
-                // Dynamic View Renderer
-                _buildViewContent(provider),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   // Header render with back button capability
@@ -598,7 +557,7 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                     child: Text('Setujui', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                   ),
                 ],
-              )
+              ),
             ],
           ),
         );
@@ -1648,40 +1607,46 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
           CircleAvatar(
             backgroundColor: bgColor,
             radius: 20,
             child: Icon(icon, color: color, size: 20),
           ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: GoogleFonts.outfit(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF0F172A),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: GoogleFonts.outfit(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF64748B),
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.inter(
+                    fontSize: 9,
+                    color: const Color(0xFF94A3B8),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            title,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF64748B),
-            ),
-          ),
-          Text(
-            subtitle,
-            style: GoogleFonts.inter(
-              fontSize: 9,
-              color: const Color(0xFF94A3B8),
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -1837,5 +1802,188 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
         ],
       ),
     );
+  }
+
+  Widget _buildQueuePreview(FarmingProvider provider) {
+    final latestLahan = provider.petugasPendingLahan.take(2).toList();
+    final latestPanen = provider.petugasPendingPanen.take(2).toList();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Antrean terbaru',
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF14280B),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Ringkasan pekerjaan yang perlu ditangani.',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          color: const Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => _push(const PetugasVerifikasiScreen()),
+                  child: Text(
+                    'Buka',
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF3E7D00),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          if (latestLahan.isEmpty && latestPanen.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                'Belum ada antrean verifikasi.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: const Color(0xFF64748B),
+                ),
+              ),
+            )
+          else ...[
+            ...latestLahan.map(
+              (item) => _buildPreviewRow(
+                icon: Icons.landscape_rounded,
+                badge: 'LAHAN',
+                title: item['nama_lahan']?.toString() ?? 'Pengajuan lahan',
+                subtitle:
+                    '${item['nama_petani'] ?? item['pemilik_lahan'] ?? '-'} - ${item['nama_kecamatan'] ?? '-'}',
+              ),
+            ),
+            ...latestPanen.map(
+              (item) => _buildPreviewRow(
+                icon: Icons.fact_check_rounded,
+                badge: 'PANEN',
+                title: item['nama_lahan']?.toString() ?? 'Laporan panen',
+                subtitle:
+                    '${item['nama_petani'] ?? '-'} - ${item['hasil_panen_label'] ?? '${item['hasil_panen'] ?? 0} Ton'}',
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreviewRow({
+    required IconData icon,
+    required String badge,
+    required String title,
+    required String subtitle,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEDF8DC),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, size: 18, color: const Color(0xFF3E7D00)),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF14280B),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: const Color(0xFF64748B),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFBEB),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              badge,
+              style: GoogleFonts.inter(
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFFD97706),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorBox(String message) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF2F2),
+        border: Border.all(color: const Color(0xFFFEE2E2)),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Text(
+        message,
+        style: GoogleFonts.inter(
+          fontSize: 12,
+          color: const Color(0xFFB91C1C),
+          height: 1.4,
+        ),
+      ),
+    );
+  }
+
+  void _push(Widget screen) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => screen)).then((
+      _,
+    ) {
+      if (mounted) _refresh();
+    });
   }
 }

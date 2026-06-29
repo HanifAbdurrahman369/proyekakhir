@@ -858,25 +858,33 @@
                 const batolaBounds = L.latLngBounds([[-3.55, 114.20], [-2.45, 115.05]]);
                 const map = L.map('petugasSpasialMap', { maxBounds: batolaBounds, maxBoundsViscosity: 0.75, doubleClickZoom: false }).setView(batolaCenter, 10);
 
-                const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                    attribution: '&copy; OpenStreetMap'
+                const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    maxZoom: 20,
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                }).addTo(map);
+
+                const cartoDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    maxZoom: 20,
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                 });
 
                 const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                     maxZoom: 19,
                     attribution: 'Tiles &copy; Esri'
-                }).addTo(map);
+                });
 
                 const batasKabupatenGroup = L.layerGroup().addTo(map);
                 const batasKecamatanGroup = L.layerGroup().addTo(map);
+                const semuaLahanGroup = L.layerGroup().addTo(map);
 
                 L.control.layers({
-                    'Satelit': satelliteLayer,
-                    'Peta Jalan': osmLayer
+                    'Carto Light (BI)': cartoLight,
+                    'Carto Dark (BI)': cartoDark,
+                    'Satelit (Esri)': satelliteLayer
                 }, {
                     'Batas Kabupaten': batasKabupatenGroup,
-                    'Batas Kecamatan': batasKecamatanGroup
+                    'Batas Kecamatan': batasKecamatanGroup,
+                    'Area Lahan': semuaLahanGroup
                 }, {
                     position: 'topright',
                     collapsed: true
@@ -1210,6 +1218,78 @@
                     }).addTo(batasKecamatanGroup);
                 }
 
+                function getLahanColor(status) {
+                    if (status === 'Selesai') return '#65bd00';
+                    if (status === 'Sedang') return '#eab308';
+                    return '#ef4444'; // Belum
+                }
+
+                function drawSemuaLahan() {
+                    if (!semuaLahan || semuaLahan.length === 0) return;
+
+                    semuaLahanGroup.clearLayers();
+                    
+                    semuaLahan.forEach(lahan => {
+                        let geojsonStr = lahan.polygon_geojson || lahan.geojson || lahan.polygon_area;
+                        if (!geojsonStr) return;
+
+                        try {
+                            const geoData = typeof geojsonStr === 'string' ? JSON.parse(geojsonStr) : geojsonStr;
+                            const status = lahan.status_verifikasi || 'Belum';
+                            const color = getLahanColor(status);
+
+                            const layer = L.geoJSON(geoData, {
+                                style: {
+                                    color: color,
+                                    weight: 2,
+                                    fillColor: color,
+                                    fillOpacity: 0.4
+                                },
+                                onEachFeature: function(feature, layer) {
+                                    // Tooltip
+                                    const tooltipContent = `
+                                        <div class="font-sans text-xs">
+                                            <strong class="text-sm block mb-1">${lahan.nama_lahan || 'Tanpa Nama'}</strong>
+                                            <span class="block">Pemilik: ${lahan.pemilik?.nama || lahan.pemilik_lahan?.nama_petani || '-'}</span>
+                                            <span class="block">Luas: ${lahan.luas_lahan_hektar ? parseFloat(lahan.luas_lahan_hektar).toFixed(2) : '-'} Ha</span>
+                                            <span class="block">Status: ${status}</span>
+                                        </div>
+                                    `;
+                                    layer.bindTooltip(tooltipContent, {
+                                        sticky: true,
+                                        className: 'bg-white border-0 shadow-lg rounded-xl p-2'
+                                    });
+
+                                    // Hover effect
+                                    layer.on({
+                                        mouseover: function(e) {
+                                            const l = e.target;
+                                            l.setStyle({ weight: 4, fillOpacity: 0.7 });
+                                            l.bringToFront();
+                                        },
+                                        mouseout: function(e) {
+                                            const l = e.target;
+                                            l.setStyle({ weight: 2, fillOpacity: 0.4 });
+                                        },
+                                        click: function(e) {
+                                            // Focus to this lahan in list & map
+                                            if(lahanIdInput) lahanIdInput.value = lahan.id;
+                                            fillForm(lahan, 'lama');
+                                            
+                                            // Additional panel info (if implemented)
+                                            showSidePanelInfo(lahan);
+                                        }
+                                    });
+                                }
+                            });
+
+                            semuaLahanGroup.addLayer(layer);
+                        } catch(e) {
+                            console.error('Invalid geojson for lahan:', lahan.id, e);
+                        }
+                    });
+                }
+
                 function setPoint(latlng) {
                     if (latInput) latInput.value = latlng.lat.toFixed(7);
                     if (lngInput) lngInput.value = latlng.lng.toFixed(7);
@@ -1420,6 +1500,33 @@
 
                 drawBatasWilayah();
                 drawBatasKecamatan();
+                drawSemuaLahan();
+
+                // Legend Control
+                const legend = L.control({ position: 'bottomright' });
+                legend.onAdd = function (map) {
+                    const div = L.DomUtil.create('div', 'bg-white p-3 rounded-xl shadow-lg text-xs font-sans border border-slate-200');
+                    div.innerHTML = `
+                        <h4 class="font-bold text-slate-700 mb-2">Status Verifikasi Lahan</h4>
+                        <div class="flex items-center mb-1"><span class="w-3 h-3 rounded-full mr-2" style="background-color: #65bd00; opacity: 0.7"></span> Selesai</div>
+                        <div class="flex items-center mb-1"><span class="w-3 h-3 rounded-full mr-2" style="background-color: #eab308; opacity: 0.7"></span> Sedang</div>
+                        <div class="flex items-center"><span class="w-3 h-3 rounded-full mr-2" style="background-color: #ef4444; opacity: 0.7"></span> Belum</div>
+                    `;
+                    return div;
+                };
+                legend.addTo(map);
+
+                function showSidePanelInfo(lahan) {
+                    // Update form title and meta for rich info
+                    if (selectedLahanTitle) selectedLahanTitle.textContent = lahan.nama_lahan || 'Detail Lahan';
+                    if (selectedLahanMeta) selectedLahanMeta.innerHTML = `
+                        <div class="mt-2 text-xs">
+                            <span class="block text-slate-600 mb-1"><strong>Luas:</strong> ${lahan.luas_lahan_hektar ? parseFloat(lahan.luas_lahan_hektar).toFixed(2) : '-'} Hektar</span>
+                            <span class="block text-slate-600 mb-1"><strong>Status:</strong> ${lahan.status_verifikasi || 'Belum'}</span>
+                            <span class="block text-slate-600"><strong>Pemilik:</strong> ${lahan.pemilik?.nama || lahan.pemilik_lahan?.nama_petani || '-'}</span>
+                        </div>
+                    `;
+                }
 
                 map.on('click', function(e) {
                     if (!selectedLahanId) {
