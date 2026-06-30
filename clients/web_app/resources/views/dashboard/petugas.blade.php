@@ -109,7 +109,7 @@
                         <a href="{{ url('/dashboard-petugas') }}" class="px-4 py-2 rounded-xl text-sm font-bold transition {{ $isActive('dashboard') }}">Dashboard</a>
                         <a href="{{ url('/verifikasi-data-petani') }}" class="px-4 py-2 rounded-xl text-sm font-bold transition {{ $isActive('verifikasi-data-petani') }}">Verifikasi</a>
                         <a href="{{ url('/manajemen-data-spasial') }}" class="px-4 py-2 rounded-xl text-sm font-bold transition {{ $isActive('manajemen-data-spasial') }}">Data Spasial</a>
-                        <a href="{{ url('/input-parameter-lingkungan') }}" class="px-4 py-2 rounded-xl text-sm font-bold transition {{ $isActive('input-parameter-lingkungan') }}">Parameter</a>
+                        <a href="{{ url('/lahan-termonitor') }}" class="px-4 py-2 rounded-xl text-sm font-bold transition {{ $isActive('lahan-termonitor') }}">Lahan Termonitor</a>
                     </div>
                 </div>
             </div>
@@ -153,9 +153,9 @@
                         <p class="font-bold text-primary-900">Manajemen Data Spasial</p>
                         <p class="text-sm text-slate-500 mt-1">Buat titik lokasi dan polygon lahan.</p>
                     </a>
-                    <a href="{{ url('/input-parameter-lingkungan') }}" class="rounded-2xl border border-primary-100 bg-white p-5 hover:bg-primary-50 transition">
-                        <p class="font-bold text-primary-900">Parameter Lingkungan</p>
-                        <p class="text-sm text-slate-500 mt-1">Catat pH air, tinggi muka air, dan kondisi lapangan.</p>
+                    <a href="{{ url('/lahan-termonitor') }}" class="rounded-2xl border border-primary-100 bg-white p-5 hover:bg-primary-50 transition">
+                        <p class="font-bold text-primary-900">Lahan Termonitor (IoT)</p>
+                        <p class="text-sm text-slate-500 mt-1">Sinkronisasi data lahan dan sensor dari Huma.</p>
                     </a>
                 </div>
             </div>
@@ -674,58 +674,150 @@
             </div>
         @endif
 
-        @if($page === 'input-parameter-lingkungan')
-            <div class="grid xl:grid-cols-2 gap-6">
-                <div class="soft-card bg-white rounded-2xl border border-primary-100 p-5">
-                    <h2 class="text-xl font-extrabold text-primary-900 mb-4">Input Parameter Lingkungan</h2>
-                    <form method="POST" action="{{ url('/petugas/parameter-lingkungan/simpan') }}" class="space-y-4">
-                        @csrf
-                        <div>
-                            <label class="block text-xs font-bold text-slate-500 mb-2">Lahan</label>
-                            <select name="lahan_id" class="w-full" required>
-                                <option value="">Pilih lahan</option>
-                                @foreach($lahanDiterima as $item)
-                                    <option value="{{ $ambil($item, ['id']) }}">{{ $ambil($item, ['nama_lahan']) }} - {{ $ambil($item, ['pemilik_lahan']) }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="grid md:grid-cols-2 gap-4">
-                            <div><label class="block text-xs font-bold text-slate-500 mb-2">Tanggal Cek</label><input type="date" name="tanggal_cek" class="w-full" value="{{ date('Y-m-d') }}" required></div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-500 mb-2">Status Air</label>
-                                <select name="status_air" class="w-full">
-                                    <option value="Normal">Normal</option>
-                                    <option value="Surut">Surut</option>
-                                    <option value="Pasang">Pasang</option>
-                                    <option value="Banjir">Banjir</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="grid md:grid-cols-2 gap-4">
-                            <div><label class="block text-xs font-bold text-slate-500 mb-2">pH Air</label><input type="number" step="0.01" name="ph_air" class="w-full"></div>
-                            <div><label class="block text-xs font-bold text-slate-500 mb-2">Tinggi Muka Air</label><input type="number" step="0.01" name="tinggi_muka_air" class="w-full"></div>
-                        </div>
-                        <div><label class="block text-xs font-bold text-slate-500 mb-2">Catatan Petugas</label><textarea name="catatan_petugas" rows="3" class="w-full"></textarea></div>
-                        <button class="btn-green rounded-2xl px-6 py-3 font-extrabold transition">Simpan Parameter</button>
-                    </form>
+        @if($page === 'lahan-termonitor')
+            <div class="space-y-6">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-primary-900">Lahan Termonitor (Integrasi Huma)</h2>
+                        <p class="text-sm text-slate-500 mt-1">Tarik data lahan dan log sensor terbaru dari perangkat Huma.</p>
+                    </div>
+                    <button id="btnSyncHuma" class="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl shadow-lg shadow-primary-200 transition flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        Sinkronkan Data Huma
+                    </button>
                 </div>
 
-                <div class="soft-card bg-white rounded-2xl border border-primary-100 p-5">
-                    <h2 class="text-xl font-extrabold text-primary-900 mb-4">Riwayat Monitoring</h2>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead><tr><th class="px-4 py-3">Tanggal</th><th class="px-4 py-3">Lahan</th><th class="px-4 py-3">pH</th><th class="px-4 py-3">Air</th></tr></thead>
-                            <tbody class="divide-y divide-primary-100">
-                                @forelse($monitoring as $row)
-                                    <tr><td class="px-4 py-3">{{ $ambil($row, ['tanggal_cek','created_at']) }}</td><td class="px-4 py-3">{{ $ambil($row, ['nama_lahan','lahan.nama_lahan']) }}</td><td class="px-4 py-3">{{ $ambil($row, ['ph_air']) }}</td><td class="px-4 py-3">{{ $ambil($row, ['status_air']) }}</td></tr>
-                                @empty
-                                    <tr><td colspan="4" class="px-4 py-8 text-center text-slate-500">Belum ada data monitoring.</td></tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                <div class="grid xl:grid-cols-2 gap-6">
+                    <!-- Tabel Preview Data (Dari API Huma) -->
+                    <div class="soft-card bg-white rounded-2xl border border-primary-100 p-5">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-extrabold text-primary-900">Preview Data (Dari Huma)</h3>
+                            <span class="px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold rounded-full">Belum Tersimpan</span>
+                        </div>
+                        <div class="overflow-x-auto max-h-80 overflow-y-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-primary-50 sticky top-0">
+                                    <tr>
+                                        <th class="px-4 py-3 font-bold text-primary-900 rounded-l-xl">Lahan</th>
+                                        <th class="px-4 py-3 font-bold text-primary-900">Device ID</th>
+                                        <th class="px-4 py-3 font-bold text-primary-900 rounded-r-xl">Sensor Logs</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-primary-100">
+                                    @forelse($previewData['lands'] ?? [] as $land)
+                                        @php
+                                            $logsCount = collect($previewData['sensors'] ?? [])->where('device_id', $land['device_id'])->count();
+                                        @endphp
+                                        <tr>
+                                            <td class="px-4 py-3">
+                                                <p class="font-bold text-primary-800">{{ $land['name'] ?? '-' }}</p>
+                                                <p class="text-xs text-slate-500">{{ $land['address'] ?? '-' }}</p>
+                                            </td>
+                                            <td class="px-4 py-3 text-slate-600 font-mono text-xs">{{ $land['device_id'] ?? '-' }}</td>
+                                            <td class="px-4 py-3 text-slate-600"><span class="font-bold text-primary-700">{{ $logsCount }}</span> logs</td>
+                                        </tr>
+                                    @empty
+                                        <tr><td colspan="3" class="px-4 py-8 text-center text-slate-500">Tidak ada data preview dari Huma.</td></tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tabel Data Tersimpan (SIGPALA) -->
+                    <div class="soft-card bg-white rounded-2xl border border-primary-100 p-5">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-extrabold text-primary-900">Data Termonitor (SIGPALA)</h3>
+                            <span class="px-3 py-1 bg-green-50 text-green-700 border border-green-200 text-xs font-bold rounded-full">Tersimpan</span>
+                        </div>
+                        <div class="overflow-x-auto max-h-80 overflow-y-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-primary-50 sticky top-0">
+                                    <tr>
+                                        <th class="px-4 py-3 font-bold text-primary-900 rounded-l-xl">Lahan</th>
+                                        <th class="px-4 py-3 font-bold text-primary-900">Device ID</th>
+                                        <th class="px-4 py-3 font-bold text-primary-900">Status</th>
+                                        <th class="px-4 py-3 font-bold text-primary-900 rounded-r-xl">Sensor Terbaru</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-primary-100">
+                                    @forelse($lahanHuma as $lahan)
+                                        @php
+                                            $catatanVerifikasi = json_decode($lahan['catatan_verifikasi'] ?? '{}', true);
+                                            $deviceId = $catatanVerifikasi['huma_device_id'] ?? '-';
+                                            $humaStatus = $catatanVerifikasi['huma_status'] ?? '-';
+                                            
+                                            // Cari log terbaru untuk lahan ini
+                                            $latestLog = collect($monitoringHuma)->where('lahan_id', $lahan['id'])->first();
+                                            $catatanPetugas = $latestLog ? json_decode($latestLog['catatan_petugas'] ?? '{}', true) : null;
+                                        @endphp
+                                        <tr>
+                                            <td class="px-4 py-3">
+                                                <p class="font-bold text-primary-800">{{ $lahan['nama_lahan'] ?? '-' }}</p>
+                                                <p class="text-xs text-slate-500">{{ $lahan['nama_kecamatan'] ?? '-' }}</p>
+                                            </td>
+                                            <td class="px-4 py-3 text-slate-600 font-mono text-xs">{{ $deviceId }}</td>
+                                            <td class="px-4 py-3 text-slate-600 text-xs">{{ $humaStatus }}</td>
+                                            <td class="px-4 py-3">
+                                                @if($catatanPetugas)
+                                                    <p class="text-xs text-slate-600">pH: <span class="font-bold text-primary-700">{{ $catatanPetugas['ph_tanah'] ?? '-' }}</span></p>
+                                                    <p class="text-[10px] text-slate-400">{{ $latestLog['tanggal_cek'] ?? '-' }}</p>
+                                                @else
+                                                    <span class="text-xs text-slate-400">Belum ada</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr><td colspan="4" class="px-4 py-8 text-center text-slate-500">Belum ada lahan Huma yang tersimpan.</td></tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
+            
+            @push('scripts')
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const btnSync = document.getElementById('btnSyncHuma');
+                        if (btnSync) {
+                            btnSync.addEventListener('click', async function() {
+                                const originalText = this.innerHTML;
+                                this.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Menyinkronkan...';
+                                this.disabled = true;
+                                
+                                try {
+                                    const response = await fetch('/api/lahan-termonitor/sync', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'Accept': 'application/json',
+                                            'Authorization': 'Bearer ' + '{{ session("token") }}',
+                                        }
+                                    });
+                                    
+                                    const result = await response.json();
+                                    
+                                    if (result.success) {
+                                        alert('Sinkronisasi berhasil: ' + (result.message || ''));
+                                        window.location.reload();
+                                    } else {
+                                        alert('Gagal: ' + (result.message || 'Unknown error'));
+                                        this.innerHTML = originalText;
+                                        this.disabled = false;
+                                    }
+                                } catch (error) {
+                                    console.error(error);
+                                    alert('Terjadi kesalahan jaringan.');
+                                    this.innerHTML = originalText;
+                                    this.disabled = false;
+                                }
+                            });
+                        }
+                    });
+                </script>
+            @endpush
         @endif
     </div>
 @endsection

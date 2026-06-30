@@ -146,6 +146,11 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/monitoring/
     return proxyRequest($request, $serviceMap['farming'], $path);
 })->where('any', '.*');
 
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/lahan-termonitor/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    $path = trim('lahan-termonitor/' . $any, '/');
+    return proxyRequest($request, $serviceMap['farming'], $path);
+})->where('any', '.*');
+
 /*
 |--------------------------------------------------------------------------
 | 4. PETUGAS - Verifikasi Hasil Panen
@@ -268,6 +273,10 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/users/{any?
 
 Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/map-lahan/{any?}', function (Request $request, $any = '') use ($serviceMap) {
     return proxyRequest($request, $serviceMap['gis'], trim('map-lahan/' . $any, '/'));
+})->where('any', '.*');
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/map-lahan-termonitor/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    return proxyRequest($request, $serviceMap['gis'], trim('map-lahan-termonitor/' . $any, '/'));
 })->where('any', '.*');
 
 Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/statistik/{any?}', function (Request $request, $any = '') use ($serviceMap) {

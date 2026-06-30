@@ -1,0 +1,113 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<title>Dokumen Kebutuhan Integrasi API Huma - SIGPALA</title>
+<!--[if gte mso 9]>
+<xml>
+ <w:WordDocument>
+  <w:View>Print</w:View>
+  <w:Zoom>100</w:Zoom>
+  <w:DoNotOptimizeForBrowser/>
+ </w:WordDocument>
+</xml>
+<![endif]-->
+<style>
+  body { font-family: 'Calibri', sans-serif; line-height: 1.5; color: #000; }
+  h1 { font-size: 20pt; text-align: center; margin-bottom: 24px; }
+  h2 { font-size: 16pt; margin-top: 24px; color: #2e74b5; border-bottom: 1px solid #2e74b5; padding-bottom: 4px; }
+  h3 { font-size: 14pt; margin-top: 16px; color: #1f4d78; }
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; margin-bottom: 20px; }
+  th, td { border: 1px solid #000; padding: 8px; text-align: left; vertical-align: top; }
+  th { background-color: #d9e1f2; font-weight: bold; }
+  ul { margin-top: 5px; margin-bottom: 15px; }
+  li { margin-bottom: 5px; }
+  .code { font-family: 'Courier New', monospace; background-color: #f2f2f2; padding: 2px 4px; font-size: 11pt; }
+</style>
+</head>
+<body>
+
+<h1>DOKUMEN KEBUTUHAN INTEGRASI API<br>Sistem Lahan Termonitor (SIGPALA & HUMA)</h1>
+
+<h2>A. Pendahuluan</h2>
+<p>Dokumen ini ditujukan kepada tim pengembang (developer) Huma sebagai acuan dalam menyediakan API untuk kebutuhan sinkronisasi data dengan sistem SIGPALA. Pendekatan integrasi yang digunakan adalah <b>Pull-Sync</b>, di mana SIGPALA bertindak sebagai klien yang akan mengambil (menarik) data dari server Huma melalui REST API.</p>
+
+<h2>B. Kebutuhan Implementasi Huma</h2>
+<p>Tim Huma diharapkan dapat menyediakan <b>2 buah endpoint REST API (Method: GET)</b> yang mengembalikan respons dalam format <b>JSON</b>.</p>
+
+<h3>1. API Endpoint 1: Data Lahan</h3>
+<p>API ini digunakan oleh SIGPALA untuk mengambil daftar titik lahan yang telah dipasangi perangkat IoT Huma. Data ini akan didaftarkan ke dalam tabel <span class="code">lahan_sawah</span> di SIGPALA.</p>
+<table>
+    <tr>
+        <th>Data Wajib pada JSON</th>
+        <th>Tujuan Penggunaan di SIGPALA</th>
+    </tr>
+    <tr>
+        <td><b>ID Lahan Huma</b></td>
+        <td>Sebagai kunci identifikasi unik agar SIGPALA tidak menduplikasi pendaftaran lahan yang sama.</td>
+    </tr>
+    <tr>
+        <td><b>Device ID</b></td>
+        <td>Kode unik alat IoT. Sangat dibutuhkan untuk mencocokkan data lahan dengan riwayat sensornya.</td>
+    </tr>
+    <tr>
+        <td><b>Nama Lahan</b></td>
+        <td>Sebagai identitas visual (label) lahan di antarmuka peta SIGPALA.</td>
+    </tr>
+    <tr>
+        <td><b>Latitude & Longitude</b></td>
+        <td>Titik koordinat (X dan Y) wajib ada untuk memposisikan lahan di peta GIS. <i>(Catatan: Huma tidak perlu menyertakan nama Kecamatan/Desa, karena SIGPALA akan mencarinya secara otomatis berbasis spasial)</i>.</td>
+    </tr>
+</table>
+
+<h3>2. API Endpoint 2: Data Log Sensor (IoT)</h3>
+<p>API ini digunakan oleh SIGPALA untuk mengambil hasil pembacaan sensor lahan. Data ini akan disimpan ke dalam tabel <span class="code">monitoring_kondisi</span> di SIGPALA.</p>
+<table>
+    <tr>
+        <th>Data Wajib pada JSON</th>
+        <th>Tujuan Penggunaan di SIGPALA</th>
+    </tr>
+    <tr>
+        <td><b>ID Log Huma</b></td>
+        <td>Sebagai kunci unik agar SIGPALA tidak menyimpan riwayat pembacaan waktu yang sama berulang kali.</td>
+    </tr>
+    <tr>
+        <td><b>Device ID</b></td>
+        <td>Kunci relasi untuk menentukan bahwa hasil bacaan ini milik lahan tertentu (berdasarkan API ke-1).</td>
+    </tr>
+    <tr>
+        <td><b>pH Tanah</b></td>
+        <td>Nilai hasil pembacaan tingkat keasaman tanah.</td>
+    </tr>
+    <tr>
+        <td><b>Nitrogen (N)</b></td>
+        <td>Nilai hasil pembacaan kadar Nitrogen.</td>
+    </tr>
+    <tr>
+        <td><b>Fosfor (P)</b></td>
+        <td>Nilai hasil pembacaan kadar Fosfor.</td>
+    </tr>
+    <tr>
+        <td><b>Kalium (K)</b></td>
+        <td>Nilai hasil pembacaan kadar Kalium.</td>
+    </tr>
+    <tr>
+        <td><b>Waktu Rekam</b></td>
+        <td>Waktu (jam dan tanggal) kapan data tersebut direkam oleh alat.</td>
+    </tr>
+</table>
+<p><b>Catatan Tambahan untuk Endpoint 2:</b> Sangat disarankan agar Huma mendukung filter parameter tanggal melalui URL query (misalnya <span class="code">?date=YYYY-MM-DD</span>). Hal ini bertujuan agar SIGPALA dapat menarik data terbaru saja tanpa perlu membebani server Huma dengan penarikan riwayat data lama.</p>
+
+<h2>C. Serah Terima Kebutuhan</h2>
+<p>Setelah tahap pembuatan API selesai dilakukan, pihak Huma mohon menyerahkan 3 informasi berikut kepada tim SIGPALA:</p>
+<ol>
+    <li><b>URL Endpoint Asli:</b> Alamat URL lengkap untuk mengakses API Lahan dan API Sensor.</li>
+    <li><b>Contoh Respons JSON Asli:</b> Bukti pengujian atau tangkapan layar respons JSON yang sesungguhnya (contoh: dari aplikasi Postman). Ini dibutuhkan agar tim SIGPALA bisa menyelaraskan penamaan <i>key</i> JSON dengan kolom database secara presisi (contoh: apakah Huma menggunakan key <span class="code">lat</span> atau <span class="code">latitude</span>).</li>
+    <li><b>Token Akses / API Key:</b> Kunci autentikasi (jika endpoint API diamankan dan tidak bersifat publik).</li>
+</ol>
+
+<p>Demikian dokumen kebutuhan ini disusun. Terima kasih atas kerja sama tim Huma.</p>
+
+</body>
+</html>

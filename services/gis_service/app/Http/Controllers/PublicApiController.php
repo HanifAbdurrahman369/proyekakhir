@@ -179,6 +179,72 @@ class PublicApiController extends Controller
         ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     }
 
+    public function getMapLahanTermonitor()
+    {
+        $rows = DB::table('lahan_sawah')
+            ->leftJoin('monitoring_kondisi', 'lahan_sawah.id', '=', 'monitoring_kondisi.lahan_id')
+            ->whereRaw("JSON_EXTRACT(lahan_sawah.catatan_verifikasi, '$.source') = 'huma'")
+            ->select(
+                'lahan_sawah.id',
+                'lahan_sawah.nama_lahan',
+                'lahan_sawah.luas_lahan_hektar',
+                'lahan_sawah.latitude',
+                'lahan_sawah.longitude',
+                DB::raw('ST_AsGeoJSON(lahan_sawah.polygon_area) as geojson'),
+                'lahan_sawah.catatan_verifikasi',
+                'monitoring_kondisi.catatan_petugas',
+                'monitoring_kondisi.ph_air',
+                'monitoring_kondisi.tanggal_cek'
+            )
+            // Lakukan pengelompokan jika ada multiple monitoring
+            ->orderBy('monitoring_kondisi.tanggal_cek', 'desc')
+            ->get()
+            ->unique('id'); // Ambil latest sensor per lahan
+
+        $features = [];
+
+        foreach ($rows as $index => $row) {
+            $geometry = $row->geojson ? json_decode($row->geojson, true) : null;
+
+            if (!$geometry && $row->latitude && $row->longitude) {
+                $geometry = [
+                    'type' => 'Point',
+                    'coordinates' => [(float) $row->longitude, (float) $row->latitude],
+                ];
+            }
+
+            if (!$geometry) {
+                continue;
+            }
+
+            $catatanVerifikasi = json_decode($row->catatan_verifikasi, true);
+            $catatanPetugas = json_decode($row->catatan_petugas, true);
+
+            $features[] = [
+                'type' => 'Feature',
+                'geometry' => $geometry,
+                'properties' => [
+                    'id' => $row->id,
+                    'nama_lahan' => $row->nama_lahan,
+                    'luas_lahan_hektar' => (float) $row->luas_lahan_hektar,
+                    'sumber' => 'Huma',
+                    'device_id' => $catatanVerifikasi['huma_device_id'] ?? '-',
+                    'ph_tanah' => $catatanPetugas['ph_tanah'] ?? $row->ph_air ?? '-',
+                    'n_level' => $catatanPetugas['n_level'] ?? '-',
+                    'p_level' => $catatanPetugas['p_level'] ?? '-',
+                    'k_level' => $catatanPetugas['k_level'] ?? '-',
+                    'waktu_rekam' => $row->tanggal_cek ?? '-'
+                ]
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'type' => 'FeatureCollection',
+            'features' => $features,
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    }
+
     private function lahanPublikQuery()
     {
         return DB::table('lahan_sawah')
@@ -499,6 +565,8 @@ class PublicApiController extends Controller
 
     private function agregatProduktivitasKecamatan(): array
     {
+        $kecamatanRows = DB::table('kecamatan')->get()->keyBy('id');
+
         $lahanRows = DB::table('lahan_sawah')
             ->select(
                 'lahan_sawah.kecamatan_id',
@@ -534,14 +602,17 @@ class PublicApiController extends Controller
                 ->keyBy('kecamatan_id');
         }
 
-        return $lahanRows
+        return $kecamatanRows
             ->keys()
+            ->merge($lahanRows->keys())
             ->merge($panenRows->keys())
             ->filter()
             ->unique()
-            ->mapWithKeys(function ($kecamatanId) use ($lahanRows, $panenRows) {
+            ->mapWithKeys(function ($kecamatanId) use ($kecamatanRows, $lahanRows, $panenRows) {
+                $kecamatan = $kecamatanRows->get($kecamatanId);
                 $lahan = $lahanRows->get($kecamatanId);
                 $panen = $panenRows->get($kecamatanId);
+                
                 $pakaiPanen = $panen && (float) $panen->total_luas_panen_ha > 0;
 
                 $totalLuasHa = (float) ($lahan->total_luas_ha ?? 0);
@@ -550,6 +621,16 @@ class PublicApiController extends Controller
                 $produktivitas = $pakaiPanen
                     ? (float) $panen->produktivitas_ton_ha
                     : (float) ($lahan->produktivitas_lahan ?? 0);
+                    
+                $sumber = $pakaiPanen ? 'panen_padi diterima' : ($lahan ? 'lahan_sawah' : 'Belum ada data');
+
+                if ($totalPanenTon <= 0 && $produktivitas <= 0 && $kecamatan) {
+                    $produktivitas = (float) ($kecamatan->produktivitas ?? 0);
+                    $totalPanenTon = (float) ($kecamatan->produksi ?? 0);
+                    if ($produktivitas > 0 || $totalPanenTon > 0) {
+                        $sumber = 'Data BPS/Dinas (Statik)';
+                    }
+                }
 
                 return [
                     $kecamatanId => [
@@ -558,7 +639,7 @@ class PublicApiController extends Controller
                         'total_luas_panen_ha' => $totalLuasPanenHa,
                         'total_panen_ton' => $totalPanenTon,
                         'produktivitas_ton_ha' => $produktivitas,
-                        'sumber_produktivitas' => $pakaiPanen ? 'panen_padi diterima' : 'lahan_sawah',
+                        'sumber_produktivitas' => $sumber,
                     ],
                 ];
             })

@@ -199,15 +199,17 @@ class PetugasController extends Controller
         ]);
     }
 
-    public function inputParameterLingkungan()
+    public function lahanTermonitor()
     {
-        $lahan = $this->getData('/lahan/accepted', []);
-        $monitoring = $this->getData('/monitoring', []);
+        $previewData = $this->getData('/lahan-termonitor/preview', ['lands' => [], 'sensors' => []]);
+        $lahanHuma = $this->getData('/lahan-termonitor', []);
+        $monitoringHuma = $this->getData('/lahan-termonitor/monitoring', []);
 
         return view('dashboard.petugas', [
-            'page' => 'input-parameter-lingkungan',
-            'lahan' => $lahan,
-            'monitoring' => $monitoring,
+            'page' => 'lahan-termonitor',
+            'previewData' => $previewData,
+            'lahanHuma' => $lahanHuma,
+            'monitoringHuma' => $monitoringHuma,
         ]);
     }
 
@@ -344,7 +346,7 @@ class PetugasController extends Controller
         $response = $this->postData('/monitoring', $request->all());
 
         if ($response->successful()) {
-            return redirect('/input-parameter-lingkungan')->with('success', 'Parameter lingkungan berhasil disimpan.');
+            return redirect('/lahan-termonitor')->with('success', 'Parameter lingkungan berhasil disimpan.');
         }
 
         return back()->with('error', $response->json('message') ?? 'Gagal menyimpan parameter lingkungan.')->withInput();

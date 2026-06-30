@@ -58,6 +58,16 @@ Route::middleware(\App\Http\Middleware\JwtMiddleware::class)->group(function () 
 
     /*
     |--------------------------------------------------------------------------
+    | PETUGAS - LAHAN TERMONITOR (HUMA INTEGRATION)
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/lahan-termonitor/preview', [\App\Http\Controllers\LahanTermonitorController::class, 'preview']);
+    Route::post('/lahan-termonitor/sync', [\App\Http\Controllers\LahanTermonitorController::class, 'sync']);
+    Route::get('/lahan-termonitor', [\App\Http\Controllers\LahanTermonitorController::class, 'index']);
+    Route::get('/lahan-termonitor/monitoring', [\App\Http\Controllers\LahanTermonitorController::class, 'monitoring']);
+
+    /*
+    |--------------------------------------------------------------------------
     | PETANI - LAHAN
     |--------------------------------------------------------------------------
     */

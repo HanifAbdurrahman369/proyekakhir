@@ -835,10 +835,13 @@ document.addEventListener('DOMContentLoaded', function () {
     map.getPane('sigpalaKecamatanPane').style.zIndex = 410;
     map.createPane('sigpalaLahanPane');
     map.getPane('sigpalaLahanPane').style.zIndex = 430;
+    map.createPane('sigpalaHumaPane');
+    map.getPane('sigpalaHumaPane').style.zIndex = 440;
 
     const kabGroup = L.layerGroup().addTo(map);
     const kecGroup = L.layerGroup().addTo(map);
     const lahanGroup = L.layerGroup().addTo(map);
+    const humaGroup = L.layerGroup().addTo(map);
 
     L.control.layers({
         'Peta Ringan': cartoLight,
@@ -848,7 +851,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }, {
         'Batas Kabupaten': kabGroup,
         'Kecamatan': kecGroup,
-        'Lahan Sawah': lahanGroup
+        'Lahan Sawah': lahanGroup,
+        'Lahan Termonitor (Huma)': humaGroup
     }, {
         collapsed: true,
         position: 'topright'
@@ -868,45 +872,44 @@ document.addEventListener('DOMContentLoaded', function () {
     renderMapLegend();
     if (insightPanel) renderKecamatanInsights();
 
-    fetch(`${apiBase}/batas-wilayah`)
-        .then(res => res.json())
-        .then(geojsonData => {
-            const layerBatas = L.geoJSON(geojsonData, {
+    let uniqueKelurahans = [];
+    let currentLahanLayer = null;
+
+    Promise.allSettled([
+        fetch(`${apiBase}/batas-wilayah`).then(res => res.json()),
+        fetch(`${apiBase}/batas-kecamatan`).then(res => res.json()),
+        fetch(`${apiBase}/map-lahan`).then(res => res.json()),
+        fetch(`${apiBase}/map-lahan-termonitor`).then(res => res.json())
+    ]).then(results => {
+        // 1. Batas Wilayah (index 0)
+        if (results[0].status === 'fulfilled') {
+            const layerBatas = L.geoJSON(results[0].value, {
                 interactive: false,
                 style: sigpalaKabupatenStyle,
                 onEachFeature: sigpalaBindWilayahLabel
             }).addTo(kabGroup);
-
             if (layerBatas.getBounds().isValid()) {
                 map.fitBounds(layerBatas.getBounds());
             }
-        })
-        .catch(() => console.error('API Batas Wilayah bermasalah'));
+        } else {
+            console.error('API Batas Wilayah bermasalah');
+        }
 
-    // 4b. Ambil Batas Kecamatan
-    let allKecamatanFeatures = [];
-    let allLahanFeatures = [];
-    let uniqueKelurahans = [];
-    let currentLahanLayer = null;
-
-    fetch(`${apiBase}/batas-kecamatan`)
-        .then(res => res.json())
-        .then(data => {
-            const featureCollection = normalizeFeatureCollection(data);
+        // 2. Batas Kecamatan (index 1)
+        if (results[1].status === 'fulfilled') {
+            const featureCollection = normalizeFeatureCollection(results[1].value);
             allKecamatanFeatures = featureCollection.features || [];
             renderKecamatanLayer(featureCollection);
             if (insightPanel) renderKecamatanInsights();
-        })
-        .catch(() => console.error('API Batas Kecamatan bermasalah'));
+        } else {
+            console.error('API Batas Kecamatan bermasalah');
+        }
 
-    // 5. Ambil Lahan Sawah
-    fetch(`${apiBase}/map-lahan`)
-        .then(res => res.json())
-        .then(data => {
-            const featureCollection = normalizeFeatureCollection(data);
+        // 3. Lahan Sawah (index 2)
+        if (results[2].status === 'fulfilled') {
+            const featureCollection = normalizeFeatureCollection(results[2].value);
             allLahanFeatures = featureCollection.features || [];
             
-            // Ekstrak kelurahan unik dari data lahan untuk search autocomplete
             const kelMap = {};
             allLahanFeatures.forEach(f => {
                 const kel = f.properties.nama_kelurahan || f.properties.kelurahan;
@@ -926,20 +929,77 @@ document.addEventListener('DOMContentLoaded', function () {
             uniqueKelurahans = Object.values(kelMap);
             
             renderLahanLayer(allLahanFeatures);
-
-            const mapLoading = document.getElementById('map-loading');
-            if (mapLoading) {
-                mapLoading.style.opacity = '0';
-                setTimeout(() => mapLoading.style.display = 'none', 500);
-            }
-        })
-        .catch(() => {
+        } else {
             console.error('API Lahan Sawah bermasalah');
             const mapLoading = document.getElementById('map-loading');
             if (mapLoading) {
-                mapLoading.innerHTML = '<h3 class="text-red-600 font-bold">Gagal Memuat Peta</h3>';
+                mapLoading.innerHTML = '<h3 class="text-red-600 font-bold">Gagal Memuat Lahan Sawah</h3>';
             }
-        });
+        }
+
+        // 4. Lahan Termonitor (index 3)
+        if (results[3].status === 'fulfilled') {
+            const featureCollection = normalizeFeatureCollection(results[3].value);
+            const humaFeatures = featureCollection.features || [];
+            
+            L.geoJSON(humaFeatures, {
+                pane: 'sigpalaHumaPane',
+                pointToLayer: function (feature, latlng) {
+                    return L.circleMarker(latlng, {
+                        radius: 8,
+                        fillColor: '#0ea5e9',
+                        color: '#0284c7',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    });
+                },
+                style: function(feature) {
+                    return {
+                        color: '#0ea5e9',
+                        weight: 2,
+                        opacity: 0.8,
+                        fillColor: '#38bdf8',
+                        fillOpacity: 0.4
+                    };
+                },
+                onEachFeature: function(feature, layer) {
+                    const p = feature.properties;
+                    const ph = p.ph_tanah || '-';
+                    const tooltipContent = `<div class="font-bold text-sky-900">${p.nama_lahan}</div><div class="text-xs text-sky-700">IoT Huma (pH: ${ph})</div>`;
+                    layer.bindTooltip(tooltipContent, {
+                        direction: 'top',
+                        className: 'bg-sky-50 border border-sky-200 shadow-sm'
+                    });
+                    
+                    const popupContent = `
+                        <div class="sigpala-popup border-t-4 border-sky-500 rounded-xl">
+                            <p class="sigpala-popup-eyebrow text-sky-600">Lahan Termonitor (IoT)</p>
+                            <h3 class="text-sky-900 mb-2">${sigpalaEscapeHtml(p.nama_lahan)}</h3>
+                            <dl class="text-sm">
+                                <div class="flex justify-between py-1 border-b border-sky-100"><dt class="text-slate-500">Device ID</dt><dd class="font-mono text-xs">${sigpalaEscapeHtml(p.device_id)}</dd></div>
+                                <div class="flex justify-between py-1 border-b border-sky-100"><dt class="text-slate-500">pH Tanah</dt><dd class="font-bold ${parseFloat(ph) < 5.5 || parseFloat(ph) > 7.5 ? 'text-amber-600' : 'text-green-600'}">${sigpalaEscapeHtml(ph)}</dd></div>
+                                <div class="flex justify-between py-1 border-b border-sky-100"><dt class="text-slate-500">Nitrogen (N)</dt><dd class="font-bold">${sigpalaEscapeHtml(p.n_level)}</dd></div>
+                                <div class="flex justify-between py-1 border-b border-sky-100"><dt class="text-slate-500">Fosfor (P)</dt><dd class="font-bold">${sigpalaEscapeHtml(p.p_level)}</dd></div>
+                                <div class="flex justify-between py-1 border-b border-sky-100"><dt class="text-slate-500">Kalium (K)</dt><dd class="font-bold">${sigpalaEscapeHtml(p.k_level)}</dd></div>
+                                <div class="flex justify-between py-1 mt-1"><dt class="text-slate-500 text-xs">Pembaruan</dt><dd class="text-xs">${sigpalaEscapeHtml(p.waktu_rekam)}</dd></div>
+                            </dl>
+                        </div>
+                    `;
+                    layer.bindPopup(popupContent, { maxWidth: 300 });
+                }
+            }).addTo(humaGroup);
+        } else {
+            console.error('API Lahan Termonitor bermasalah');
+        }
+
+        // Hide map loading after all promises settled
+        const mapLoading = document.getElementById('map-loading');
+        if (mapLoading && !mapLoading.innerHTML.includes('Gagal Memuat')) {
+            mapLoading.style.opacity = '0';
+            setTimeout(() => mapLoading.style.display = 'none', 500);
+        }
+    });
 
     function normalizeFeatureCollection(data) {
         if (data?.data?.type === 'FeatureCollection') return data.data;
@@ -1239,8 +1299,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }, {});
 
         const priorityKeys = ['tinggi', 'sedang', 'rendah'];
-        const visibleRows = rows.slice(0, 5);
-        const list = visibleRows.map(({ props }) => {
+        const list = rows.map(({ props }) => {
             const key = props.kategori_produktivitas || 'belum-data';
             const config = sigpalaProductivityClass(key);
             const id = props.kecamatan_id || props.id || '';

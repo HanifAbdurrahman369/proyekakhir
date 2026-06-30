@@ -52,13 +52,13 @@
     <span>Manajemen Data Spasial</span>
 </a>
 
-<a href="/input-parameter-lingkungan" class="{{ $menuBase }} {{ request()->is('input-parameter-lingkungan') ? $menuActive : $menuIdle }}">
-    <span class="{{ $iconBase }} {{ request()->is('input-parameter-lingkungan') ? $iconActive : $iconIdle }}">
+<a href="/lahan-termonitor" class="{{ $menuBase }} {{ request()->is('lahan-termonitor') ? $menuActive : $menuIdle }}">
+    <span class="{{ $iconBase }} {{ request()->is('lahan-termonitor') ? $iconActive : $iconIdle }}">
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm1 13h-2v-3H8v-2h3V8h2v3h3v2h-3v3z"/>
         </svg>
     </span>
-    <span>Input Parameter Lingkungan</span>
+    <span>Lahan Termonitor (IoT)</span>
 </a>
 
 <a href="/verifikasi-data-petani" class="{{ $menuBase }} {{ request()->is('verifikasi-data-petani') ? $menuActive : $menuIdle }}">
