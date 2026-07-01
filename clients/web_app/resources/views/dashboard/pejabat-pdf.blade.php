@@ -206,35 +206,35 @@
         </tr>
     </table>
 
-    @php
-    $bulanLabel = [
-        1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
-        5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-        9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
-    ];
-    @endphp
-
     <table style="width: 100%; border-collapse: collapse;">
         <tr>
-            <!-- Tren Produksi Bulanan -->
+            <!-- Tren Produksi per Kecamatan -->
             <td class="grid-col" style="width: 48.5%;">
-                <div class="section-title">Tren Produksi Bulanan</div>
+                <div class="section-title">Tren Produksi per Kecamatan</div>
                 <table class="table-data">
                     <thead>
                         <tr>
-                            <th>Bulan</th>
+                            <th>No</th>
+                            <th>Kecamatan</th>
                             <th class="text-right">Produksi (Ton)</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($produksiBulanan as $bulan => $total)
+                        @forelse($produksiKecamatan as $index => $item)
                             <tr>
-                                <td>{{ $bulanLabel[$bulan] ?? '-' }}</td>
+                                <td style="width: 15%;">{{ $index + 1 }}</td>
+                                <td class="font-bold">{{ $item['nama_kecamatan'] ?? '-' }}</td>
                                 <td class="text-right font-bold text-green">
-                                    {{ number_format($total, 2) }}
+                                    {{ number_format($item['produksi_pejabat'] ?? 0.0, 2) }}
                                 </td>
                             </tr>
-                        @endforeach
+                        @empty
+                            <tr>
+                                <td colspan="3" class="text-center" style="padding: 20px; color: #777;">
+                                    Belum ada data produksi.
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </td>

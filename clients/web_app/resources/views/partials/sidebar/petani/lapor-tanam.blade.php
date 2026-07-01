@@ -229,12 +229,6 @@
                                 @if($siklus['can_edit'])
                                     <a href="{{ route('lapor.tanam.edit', $siklus['id']) }}" class="rounded-lg border border-slate-300 px-3 py-1.5 text-[11px] font-bold text-slate-600">Edit</a>
                                 @endif
-                                @if($siklus['can_delete'])
-                                    <form action="{{ route('lapor.tanam.destroy', $siklus['id']) }}" method="POST" onsubmit="return confirm('Hapus laporan tanam ini?')">
-                                        @csrf @method('DELETE')
-                                        <button class="rounded-lg border border-red-200 px-3 py-1.5 text-[11px] font-bold text-red-600">Hapus</button>
-                                    </form>
-                                @endif
                             </div>
                         @endif
                     </div>

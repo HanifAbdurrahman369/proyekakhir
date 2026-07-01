@@ -32,16 +32,16 @@
 <body>
     <table>
         <tr>
-            <td colspan="6" class="header"><b>LAPORAN DAFTAR LAHAN SAWAH TERVERIFIKASI</b></td>
+            <td colspan="7" class="header"><b>LAPORAN DAFTAR LAHAN SAWAH TERVERIFIKASI</b></td>
         </tr>
         <tr>
-            <td colspan="6" class="header"><b>KABUPATEN BARITO KUALA</b></td>
+            <td colspan="7" class="header"><b>KABUPATEN BARITO KUALA</b></td>
         </tr>
         <tr>
-            <td colspan="6" style="text-align: center;">Tanggal Cetak: {{ now()->translatedFormat('d F Y H:i') }}</td>
+            <td colspan="7" style="text-align: center;">Tanggal Cetak: {{ now()->translatedFormat('d F Y H:i') }}</td>
         </tr>
         <tr>
-            <td colspan="6"></td>
+            <td colspan="7"></td>
         </tr>
         <thead>
             <tr>
@@ -50,6 +50,7 @@
                 <th class="th-style">Kecamatan</th>
                 <th class="th-style">Kelurahan/Desa</th>
                 <th class="th-style">Pemilik</th>
+                <th class="th-style">Tipe Lahan</th>
                 <th class="th-style">Luas Lahan (Ha)</th>
             </tr>
         </thead>
@@ -61,6 +62,7 @@
                     <td class="td-style">{{ $item['nama_kecamatan'] ?? '-' }}</td>
                     <td class="td-style">{{ $item['nama_kelurahan'] ?? '-' }}</td>
                     <td class="td-style">{{ $item['pemilik_nama'] ?? '-' }}</td>
+                    <td class="td-style">{{ $item['tipe_lahan'] ?? '-' }}</td>
                     <td class="td-number">{{ number_format($item['luas'] ?? 0.0, 2, '.', '') }}</td>
                 </tr>
             @endforeach

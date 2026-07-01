@@ -143,28 +143,51 @@
     <table class="table-data">
         <thead>
             <tr>
-                <th style="width: 5%;" class="text-center">No</th>
-                <th style="width: 30%;">Desa / Kelurahan</th>
-                @if(!$kecamatan)
-                    <th style="width: 25%;">Kecamatan</th>
-                @endif
-                <th style="width: 15%;" class="text-center">Jumlah Lahan</th>
-                <th style="width: 15%;" class="text-right">Total Luas (Ha)</th>
-                <th style="width: 15%;" class="text-right">Hasil Panen (Ton)</th>
+                <th style="width: 4%;" class="text-center">No</th>
+                <th style="width: 12%;">Kecamatan</th>
+                <th style="width: 14%;">Kelurahan / Desa</th>
+                <th style="width: 8%;" class="text-center">Tahun LBS</th>
+                <th style="width: 10%;" class="text-center">Jumlah Lahan</th>
+                <th style="width: 10%;" class="text-right">Total Luas (Ha)</th>
+                <th style="width: 22%;">Rincian Per Tipe (Ha)</th>
+                <th style="width: 12%;" class="text-right">Hasil Panen (Ton)</th>
+                <th style="width: 8%;" class="text-right">Produktivitas</th>
             </tr>
         </thead>
         <tbody>
             @forelse($data as $index => $item)
+                @php
+                    $tipeRincian = is_array($item['rincian_tipe_lahan'] ?? null) ? $item['rincian_tipe_lahan'] : [];
+                    $rincianStr = [];
+                    foreach($tipeRincian as $tipe) {
+                        $val = (float)($tipe['total_luas'] ?? 0);
+                        if ($val > 0) {
+                            $rincianStr[] = ($tipe['nama_tipe'] ?? 'Belum Ditentukan') . ': ' . number_format($val, 2) . ' Ha';
+                        }
+                    }
+                    $totalLuas = (float)($item['total_luas'] ?? 0);
+                    $totalPanen = (float)($item['total_panen'] ?? 0);
+                    $prod = $totalLuas > 0 ? ($totalPanen / $totalLuas) : 0;
+                @endphp
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
-                    <td class="font-bold">{{ $item['nama_kelurahan'] ?? '-' }}</td>
-                    @if(!$kecamatan)
-                        <td>{{ $item['nama_kecamatan'] ?? '-' }}</td>
-                    @endif
-                    <td class="text-center">{{ $item['jumlah_lahan'] ?? 0 }}</td>
-                    <td class="text-right">{{ number_format($item['total_luas'] ?? 0.0, 2) }}</td>
+                    <td class="font-bold">{{ $item['nama_kecamatan'] ?? '-' }}</td>
+                    <td>{{ $item['nama_kelurahan'] ?? '-' }}</td>
+                    <td class="text-center">{{ $item['tahun_lbs'] ?? '-' }}</td>
+                    <td class="text-center">{{ $item['jumlah_lahan'] ?? 0 }} Lahan</td>
+                    <td class="text-right">{{ number_format($totalLuas, 2) }} Ha</td>
+                    <td>
+                        @if(empty($rincianStr))
+                            <span style="color: #bbb; font-style: italic;">-</span>
+                        @else
+                            {!! implode('<br>', $rincianStr) !!}
+                        @endif
+                    </td>
                     <td class="text-right font-bold text-emerald">
-                        {{ number_format($item['total_panen'] ?? 0.0, 2) }}
+                        {{ number_format($totalPanen, 2) }} Ton
+                    </td>
+                    <td class="text-right font-bold" style="color: #1d4ed8;">
+                        {{ number_format($prod, 2) }} Ton/Ha
                     </td>
                 </tr>
             @empty

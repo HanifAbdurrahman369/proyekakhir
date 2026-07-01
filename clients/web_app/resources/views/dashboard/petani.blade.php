@@ -26,17 +26,39 @@
         </div>
         <div class="flex flex-wrap gap-2">
             @if($roleId === 1)
-                <a href="{{ route('tambah.lahan') }}" class="rounded-[26px] border border-[#3E7D00] bg-white px-5 py-2.5 text-xs font-semibold text-[#3E7D00] hover:bg-[#edf8dc] transition shadow-[0_14px_38px_rgba(32,60,16,.06)]">Tambah Lahan</a>
+                <a href="{{ route('tambah.lahan') }}" class="inline-flex items-center gap-2 rounded-[26px] border border-[#3E7D00] bg-white px-5 py-2.5 text-xs font-semibold text-[#3E7D00] hover:bg-[#edf8dc] transition shadow-[0_14px_38px_rgba(32,60,16,.06)]">
+                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Tambah Lahan</span>
+                </a>
             @endif
             
             @if($isAllowedToPlant)
-                <a href="{{ route('lapor.tanam') }}" class="rounded-[26px] bg-[#3E7D00] px-5 py-2.5 text-xs font-semibold text-white hover:bg-[#2f5c12] transition shadow-[0_14px_38px_rgba(32,60,16,.06)]">Lapor Tanam</a>
+                <a href="{{ route('lapor.tanam') }}" class="inline-flex items-center gap-2 rounded-[26px] bg-[#3E7D00] px-5 py-2.5 text-xs font-semibold text-white hover:bg-[#2f5c12] transition shadow-[0_14px_38px_rgba(32,60,16,.06)]">
+                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 0 0 8 20C19 20 22 3 22 3c-1 2-8 2-8 2s4-4-3 1C7 9 7 15 7 15s0-3 3-5.31C13.77 7.73 17 8 17 8Z"/>
+                    </svg>
+                    <span>Lapor Tanam</span>
+                </a>
             @else
-                <button type="button" disabled class="rounded-[26px] bg-slate-300 px-5 py-2.5 text-xs font-semibold text-slate-500 cursor-not-allowed shadow-[0_14px_38px_rgba(32,60,16,.06)]" title="Masa tanam Anda sedang dikunci">Lapor Tanam (Kunci)</button>
+                <button type="button" disabled class="inline-flex items-center gap-2 rounded-[26px] bg-slate-300 px-5 py-2.5 text-xs font-semibold text-slate-500 cursor-not-allowed shadow-[0_14px_38px_rgba(32,60,16,.06)]" title="Masa tanam Anda sedang dikunci">
+                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    <span>Lapor Tanam (Kunci)</span>
+                </button>
             @endif
 
             @if($roleId === 1)
-                <a href="{{ route('lapor.panen') }}" class="rounded-[26px] bg-[#203c10] px-5 py-2.5 text-xs font-semibold text-white hover:bg-[#14280b] transition shadow-[0_14px_38px_rgba(32,60,16,.06)]">Lapor Hasil Panen</a>
+                <a href="{{ route('lapor.panen') }}" class="inline-flex items-center gap-2 rounded-[26px] bg-[#203c10] px-5 py-2.5 text-xs font-semibold text-white hover:bg-[#14280b] transition shadow-[0_14px_38px_rgba(32,60,16,.06)]">
+                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 15c-1.1 0-2 .9-2 2v3c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h3V4H5C2.8 4 1 5.8 1 8v12c0 2.2 1.8 4 4 4h10c2.2 0 4-1.8 4-4v-3c0-1.1-.9-2-2-2zm-3-4V3c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h6c1.1 0 2-.9 2-2zm-2 0H8V3h6v8z"/>
+                    </svg>
+                    <span>Lapor Hasil Panen</span>
+                </a>
             @endif
         </div>
     </header>
@@ -141,12 +163,6 @@
                                     <a href="{{ route('lahan.edit', $item['id']) }}" class="mt-2 inline-block font-bold hover:underline">Perbaiki pengajuan</a>
                                 @endif
                             </div>
-                        @endif
-                        @if($roleId === 1 && in_array($status, ['PENDING', 'DITOLAK'], true))
-                            <form action="{{ route('lahan.destroy', $item['id']) }}" method="POST" class="mt-3" onsubmit="return confirm('Hapus pengajuan lahan ini?')">
-                                @csrf @method('DELETE')
-                                <button class="rounded-lg border border-red-200 px-3 py-1.5 text-[11px] font-bold text-red-600 hover:bg-red-50">Hapus Pengajuan</button>
-                            </form>
                         @endif
                     </article>
                 @empty

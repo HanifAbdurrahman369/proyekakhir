@@ -17,6 +17,8 @@ class PejabatDashboard extends StatefulWidget {
 }
 
 class _PejabatDashboardState extends State<PejabatDashboard> {
+  bool _isKecamatanExpanded = false;
+
   @override
   void initState() {
     super.initState();
@@ -295,16 +297,14 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
       );
     }
 
-    final monthlyData = provider.produksiBulananPejabat;
-    final maxMonthlyVal = monthlyData.values.isNotEmpty
-        ? monthlyData.values.reduce((a, b) => a > b ? a : b)
+    final kecamatanData = provider.produksiKecamatanPejabat;
+    final maxKecamatanVal = kecamatanData.isNotEmpty
+        ? kecamatanData
+            .map((item) => double.tryParse(item['produksi_pejabat']?.toString() ?? '0') ?? 0.0)
+            .reduce((a, b) => a > b ? a : b)
         : 0.0;
-    final maxProduksiForChart = maxMonthlyVal > 0 ? maxMonthlyVal : 1.0;
+    final maxProduksiKecamatanForChart = maxKecamatanVal > 0 ? maxKecamatanVal : 1.0;
 
-    final monthNames = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'
-    ];
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -560,7 +560,7 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
             ),
             const SizedBox(height: 24),
 
-            // 4. Tren Produksi Bulanan (Bar Chart)
+            // 4. Tren Produksi per Kecamatan (Horizontal Progress Bar List)
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -571,74 +571,149 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Tren Produksi Bulanan',
-                    style: GoogleFonts.outfit(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF14280B),
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Tren Produksi per Kecamatan',
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF14280B),
+                        ),
+                      ),
+                      Icon(Icons.bar_chart_rounded, color: Colors.green[800], size: 20),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Visualisasi cepat untuk pembacaan eksekutif.',
+                    'Produksi komoditas per kecamatan dalam 1 tahun.',
                     style: GoogleFonts.inter(
                       fontSize: 11,
                       color: Colors.grey[500],
                     ),
                   ),
-                  const SizedBox(height: 28),
-                  SizedBox(
-                    height: 180,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: List.generate(12, (index) {
-                        final monthNum = index + 1;
-                        final total = monthlyData[monthNum] ?? 0.0;
-                        final heightFactor = total / maxProduksiForChart;
-                        final barHeight = heightFactor * 130;
+                  const SizedBox(height: 20),
+                  kecamatanData.isEmpty
+                      ? SizedBox(
+                          height: 150,
+                          child: Center(
+                            child: Text(
+                              'Belum ada data produksi.',
+                              style: GoogleFonts.inter(color: Colors.grey[500]),
+                            ),
+                          ),
+                        )
+                      : Column(
+                          children: [
+                            ...List.generate(
+                              _isKecamatanExpanded ? kecamatanData.length : (kecamatanData.length > 5 ? 5 : kecamatanData.length),
+                              (index) {
+                                final item = kecamatanData[index];
+                                final name = item['nama_kecamatan'] ?? '-';
+                                final total = double.tryParse(item['produksi_pejabat']?.toString() ?? '0') ?? 0.0;
+                                final percent = maxProduksiKecamatanForChart > 0 ? total / maxProduksiKecamatanForChart : 0.0;
 
-                        return Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              if (total > 0)
-                                Text(
-                                  total.toStringAsFixed(0),
-                                  style: GoogleFonts.inter(
-                                    fontSize: 8,
-                                    fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF3E7D00),
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 14),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              name,
+                                              style: GoogleFonts.inter(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.bold,
+                                                color: const Color(0xFF1E293B),
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            '${_formatNumber(total)} Ton',
+                                            style: GoogleFonts.outfit(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.green[800],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      LayoutBuilder(
+                                        builder: (context, constraints) {
+                                          final barWidth = constraints.maxWidth * percent;
+                                          return Stack(
+                                            children: [
+                                              Container(
+                                                height: 8,
+                                                width: constraints.maxWidth,
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFFF1F5F9),
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                              ),
+                                              Container(
+                                                height: 8,
+                                                width: barWidth < 4 && percent > 0 ? 4 : barWidth,
+                                                decoration: BoxDecoration(
+                                                  gradient: const LinearGradient(
+                                                    colors: [Color(0xFF65BD00), Color(0xFF3E7D00)],
+                                                  ),
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      ),
+                                    ],
                                   ),
+                                );
+                              },
+                            ),
+                            if (kecamatanData.length > 5) ...[
+                              const Divider(color: Color(0xFFF1F5F9), height: 24),
+                              TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _isKecamatanExpanded = !_isKecamatanExpanded;
+                                  });
+                                },
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: const Size(0, 0),
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                 ),
-                              const SizedBox(height: 4),
-                              Container(
-                                height: barHeight < 15 ? 15 : barHeight,
-                                margin: const EdgeInsets.symmetric(horizontal: 3),
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [Color(0xFF65BD00), Color(0xFF3E7D00)],
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                  ),
-                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                monthNames[index],
-                                style: GoogleFonts.inter(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey[500],
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      _isKecamatanExpanded ? 'Tampilkan Lebih Sedikit' : 'Tampilkan Seluruh Kecamatan',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF3E7D00),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Icon(
+                                      _isKecamatanExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                                      size: 16,
+                                      color: const Color(0xFF3E7D00),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
-                          ),
-                        );
-                      }),
-                    ),
-                  ),
+                          ],
+                        ),
                 ],
               ),
             ),

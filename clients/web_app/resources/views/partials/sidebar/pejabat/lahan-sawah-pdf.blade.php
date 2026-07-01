@@ -140,11 +140,12 @@
         <thead>
             <tr>
                 <th style="width: 5%;" class="text-center">No</th>
-                <th style="width: 25%;">Nama Lahan Sawah</th>
-                <th style="width: 20%;">Kecamatan</th>
-                <th style="width: 20%;">Kelurahan/Desa</th>
-                <th style="width: 18%;">Pemilik</th>
-                <th style="width: 12%;" class="text-right">Luas (Ha)</th>
+                <th style="width: 22%;">Nama Lahan Sawah</th>
+                <th style="width: 18%;">Kecamatan</th>
+                <th style="width: 18%;">Kelurahan/Desa</th>
+                <th style="width: 15%;">Pemilik</th>
+                <th style="width: 12%;">Tipe Lahan</th>
+                <th style="width: 10%;" class="text-right">Luas (Ha)</th>
             </tr>
         </thead>
         <tbody>
@@ -155,6 +156,7 @@
                     <td>{{ $item['nama_kecamatan'] ?? '-' }}</td>
                     <td>{{ $item['nama_kelurahan'] ?? '-' }}</td>
                     <td>{{ $item['pemilik_nama'] ?? '-' }}</td>
+                    <td>{{ $item['tipe_lahan'] ?? '-' }}</td>
                     <td class="text-right font-bold text-emerald">
                         {{ number_format($item['luas'] ?? 0.0, 2) }}
                     </td>

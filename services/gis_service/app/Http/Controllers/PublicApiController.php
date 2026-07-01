@@ -41,6 +41,7 @@ class PublicApiController extends Controller
                 'lahan_all' => $this->lahanDiterimaQuery()
                     ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
                     ->leftJoin('kelurahan', 'lahan_sawah.kelurahan_id', '=', 'kelurahan.id')
+                    ->leftJoin('tipe_lahan', 'lahan_sawah.tipe_lahan_id', '=', 'tipe_lahan.id')
                     ->leftJoin('users as pemilik', 'lahan_sawah.pemilik_id', '=', 'pemilik.id')
                     ->select(
                         'lahan_sawah.id',
@@ -48,7 +49,8 @@ class PublicApiController extends Controller
                         'lahan_sawah.luas_lahan_hektar as luas',
                         'kecamatan.nama_kecamatan',
                         'kelurahan.nama_kelurahan',
-                        'pemilik.nama_lengkap as pemilik_nama'
+                        'pemilik.nama_lengkap as pemilik_nama',
+                        DB::raw("COALESCE(tipe_lahan.nama_tipe, 'Belum Ditentukan') as tipe_lahan")
                     )
                     ->orderBy('kecamatan.nama_kecamatan')
                     ->orderBy('kelurahan.nama_kelurahan')

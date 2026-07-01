@@ -47,20 +47,14 @@ class PejabatController extends Controller
                 $totalLahan = $lahan->json('data.total_lahan');
             }
 
-            // Produksi bulanan
-            $bulanan = Http::withToken($token)
+            // Produksi per kecamatan
+            $produksiKecamatan = [];
+            $kecamatanRes = Http::withToken($token)
                 ->acceptJson()
-                ->get($this->gatewayUrl . '/api/produksi-bulanan');
+                ->get($this->gatewayUrl . '/api/produksi-kecamatan');
 
-            if ($bulanan->successful()) {
-
-                $produksiBulanan = array_fill(1, 12, 0);
-
-                $data = $bulanan->json('data') ?? [];
-
-                foreach ($data as $bulan => $total) {
-                    $produksiBulanan[$bulan] = $total;
-                }
+            if ($kecamatanRes->successful()) {
+                $produksiKecamatan = $kecamatanRes->json('data') ?? [];
             }
 
             // Top kecamatan
@@ -90,7 +84,7 @@ class PejabatController extends Controller
             'produksiPejabat',
             'totalLahan',
             'topKecamatan',
-            'produksiBulanan',
+            'produksiKecamatan',
             'produksiKelurahanData',
             'totalProduksiKelurahan'
         ));
@@ -244,17 +238,15 @@ class PejabatController extends Controller
                 $totalLahan = $lahan->json('data.total_lahan');
             }
 
-            // Produksi bulanan
-            $bulanan = Http::withoutVerifying()
+            // Produksi per kecamatan
+            $produksiKecamatan = [];
+            $kecamatanRes = Http::withoutVerifying()
                 ->withToken($token)
                 ->acceptJson()
-                ->get($this->gatewayUrl . '/api/produksi-bulanan');
+                ->get($this->gatewayUrl . '/api/produksi-kecamatan');
 
-            if ($bulanan->successful()) {
-                $data = $bulanan->json('data') ?? [];
-                foreach ($data as $bulan => $total) {
-                    $produksiBulanan[$bulan] = $total;
-                }
+            if ($kecamatanRes->successful()) {
+                $produksiKecamatan = $kecamatanRes->json('data') ?? [];
             }
 
             // Top kecamatan
@@ -275,7 +267,7 @@ class PejabatController extends Controller
             'produksiPejabat',
             'totalLahan',
             'topKecamatan',
-            'produksiBulanan'
+            'produksiKecamatan'
         ));
         return $pdf->download('laporan-statistik-eksekutif.pdf');
     }
@@ -374,7 +366,8 @@ class PejabatController extends Controller
             report($e);
         }
 
-        $pdf = Pdf::loadView('partials.sidebar.pejabat.produksi-kelurahan-pdf', compact('data', 'kecamatan'));
+        $pdf = Pdf::loadView('partials.sidebar.pejabat.produksi-kelurahan-pdf', compact('data', 'kecamatan'))
+            ->setPaper('a4', 'landscape');
         return $pdf->download('rekap-produksi-kelurahan-' . ($kecamatan ?: 'semua') . '.pdf');
     }
 

@@ -87,14 +87,23 @@ class LahanSawahController extends Controller
         }
 
         $query = LahanSawah::where('status_verifikasi', 'DITERIMA');
+        if (Schema::hasColumn('lahan_sawah', 'status_spasial')) {
+            $query->where('status_spasial', 'SUDAH_DIPETAKAN');
+        }
+
         if ($roleId === 1) {
             $query->where('pemilik_id', $userId);
         } else {
             $query->where('petani_id', $userId);
         }
 
+        $select = ['id', 'pemilik_id', 'petani_id', 'nama_lahan', 'luas_lahan_hektar'];
+        if (Schema::hasColumn('lahan_sawah', 'status_spasial')) {
+            $select[] = 'status_spasial';
+        }
+
         $data = $query->with('pemilik:id,nama_lengkap')
-            ->select('id', 'pemilik_id', 'petani_id', 'nama_lahan', 'luas_lahan_hektar')
+            ->select($select)
             ->orderBy('nama_lahan')
             ->get()
             ->values()

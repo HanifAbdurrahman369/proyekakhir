@@ -72,15 +72,17 @@ class StatistikController extends Controller
     {
         $this->authorizePejabat($request);
 
-        $data = DB::table('panen_padi')
-            ->join('lahan_sawah', 'panen_padi.lahan_id', '=', 'lahan_sawah.id')
-            ->join('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
-            ->where('panen_padi.status_verifikasi', 'DITERIMA')
-            ->whereDate('panen_padi.tanggal_panen', '<=', now()->toDateString())
+        $data = DB::table('kecamatan')
+            ->leftJoin('lahan_sawah', 'kecamatan.id', '=', 'lahan_sawah.kecamatan_id')
+            ->leftJoin('panen_padi', function($join) {
+                $join->on('lahan_sawah.id', '=', 'panen_padi.lahan_id')
+                     ->where('panen_padi.status_verifikasi', '=', 'DITERIMA')
+                     ->whereDate('panen_padi.tanggal_panen', '<=', now()->toDateString());
+            })
             ->select(
                 'kecamatan.id',
                 'kecamatan.nama_kecamatan',
-                DB::raw('SUM(panen_padi.hasil_panen_ton) as produksi_pejabat')
+                DB::raw('COALESCE(SUM(panen_padi.hasil_panen_ton), 0) as produksi_pejabat')
             )
             ->groupBy(
                 'kecamatan.id',
@@ -102,18 +104,15 @@ class StatistikController extends Controller
     {
         $this->authorizePejabat($request);
 
-        $data = DB::table('lahan_sawah')
-            ->join(
-                'kecamatan',
-                'lahan_sawah.kecamatan_id',
-                '=',
-                'kecamatan.id'
-            )
-            ->where('lahan_sawah.status_verifikasi', 'DITERIMA')
+        $data = DB::table('kecamatan')
+            ->leftJoin('lahan_sawah', function($join) {
+                $join->on('kecamatan.id', '=', 'lahan_sawah.kecamatan_id')
+                     ->where('lahan_sawah.status_verifikasi', '=', 'DITERIMA');
+            })
             ->select(
                 'kecamatan.id',
                 'kecamatan.nama_kecamatan',
-                DB::raw('SUM(lahan_sawah.luas_lahan_hektar) as total_lahan')
+                DB::raw('COALESCE(SUM(lahan_sawah.luas_lahan_hektar), 0) as total_lahan')
             )
             ->groupBy(
                 'kecamatan.id',

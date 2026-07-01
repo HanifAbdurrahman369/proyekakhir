@@ -78,45 +78,74 @@
 </div>
 
 @php
-$bulanLabel = [
-    1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr',
-    5 => 'Mei', 6 => 'Jun', 7 => 'Jul', 8 => 'Agt',
-    9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des'
-];
-
-$maxProduksi = max($produksiBulanan ?: [1]);
+$maxProduksi = 1.0;
+foreach($produksiKecamatan as $item) {
+    $val = (float)($item['produksi_pejabat'] ?? 0);
+    if($val > $maxProduksi) $maxProduksi = $val;
+}
 @endphp
 
-{{-- Tren Produksi Bulanan --}}
+{{-- Tren Produksi per Kecamatan --}}
 <div class="glass-card rounded-[28px] p-5 sm:p-6 flex flex-col justify-between">
     <div>
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
             <div>
-                <h3 class="text-base font-extrabold text-[#14280b]">Tren Produksi Bulanan</h3>
-                <p class="text-xs text-slate-500 mt-1">Visualisasi cepat untuk pembacaan eksekutif.</p>
+                <h3 class="text-base font-extrabold text-[#14280b]">Tren Produksi per Kecamatan</h3>
+                <p class="text-xs text-slate-500 mt-1">Produksi komoditas per kecamatan dalam 1 tahun.</p>
             </div>
         </div>
 
-        <div class="h-52 flex items-end gap-2 sm:gap-3 overflow-x-auto pb-2">
-            @foreach($produksiBulanan as $bulan => $total)
+        <div class="space-y-4">
+            @forelse($produksiKecamatan as $index => $item)
                 @php
-                    $height = $maxProduksi > 0
-                        ? max(20, ($total / $maxProduksi) * 145)
-                        : 20;
+                    $total = (float)($item['produksi_pejabat'] ?? 0);
+                    $percent = $maxProduksi > 0 ? ($total / $maxProduksi) * 100 : 0;
+                    $isHidden = $index >= 5 ? 'hidden kecamatan-extra-item' : '';
                 @endphp
-
-                <div class="min-w-10 flex-1 flex flex-col items-center gap-2">
-                    <div class="w-full rounded-t-2xl transition hover:opacity-80 flex items-start justify-center text-white text-[10px] font-bold pt-1"
-                        style="height:{{ $height }}px; background:linear-gradient(180deg,#65bd00,#3E7D00);">
-                        {{ number_format($total, 0) }}
+                <div class="space-y-2 {{ $isHidden }}">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-bold text-slate-700">{{ $item['nama_kecamatan'] ?? '-' }}</span>
+                        <span class="text-sm font-extrabold text-[#3E7D00]">{{ number_format($total, 2) }} Ton</span>
                     </div>
-
-                    <span class="text-[10px] text-slate-400 font-bold uppercase">
-                        {{ $bulanLabel[$bulan] ?? '-' }}
-                    </span>
+                    <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-[#65bd00] to-[#3E7D00] rounded-full transition-all duration-500" style="width: {{ $percent }}%"></div>
+                    </div>
                 </div>
-            @endforeach
+            @empty
+                <div class="text-center py-8 text-slate-400">Belum ada data produksi.</div>
+            @endforelse
         </div>
+
+        @if(count($produksiKecamatan) > 5)
+            <div class="text-center mt-6">
+                <button id="toggleKecamatanBtn" onclick="toggleExtraKecamatan()" class="px-5 py-2.5 rounded-xl text-xs font-bold text-[#3E7D00] bg-[#edf8dc] hover:bg-[#e2f2cc] transition-all border border-[#dfeccc]">
+                    Tampilkan Seluruh Kecamatan
+                </button>
+            </div>
+        @endif
     </div>
 </div>
+
+<script>
+function toggleExtraKecamatan() {
+    const extraItems = document.querySelectorAll('.kecamatan-extra-item');
+    const btn = document.getElementById('toggleKecamatanBtn');
+    if (extraItems.length === 0) return;
+    
+    const isHidden = extraItems[0].classList.contains('hidden');
+    extraItems.forEach(el => {
+        if (isHidden) {
+            el.classList.remove('hidden');
+        } else {
+            el.classList.add('hidden');
+        }
+    });
+    
+    if (isHidden) {
+        btn.innerText = 'Sembunyikan Kecamatan';
+    } else {
+        btn.innerText = 'Tampilkan Seluruh Kecamatan';
+    }
+}
+</script>
 @endsection

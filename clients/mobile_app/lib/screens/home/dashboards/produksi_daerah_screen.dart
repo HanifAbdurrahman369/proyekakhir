@@ -133,14 +133,11 @@ class _ProduksiDaerahScreenState extends State<ProduksiDaerahScreen> with Single
     final summary = data['summary'] as Map<String, dynamic>? ?? {};
     final chartPanen = data['chart_panen_kecamatan'] as List<dynamic>? ?? [];
     final chartTipe = data['chart_luas_tipe_lahan'] as List<dynamic>? ?? [];
-    final chartProduktivitas = data['chart_produktivitas_lahan'] as List<dynamic>? ?? [];
     final chartLuasKec = data['chart_luas_kecamatan'] as List<dynamic>? ?? [];
     final kecamatanAll = data['kecamatan_all'] as List<dynamic>? ?? [];
     final kelurahanAll = data['kelurahan_all'] as List<dynamic>? ?? [];
     final lahanAll = data['lahan_all'] as List<dynamic>? ?? [];
     final rekapRows = data['tabel_rekap'] as List<dynamic>? ?? [];
-
-    final isPejabat = context.watch<AuthProvider>().currentUser?.roleId == 3;
 
     final double totalLuas = double.tryParse(summary['total_luas_ha']?.toString() ?? '0') ?? 0.0;
     final double totalPanen = double.tryParse(summary['total_panen_ton']?.toString() ?? '0') ?? 0.0;
@@ -268,60 +265,14 @@ class _ProduksiDaerahScreenState extends State<ProduksiDaerahScreen> with Single
 
             // Section: Hasil Panen Per Kecamatan (Bar Visuals)
             _buildSectionHeader('Hasil Panen per Kecamatan', 'Total produksi dalam satuan Ton (Klik untuk detail kelurahan/desa)'),
-            const SizedBox(height: 8),
-            if (isPejabat) ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => _exportKecamatanProduksiReport('pdf'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFDC2626),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        elevation: 1,
-                      ),
-                      icon: const Icon(Icons.picture_as_pdf_rounded, size: 14),
-                      label: Text('Export PDF', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => _exportKecamatanProduksiReport('excel'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF16A34A),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        elevation: 1,
-                      ),
-                      icon: const Icon(Icons.table_view_rounded, size: 14),
-                      label: Text('Export Excel', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-            ],
+            const SizedBox(height: 12),
             _buildPanenKecamatanList(chartPanen, rekapRows),
             const SizedBox(height: 24),
 
             // Section: Sebaran Tipe Lahan
             _buildSectionHeader('Distribusi Tipe Lahan', 'Perbandingan luas lahan (Hektar) per tipe'),
             const SizedBox(height: 12),
-            _buildTipeLahanList(chartTipe),
-            const SizedBox(height: 24),
-
-            // Section: Tingkat Produktivitas
-            _buildSectionHeader('Produktivitas per Kecamatan', 'Rata-rata produktivitas padi (Ton / Ha)'),
-            const SizedBox(height: 12),
-            _buildProduktivitasList(chartProduktivitas),
+            _buildTipeLahanList(chartTipe, lahanAll),
             const SizedBox(height: 16),
           ],
         ),
@@ -712,7 +663,14 @@ class _ProduksiDaerahScreenState extends State<ProduksiDaerahScreen> with Single
   Future<void> _exportLahanSawahReport(String format) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final token = authProvider.token;
-    if (token == null) return;
+    if (token == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Silakan login sebagai Pejabat Dinas untuk mengunduh laporan.')),
+        );
+      }
+      return;
+    }
 
     final baseUrl = ApiEndpoints.baseUrl;
     final uri = Uri.parse(baseUrl);
@@ -733,7 +691,14 @@ class _ProduksiDaerahScreenState extends State<ProduksiDaerahScreen> with Single
   Future<void> _exportKecamatanProduksiReport(String format) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final token = authProvider.token;
-    if (token == null) return;
+    if (token == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Silakan login sebagai Pejabat Dinas untuk mengunduh laporan.')),
+        );
+      }
+      return;
+    }
 
     final baseUrl = ApiEndpoints.baseUrl;
     final uri = Uri.parse(baseUrl);
@@ -754,7 +719,14 @@ class _ProduksiDaerahScreenState extends State<ProduksiDaerahScreen> with Single
   Future<void> _exportKelurahanProduksiReport(String kecamatanName, String format) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final token = authProvider.token;
-    if (token == null) return;
+    if (token == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Silakan login sebagai Pejabat Dinas untuk mengunduh laporan.')),
+        );
+      }
+      return;
+    }
 
     final baseUrl = ApiEndpoints.baseUrl;
     final uri = Uri.parse(baseUrl);
@@ -890,83 +862,134 @@ class _ProduksiDaerahScreenState extends State<ProduksiDaerahScreen> with Single
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
-        children: List.generate(chartPanen.length, (index) {
-          final item = chartPanen[index];
-          final name = item['nama_kecamatan'] ?? 'Kecamatan';
-          final val = double.tryParse(item['total_panen']?.toString() ?? '0') ?? 0.0;
-          final percent = val / maxPanen;
+        children: [
+          ...List.generate(chartPanen.length, (index) {
+            final item = chartPanen[index];
+            final name = item['nama_kecamatan'] ?? 'Kecamatan';
+            final val = double.tryParse(item['total_panen']?.toString() ?? '0') ?? 0.0;
+            final percent = val / maxPanen;
 
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12.0),
-            child: InkWell(
-              onTap: () {
-                _showKelurahanPanenSheet(context, name, rekapRows);
-              },
-              borderRadius: BorderRadius.circular(16),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            name,
-                            style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF334155)),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Row(
-                          children: [
-                            Text(
-                              '${_formatNumber(val)} Ton',
-                              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF3E7D00)),
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12.0),
+              child: InkWell(
+                onTap: () {
+                  _showKelurahanPanenSheet(context, name, rekapRows);
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              name,
+                              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF334155)),
                             ),
-                            const SizedBox(width: 4),
-                            const Icon(Icons.chevron_right_rounded, size: 16, color: Colors.grey),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: percent,
-                        backgroundColor: const Color(0xFFF1F5F9),
-                        color: const Color(0xFF3E7D00),
-                        minHeight: 8,
+                          ),
+                          const SizedBox(width: 8),
+                          Row(
+                            children: [
+                              Text(
+                                '${_formatNumber(val)} Ton',
+                                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF3E7D00)),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(Icons.chevron_right_rounded, size: 16, color: Colors.grey),
+                            ],
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: percent,
+                          backgroundColor: const Color(0xFFF1F5F9),
+                          color: const Color(0xFF3E7D00),
+                          minHeight: 8,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          );
-        }),
+            );
+          }),
+          const Divider(color: Color(0xFFE2E8F0), height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _exportKecamatanProduksiReport('pdf'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFDC2626),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    elevation: 1,
+                  ),
+                  icon: const Icon(Icons.picture_as_pdf_rounded, size: 14),
+                  label: Text(
+                    'Export PDF',
+                    style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _exportKecamatanProduksiReport('excel'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF16A34A),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    elevation: 1,
+                  ),
+                  icon: const Icon(Icons.table_view_rounded, size: 14),
+                  label: Text(
+                    'Export Excel',
+                    style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
   void _showKelurahanPanenSheet(BuildContext context, String kecamatanName, List<dynamic> rekapRows) {
-    final isPejabat = context.read<AuthProvider>().currentUser?.roleId == 3;
     // Filter kelurahan by selected kecamatan name
     final filteredKelurahan = rekapRows.where((row) {
       final kec = row['nama_kecamatan']?.toString().toLowerCase();
       return kec == kecamatanName.toLowerCase();
     }).toList();
 
-    // Sort alphabetically by kelurahan name
-    filteredKelurahan.sort((a, b) {
-      final nameA = a['nama_kelurahan']?.toString() ?? '';
-      final nameB = b['nama_kelurahan']?.toString() ?? '';
-      return nameA.compareTo(nameB);
-    });
+    double totalPanen = 0.0;
+    double totalLuas = 0.0;
+    int totalLahan = 0;
+
+    for (var row in filteredKelurahan) {
+      totalPanen += double.tryParse(row['total_panen']?.toString() ?? '0') ?? 0.0;
+      totalLuas += double.tryParse(row['total_luas']?.toString() ?? '0') ?? 0.0;
+      totalLahan += int.tryParse(row['jumlah_lahan']?.toString() ?? '0') ?? 0;
+    }
+
+    final double avgProduktivitas = totalLuas > 0 ? totalPanen / totalLuas : 0.0;
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -975,6 +998,7 @@ class _ProduksiDaerahScreenState extends State<ProduksiDaerahScreen> with Single
         return Container(
           padding: const EdgeInsets.all(24),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
@@ -985,7 +1009,7 @@ class _ProduksiDaerahScreenState extends State<ProduksiDaerahScreen> with Single
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Hasil Panen Kelurahan/Desa',
+                          'Detail Produksi Kecamatan',
                           style: GoogleFonts.outfit(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -1009,65 +1033,351 @@ class _ProduksiDaerahScreenState extends State<ProduksiDaerahScreen> with Single
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              if (isPejabat) ...[
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () => _exportKelurahanProduksiReport(kecamatanName, 'pdf'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFDC2626),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          elevation: 1,
-                        ),
-                        icon: const Icon(Icons.picture_as_pdf_rounded, size: 14),
-                        label: Text('Export PDF', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold)),
-                      ),
+              const Divider(color: Color(0xFFE2E8F0), height: 24),
+              
+              // Grid 2x2 data kecamatan
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildKecamatanDetailCard(
+                      'Total Hasil Panen',
+                      '${_formatNumber(totalPanen)} Ton',
+                      Icons.grass_rounded,
+                      const Color(0xFF3E7D00),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () => _exportKelurahanProduksiReport(kecamatanName, 'excel'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF16A34A),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          elevation: 1,
-                        ),
-                        icon: const Icon(Icons.table_view_rounded, size: 14),
-                        label: Text('Export Excel', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold)),
-                      ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildKecamatanDetailCard(
+                      'Luas Lahan',
+                      '${_formatNumber(totalLuas)} Ha',
+                      Icons.landscape_rounded,
+                      const Color(0xFF0284C7),
                     ),
-                  ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildKecamatanDetailCard(
+                      'Jumlah Lahan Sawah',
+                      '$totalLahan Lahan',
+                      Icons.layers_rounded,
+                      const Color(0xFFD97706),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildKecamatanDetailCard(
+                      'Produktivitas Rata-rata',
+                      '${_formatNumber(avgProduktivitas)} Ton/Ha',
+                      Icons.trending_up_rounded,
+                      const Color(0xFF7C3AED),
+                    ),
+                  ),
+                ],
+              ),
+              
+              const Divider(color: Color(0xFFE2E8F0), height: 32),
+              
+              Text(
+                'Unduh Laporan Kecamatan',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF64748B),
                 ),
-                const Divider(color: Color(0xFFE2E8F0), height: 24),
-              ] else ...[
-                const Divider(color: Color(0xFFE2E8F0), height: 12),
-              ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _exportKelurahanProduksiReport(kecamatanName, 'pdf'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFDC2626),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        elevation: 1,
+                      ),
+                      icon: const Icon(Icons.picture_as_pdf_rounded, size: 16),
+                      label: Text(
+                        'Export PDF',
+                        style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _exportKelurahanProduksiReport(kecamatanName, 'excel'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF16A34A),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        elevation: 1,
+                      ),
+                      icon: const Icon(Icons.table_view_rounded, size: 16),
+                      label: Text(
+                        'Export Excel',
+                        style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildKecamatanDetailCard(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 18),
+              const SizedBox(width: 6),
               Expanded(
-                child: filteredKelurahan.isEmpty
+                child: Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF64748B),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: GoogleFonts.outfit(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF1E293B),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTipeLahanList(List<dynamic> chartTipe, List<dynamic> lahanAll) {
+    if (chartTipe.isEmpty) {
+      return _buildEmptyListCard('Belum ada data tipe lahan.');
+    }
+
+    double totalLuas = 0.0;
+    for (var item in chartTipe) {
+      totalLuas += double.tryParse(item['total_luas']?.toString() ?? '0') ?? 0.0;
+    }
+    if (totalLuas == 0.0) totalLuas = 1.0;
+
+    final List<Color> colors = [Colors.blue, Colors.green, Colors.orange, Colors.purple, Colors.pink];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        children: [
+          ...List.generate(chartTipe.length, (index) {
+            final item = chartTipe[index];
+            final name = item['nama_tipe'] ?? item['tipe_lahan'] ?? 'Belum Ditentukan';
+            final val = double.tryParse(item['total_luas']?.toString() ?? '0') ?? 0.0;
+            final pct = (val / totalLuas) * 100;
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12.0),
+              child: InkWell(
+                onTap: () => _showLahanByTipeSheet(context, name, lahanAll),
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              name,
+                              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF334155)),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Row(
+                            children: [
+                              Text(
+                                '${_formatNumber(val)} Ha (${pct.toStringAsFixed(1)}%)',
+                                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey[700]),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(Icons.chevron_right_rounded, size: 16, color: Colors.grey),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: pct / 100,
+                          backgroundColor: const Color(0xFFF1F5F9),
+                          color: colors[index % colors.length],
+                          minHeight: 8,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+          const Divider(color: Color(0xFFE2E8F0), height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _exportLahanSawahReport('pdf'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFDC2626),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    elevation: 1,
+                  ),
+                  icon: const Icon(Icons.picture_as_pdf_rounded, size: 14),
+                  label: Text(
+                    'Export PDF',
+                    style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _exportLahanSawahReport('excel'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF16A34A),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    elevation: 1,
+                  ),
+                  icon: const Icon(Icons.table_view_rounded, size: 14),
+                  label: Text(
+                    'Export Excel',
+                    style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLahanByTipeSheet(BuildContext context, String tipeName, List<dynamic> lahanAll) {
+    final filteredLahan = lahanAll.where((lahan) {
+      final type = lahan['tipe_lahan']?.toString().toLowerCase() ?? '';
+      return type == tipeName.toLowerCase();
+    }).toList();
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      backgroundColor: Colors.white,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          tipeName,
+                          style: GoogleFonts.outfit(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF14280B),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Daftar Lahan Terverifikasi',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+              const Divider(color: Color(0xFFE2E8F0), height: 24),
+              Expanded(
+                child: filteredLahan.isEmpty
                     ? Center(
                         child: Text(
-                          'Belum ada data kelurahan/desa.',
+                          'Belum ada data lahan sawah.',
                           style: GoogleFonts.inter(color: Colors.grey[500]),
                         ),
                       )
                     : ListView.builder(
-                        itemCount: filteredKelurahan.length,
+                        itemCount: filteredLahan.length,
                         itemBuilder: (context, index) {
-                          final item = filteredKelurahan[index];
-                          final name = item['nama_kelurahan'] ?? 'Kelurahan';
-                          final totalPanen = double.tryParse(item['total_panen']?.toString() ?? '0') ?? 0.0;
-                          final totalLuas = double.tryParse(item['total_luas']?.toString() ?? '0') ?? 0.0;
-                          final jmlLahan = item['jumlah_lahan'] ?? 0;
+                          final item = filteredLahan[index];
+                          final name = item['nama_lahan'] ?? 'Lahan Sawah';
+                          final pemilik = item['pemilik_nama'] ?? '-';
+                          final luas = double.tryParse(item['luas']?.toString() ?? '0') ?? 0.0;
+                          final kecamatan = item['nama_kecamatan'] ?? '-';
+                          final kelurahan = item['nama_kelurahan'] ?? '-';
 
                           return Container(
                             margin: const EdgeInsets.only(bottom: 12),
@@ -1104,7 +1414,7 @@ class _ProduksiDaerahScreenState extends State<ProduksiDaerahScreen> with Single
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        '$jmlLahan Lahan Sawah • $totalLuas Ha',
+                                        'Pemilik: $pemilik • Kec. $kecamatan, Kel. $kelurahan',
                                         style: GoogleFonts.inter(
                                           fontSize: 11,
                                           color: Colors.grey[600],
@@ -1116,15 +1426,15 @@ class _ProduksiDaerahScreenState extends State<ProduksiDaerahScreen> with Single
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: totalPanen > 0 ? const Color(0xFFEDF8DC) : Colors.grey[100],
+                                    color: const Color(0xFFEDF8DC),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
-                                    '${_formatNumber(totalPanen)} Ton',
+                                    '${_formatNumber(luas)} Ha',
                                     style: GoogleFonts.outfit(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13,
-                                      color: totalPanen > 0 ? const Color(0xFF3E7D00) : Colors.grey[600],
+                                      color: const Color(0xFF3E7D00),
                                     ),
                                   ),
                                 ),
@@ -1141,135 +1451,7 @@ class _ProduksiDaerahScreenState extends State<ProduksiDaerahScreen> with Single
     );
   }
 
-  Widget _buildTipeLahanList(List<dynamic> chartTipe) {
-    if (chartTipe.isEmpty) {
-      return _buildEmptyListCard('Belum ada data tipe lahan.');
-    }
 
-    double totalLuas = 0.0;
-    for (var item in chartTipe) {
-      totalLuas += double.tryParse(item['total_luas']?.toString() ?? '0') ?? 0.0;
-    }
-    if (totalLuas == 0.0) totalLuas = 1.0;
-
-    final List<Color> colors = [Colors.blue, Colors.green, Colors.orange, Colors.purple, Colors.pink];
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        children: List.generate(chartTipe.length, (index) {
-          final item = chartTipe[index];
-          final name = item['nama_tipe'] ?? item['tipe_lahan'] ?? 'Belum Ditentukan';
-          final val = double.tryParse(item['total_luas']?.toString() ?? '0') ?? 0.0;
-          final pct = (val / totalLuas) * 100;
-
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        name,
-                        style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF334155)),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${_formatNumber(val)} Ha (${pct.toStringAsFixed(1)}%)',
-                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey[700]),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: pct / 100,
-                    backgroundColor: const Color(0xFFF1F5F9),
-                    color: colors[index % colors.length],
-                    minHeight: 8,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  Widget _buildProduktivitasList(List<dynamic> chartProd) {
-    if (chartProd.isEmpty) {
-      return _buildEmptyListCard('Belum ada data produktivitas kecamatan.');
-    }
-
-    double maxProd = 1.0;
-    for (var item in chartProd) {
-      final val = double.tryParse(item['produktivitas_ton_ha']?.toString() ?? '0') ?? 0.0;
-      if (val > maxProd) maxProd = val;
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        children: List.generate(chartProd.length, (index) {
-          final item = chartProd[index];
-          final name = item['nama_lahan'] ?? item['periode_label'] ?? 'Kecamatan';
-          final val = double.tryParse(item['produktivitas_ton_ha']?.toString() ?? '0') ?? 0.0;
-          final percent = val / maxProd;
-
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        name,
-                        style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF334155)),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${_formatNumber(val)} Ton/Ha',
-                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.blue[800]),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: percent,
-                    backgroundColor: const Color(0xFFF1F5F9),
-                    color: Colors.blue[700],
-                    minHeight: 8,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-      ),
-    );
-  }
 
   Widget _buildEmptyListCard(String text) {
     return Container(

@@ -14,25 +14,25 @@
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 w-full max-w-7xl">
-        <div class="bg-white/95 p-8 rounded-[2rem] shadow-sm border border-[#e7efd8] hover:shadow-xl hover:-translate-y-1 transition-all duration-500 text-center flex flex-col justify-center group">
+        <div class="bg-white/95 p-8 rounded-[2rem] shadow-sm border border-[#e7efd8] hover:shadow-xl hover:-translate-y-1 hover:scale-105 transition-all duration-300 text-center flex flex-col justify-center group cursor-pointer" onclick="openStatModal('kecamatan', 'Daftar Kecamatan', 'Daftar 17 Kecamatan di Kabupaten Barito Kuala')">
             <p class="text-[#7d8799] text-sm font-bold uppercase tracking-widest mb-4 group-hover:text-[#4f9a00] transition-colors">
                 Total Kecamatan
             </p>
             <p class="text-5xl font-black text-[#203c10]" id="stat-kecamatan">...</p>
         </div>
-        <div class="bg-white/95 p-8 rounded-[2rem] shadow-sm border border-[#e7efd8] hover:shadow-xl hover:-translate-y-1 transition-all duration-500 text-center flex flex-col justify-center group">
+        <div class="bg-white/95 p-8 rounded-[2rem] shadow-sm border border-[#e7efd8] hover:shadow-xl hover:-translate-y-1 hover:scale-105 transition-all duration-300 text-center flex flex-col justify-center group cursor-pointer" onclick="openStatModal('kelurahan', 'Daftar Kelurahan / Desa', 'Daftar 202 Kelurahan / Desa di Kabupaten Barito Kuala')">
             <p class="text-[#7d8799] text-sm font-bold uppercase tracking-widest mb-4 group-hover:text-[#4f9a00] transition-colors">
                 Kelurahan / Desa
             </p>
             <p class="text-5xl font-black text-[#203c10]" id="stat-kelurahan">...</p>
         </div>
-        <div class="bg-white/95 p-8 rounded-[2rem] shadow-sm border border-[#e7efd8] hover:shadow-xl hover:-translate-y-1 transition-all duration-500 text-center flex flex-col justify-center group">
+        <div class="bg-white/95 p-8 rounded-[2rem] shadow-sm border border-[#e7efd8] hover:shadow-xl hover:-translate-y-1 hover:scale-105 transition-all duration-300 text-center flex flex-col justify-center group cursor-pointer" onclick="openStatModal('lahan', 'Daftar Lahan Sawah', 'Daftar seluruh lahan sawah terverifikasi')">
             <p class="text-[#4f9a00] text-sm font-bold uppercase tracking-widest mb-4">
                 Total Lahan Sawah
             </p>
             <p class="text-5xl font-black text-[#4f9a00]" id="stat-total-lahan">...</p>
         </div>
-        <div class="glass-card rounded-[2rem] p-8 border border-[#e7efd8] hover:-translate-y-1 transition-all duration-300 text-center">
+        <div class="glass-card rounded-[2rem] p-8 border border-[#e7efd8] hover:-translate-y-1 hover:scale-105 transition-all duration-300 text-center cursor-pointer" onclick="openStatModal('luas', 'Daftar Luas Lahan Sawah', 'Daftar luas lahan sawah terverifikasi')">
             <p class="text-xs font-semibold uppercase tracking-[0.2em] text-[#7d8799]">
                 Total Luas Lahan
             </p>
@@ -58,14 +58,7 @@
             <div class="relative w-full h-[300px] flex items-center justify-center"><canvas id="pieChart"></canvas></div>
         </div>
 
-        <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 transition-all hover:border-indigo-100">
-            <h3 class="text-slate-800 font-bold text-xl mb-8 flex items-center gap-3">
-                <span class="w-2.5 h-8 bg-indigo-500 rounded-full"></span> Produktivitas Padi
-            </h3>
-            <div class="relative w-full h-[300px]"><canvas id="lineChart"></canvas></div>
-        </div>
-
-        <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 transition-all hover:border-amber-100 flex flex-col">
+        <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 transition-all hover:border-amber-100 flex flex-col lg:col-span-2">
             <h3 class="text-slate-800 font-bold text-xl mb-8 flex items-center gap-3">
                 <span class="w-2.5 h-8 bg-amber-500 rounded-full"></span> Sebaran Luas Lahan (Ha)
             </h3>
@@ -76,6 +69,29 @@
     @if(isset($showTable) && $showTable)
     <div class="w-full max-w-7xl mt-10">
         
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div>
+                <h3 class="text-2xl font-extrabold text-[#14280b] tracking-tight">Tabel Rekapitulasi Produksi</h3>
+                <p class="text-sm text-slate-500 mt-1">Rincian data luas lahan dan hasil panen per wilayah.</p>
+            </div>
+            <div class="flex gap-3">
+                <a href="{{ route('pejabat.produksi_kelurahan.pdf') }}?token={{ session('token') }}" target="_blank"
+                   class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold text-white bg-gradient-to-r from-rose-600 to-rose-500 shadow-md hover:scale-105 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                    Export PDF
+                </a>
+                <a href="{{ route('pejabat.produksi_kelurahan.excel') }}?token={{ session('token') }}" target="_blank"
+                   class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold text-white bg-gradient-to-r from-emerald-600 to-emerald-500 shadow-md hover:scale-105 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                    Export Excel
+                </a>
+            </div>
+        </div>
+
         <div class="bg-white/80 backdrop-blur-md p-8 rounded-[2.5rem] shadow-sm border border-slate-100 mb-8">
             <div class="flex flex-col xl:flex-row gap-6 items-end justify-between">
                 
@@ -187,6 +203,11 @@
                     document.getElementById('stat-kelurahan').innerText = data.summary.total_kelurahan;
                     document.getElementById('stat-total-lahan').innerText = data.summary.total_lahan_sawah;
                     document.getElementById('stat-total-luas').innerText = data.summary.total_luas_ha + " Ha";
+
+                    // Save data to window globals for modal access
+                    window.globalKecamatan = data.kecamatan_all || [];
+                    window.globalKelurahan = data.kelurahan_all || [];
+                    window.globalLahan = data.lahan_all || [];
 
                     renderCharts(data);
                     globalData = data.tabel_rekap;
@@ -376,19 +397,7 @@
             });
         }
 
-        // 3. Render Line Chart (DIKEMBALIKAN)
-        if(document.getElementById('lineChart') && data.chart_produktivitas_lahan) {
-            let grad = document.getElementById('lineChart').getContext('2d').createLinearGradient(0, 0, 0, 300);
-            grad.addColorStop(0, 'rgba(99, 102, 241, 0.3)'); grad.addColorStop(1, 'rgba(99, 102, 241, 0)');
-            new Chart(document.getElementById('lineChart').getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: data.chart_produktivitas_lahan.map(i => i.periode_label || i.periode || i.nama_lahan),
-                    datasets: [{ label: 'Produktivitas Padi', data: data.chart_produktivitas_lahan.map(i => i.produktivitas_ton_ha), borderColor: colors.indigo.border, backgroundColor: grad, fill: true, tension: 0.4, pointRadius: 4 }]
-                },
-                options: { ...config, scales: { x: { display: true } } }
-            });
-        }
+
 
         // 4. Render Polar Area Chart (DIKEMBALIKAN)
         if(document.getElementById('polarChart') && data.chart_luas_kecamatan) {
@@ -402,5 +411,200 @@
             });
         }
     }
+
+    let currentModalType = '';
+    let currentModalData = [];
+
+    function openStatModal(type, title, subtitle) {
+        currentModalType = type;
+        const modal = document.getElementById('statModal');
+        const modalContent = document.getElementById('statModalContent');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalSubtitle = document.getElementById('modalSubtitle');
+        const searchInput = document.getElementById('modalSearchInput');
+        const exportContainer = document.getElementById('modalExportContainer');
+        const pdfBtn = document.getElementById('modalExportPdf');
+        const excelBtn = document.getElementById('modalExportExcel');
+
+        modalTitle.innerText = title;
+        modalSubtitle.innerText = subtitle;
+        searchInput.value = '';
+
+        if (type === 'kecamatan') {
+            currentModalData = window.globalKecamatan || [];
+        } else if (type === 'kelurahan') {
+            currentModalData = window.globalKelurahan || [];
+        } else if (type === 'lahan' || type === 'luas') {
+            currentModalData = window.globalLahan || [];
+        }
+
+        if (type === 'lahan' || type === 'luas') {
+            pdfBtn.href = "{{ route('pejabat.lahan_sawah.pdf') }}?token=" + (window.USER_TOKEN || "{{ session('token') }}");
+            excelBtn.href = "{{ route('pejabat.lahan_sawah.excel') }}?token=" + (window.USER_TOKEN || "{{ session('token') }}");
+            exportContainer.classList.remove('hidden');
+        } else {
+            exportContainer.classList.add('hidden');
+        }
+
+        renderModalList(currentModalData);
+
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modalContent.classList.remove('scale-95');
+            modalContent.classList.add('scale-100');
+        }, 10);
+    }
+
+    function closeStatModal() {
+        const modal = document.getElementById('statModal');
+        const modalContent = document.getElementById('statModalContent');
+        modalContent.classList.remove('scale-100');
+        modalContent.classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 150);
+    }
+
+    document.getElementById('statModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeStatModal();
+        }
+    });
+
+    function renderModalList(items) {
+        const container = document.getElementById('modalListContainer');
+        container.innerHTML = '';
+
+        if (items.length === 0) {
+            container.innerHTML = '<div class="text-center py-8 text-slate-400">Tidak ada data.</div>';
+            return;
+        }
+
+        items.forEach((item, index) => {
+            let html = '';
+            if (currentModalType === 'kecamatan') {
+                html = `
+                    <div class="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm">
+                            ${index + 1}
+                        </div>
+                        <div>
+                            <p class="font-bold text-slate-800">${item.nama_kecamatan}</p>
+                            <p class="text-xs text-slate-400 font-medium">Kabupaten Barito Kuala</p>
+                        </div>
+                    </div>
+                `;
+            } else if (currentModalType === 'kelurahan') {
+                html = `
+                    <div class="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
+                            ${index + 1}
+                        </div>
+                        <div>
+                            <p class="font-bold text-slate-800">${item.nama_kelurahan}</p>
+                            <p class="text-xs text-slate-400 font-medium text-slate-500">Kecamatan ${item.nama_kecamatan || '-'}</p>
+                        </div>
+                    </div>
+                `;
+            } else if (currentModalType === 'lahan') {
+                html = `
+                    <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div class="flex items-center gap-4">
+                            <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-sm">
+                                ${index + 1}
+                            </div>
+                            <div>
+                                <p class="font-bold text-slate-800">${item.nama_lahan}</p>
+                                <p class="text-xs text-slate-400 font-medium text-slate-500">Pemilik: ${item.pemilik_nama || '-'} • Kec. ${item.nama_kecamatan || '-'}, Kel. ${item.nama_kelurahan || '-'}</p>
+                            </div>
+                        </div>
+                        <span class="px-2.5 py-1 text-xs bg-slate-200/60 rounded-lg text-slate-600 font-semibold">${item.tipe_lahan || '-'}</span>
+                    </div>
+                `;
+            } else if (currentModalType === 'luas') {
+                const luas = parseFloat(item.luas || 0);
+                html = `
+                    <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div class="flex items-center gap-4">
+                            <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm">
+                                ${index + 1}
+                            </div>
+                            <div>
+                                <p class="font-bold text-slate-800">${item.nama_lahan}</p>
+                                <p class="text-xs text-slate-400 font-medium text-slate-500">Pemilik: ${item.pemilik_nama || '-'} • Kec. ${item.nama_kecamatan || '-'}, Kel. ${item.nama_kelurahan || '-'}</p>
+                            </div>
+                        </div>
+                        <span class="px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-700 font-bold text-sm">${luas.toFixed(2)} Ha</span>
+                    </div>
+                `;
+            }
+            container.insertAdjacentHTML('beforeend', html);
+        });
+    }
+
+    function filterModalList() {
+        const query = document.getElementById('modalSearchInput').value.toLowerCase();
+        const filtered = currentModalData.filter(item => {
+            if (currentModalType === 'kecamatan') {
+                return item.nama_kecamatan.toLowerCase().includes(query);
+            } else if (currentModalType === 'kelurahan') {
+                return item.nama_kelurahan.toLowerCase().includes(query) || (item.nama_kecamatan || '').toLowerCase().includes(query);
+            } else {
+                return item.nama_lahan.toLowerCase().includes(query) || 
+                       (item.pemilik_nama || '').toLowerCase().includes(query) || 
+                       (item.nama_kecamatan || '').toLowerCase().includes(query) || 
+                       (item.nama_kelurahan || '').toLowerCase().includes(query);
+            }
+        });
+        renderModalList(filtered);
+    }
 </script>
-@endsection
+
+<!-- Stat Modal Markup -->
+<div id="statModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-[2rem] shadow-2xl border border-slate-100 w-full max-w-2xl flex flex-col max-h-[80vh] overflow-hidden transform scale-95 transition-all duration-300" id="statModalContent">
+        <!-- Modal Header -->
+        <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <h3 class="text-xl font-bold text-slate-800" id="modalTitle">Detail Data</h3>
+                <p class="text-xs text-slate-400 mt-1" id="modalSubtitle">Daftar rincian data wilayah</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <!-- Export buttons container -->
+                <div id="modalExportContainer" class="hidden flex gap-2">
+                    <a id="modalExportPdf" href="#" target="_blank" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold shadow-md hover:bg-rose-700 hover:scale-105 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                        PDF
+                    </a>
+                    <a id="modalExportExcel" href="#" target="_blank" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-md hover:bg-emerald-700 hover:scale-105 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                        Excel
+                    </a>
+                </div>
+                <button onclick="closeStatModal()" class="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Modal Search -->
+        <div class="px-6 py-4 bg-slate-50 border-b border-slate-100">
+            <input type="text" id="modalSearchInput" placeholder="Cari data..." oninput="filterModalList()" 
+                   class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all font-['Poppins']">
+          </div>
+
+          <!-- Modal Body -->
+          <div class="p-6 overflow-y-auto flex-1 custom-scrollbar">
+              <div id="modalListContainer" class="space-y-3">
+                  <!-- Items will be injected here -->
+              </div>
+          </div>
+      </div>
+  </div>
+  @endsection
