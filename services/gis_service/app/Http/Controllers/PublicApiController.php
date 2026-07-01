@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use App\Http\Controllers\Controller;
@@ -17,6 +18,7 @@ class PublicApiController extends Controller
         $totalLuasHektar = $this->lahanDiterimaQuery()->sum('luas_lahan_hektar');
         $totalPanen = $this->totalPanenDiterimaPublik();
         $rekapRows = $this->buildTabelRekap();
+        $rekapPadiKecamatan = $this->buildRekapPadiKecamatan();
 
         return response()->json([
             'success' => true,
@@ -63,18 +65,76 @@ class PublicApiController extends Controller
 
                 'chart_produktivitas_lahan' => $this->chartProduktivitasLahan(),
 
-                'chart_luas_kecamatan' => $this->lahanDiterimaQuery()
-                    ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
-                    ->select('kecamatan.nama_kecamatan', DB::raw('ROUND(COALESCE(SUM(lahan_sawah.luas_lahan_hektar),0), 2) as total_luas'))
-                    ->groupBy('kecamatan.nama_kecamatan')
-                    ->orderBy('kecamatan.nama_kecamatan')
-                    ->get(),
+                'chart_luas_kecamatan' => $this->chartLuasKecamatan(),
 
                 'tipe_lahan_options' => $this->tipeLahanOptions($rekapRows),
                 'tabel_rekap' => $rekapRows,
+                'rekap_padi_kecamatan' => $rekapPadiKecamatan,
+                'tahun_padi_options' => $this->tahunStatistikPadiOptions(),
             ],
             'message' => 'Data statistik berhasil diambil'
         ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    }
+
+    public function getDetailStatistikKecamatan(Request $request, string $kecamatan)
+    {
+        $resolved = $this->resolveKecamatan($kecamatan);
+
+        if (!$resolved) {
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => 'Kecamatan tidak ditemukan',
+            ], 404);
+        }
+
+        $tahun = $request->query('tahun');
+        $rows = $this->statistikPadiRowsForKecamatan($resolved->id, $tahun);
+        $allRows = $this->statistikPadiRowsForKecamatan($resolved->id);
+        $summary = $this->summaryStatistikPadiRows($rows);
+        $summaryAllYears = $this->summaryStatistikPadiRows($allRows);
+
+        return response()->json([
+            'success' => true,
+            'status' => 'success',
+            'data' => [
+                'kecamatan' => [
+                    'id' => $resolved->id,
+                    'nama_kecamatan' => $resolved->nama_kecamatan,
+                ],
+                'filter' => [
+                    'tahun' => $tahun ?: 'all',
+                ],
+                'tahun_options' => $allRows->pluck('tahun')->values()->all(),
+                'summary' => $summary,
+                'summary_all_years' => $summaryAllYears,
+                'narasi' => $this->narasiStatistikPadi($resolved->nama_kecamatan, $summary),
+                'rows' => $rows->values()->all(),
+            ],
+            'message' => 'Detail statistik padi kecamatan berhasil diambil',
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    }
+
+    public function downloadStatistikKecamatan(Request $request, string $kecamatan)
+    {
+        $resolved = $this->resolveKecamatan($kecamatan);
+
+        if (!$resolved) {
+            abort(404, 'Kecamatan tidak ditemukan');
+        }
+
+        $tahun = $request->query('tahun');
+        $rows = $this->statistikPadiRowsForKecamatan($resolved->id, $tahun);
+        $summary = $this->summaryStatistikPadiRows($rows);
+        $filename = 'statistik-padi-' . $this->filenameSlug($resolved->nama_kecamatan)
+            . ($tahun ? '-' . $tahun : '-2010-2025') . '.xls';
+
+        $html = $this->buildStatistikPadiExcelHtml($resolved->nama_kecamatan, $rows, $summary, $tahun);
+
+        return response($html)
+            ->header('Content-Type', 'application/vnd.ms-excel; charset=UTF-8')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     }
 
     public function getMapData()
@@ -285,12 +345,49 @@ class PublicApiController extends Controller
 
     private function chartPanenKecamatan()
     {
+        $statistikRows = $this->latestStatistikPadiRows();
+
+        if ($statistikRows->isNotEmpty()) {
+            return $statistikRows
+                ->map(fn ($row) => [
+                    'nama_kecamatan' => $row->nama_kecamatan,
+                    'total_panen' => round((float) $row->produksi_ton, 2),
+                    'tahun' => (int) $row->tahun,
+                    'sumber' => $row->sumber_data,
+                ])
+                ->values();
+        }
+
         return $this->lahanDiterimaQuery()
             ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
             ->leftJoinSub($this->panenDiterimaPerLahanQuery(), 'panen_lahan', function ($join) {
                 $join->on('panen_lahan.lahan_id', '=', 'lahan_sawah.id');
             })
             ->select('kecamatan.nama_kecamatan', DB::raw('ROUND(COALESCE(SUM(panen_lahan.total_panen),0), 2) as total_panen'))
+            ->groupBy('kecamatan.nama_kecamatan')
+            ->orderBy('kecamatan.nama_kecamatan')
+            ->get();
+    }
+
+    private function chartLuasKecamatan()
+    {
+        $statistikRows = $this->latestStatistikPadiRows();
+
+        if ($statistikRows->isNotEmpty()) {
+            return $statistikRows
+                ->map(fn ($row) => [
+                    'nama_kecamatan' => $row->nama_kecamatan,
+                    'total_luas' => round((float) $row->luas_panen_ha, 2),
+                    'luas_tanam_ha' => round((float) $row->luas_tanam_ha, 2),
+                    'tahun' => (int) $row->tahun,
+                    'sumber' => $row->sumber_data,
+                ])
+                ->values();
+        }
+
+        return $this->lahanDiterimaQuery()
+            ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
+            ->select('kecamatan.nama_kecamatan', DB::raw('ROUND(COALESCE(SUM(lahan_sawah.luas_lahan_hektar),0), 2) as total_luas'))
             ->groupBy('kecamatan.nama_kecamatan')
             ->orderBy('kecamatan.nama_kecamatan')
             ->get();
@@ -313,6 +410,22 @@ class PublicApiController extends Controller
 
     private function chartProduktivitasLahan()
     {
+        $statistikRows = $this->latestStatistikPadiRows();
+
+        if ($statistikRows->isNotEmpty()) {
+            return $statistikRows
+                ->map(fn ($row) => [
+                    'nama_lahan' => $row->nama_kecamatan,
+                    'periode_label' => $row->nama_kecamatan,
+                    'total_panen' => round((float) $row->produksi_ton, 2),
+                    'total_luas_panen' => round((float) $row->luas_panen_ha, 2),
+                    'produktivitas_ton_ha' => round((float) $row->produktivitas_ton_ha, 2),
+                    'tahun' => (int) $row->tahun,
+                    'sumber' => $row->sumber_data,
+                ])
+                ->values();
+        }
+
         if (Schema::hasTable('panen_padi')) {
             return DB::table('panen_padi as rp')
                 ->join('lahan_sawah as ls', 'ls.id', '=', 'rp.lahan_id')
@@ -425,6 +538,315 @@ class PublicApiController extends Controller
             ->all();
     }
 
+    private function statistikPadiTableReady(): bool
+    {
+        return Schema::hasTable('kecamatan') && Schema::hasTable('statistik_padi_kecamatan');
+    }
+
+    private function latestStatistikPadiRows()
+    {
+        if (!$this->statistikPadiTableReady()) {
+            return collect();
+        }
+
+        $latestYears = DB::table('statistik_padi_kecamatan')
+            ->select('kecamatan_id', DB::raw('MAX(tahun) as tahun'))
+            ->groupBy('kecamatan_id');
+
+        return DB::table('statistik_padi_kecamatan as s')
+            ->joinSub($latestYears, 'latest', function ($join) {
+                $join->on('latest.kecamatan_id', '=', 's.kecamatan_id')
+                    ->on('latest.tahun', '=', 's.tahun');
+            })
+            ->join('kecamatan as k', 'k.id', '=', 's.kecamatan_id')
+            ->select(
+                's.kecamatan_id',
+                'k.nama_kecamatan',
+                's.tahun',
+                's.luas_tanam_ha',
+                's.luas_panen_ha',
+                's.produktivitas_kw_ha',
+                's.produktivitas_ton_ha',
+                's.produksi_ton',
+                's.is_sementara',
+                's.sumber_data'
+            )
+            ->orderBy('k.nama_kecamatan')
+            ->get();
+    }
+
+    private function tahunStatistikPadiOptions()
+    {
+        if (!$this->statistikPadiTableReady()) {
+            return [];
+        }
+
+        return DB::table('statistik_padi_kecamatan')
+            ->select('tahun')
+            ->distinct()
+            ->orderBy('tahun')
+            ->pluck('tahun')
+            ->map(fn ($tahun) => (int) $tahun)
+            ->values();
+    }
+
+    private function buildRekapPadiKecamatan()
+    {
+        if (!$this->statistikPadiTableReady()) {
+            return collect();
+        }
+
+        $rows = DB::table('statistik_padi_kecamatan as s')
+            ->join('kecamatan as k', 'k.id', '=', 's.kecamatan_id')
+            ->select(
+                's.kecamatan_id',
+                'k.nama_kecamatan',
+                's.tahun',
+                's.luas_tanam_ha',
+                's.luas_panen_ha',
+                's.produktivitas_kw_ha',
+                's.produktivitas_ton_ha',
+                's.produksi_ton',
+                's.is_sementara',
+                's.sumber_data'
+            )
+            ->orderBy('k.nama_kecamatan')
+            ->orderBy('s.tahun')
+            ->get();
+
+        return $rows
+            ->groupBy('kecamatan_id')
+            ->map(function ($items) {
+                $first = $items->first();
+                $latest = $items->sortByDesc('tahun')->first();
+                $totalLuasTanam = (float) $items->sum('luas_tanam_ha');
+                $totalLuasPanen = (float) $items->sum('luas_panen_ha');
+                $totalProduksi = (float) $items->sum('produksi_ton');
+                $rataProduktivitas = $totalLuasPanen > 0
+                    ? $totalProduksi / $totalLuasPanen
+                    : (float) $items->avg('produktivitas_ton_ha');
+
+                return [
+                    'id' => (int) $first->kecamatan_id,
+                    'kecamatan_id' => (int) $first->kecamatan_id,
+                    'nama_kecamatan' => $first->nama_kecamatan,
+                    'tahun_awal' => (int) $items->min('tahun'),
+                    'tahun_akhir' => (int) $items->max('tahun'),
+                    'jumlah_tahun' => $items->count(),
+                    'total_luas_tanam_ha' => round($totalLuasTanam, 2),
+                    'total_luas_panen_ha' => round($totalLuasPanen, 2),
+                    'total_produksi_ton' => round($totalProduksi, 2),
+                    'rata_produktivitas_ton_ha' => round($rataProduktivitas, 3),
+                    'rata_produktivitas_kw_ha' => round($rataProduktivitas * 10, 2),
+                    'tahun_terbaru' => (int) $latest->tahun,
+                    'luas_tanam_terbaru_ha' => round((float) $latest->luas_tanam_ha, 2),
+                    'luas_panen_terbaru_ha' => round((float) $latest->luas_panen_ha, 2),
+                    'produktivitas_terbaru_ton_ha' => round((float) $latest->produktivitas_ton_ha, 3),
+                    'produksi_terbaru_ton' => round((float) $latest->produksi_ton, 2),
+                    'is_sementara' => (bool) $latest->is_sementara,
+                    'sumber_data' => $latest->sumber_data,
+                ];
+            })
+            ->sortBy('nama_kecamatan')
+            ->values();
+    }
+
+    private function statistikPadiRowsForKecamatan(int $kecamatanId, ?string $tahun = null)
+    {
+        if (!$this->statistikPadiTableReady()) {
+            return collect();
+        }
+
+        $query = DB::table('statistik_padi_kecamatan as s')
+            ->where('s.kecamatan_id', $kecamatanId)
+            ->select(
+                's.tahun',
+                's.luas_tanam_ha',
+                's.luas_panen_ha',
+                's.produktivitas_kw_ha',
+                's.produktivitas_ton_ha',
+                's.produksi_ton',
+                's.is_sementara',
+                's.sumber_data'
+            )
+            ->orderBy('s.tahun');
+
+        if ($tahun && $tahun !== 'all') {
+            $query->where('s.tahun', (int) $tahun);
+        }
+
+        return $query->get()->map(fn ($row) => [
+            'tahun' => (int) $row->tahun,
+            'luas_tanam_ha' => round((float) $row->luas_tanam_ha, 2),
+            'luas_panen_ha' => round((float) $row->luas_panen_ha, 2),
+            'produktivitas_kw_ha' => round((float) $row->produktivitas_kw_ha, 2),
+            'produktivitas_ton_ha' => round((float) $row->produktivitas_ton_ha, 3),
+            'produksi_ton' => round((float) $row->produksi_ton, 2),
+            'is_sementara' => (bool) $row->is_sementara,
+            'status_data' => $row->is_sementara ? 'Sementara' : 'Tetap',
+            'sumber_data' => $row->sumber_data,
+        ]);
+    }
+
+    private function summaryStatistikPadiRows($rows): array
+    {
+        $rows = collect($rows);
+
+        if ($rows->isEmpty()) {
+            return [
+                'jumlah_tahun' => 0,
+                'tahun_awal' => null,
+                'tahun_akhir' => null,
+                'periode_label' => '-',
+                'total_luas_tanam_ha' => 0,
+                'total_luas_panen_ha' => 0,
+                'total_produksi_ton' => 0,
+                'rata_produktivitas_ton_ha' => 0,
+                'rata_produktivitas_kw_ha' => 0,
+                'tahun_terbaru' => null,
+                'latest' => null,
+                'ada_data_sementara' => false,
+            ];
+        }
+
+        $tahunAwal = (int) $rows->min('tahun');
+        $tahunAkhir = (int) $rows->max('tahun');
+        $latest = $rows->sortByDesc('tahun')->first();
+        $totalLuasTanam = (float) $rows->sum('luas_tanam_ha');
+        $totalLuasPanen = (float) $rows->sum('luas_panen_ha');
+        $totalProduksi = (float) $rows->sum('produksi_ton');
+        $rataProduktivitas = $totalLuasPanen > 0
+            ? $totalProduksi / $totalLuasPanen
+            : (float) $rows->avg('produktivitas_ton_ha');
+
+        return [
+            'jumlah_tahun' => $rows->count(),
+            'tahun_awal' => $tahunAwal,
+            'tahun_akhir' => $tahunAkhir,
+            'periode_label' => $tahunAwal === $tahunAkhir ? (string) $tahunAwal : "{$tahunAwal} - {$tahunAkhir}",
+            'total_luas_tanam_ha' => round($totalLuasTanam, 2),
+            'total_luas_panen_ha' => round($totalLuasPanen, 2),
+            'total_produksi_ton' => round($totalProduksi, 2),
+            'rata_produktivitas_ton_ha' => round($rataProduktivitas, 3),
+            'rata_produktivitas_kw_ha' => round($rataProduktivitas * 10, 2),
+            'tahun_terbaru' => (int) $latest['tahun'],
+            'latest' => $latest,
+            'ada_data_sementara' => $rows->contains(fn ($row) => (bool) ($row['is_sementara'] ?? false)),
+        ];
+    }
+
+    private function narasiStatistikPadi(string $namaKecamatan, array $summary): string
+    {
+        if (($summary['jumlah_tahun'] ?? 0) === 0) {
+            return "Data statistik padi untuk Kecamatan {$namaKecamatan} belum tersedia pada basis data historis.";
+        }
+
+        $status = ($summary['ada_data_sementara'] ?? false)
+            ? ' Beberapa nilai bertanda sementara, sehingga masih dapat berubah mengikuti pembaruan sumber data.'
+            : '';
+
+        return "Tabel ini merangkum luas tanam, luas panen, produktivitas, dan produksi padi Kecamatan {$namaKecamatan} pada periode {$summary['periode_label']}. Total produksi pada periode ini mencapai "
+            . $this->formatId($summary['total_produksi_ton']) . ' ton dari '
+            . $this->formatId($summary['total_luas_panen_ha']) . ' ha luas panen, dengan rata-rata produktivitas berbobot '
+            . $this->formatId($summary['rata_produktivitas_ton_ha'], 3) . ' ton/ha.' . $status;
+    }
+
+    private function resolveKecamatan(string $identifier): ?object
+    {
+        $decoded = urldecode($identifier);
+
+        if (ctype_digit($decoded)) {
+            return DB::table('kecamatan')
+                ->select('id', 'nama_kecamatan')
+                ->where('id', (int) $decoded)
+                ->first();
+        }
+
+        $needle = $this->kecamatanKey($decoded);
+
+        return DB::table('kecamatan')
+            ->select('id', 'nama_kecamatan')
+            ->get()
+            ->first(fn ($row) => $this->kecamatanKey($row->nama_kecamatan) === $needle);
+    }
+
+    private function kecamatanKey(?string $value): string
+    {
+        $value = preg_replace('/^kecamatan\s+/i', '', (string) $value);
+        $value = str_replace(['-', '_'], ' ', $value);
+        $value = preg_replace('/\s+/', ' ', $value);
+
+        return strtolower(trim($value));
+    }
+
+    private function filenameSlug(string $value): string
+    {
+        $slug = preg_replace('/[^a-z0-9]+/i', '-', strtolower($value));
+        return trim($slug, '-') ?: 'kecamatan';
+    }
+
+    private function formatId(float|int $value, int $digits = 2): string
+    {
+        return number_format((float) $value, $digits, ',', '.');
+    }
+
+    private function excelNumber(float|int $value, int $digits = 2): string
+    {
+        return number_format((float) $value, $digits, '.', '');
+    }
+
+    private function buildStatistikPadiExcelHtml(string $namaKecamatan, $rows, array $summary, ?string $tahun): string
+    {
+        $periode = $tahun ?: ($summary['periode_label'] ?? '-');
+        $bodyRows = collect($rows)->map(function ($row) {
+            return '<tr>'
+                . '<td>' . e($row['tahun']) . '</td>'
+                . '<td>' . $this->excelNumber($row['luas_tanam_ha']) . '</td>'
+                . '<td>' . $this->excelNumber($row['luas_panen_ha']) . '</td>'
+                . '<td>' . $this->excelNumber($row['produktivitas_kw_ha']) . '</td>'
+                . '<td>' . $this->excelNumber($row['produktivitas_ton_ha'], 3) . '</td>'
+                . '<td>' . $this->excelNumber($row['produksi_ton']) . '</td>'
+                . '<td>' . e($row['status_data']) . '</td>'
+                . '</tr>';
+        })->implode('');
+
+        if ($bodyRows === '') {
+            $bodyRows = '<tr><td colspan="7">Data tidak tersedia</td></tr>';
+        }
+
+        return "\xEF\xBB\xBF" . '<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        table { border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px; }
+        th, td { border: 1px solid #94a3b8; padding: 6px 8px; }
+        th { background: #dcfce7; font-weight: bold; text-align: center; }
+        .title { background: #166534; color: #ffffff; font-size: 16px; font-weight: bold; }
+        .meta { background: #f8fafc; font-weight: bold; }
+        .number { mso-number-format:"0.00"; }
+    </style>
+</head>
+<body>
+    <table>
+        <tr><td colspan="7" class="title">STATISTIK PADI KECAMATAN ' . e(strtoupper($namaKecamatan)) . '</td></tr>
+        <tr><td colspan="7" class="meta">Periode: ' . e($periode) . '</td></tr>
+        <tr><td colspan="7" class="meta">Total Produksi: ' . $this->excelNumber($summary['total_produksi_ton'] ?? 0) . ' ton | Rata-rata Produktivitas: ' . $this->excelNumber($summary['rata_produktivitas_ton_ha'] ?? 0, 3) . ' ton/ha</td></tr>
+        <tr>
+            <th>Tahun</th>
+            <th>Luas Tanam (Ha)</th>
+            <th>Luas Panen (Ha)</th>
+            <th>Produktivitas (Kw/Ha)</th>
+            <th>Produktivitas (Ton/Ha)</th>
+            <th>Produksi (Ton)</th>
+            <th>Status Data</th>
+        </tr>
+        ' . $bodyRows . '
+    </table>
+</body>
+</html>';
+    }
+
     public function getBatasWilayah()
     {
         $kabupaten = DB::table('kabupaten')
@@ -511,9 +933,12 @@ class PublicApiController extends Controller
             $statistik = $agregatProduktivitas[$row->id] ?? [
                 'jumlah_lahan' => 0,
                 'total_luas_ha' => 0,
+                'luas_tanam_ha' => 0,
                 'total_luas_panen_ha' => 0,
                 'total_panen_ton' => 0,
                 'produktivitas_ton_ha' => 0,
+                'tahun_data_padi' => null,
+                'is_sementara' => false,
                 'sumber_produktivitas' => 'Belum ada data',
             ];
             $kategori = $this->kategoriProduktivitasKecamatan(
@@ -529,9 +954,12 @@ class PublicApiController extends Controller
                 'label' => $row->nama_kecamatan,
                 'jumlah_lahan' => (int) $statistik['jumlah_lahan'],
                 'total_luas_ha' => round((float) $statistik['total_luas_ha'], 2),
+                'luas_tanam_ha' => round((float) ($statistik['luas_tanam_ha'] ?? $statistik['total_luas_ha']), 2),
                 'total_luas_panen_ha' => round((float) $statistik['total_luas_panen_ha'], 2),
                 'total_panen_ton' => round((float) $statistik['total_panen_ton'], 2),
                 'produktivitas_ton_ha' => round((float) $statistik['produktivitas_ton_ha'], 2),
+                'tahun_data_padi' => $statistik['tahun_data_padi'] ?? null,
+                'is_sementara' => (bool) ($statistik['is_sementara'] ?? false),
                 'sumber_produktivitas' => $statistik['sumber_produktivitas'],
                 'kategori_produktivitas' => $kategori['key'],
                 'kategori_produktivitas_label' => $kategori['label'],
@@ -568,6 +996,7 @@ class PublicApiController extends Controller
     private function agregatProduktivitasKecamatan(): array
     {
         $kecamatanRows = DB::table('kecamatan')->get()->keyBy('id');
+        $statistikRows = $this->latestStatistikPadiRows()->keyBy('kecamatan_id');
 
         $lahanRows = DB::table('lahan_sawah')
             ->select(
@@ -606,15 +1035,41 @@ class PublicApiController extends Controller
 
         return $kecamatanRows
             ->keys()
+            ->merge($statistikRows->keys())
             ->merge($lahanRows->keys())
             ->merge($panenRows->keys())
             ->filter()
             ->unique()
-            ->mapWithKeys(function ($kecamatanId) use ($kecamatanRows, $lahanRows, $panenRows) {
+            ->mapWithKeys(function ($kecamatanId) use ($kecamatanRows, $statistikRows, $lahanRows, $panenRows) {
                 $kecamatan = $kecamatanRows->get($kecamatanId);
+                $statistik = $statistikRows->get($kecamatanId);
                 $lahan = $lahanRows->get($kecamatanId);
                 $panen = $panenRows->get($kecamatanId);
-                
+
+                $jumlahLahan = (int) ($lahan->jumlah_lahan ?? $panen->jumlah_lahan_panen ?? 0);
+
+                if ($statistik) {
+                    $totalLuasHa = (float) $statistik->luas_tanam_ha;
+                    $totalLuasPanenHa = (float) $statistik->luas_panen_ha;
+                    $totalPanenTon = (float) $statistik->produksi_ton;
+                    $produktivitas = (float) $statistik->produktivitas_ton_ha;
+                    $sumber = 'Statistik padi kecamatan ' . $statistik->tahun;
+
+                    return [
+                        $kecamatanId => [
+                            'jumlah_lahan' => $jumlahLahan,
+                            'total_luas_ha' => $totalLuasHa,
+                            'luas_tanam_ha' => $totalLuasHa,
+                            'total_luas_panen_ha' => $totalLuasPanenHa,
+                            'total_panen_ton' => $totalPanenTon,
+                            'produktivitas_ton_ha' => $produktivitas,
+                            'tahun_data_padi' => (int) $statistik->tahun,
+                            'is_sementara' => (bool) $statistik->is_sementara,
+                            'sumber_produktivitas' => $sumber,
+                        ],
+                    ];
+                }
+
                 $pakaiPanen = $panen && (float) $panen->total_luas_panen_ha > 0;
 
                 $totalLuasHa = (float) ($lahan->total_luas_ha ?? 0);
@@ -623,24 +1078,34 @@ class PublicApiController extends Controller
                 $produktivitas = $pakaiPanen
                     ? (float) $panen->produktivitas_ton_ha
                     : (float) ($lahan->produktivitas_lahan ?? 0);
-                    
+
                 $sumber = $pakaiPanen ? 'panen_padi diterima' : ($lahan ? 'lahan_sawah' : 'Belum ada data');
 
                 if ($totalPanenTon <= 0 && $produktivitas <= 0 && $kecamatan) {
                     $produktivitas = (float) ($kecamatan->produktivitas ?? 0);
+                    if ($produktivitas > 20) {
+                        $produktivitas = $produktivitas / 10;
+                    }
+
                     $totalPanenTon = (float) ($kecamatan->produksi ?? 0);
+                    $totalLuasHa = (float) ($kecamatan->luas_tanam_ha ?? $totalLuasHa);
+                    $totalLuasPanenHa = (float) ($kecamatan->luas_panen_ha ?? $totalLuasPanenHa);
+
                     if ($produktivitas > 0 || $totalPanenTon > 0) {
-                        $sumber = 'Data BPS/Dinas (Statik)';
+                        $sumber = 'Ringkasan kecamatan';
                     }
                 }
 
                 return [
                     $kecamatanId => [
-                        'jumlah_lahan' => (int) ($lahan->jumlah_lahan ?? $panen->jumlah_lahan_panen ?? 0),
+                        'jumlah_lahan' => $jumlahLahan,
                         'total_luas_ha' => $totalLuasHa,
+                        'luas_tanam_ha' => $totalLuasHa,
                         'total_luas_panen_ha' => $totalLuasPanenHa,
                         'total_panen_ton' => $totalPanenTon,
                         'produktivitas_ton_ha' => $produktivitas,
+                        'tahun_data_padi' => $kecamatan->tahun_data_padi ?? null,
+                        'is_sementara' => false,
                         'sumber_produktivitas' => $sumber,
                     ],
                 ];

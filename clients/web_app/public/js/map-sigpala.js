@@ -143,9 +143,16 @@ function sigpalaProductivityBadge(label, key) {
     return `<span class="sigpala-priority-badge" style="background:${config.fillColor}22;color:${config.textColor};border-color:${config.fillColor}55">${sigpalaDisplay(label || config.label)}</span>`;
 }
 
+function sigpalaKecamatanDetailHref(props) {
+    const identifier = props.kecamatan_id || props.id || props.nama_kecamatan || props.kecamatan || props.label || '';
+    return `/statistik/kecamatan/${encodeURIComponent(String(identifier))}`;
+}
+
 function sigpalaKecamatanPopup(props) {
     const key = props.kategori_produktivitas || 'belum-data';
     const label = props.kategori_produktivitas_label || sigpalaProductivityClass(key).label;
+    const detailHref = sigpalaKecamatanDetailHref(props);
+    const tahunLabel = props.tahun_data_padi ? `${props.tahun_data_padi}${props.is_sementara ? ' (sementara)' : ''}` : '-';
 
     return `
         <div class="sigpala-popup">
@@ -153,11 +160,14 @@ function sigpalaKecamatanPopup(props) {
             <h3>${sigpalaDisplay(props.nama_kecamatan)}</h3>
             <div class="sigpala-popup-badge-wrap">${sigpalaProductivityBadge(label, key)}</div>
             <dl>
+                <div><dt>Tahun data</dt><dd>${sigpalaEscapeHtml(tahunLabel)}</dd></div>
                 <div><dt>Produktivitas</dt><dd>${sigpalaNumber(props.produktivitas_ton_ha)} ton/ha</dd></div>
-                <div><dt>Total panen</dt><dd>${sigpalaNumber(props.total_panen_ton)} ton</dd></div>
-                <div><dt>Total luas</dt><dd>${sigpalaNumber(props.total_luas_ha)} ha</dd></div>
-                <div><dt>Lahan terdata</dt><dd>${sigpalaNumber(props.jumlah_lahan, 0)}</dd></div>
+                <div><dt>Produksi</dt><dd>${sigpalaNumber(props.total_panen_ton)} ton</dd></div>
+                <div><dt>Luas tanam</dt><dd>${sigpalaNumber(props.luas_tanam_ha || props.total_luas_ha)} ha</dd></div>
+                <div><dt>Luas panen</dt><dd>${sigpalaNumber(props.total_luas_panen_ha)} ha</dd></div>
+                <div><dt>Lahan terdaftar</dt><dd>${sigpalaNumber(props.jumlah_lahan, 0)}</dd></div>
             </dl>
+            <a class="sigpala-popup-detail-button" href="${sigpalaEscapeHtml(detailHref)}">Detail Produktivitas</a>
         </div>
     `;
 }
@@ -674,6 +684,7 @@ document.addEventListener('DOMContentLoaded', function () {
             justify-content: center;
             margin-top: 13px;
             padding: 10px 12px;
+            text-decoration: none;
             width: 100%;
         }
 

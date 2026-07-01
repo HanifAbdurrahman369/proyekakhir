@@ -6,6 +6,8 @@ use App\Http\Controllers\LahanSawahController;
 
 // RUTE MAP PUBLIK
 Route::get('/statistik', [PublicApiController::class, 'getStatistik']);
+Route::get('/statistik/kecamatan/{kecamatan}', [PublicApiController::class, 'getDetailStatistikKecamatan']);
+Route::get('/statistik/kecamatan/{kecamatan}/excel', [PublicApiController::class, 'downloadStatistikKecamatan']);
 Route::get('/batas-wilayah', [PublicApiController::class, 'getBatasWilayah']);
 Route::get('/batas-kecamatan', [PublicApiController::class, 'getBatasKecamatan']);
 Route::get('/map-lahan', [PublicApiController::class, 'getMapData']);

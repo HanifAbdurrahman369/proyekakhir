@@ -57,6 +57,15 @@
 
     @if(isset($showTable) && $showTable)
     <div class="w-full max-w-7xl mt-10">
+        <div class="bg-white/80 backdrop-blur-md p-8 rounded-[2.5rem] shadow-sm border border-slate-100 mb-8">
+            <div class="max-w-4xl space-y-3">
+                <p class="text-emerald-600 text-xs font-bold uppercase tracking-[0.24em]">Data Lahan Sawah Terdaftar</p>
+                <h3 class="text-slate-900 font-extrabold text-2xl md:text-3xl tracking-tight">Rekapitulasi Lahan Sawah yang Sudah Terverifikasi</h3>
+                <p class="text-slate-500 text-sm md:text-base font-medium leading-relaxed">
+                    Tabel ini berisi rekap lahan sawah yang sudah terdaftar dan diterima dalam sistem SIG-PALA. Data diringkas menurut kecamatan, tahun basis LBS, jumlah lahan, total luas, tipe lahan, hasil panen, dan produktivitas dari lahan yang tercatat di basis data aplikasi.
+                </p>
+            </div>
+        </div>
         
         <div class="bg-white/80 backdrop-blur-md p-8 rounded-[2.5rem] shadow-sm border border-slate-100 mb-8">
             <div class="flex flex-col xl:flex-row gap-6 items-end justify-between">
@@ -109,11 +118,10 @@
 
         <div class="bg-white rounded-[3rem] shadow-sm border border-slate-100 overflow-hidden relative">
             <div class="overflow-x-auto custom-scrollbar">
-                <table class="w-full text-left whitespace-nowrap min-w-[1250px]">
+                <table class="w-full text-left whitespace-nowrap min-w-[1120px]">
                     <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 font-bold uppercase tracking-[0.15em] text-[11px]">
                         <tr>
                             <th class="py-6 px-8">Kecamatan</th>
-                            <th class="py-6 px-8">Kelurahan / Desa</th>
                             <th class="py-6 px-6 text-center">Tahun LBS</th>
                             <th class="py-6 px-6 text-center">Jumlah Lahan</th>
                             <th class="py-6 px-6 text-center">Total Luas (Ha)</th>
@@ -123,13 +131,46 @@
                         </tr>
                     </thead>
                     <tbody id="tabel-rekap-body" class="text-slate-600 divide-y divide-slate-50 text-base font-normal">
-                        <tr><td colspan="8" class="py-20 text-center italic text-slate-300">Menyusun data statistik...</td></tr>
+                        <tr><td colspan="7" class="py-20 text-center italic text-slate-300">Menyusun data statistik...</td></tr>
                     </tbody>
                 </table>
             </div>
 
             <div id="pagination-controls" class="flex justify-between items-center px-8 py-6 bg-slate-50/50 border-t border-slate-100">
                 </div>
+        </div>
+
+        <div class="mt-12">
+            <div class="bg-white/80 backdrop-blur-md p-8 rounded-[2.5rem] shadow-sm border border-slate-100 mb-8">
+                <div class="max-w-4xl space-y-3">
+                    <p class="text-emerald-600 text-xs font-bold uppercase tracking-[0.24em]">Statistik Padi Kecamatan</p>
+                    <h3 class="text-slate-900 font-extrabold text-2xl md:text-3xl tracking-tight">Rekapitulasi Historis 17 Kecamatan</h3>
+                    <p class="text-slate-500 text-sm md:text-base font-medium leading-relaxed">
+                        Tabel berikut merangkum data luas tanam, luas panen, produktivitas, dan produksi padi seluruh kecamatan Barito Kuala untuk periode 2010 sampai 2025. Klik salah satu baris kecamatan untuk membuka detail tahunannya dan mengunduh data kecamatan tersebut.
+                    </p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-[3rem] shadow-sm border border-slate-100 overflow-hidden relative">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left whitespace-nowrap min-w-[1180px]">
+                        <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 font-bold uppercase tracking-[0.15em] text-[11px]">
+                            <tr>
+                                <th class="py-6 px-8">Kecamatan</th>
+                                <th class="py-6 px-6 text-center">Periode</th>
+                                <th class="py-6 px-6 text-right">Total Luas Tanam</th>
+                                <th class="py-6 px-6 text-right">Total Luas Panen</th>
+                                <th class="py-6 px-6 text-right bg-emerald-50/50 text-emerald-700">Total Produksi</th>
+                                <th class="py-6 px-6 text-right bg-blue-50/50 text-blue-700">Rata Produktivitas</th>
+                                <th class="py-6 px-6 text-center">Tahun Terbaru</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rekap-padi-body" class="text-slate-600 divide-y divide-slate-50 text-base font-normal">
+                            <tr><td colspan="7" class="py-20 text-center italic text-slate-300">Menyusun rekap statistik padi...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
     @endif
@@ -154,11 +195,12 @@
 <script>
     let globalData = [];
     let filteredData = [];
+    let rekapPadiKecamatan = [];
     let currentPage = 1;
     const rowsPerPage = 7;
 
     document.addEventListener("DOMContentLoaded", function () {
-        const gatewayBase = window.GATEWAY_URL || "{{ env('GATEWAY_URL', 'http://127.0.0.1:8000') }}";
+        const gatewayBase = window.GATEWAY_URL || "{{ env('GATEWAY_URL', 'http://127.0.0.1:8003') }}";
 
         fetch(`${gatewayBase}/api/statistik`)
             .then(res => res.json())
@@ -172,7 +214,9 @@
 
                     renderCharts(data);
                     globalData = data.tabel_rekap;
+                    rekapPadiKecamatan = data.rekap_padi_kecamatan || [];
                     populateTipeLahanFilter(data.tipe_lahan_options || []);
+                    renderRekapPadiKecamatan();
                     
                     if(document.getElementById('filterTahun')) {
                         applyFilters();
@@ -218,7 +262,7 @@
             const totalPanen = parseFloat(item.total_panen || 0);
             const prod = totalLuas > 0 ? (totalPanen / totalLuas) : 0;
 
-            const lokasi = `${item.nama_kecamatan || ''} ${item.nama_kelurahan || ''}`.toLowerCase();
+            const lokasi = `${item.nama_kecamatan || ''}`.toLowerCase();
             const tipeIds = (item.tipe_lahan_ids || []).map(value => String(value));
             const matchSearch = !search || lokasi.includes(search);
             const matchTahun = tahun === 'all' || item.tahun_lbs === tahun;
@@ -251,7 +295,7 @@
         tbody.innerHTML = '';
 
         if(filteredData.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="py-20 text-center text-slate-400 font-medium text-base">Data tidak ditemukan.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="py-20 text-center text-slate-400 font-medium text-base">Data tidak ditemukan.</td></tr>';
             return;
         }
 
@@ -289,7 +333,6 @@
             tbody.insertAdjacentHTML('beforeend', `
                 <tr class="${bg} hover:bg-slate-50 transition-colors">
                     <td class="py-5 px-8 text-slate-800 text-base font-normal">${item.nama_kecamatan}</td>
-                    <td class="py-5 px-8 text-slate-500 font-normal text-base">${item.nama_kelurahan || '-'}</td>
                     <td class="py-5 px-6 text-center font-normal text-slate-400 text-base">${item.tahun_lbs || '-'}</td>
                     <td class="py-5 px-6 text-center font-normal text-base">${item.jumlah_lahan} Lahan</td>
                     <td class="py-5 px-6 text-center font-normal text-base">${totalLuas.toFixed(2)} Ha</td>
@@ -302,6 +345,34 @@
                 </tr>
             `);
         });
+    }
+
+    function renderRekapPadiKecamatan() {
+        const tbody = document.getElementById('rekap-padi-body');
+        if (!tbody) return;
+
+        if (!rekapPadiKecamatan.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="py-20 text-center text-slate-400 font-medium text-base">Data rekap statistik padi belum tersedia.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = rekapPadiKecamatan.map((item, index) => {
+            const bg = index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30';
+            const href = `/statistik/kecamatan/${encodeURIComponent(item.id || item.kecamatan_id || item.nama_kecamatan)}`;
+            const status = item.is_sementara ? '<span class="ml-2 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-700">Sementara</span>' : '';
+
+            return `
+                <tr class="${bg} cursor-pointer hover:bg-emerald-50/50 transition-colors" onclick="window.location.href='${href}'">
+                    <td class="py-5 px-8 text-slate-800 text-base font-bold">${escapeHtml(item.nama_kecamatan)}</td>
+                    <td class="py-5 px-6 text-center text-slate-500">${item.tahun_awal} - ${item.tahun_akhir}</td>
+                    <td class="py-5 px-6 text-right">${formatStatNumber(item.total_luas_tanam_ha)} Ha</td>
+                    <td class="py-5 px-6 text-right">${formatStatNumber(item.total_luas_panen_ha)} Ha</td>
+                    <td class="py-5 px-6 text-right bg-emerald-50/20 font-bold text-emerald-700">${formatStatNumber(item.total_produksi_ton)} Ton</td>
+                    <td class="py-5 px-6 text-right bg-blue-50/20 font-bold text-blue-700">${formatStatNumber(item.rata_produktivitas_ton_ha, 3)} Ton/Ha</td>
+                    <td class="py-5 px-6 text-center text-slate-500">${item.tahun_terbaru}${status}</td>
+                </tr>
+            `;
+        }).join('');
     }
 
     function renderPagination() {
@@ -383,5 +454,22 @@
                 options: { ...config, plugins: { legend: { position: 'right' } }, scales: { r: { ticks: { display: false } } } }
             });
         }
+    }
+
+    function formatStatNumber(value, fractionDigits = 2) {
+        const number = Number(value || 0);
+        return number.toLocaleString('id-ID', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: fractionDigits
+        });
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 </script>

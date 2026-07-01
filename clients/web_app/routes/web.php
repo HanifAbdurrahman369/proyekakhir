@@ -64,6 +64,9 @@ Route::get('/map.pejabat', function () { return view('sebaran-lahan'); })->name(
 Route::get('/statistik', function () {
     return view('statistik_halaman'); 
 })->name('statistik.publik');
+Route::get('/statistik/kecamatan/{kecamatan}', function ($kecamatan) {
+    return view('statistik_kecamatan_detail', ['kecamatanIdentifier' => $kecamatan]);
+})->name('statistik.kecamatan.detail');
 
 
 /*
