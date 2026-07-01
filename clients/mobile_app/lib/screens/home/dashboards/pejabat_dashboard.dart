@@ -322,68 +322,40 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
             // const SizedBox(height: 24),
 
             // 2. Header Dashboard
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEDF8DC),
-                          border: Border.all(color: const Color(0xFFDFECCC)),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          'Dashboard Pejabat',
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF3E7D00),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Statistik Eksekutif',
-                        style: GoogleFonts.outfit(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFF14280B),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Analisis Data Komoditas Daerah — ${_getCurrentMonthYear()}',
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEDF8DC),
+                    border: Border.all(color: const Color(0xFFDFECCC)),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton.icon(
-                  onPressed: _exportPdfReport,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3E7D00),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    elevation: 1,
-                  ),
-                  icon: const Icon(Icons.picture_as_pdf_rounded, size: 16),
-                  label: Text(
-                    'Export PDF',
+                  child: Text(
+                    'Dashboard Pejabat',
                     style: GoogleFonts.inter(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
+                      color: const Color(0xFF3E7D00),
                     ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Statistik Eksekutif',
+                  style: GoogleFonts.outfit(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF14280B),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Analisis Data Komoditas Daerah — ${_getCurrentMonthYear()}',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: Colors.grey[600],
                   ),
                 ),
               ],
@@ -557,6 +529,30 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 16),
+
+            // Button Export PDF di bawah Card Lahan & Produksi
+            ElevatedButton.icon(
+              onPressed: _exportPdfReport,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF3E7D00),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                elevation: 2,
+                shadowColor: const Color(0xFF3E7D00).withOpacity(0.2),
+              ),
+              icon: const Icon(Icons.picture_as_pdf_rounded, size: 20),
+              label: Text(
+                'Export PDF Laporan',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
             const SizedBox(height: 24),
 

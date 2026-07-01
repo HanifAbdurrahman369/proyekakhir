@@ -1,9 +1,10 @@
 class ApiEndpoints {
-  // Jika menggunakan koneksi Wi-Fi langsung (pastikan firewall port 8003 terbuka):
-  static const String baseUrl = 'http://192.168.1.6:8003/api';
+  // Jika menggunakan USB debugging dengan adb reverse (direkomendasikan):
+  static const String baseUrl = 'http://127.0.0.1:8003/api';
   
-  // Jika menggunakan USB debugging dengan adb reverse:
-  // static const String baseUrl = 'http://127.0.0.1:8003/api';
+  // Jika menggunakan koneksi Wi-Fi langsung (sesuaikan dengan IP lokal saat ini):
+  // static const String baseUrl = 'http://10.191.194.225:8003/api';
+  // static const String baseUrl = 'http://192.168.1.6:8003/api';
 
   // Auth & User Endpoints
   

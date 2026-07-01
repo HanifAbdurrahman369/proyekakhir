@@ -215,13 +215,45 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
             ),
             const SizedBox(height: 16),
 
-            // 3. Action Buttons Row (Sejajar)
+            // 3. Statistics Cards (Lahan Terdaftar & Produksi Tahun Ini)
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final cardWidth =
+                    (constraints.maxWidth - 16) / 2; // 2 cards side-by-side
+                return Row(
+                  children: [
+                    _buildStatCard(
+                      title: roleId == 5 ? 'PROSES AKTIF' : 'LAHAN TERDAFTAR',
+                      value: roleId == 5
+                          ? '${activeCycles.length}'
+                          : '$totalLahan',
+                      desc: roleId == 5
+                          ? 'Siklus tanam yang sedang digarap'
+                          : 'Pengajuan lahan pada akun Anda',
+                      width: cardWidth,
+                    ),
+                    const SizedBox(width: 16),
+                    _buildStatCard(
+                      title: 'PRODUKSI TAHUN INI',
+                      value: '${_formatDouble(totalProduksi)} Ton',
+                      desc: 'Hanya hasil panen yang disetujui petugas',
+                      width: cardWidth,
+                      isDark: true,
+                    ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // 4. Action Buttons Row (Sejajar di bawah 2 card statistik utama)
             Row(
               children: [
                 if (roleId == 1) ...[
                   Expanded(
                     child: _buildActionButton(
                       label: 'Tambah Lahan',
+                      icon: Icons.add_location_alt_rounded,
                       onPressed: () async {
                         await Navigator.push(
                           context,
@@ -244,7 +276,7 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                 Expanded(
                   child: _buildActionButton(
                     label: 'Lapor Tanam',
-                    icon: isAllowedToPlant ? null : Icons.lock_outline_rounded,
+                    icon: isAllowedToPlant ? Icons.grass_rounded : Icons.lock_outline_rounded,
                     onPressed: isAllowedToPlant
                         ? () async {
                             await Navigator.push(
@@ -272,6 +304,7 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                   Expanded(
                     child: _buildActionButton(
                       label: 'Lapor Hasil Panen',
+                      icon: Icons.check_circle_outline_rounded,
                       onPressed: () async {
                         await Navigator.push(
                           context,
@@ -293,7 +326,7 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
             ),
             const SizedBox(height: 16),
 
-            // 4. Lock Alert Banner
+            // 5. Lock Alert Banner
             if (!isAllowedToPlant) ...[
               Container(
                 padding: const EdgeInsets.all(16),
@@ -338,53 +371,28 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
             ],
 
-            // 5. Statistics Cards
+            // 6. Statistics Card (Aturan Masa Tanam)
             LayoutBuilder(
               builder: (context, constraints) {
-                final cardWidth =
-                    (constraints.maxWidth - 16) / 2; // 2 cards side-by-side
-                return Wrap(
-                  spacing: 16,
-                  runSpacing: 16,
-                  children: [
-                    _buildStatCard(
-                      title: roleId == 5 ? 'PROSES AKTIF' : 'LAHAN TERDAFTAR',
-                      value: roleId == 5
-                          ? '${activeCycles.length}'
-                          : '$totalLahan',
-                      desc: roleId == 5
-                          ? 'Siklus tanam yang sedang digarap'
-                          : 'Pengajuan lahan pada akun Anda',
-                      width: cardWidth,
-                    ),
-                    _buildStatCard(
-                      title: 'PRODUKSI TAHUN INI',
-                      value: '${_formatDouble(totalProduksi)} Ton',
-                      desc: 'Hanya hasil panen yang disetujui petugas',
-                      width: cardWidth,
-                      isDark: true,
-                    ),
-                    _buildStatCard(
-                      title: 'ATURAN MASA TANAM',
-                      value: roleId == 5
-                          ? 'Oktober - Januari'
-                          : 'Januari - September',
-                      desc: roleId == 5
-                          ? 'Bibit unggul lahan Kelompok Tani induk'
-                          : 'Bibit lokal sebagai pemilik lahan',
-                      width: constraints.maxWidth,
-                      isLightGreen: true,
-                    ),
-                  ],
+                return _buildStatCard(
+                  title: 'ATURAN MASA TANAM',
+                  value: roleId == 5
+                      ? 'Oktober - Januari'
+                      : 'Januari - September',
+                  desc: roleId == 5
+                      ? 'Bibit unggul lahan Kelompok Tani induk'
+                      : 'Bibit lokal sebagai pemilik lahan',
+                  width: constraints.maxWidth,
+                  isLightGreen: true,
                 );
               },
             ),
             const SizedBox(height: 24),
 
-            // 6. Active cycles (Padi dalam masa tanam)
+            // 7. Active cycles (Padi dalam masa tanam)
             _buildActiveCyclesSection(activeCycles),
             const SizedBox(height: 24),
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../providers/farming_provider.dart';
 
 class RiwayatAktivitasScreen extends StatefulWidget {
@@ -68,6 +69,129 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
           .replaceFirst(RegExp(r',00$'), '');
     }
     return val.toString();
+  }
+
+  Future<void> _showContactOfficerDialog(BuildContext context, String namaLahan) async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          titlePadding: const EdgeInsets.only(left: 24, right: 16, top: 16, bottom: 0),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  'Hubungi Petugas Pemetaan',
+                  style: GoogleFonts.outfit(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF1E293B),
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close_rounded),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFECFDF5),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.map_outlined,
+                  color: Color(0xFF059669),
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 16),
+              RichText(
+                textAlign: TextAlign.center,
+                text: TextSpan(
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: const Color(0xFF475569),
+                    height: 1.5,
+                  ),
+                  children: [
+                    const TextSpan(text: 'Untuk melanjutkan ke tahap pemetaan lahan '),
+                    TextSpan(
+                      text: namaLahan,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF059669),
+                      ),
+                    ),
+                    const TextSpan(text: ', silakan segera menghubungi petugas dinas pertanian.'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Anda dapat berkoordinasi langsung untuk menjadwalkan kunjungan pemetaan lahan sawah Anda.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: const Color(0xFF94A3B8),
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actionsPadding: const EdgeInsets.only(left: 24, right: 24, bottom: 24),
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  final url = Uri.parse('https://wa.me/6285753510996');
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  } else {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Tidak dapat membuka WhatsApp.')),
+                      );
+                    }
+                  }
+                },
+                icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                label: Text(
+                  'Hubungi via WhatsApp',
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF059669),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -279,6 +403,38 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                               ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF3E7D00),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                        if (statusRaw == 'DITERIMA' && statusSpasial == 'BELUM_DIPETAKAN') ...[
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () =>
+                                  _showContactOfficerDialog(context, item['nama_lahan'] ?? '-'),
+                              icon: const Icon(
+                                Icons.chat_bubble_outline_rounded,
+                                size: 18,
+                              ),
+                              label: Text(
+                                'Hubungi Petugas',
+                                style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF059669),
                                 foregroundColor: Colors.white,
                                 elevation: 0,
                                 padding: const EdgeInsets.symmetric(
