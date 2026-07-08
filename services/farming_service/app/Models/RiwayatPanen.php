@@ -13,7 +13,6 @@ class RiwayatPanen extends Model
         'lahan_id',
         'bibit_id',
         'pemilik_id',
-        'petani_id',
         'diverifikasi_oleh',
         'nama_lahan',
         'nama_bibit',

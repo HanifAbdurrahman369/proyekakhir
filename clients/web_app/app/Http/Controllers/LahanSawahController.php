@@ -34,18 +34,18 @@ class LahanSawahController extends Controller
             $this->gatewayUrl() . '/api/spasial-lahan/referensi'
         )->json()['data'] ?? [];
 
-        $petani = $spasialReferensi['petani'] ?? [];
 
-        return compact('kecamatan', 'kelurahan', 'tipeLahan', 'petani');
+
+        return compact('kecamatan', 'kelurahan', 'tipeLahan');
     }
 
     public function create()
     {
-        ['kecamatan' => $kecamatan, 'kelurahan' => $kelurahan, 'tipeLahan' => $tipeLahan, 'petani' => $petani] = $this->referensi();
+        ['kecamatan' => $kecamatan, 'kelurahan' => $kelurahan, 'tipeLahan' => $tipeLahan] = $this->referensi();
 
         return view(
             'partials.sidebar.petani.tambah-lahan',
-            compact('kecamatan', 'kelurahan', 'tipeLahan', 'petani')
+            compact('kecamatan', 'kelurahan', 'tipeLahan')
         );
     }
 
@@ -57,7 +57,7 @@ class LahanSawahController extends Controller
             return redirect('/login')->with('error', 'Login dulu');
         }
 
-        ['kecamatan' => $kecamatan, 'kelurahan' => $kelurahan, 'tipeLahan' => $tipeLahan, 'petani' => $petani] = $this->referensi();
+        ['kecamatan' => $kecamatan, 'kelurahan' => $kelurahan, 'tipeLahan' => $tipeLahan] = $this->referensi();
 
         $response = Http::withToken($token)
             ->acceptJson()
@@ -75,7 +75,7 @@ class LahanSawahController extends Controller
 
         return view(
             'partials.sidebar.petani.tambah-lahan',
-            compact('editLahan', 'kecamatan', 'kelurahan', 'tipeLahan', 'petani')
+            compact('editLahan', 'kecamatan', 'kelurahan', 'tipeLahan')
         );
     }
 
@@ -99,7 +99,7 @@ class LahanSawahController extends Controller
                 'tipe_lahan_id' => $request->tipe_lahan_id,
                 'alamat_detail' => $request->alamat_detail,
                 'luas_lahan_hektar' => $request->luas_lahan_hektar,
-                'petani_id' => $request->petani_id,
+
             ]);
 
         if ($response->successful()) {
@@ -127,7 +127,7 @@ class LahanSawahController extends Controller
                 'tipe_lahan_id' => $request->tipe_lahan_id,
                 'alamat_detail' => $request->alamat_detail,
                 'luas_lahan_hektar' => $request->luas_lahan_hektar,
-                'petani_id' => $request->petani_id,
+
             ]);
 
         if ($response->successful()) {

@@ -19,7 +19,35 @@ class HumaIntegrationService
     {
         // Fallback IDs for required LahanSawah constraints. In a real system, these would be in .env
         $this->defaultOwnerId = env('HUMA_DEFAULT_OWNER_ID', 1); // fallback user ID 1
-        $this->defaultPetaniId = env('HUMA_DEFAULT_PETANI_ID', 1);
+
+    }
+
+    private function whereJsonTextValue($query, string $column, string $key, $value)
+    {
+        return $query->whereRaw(
+            "CASE WHEN JSON_VALID(`$column`) THEN JSON_UNQUOTE(JSON_EXTRACT(`$column`, '$.\"$key\"')) ELSE NULL END = ?",
+            [(string) $value]
+        );
+    }
+
+    private function humaLahanQuery()
+    {
+        return $this->whereJsonTextValue(LahanSawah::query(), 'catatan_verifikasi', 'source', 'huma');
+    }
+
+    private function humaLahanByLandId($landId)
+    {
+        return $this->whereJsonTextValue($this->humaLahanQuery(), 'catatan_verifikasi', 'huma_land_id', $landId);
+    }
+
+    private function humaSensorQuery()
+    {
+        return $this->whereJsonTextValue(MonitoringKondisi::query(), 'catatan_petugas', 'source', 'huma');
+    }
+
+    private function humaSensorByLogId($sensorLogId)
+    {
+        return $this->whereJsonTextValue($this->humaSensorQuery(), 'catatan_petugas', 'huma_sensor_log_id', $sensorLogId);
     }
 
     /**
@@ -34,9 +62,7 @@ class HumaIntegrationService
 
         foreach ($lands as $land) {
             // Check sync status for land
-            $existingLahan = LahanSawah::whereJsonContains('catatan_verifikasi->huma_land_id', $land['id'])
-                                       ->whereJsonContains('catatan_verifikasi->source', 'huma')
-                                       ->first();
+            $existingLahan = $this->humaLahanByLandId($land['id'])->first();
             
             $statusLahan = $existingLahan ? 'Sudah Ada / Akan Update' : 'Baru';
 
@@ -63,9 +89,7 @@ class HumaIntegrationService
             // Mock latest sensor
             $sensor = $this->fetchMockLatestSensor($land['id'], $land['device_id']);
             if ($sensor) {
-                $existingSensor = MonitoringKondisi::whereJsonContains('catatan_petugas->huma_sensor_log_id', $sensor['sensor_log_id'])
-                                                   ->whereJsonContains('catatan_petugas->source', 'huma')
-                                                   ->first();
+                $existingSensor = $this->humaSensorByLogId($sensor['sensor_log_id'])->first();
                 $statusSensor = $existingSensor ? 'Sudah Ada' : 'Baru';
 
                 $previewSensors[] = [
@@ -109,9 +133,7 @@ class HumaIntegrationService
             }
 
             // Upsert Lahan
-            $lahan = LahanSawah::whereJsonContains('catatan_verifikasi->huma_land_id', $land['id'])
-                               ->whereJsonContains('catatan_verifikasi->source', 'huma')
-                               ->first();
+            $lahan = $this->humaLahanByLandId($land['id'])->first();
 
             $catatanVerifikasi = [
                 'source' => 'huma',
@@ -128,7 +150,7 @@ class HumaIntegrationService
             }
 
             $lahan->pemilik_id = $this->defaultOwnerId;
-            $lahan->petani_id = $this->defaultPetaniId;
+
             $lahan->kecamatan_id = $kecamatanId;
             $lahan->nama_lahan = $land['name'];
             $lahan->alamat_detail = $land['address'];
@@ -149,9 +171,7 @@ class HumaIntegrationService
             // Sync Sensor
             $sensor = $this->fetchMockLatestSensor($land['id'], $land['device_id']);
             if ($sensor) {
-                $existingSensor = MonitoringKondisi::whereJsonContains('catatan_petugas->huma_sensor_log_id', $sensor['sensor_log_id'])
-                                                   ->whereJsonContains('catatan_petugas->source', 'huma')
-                                                   ->first();
+                $existingSensor = $this->humaSensorByLogId($sensor['sensor_log_id'])->first();
                 if (!$existingSensor) {
                     $catatanPetugas = [
                         'source' => 'huma',
@@ -193,13 +213,13 @@ class HumaIntegrationService
      */
     public function getLahanTermonitor()
     {
-        $lands = LahanSawah::whereJsonContains('catatan_verifikasi->source', 'huma')->get();
+        $lands = $this->humaLahanQuery()->get();
         return $lands;
     }
 
     public function getMonitoringTermonitor()
     {
-        $sensors = MonitoringKondisi::whereJsonContains('catatan_petugas->source', 'huma')->with('lahan')->get();
+        $sensors = $this->humaSensorQuery()->with('lahan')->get();
         return $sensors;
     }
 

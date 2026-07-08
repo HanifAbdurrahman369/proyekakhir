@@ -28,14 +28,27 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
   }
 
   String _formatNumber(double val) {
-    return val.toStringAsFixed(2).replaceAll('.', ',').replaceFirst(RegExp(r',00$'), '');
+    return val
+        .toStringAsFixed(2)
+        .replaceAll('.', ',')
+        .replaceFirst(RegExp(r',00$'), '');
   }
 
   String _getCurrentMonthYear() {
     final now = DateTime.now();
     final months = [
-      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
     ];
     return '${months[now.month - 1]} ${now.year}';
   }
@@ -47,8 +60,10 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
 
     final baseUrl = ApiEndpoints.baseUrl;
     final uri = Uri.parse(baseUrl);
-    final webAppUrl = '${uri.scheme}://${uri.host}:8080';
-    final downloadUrl = Uri.parse('$webAppUrl/pejabat/cetak-laporan?token=$token');
+    final webAppUrl = '${uri.scheme}://${uri.host}:8000'; // Default port artisan serve
+    final downloadUrl = Uri.parse(
+      '$webAppUrl/pejabat/cetak-laporan?token=$token',
+    );
 
     if (await canLaunchUrl(downloadUrl)) {
       await launchUrl(downloadUrl, mode: LaunchMode.externalApplication);
@@ -106,14 +121,20 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
                         itemCount: list.length,
                         itemBuilder: (context, index) {
                           final item = list[index];
-                          final prod = double.tryParse(item['produksi_pejabat']?.toString() ?? '0') ?? 0.0;
+                          final prod =
+                              double.tryParse(
+                                item['produksi_pejabat']?.toString() ?? '0',
+                              ) ??
+                              0.0;
                           return Container(
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               color: const Color(0xFFF8FAFC),
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                              ),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -126,7 +147,10 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
                                       radius: 18,
                                       child: Text(
                                         '${index + 1}',
-                                        style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
+                                        style: GoogleFonts.inter(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 12),
@@ -204,14 +228,20 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
                         itemCount: list.length,
                         itemBuilder: (context, index) {
                           final item = list[index];
-                          final lahan = double.tryParse(item['total_lahan']?.toString() ?? '0') ?? 0.0;
+                          final lahan =
+                              double.tryParse(
+                                item['total_lahan']?.toString() ?? '0',
+                              ) ??
+                              0.0;
                           return Container(
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               color: const Color(0xFFF8FAFC),
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                              ),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -224,7 +254,10 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
                                       radius: 18,
                                       child: Text(
                                         '${index + 1}',
-                                        style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
+                                        style: GoogleFonts.inter(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 12),
@@ -263,20 +296,26 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
   Widget build(BuildContext context) {
     final provider = context.watch<FarmingProvider>();
 
-    if (provider.isPejabatLoading && provider.produksiKecamatanPejabat.isEmpty) {
+    if (provider.isPejabatLoading &&
+        provider.produksiKecamatanPejabat.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: Colors.green),
       );
     }
 
-    if (provider.errorMessage != null && provider.produksiKecamatanPejabat.isEmpty) {
+    if (provider.errorMessage != null &&
+        provider.produksiKecamatanPejabat.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline_rounded, size: 48, color: Colors.red),
+              const Icon(
+                Icons.error_outline_rounded,
+                size: 48,
+                color: Colors.red,
+              ),
               const SizedBox(height: 16),
               Text(
                 provider.errorMessage!,
@@ -288,9 +327,14 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
                 onPressed: () {
                   context.read<FarmingProvider>().fetchPejabatDashboardData();
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.green[800]),
-                child: Text('Coba Lagi', style: GoogleFonts.inter(color: Colors.white)),
-              )
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green[800],
+                ),
+                child: Text(
+                  'Coba Lagi',
+                  style: GoogleFonts.inter(color: Colors.white),
+                ),
+              ),
             ],
           ),
         ),
@@ -300,11 +344,18 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
     final kecamatanData = provider.produksiKecamatanPejabat;
     final maxKecamatanVal = kecamatanData.isNotEmpty
         ? kecamatanData
-            .map((item) => double.tryParse(item['produksi_pejabat']?.toString() ?? '0') ?? 0.0)
-            .reduce((a, b) => a > b ? a : b)
+              .map(
+                (item) =>
+                    double.tryParse(
+                      item['produksi_pejabat']?.toString() ?? '0',
+                    ) ??
+                    0.0,
+              )
+              .reduce((a, b) => a > b ? a : b)
         : 0.0;
-    final maxProduksiKecamatanForChart = maxKecamatanVal > 0 ? maxKecamatanVal : 1.0;
-
+    final maxProduksiKecamatanForChart = maxKecamatanVal > 0
+        ? maxKecamatanVal
+        : 1.0;
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -326,7 +377,10 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEDF8DC),
                     border: Border.all(color: const Color(0xFFDFECCC)),
@@ -368,7 +422,10 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
                 // Card Total Produksi
                 Expanded(
                   child: InkWell(
-                    onTap: () => _showProduksiKecamatanSheet(context, provider.produksiKecamatanPejabat),
+                    onTap: () => _showProduksiKecamatanSheet(
+                      context,
+                      provider.produksiKecamatanPejabat,
+                    ),
                     borderRadius: BorderRadius.circular(26),
                     child: Container(
                       padding: const EdgeInsets.all(16),
@@ -436,7 +493,11 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
                                     ),
                                   ),
                                   const SizedBox(width: 2),
-                                  const Icon(Icons.arrow_forward_rounded, size: 10, color: Color(0xFF3E7D00)),
+                                  const Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 10,
+                                    color: Color(0xFF3E7D00),
+                                  ),
                                 ],
                               ),
                             ],
@@ -450,7 +511,10 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
                 // Card Lahan Aktif
                 Expanded(
                   child: InkWell(
-                    onTap: () => _showLahanKecamatanSheet(context, provider.lahanKecamatanPejabat),
+                    onTap: () => _showLahanKecamatanSheet(
+                      context,
+                      provider.lahanKecamatanPejabat,
+                    ),
                     borderRadius: BorderRadius.circular(26),
                     child: Container(
                       padding: const EdgeInsets.all(16),
@@ -518,7 +582,11 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
                                     ),
                                   ),
                                   const SizedBox(width: 2),
-                                  const Icon(Icons.arrow_forward_rounded, size: 10, color: Color(0xFF3E7D00)),
+                                  const Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 10,
+                                    color: Color(0xFF3E7D00),
+                                  ),
                                 ],
                               ),
                             ],
@@ -543,7 +611,7 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 elevation: 2,
-                shadowColor: const Color(0xFF3E7D00).withOpacity(0.2),
+                shadowColor: const Color(0xFF3E7D00).withValues(alpha: 0.2),
               ),
               icon: const Icon(Icons.picture_as_pdf_rounded, size: 20),
               label: Text(
@@ -578,7 +646,11 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
                           color: const Color(0xFF14280B),
                         ),
                       ),
-                      Icon(Icons.bar_chart_rounded, color: Colors.green[800], size: 20),
+                      Icon(
+                        Icons.bar_chart_rounded,
+                        color: Colors.green[800],
+                        size: 20,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -603,20 +675,33 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
                       : Column(
                           children: [
                             ...List.generate(
-                              _isKecamatanExpanded ? kecamatanData.length : (kecamatanData.length > 5 ? 5 : kecamatanData.length),
+                              _isKecamatanExpanded
+                                  ? kecamatanData.length
+                                  : (kecamatanData.length > 5
+                                        ? 5
+                                        : kecamatanData.length),
                               (index) {
                                 final item = kecamatanData[index];
                                 final name = item['nama_kecamatan'] ?? '-';
-                                final total = double.tryParse(item['produksi_pejabat']?.toString() ?? '0') ?? 0.0;
-                                final percent = maxProduksiKecamatanForChart > 0 ? total / maxProduksiKecamatanForChart : 0.0;
+                                final total =
+                                    double.tryParse(
+                                      item['produksi_pejabat']?.toString() ??
+                                          '0',
+                                    ) ??
+                                    0.0;
+                                final percent = maxProduksiKecamatanForChart > 0
+                                    ? total / maxProduksiKecamatanForChart
+                                    : 0.0;
 
                                 return Container(
                                   margin: const EdgeInsets.only(bottom: 14),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Expanded(
                                             child: Text(
@@ -644,25 +729,37 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
                                       const SizedBox(height: 6),
                                       LayoutBuilder(
                                         builder: (context, constraints) {
-                                          final barWidth = constraints.maxWidth * percent;
+                                          final barWidth =
+                                              constraints.maxWidth * percent;
                                           return Stack(
                                             children: [
                                               Container(
                                                 height: 8,
                                                 width: constraints.maxWidth,
                                                 decoration: BoxDecoration(
-                                                  color: const Color(0xFFF1F5F9),
-                                                  borderRadius: BorderRadius.circular(4),
+                                                  color: const Color(
+                                                    0xFFF1F5F9,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
                                                 ),
                                               ),
                                               Container(
                                                 height: 8,
-                                                width: barWidth < 4 && percent > 0 ? 4 : barWidth,
+                                                width:
+                                                    barWidth < 4 && percent > 0
+                                                    ? 4
+                                                    : barWidth,
                                                 decoration: BoxDecoration(
-                                                  gradient: const LinearGradient(
-                                                    colors: [Color(0xFF65BD00), Color(0xFF3E7D00)],
-                                                  ),
-                                                  borderRadius: BorderRadius.circular(4),
+                                                  gradient:
+                                                      const LinearGradient(
+                                                        colors: [
+                                                          Color(0xFF65BD00),
+                                                          Color(0xFF3E7D00),
+                                                        ],
+                                                      ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
                                                 ),
                                               ),
                                             ],
@@ -675,23 +772,30 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
                               },
                             ),
                             if (kecamatanData.length > 5) ...[
-                              const Divider(color: Color(0xFFF1F5F9), height: 24),
+                              const Divider(
+                                color: Color(0xFFF1F5F9),
+                                height: 24,
+                              ),
                               TextButton(
                                 onPressed: () {
                                   setState(() {
-                                    _isKecamatanExpanded = !_isKecamatanExpanded;
+                                    _isKecamatanExpanded =
+                                        !_isKecamatanExpanded;
                                   });
                                 },
                                 style: TextButton.styleFrom(
                                   padding: EdgeInsets.zero,
                                   minimumSize: const Size(0, 0),
-                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
-                                      _isKecamatanExpanded ? 'Tampilkan Lebih Sedikit' : 'Tampilkan Seluruh Kecamatan',
+                                      _isKecamatanExpanded
+                                          ? 'Tampilkan Lebih Sedikit'
+                                          : 'Tampilkan Seluruh Kecamatan',
                                       style: GoogleFonts.inter(
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold,
@@ -700,7 +804,9 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
                                     ),
                                     const SizedBox(width: 4),
                                     Icon(
-                                      _isKecamatanExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                                      _isKecamatanExpanded
+                                          ? Icons.keyboard_arrow_up_rounded
+                                          : Icons.keyboard_arrow_down_rounded,
                                       size: 16,
                                       color: const Color(0xFF3E7D00),
                                     ),

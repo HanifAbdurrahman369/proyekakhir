@@ -69,13 +69,11 @@ class FarmingProvider extends ChangeNotifier {
   // State Petugas (Hanif)
   List<dynamic> _petugasPendingLahan = [];
   List<dynamic> _petugasPendingPanen = [];
-  List<dynamic> _petugasNotifikasi = [];
   Map<String, dynamic> _petugasPendingCounts = {
     'pending_lahan': 0,
     'pending_panen': 0,
     'total_pending': 0,
   };
-  int _petugasUnreadCount = 0;
   bool _isPetugasActionLoading = false;
 
   Map<String, dynamic> _petugasSpasialReferensi = {
@@ -93,6 +91,14 @@ class FarmingProvider extends ChangeNotifier {
   };
   bool _isPetugasSpasialLoading = false;
 
+  Map<String, dynamic> _lahanTermonitorPreview = {
+    'lands': <dynamic>[],
+    'sensors': <dynamic>[],
+  };
+  List<dynamic> _lahanTermonitorList = [];
+  List<dynamic> _lahanTermonitorMonitoring = [];
+  bool _isLahanTermonitorLoading = false;
+  String? _lahanTermonitorSyncMessage;
 
   FarmingProvider(this._farmingService);
 
@@ -125,15 +131,17 @@ class FarmingProvider extends ChangeNotifier {
   // Getters Petugas (Hanif)
   List<dynamic> get petugasPendingLahan => _petugasPendingLahan;
   List<dynamic> get petugasPendingPanen => _petugasPendingPanen;
-  List<dynamic> get petugasNotifikasi => _petugasNotifikasi;
   Map<String, dynamic> get petugasPendingCounts => _petugasPendingCounts;
-  int get petugasUnreadCount => _petugasUnreadCount;
   bool get isPetugasActionLoading => _isPetugasActionLoading;
   Map<String, dynamic> get petugasSpasialReferensi => _petugasSpasialReferensi;
   List<dynamic> get petugasSpasialRows => _petugasSpasialRows;
   Map<String, dynamic> get petugasSpasialSummary => _petugasSpasialSummary;
   bool get isPetugasSpasialLoading => _isPetugasSpasialLoading;
-
+  Map<String, dynamic> get lahanTermonitorPreview => _lahanTermonitorPreview;
+  List<dynamic> get lahanTermonitorList => _lahanTermonitorList;
+  List<dynamic> get lahanTermonitorMonitoring => _lahanTermonitorMonitoring;
+  bool get isLahanTermonitorLoading => _isLahanTermonitorLoading;
+  String? get lahanTermonitorSyncMessage => _lahanTermonitorSyncMessage;
 
   bool get isLoading => _isLoading;
   Map<String, dynamic> get lahanData => _lahanData;
@@ -534,37 +542,26 @@ class FarmingProvider extends ChangeNotifier {
         _farmingService.getPetaniSpasial(),
         _farmingService.getAcceptedLahan(),
         _farmingService.getMonitoring(),
-        _farmingService.getPetugasPendingLahan(),
-        _farmingService.getPetugasPendingPanen(),
-        _farmingService.getPetugasNotifikasi(),
       ]);
 
-      _pendingLahanList = results[0] as List<dynamic>;
-      _pendingPanenList = results[1] as List<dynamic>;
-      _spasialLahanList = results[2] as List<dynamic>;
-      _acceptedLahanList = results[3] as List<dynamic>;
-      _monitoringList = results[4] as List<dynamic>;
+      _pendingLahanList = results[0];
+      _pendingPanenList = results[1];
+      _spasialLahanList = results[2];
+      _acceptedLahanList = results[3];
+      _monitoringList = results[4];
 
       _pendingLahanCount = _pendingLahanList.length;
       _pendingPanenCount = _pendingPanenList.length;
       _totalPendingCount = _pendingLahanCount + _pendingPanenCount;
 
-      _petugasPendingLahan = results[5] as List<dynamic>;
-      _petugasPendingPanen = results[6] as List<dynamic>;
-      final notifikasiResult = results[7] as Map<String, dynamic>;
-      _petugasNotifikasi = notifikasiResult['data'] as List<dynamic>? ?? [];
-      _petugasUnreadCount =
-          int.tryParse(notifikasiResult['unread_count']?.toString() ?? '0') ??
-          0;
-      _petugasPendingCounts = Map<String, dynamic>.from(
-        notifikasiResult['pending_counts'] as Map? ??
-            {
-              'pending_lahan': _petugasPendingLahan.length,
-              'pending_panen': _petugasPendingPanen.length,
-              'total_pending':
-                  _petugasPendingLahan.length + _petugasPendingPanen.length,
-            },
-      );
+      _petugasPendingLahan = _pendingLahanList;
+      _petugasPendingPanen = _pendingPanenList;
+      _petugasPendingCounts = {
+        'pending_lahan': _petugasPendingLahan.length,
+        'pending_panen': _petugasPendingPanen.length,
+        'total_pending':
+            _petugasPendingLahan.length + _petugasPendingPanen.length,
+      };
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
     } finally {
@@ -664,12 +661,6 @@ class FarmingProvider extends ChangeNotifier {
   Future<bool> rejectPetugasPanen(int id, String reason) async {
     return _runPetugasAction(
       () => _farmingService.rejectPetugasPanen(id, reason),
-    );
-  }
-
-  Future<bool> markPetugasNotifikasiRead(int id) async {
-    return _runPetugasAction(
-      () => _farmingService.markPetugasNotifikasiRead(id),
     );
   }
 
@@ -804,6 +795,49 @@ class FarmingProvider extends ChangeNotifier {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
     } finally {
       _isPetugasSpasialLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchLahanTermonitorData() async {
+    _isLahanTermonitorLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final results = await Future.wait([
+        _farmingService.getLahanTermonitorPreview(),
+        _farmingService.getLahanTermonitor(),
+        _farmingService.getLahanTermonitorMonitoring(),
+      ]);
+
+      _lahanTermonitorPreview = Map<String, dynamic>.from(results[0] as Map);
+      _lahanTermonitorList = results[1] as List<dynamic>;
+      _lahanTermonitorMonitoring = results[2] as List<dynamic>;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      _isLahanTermonitorLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> syncLahanTermonitor() async {
+    _isPetugasActionLoading = true;
+    _errorMessage = null;
+    _lahanTermonitorSyncMessage = null;
+    notifyListeners();
+
+    try {
+      final result = await _farmingService.syncLahanTermonitor();
+      _lahanTermonitorSyncMessage = result['message']?.toString();
+      await fetchLahanTermonitorData();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _isPetugasActionLoading = false;
       notifyListeners();
     }
   }

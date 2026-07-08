@@ -48,15 +48,17 @@ class StatistikPadiKecamatanSeeder extends Seeder
                 continue;
             }
 
+            $tahun = (int) $record['tahun'];
+
             $rows[] = [
                 'kecamatan_id' => $kecamatan->id,
-                'tahun' => (int) $record['tahun'],
+                'tahun' => $tahun,
                 'luas_tanam_ha' => $this->decimal($record['luas_tanam_ha'] ?? 0),
                 'luas_panen_ha' => $this->decimal($record['luas_panen_ha'] ?? 0),
                 'produktivitas_kw_ha' => $this->decimal($record['produktivitas_kw_ha'] ?? 0),
                 'produktivitas_ton_ha' => $this->decimal($record['produktivitas_ton_ha'] ?? 0),
                 'produksi_ton' => $this->decimal($record['produksi_ton'] ?? 0),
-                'is_sementara' => (int) ($record['is_sementara'] ?? 0) === 1,
+                'is_sementara' => $tahun === 2025 ? false : (int) ($record['is_sementara'] ?? 0) === 1,
                 'sumber_data' => self::SUMBER_DATA,
                 'created_at' => $now,
                 'updated_at' => $now,

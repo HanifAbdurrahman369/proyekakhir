@@ -5,6 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../models/user.dart';
 import '../../../providers/farming_provider.dart';
+import '../petugas_lahan_termonitor_content.dart';
 import '../petugas_verifikasi_screen.dart';
 
 class PetugasDashboard extends StatefulWidget {
@@ -17,12 +18,14 @@ class PetugasDashboard extends StatefulWidget {
 }
 
 class _PetugasDashboardState extends State<PetugasDashboard> {
-  String _currentView = 'dashboard'; // 'dashboard', 'verifikasi', 'spasial', 'parameter'
+  String _currentView =
+      'dashboard'; // 'dashboard', 'verifikasi', 'spasial', 'termonitor'
   String _verifikasiTab = 'lahan'; // 'lahan', 'panen'
   String _spasialTab = 'belum'; // 'belum', 'sudah'
 
   // Search controllers
-  final TextEditingController _spasialSearchController = TextEditingController();
+  final TextEditingController _spasialSearchController =
+      TextEditingController();
   String _spasialSearchQuery = '';
 
   // Form controllers for Parameter Lingkungan
@@ -33,7 +36,8 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
   final TextEditingController _tinggiAirController = TextEditingController();
   String _statusAir = 'Normal';
   String _kekeruhanAir = 'Jernih';
-  final TextEditingController _catatanPetugasController = TextEditingController();
+  final TextEditingController _catatanPetugasController =
+      TextEditingController();
 
   @override
   void initState() {
@@ -57,8 +61,13 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
     super.dispose();
   }
 
-  Future<void> _refresh() =>
-      context.read<FarmingProvider>().fetchPetugasDashboardData();
+  Future<void> _refresh() {
+    final provider = context.read<FarmingProvider>();
+    if (_currentView == 'termonitor') {
+      return provider.fetchLahanTermonitorData();
+    }
+    return provider.fetchPetugasDashboardData();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,8 +107,18 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
     try {
       final parsed = DateTime.parse(dateStr);
       final months = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-        'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'Mei',
+        'Jun',
+        'Jul',
+        'Ags',
+        'Sep',
+        'Okt',
+        'Nov',
+        'Des',
       ];
       return '${parsed.day} ${months[parsed.month - 1]} ${parsed.year}';
     } catch (_) {
@@ -143,7 +162,11 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
       children: [
         if (_currentView != 'dashboard') ...[
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF14280B), size: 20),
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Color(0xFF14280B),
+              size: 20,
+            ),
             onPressed: () {
               setState(() {
                 _currentView = 'dashboard';
@@ -164,7 +187,7 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'SIG-PALA BATOLA',
+                  'SiTani BATOLA',
                   style: GoogleFonts.inter(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
@@ -178,10 +201,12 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                 _currentView == 'dashboard'
                     ? 'Dashboard Petugas'
                     : _currentView == 'verifikasi'
-                        ? 'Verifikasi Data Petani'
-                        : _currentView == 'spasial'
-                            ? 'Manajemen Data Spasial'
-                            : 'Parameter Lingkungan',
+                    ? 'Verifikasi Data Petani'
+                    : _currentView == 'spasial'
+                    ? 'Manajemen Data Spasial'
+                    : _currentView == 'termonitor'
+                    ? 'Lahan Termonitor (IoT)'
+                    : 'Parameter Lingkungan',
                 style: GoogleFonts.outfit(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
@@ -204,6 +229,8 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
         return _buildVerifikasiView(provider);
       case 'spasial':
         return _buildSpasialView(provider);
+      case 'termonitor':
+        return const PetugasLahanTermonitorContent(showIntro: false);
       case 'parameter':
         return _buildParameterView(provider);
       default:
@@ -217,6 +244,8 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // 3 Statistic cards
+        _buildWilayahPetugasCard(),
+        const SizedBox(height: 12),
         _buildStatCard(
           title: 'Total Antrean',
           value: '${provider.totalPendingCount}',
@@ -301,15 +330,15 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
         ),
         const SizedBox(height: 12),
         _buildActionMenuCard(
-          title: 'Parameter Lingkungan',
-          subtitle: 'Catat pH air, tinggi muka air, dan kondisi lapangan.',
-          icon: Icons.thermostat_rounded,
+          title: 'Lahan Termonitor (IoT)',
+          subtitle: 'Sinkronisasi data lahan dan sensor dari Huma.',
+          icon: Icons.sensors_rounded,
           color: Colors.orange[800]!,
           onTap: () {
             setState(() {
-              _currentView = 'parameter';
+              _currentView = 'termonitor';
             });
-            provider.fetchMonitoringData();
+            provider.fetchLahanTermonitorData();
           },
         ),
       ],
@@ -366,15 +395,30 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
       itemBuilder: (context, index) {
         final item = list[index];
         final id = item['id'];
-        final pengaju = item['nama_petani'] ?? item['petani']?['nama_lengkap'] ?? item['user']?['nama_lengkap'] ?? '-';
-        final email = item['email_petani'] ?? item['petani']?['email'] ?? item['user']?['email'] ?? '-';
-        final namaLahan = item['nama_lahan'] ?? item['lahan']?['nama_lahan'] ?? '-';
+        final pengaju =
+            item['nama_petani'] ??
+            item['petani']?['nama_lengkap'] ??
+            item['user']?['nama_lengkap'] ??
+            '-';
+        final email =
+            item['email_petani'] ??
+            item['petani']?['email'] ??
+            item['user']?['email'] ??
+            '-';
+        final namaLahan =
+            item['nama_lahan'] ?? item['lahan']?['nama_lahan'] ?? '-';
         final pemilik = item['pemilik_lahan'] ?? '-';
-        final luas = item['luas_lahan_hektar'] != null 
-            ? '${_formatDouble(double.parse(item['luas_lahan_hektar'].toString()))} Ha' 
+        final luas = item['luas_lahan_hektar'] != null
+            ? '${_formatDouble(double.parse(item['luas_lahan_hektar'].toString()))} Ha'
             : '-';
-        final kecamatan = item['nama_kecamatan'] ?? item['kecamatan']?['nama_kecamatan'] ?? '-';
-        final kelurahan = item['nama_kelurahan'] ?? item['kelurahan']?['nama_kelurahan'] ?? '-';
+        final kecamatan =
+            item['nama_kecamatan'] ??
+            item['kecamatan']?['nama_kecamatan'] ??
+            '-';
+        final kelurahan =
+            item['nama_kelurahan'] ??
+            item['kelurahan']?['nama_kelurahan'] ??
+            '-';
 
         return Container(
           padding: const EdgeInsets.all(16),
@@ -400,7 +444,10 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.amber[50],
                       borderRadius: BorderRadius.circular(8),
@@ -427,28 +474,50 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   OutlinedButton(
-                    onPressed: () => _showRejectLahanDialog(context, id, namaLahan),
+                    onPressed: () =>
+                        _showRejectLahanDialog(context, id, namaLahan),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.red[700],
                       side: BorderSide(color: Colors.red[200]!),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                     ),
-                    child: Text('Tolak', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                    child: Text(
+                      'Tolak',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                    ),
                   ),
                   const SizedBox(width: 10),
                   ElevatedButton(
-                    onPressed: () => _showApproveLahanDialog(context, id, namaLahan, provider),
+                    onPressed: () => _showApproveLahanDialog(
+                      context,
+                      id,
+                      namaLahan,
+                      provider,
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green[800],
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                     ),
-                    child: Text('Setujui', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                    child: Text(
+                      'Setujui',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                    ),
                   ),
                 ],
-              )
+              ),
             ],
           ),
         );
@@ -470,17 +539,23 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
       itemBuilder: (context, index) {
         final item = list[index];
         final id = item['id'];
-        final pengaju = item['nama_petani'] ?? item['petani']?['nama_lengkap'] ?? item['user']?['nama_lengkap'] ?? '-';
+        final pengaju =
+            item['nama_petani'] ??
+            item['petani']?['nama_lengkap'] ??
+            item['user']?['nama_lengkap'] ??
+            '-';
         final email = item['email_petani'] ?? item['petani']?['email'] ?? '-';
         final phone = item['no_hp_petani'] ?? item['petani']?['no_hp'] ?? '-';
-        final namaLahan = item['nama_lahan'] ?? item['lahan']?['nama_lahan'] ?? '-';
-        final pemilik = item['pemilik_lahan'] ?? item['lahan']?['pemilik_lahan'] ?? '-';
+        final namaLahan =
+            item['nama_lahan'] ?? item['lahan']?['nama_lahan'] ?? '-';
+        final pemilik =
+            item['pemilik_lahan'] ?? item['lahan']?['pemilik_lahan'] ?? '-';
         final bibit = item['nama_bibit'] ?? item['bibit']?['nama_bibit'] ?? '-';
         final varietas = item['varietas'] ?? item['bibit']?['varietas'] ?? '-';
         final tanamDate = _formatDateStr(item['tanggal_tanam']);
         final panenDate = _formatDateStr(item['tanggal_panen']);
-        final hasil = item['hasil_panen'] != null 
-            ? '${_formatDouble(double.parse(item['hasil_panen'].toString()))} Ton' 
+        final hasil = item['hasil_panen'] != null
+            ? '${_formatDouble(double.parse(item['hasil_panen'].toString()))} Ton'
             : '0 Ton';
 
         return Container(
@@ -507,7 +582,10 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.amber[50],
                       borderRadius: BorderRadius.circular(8),
@@ -530,31 +608,54 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
               _buildDetailRow('Bibit / Varietas', '$bibit ($varietas)'),
               _buildDetailRow('Tanggal Tanam', tanamDate),
               _buildDetailRow('Tanggal Panen', panenDate),
-              _buildDetailRow('Hasil Panen', hasil, isBoldValue: true, valueColor: const Color(0xFF3E7D00)),
+              _buildDetailRow(
+                'Hasil Panen',
+                hasil,
+                isBoldValue: true,
+                valueColor: const Color(0xFF3E7D00),
+              ),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   OutlinedButton(
-                    onPressed: () => _showRejectPanenDialog(context, id, namaLahan),
+                    onPressed: () =>
+                        _showRejectPanenDialog(context, id, namaLahan),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.red[700],
                       side: BorderSide(color: Colors.red[200]!),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                     ),
-                    child: Text('Tolak', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                    child: Text(
+                      'Tolak',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                    ),
                   ),
                   const SizedBox(width: 10),
                   ElevatedButton(
-                    onPressed: () => _showApprovePanenDialog(context, id, namaLahan),
+                    onPressed: () =>
+                        _showApprovePanenDialog(context, id, namaLahan),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green[800],
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                     ),
-                    child: Text('Setujui', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                    child: Text(
+                      'Setujui',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                    ),
                   ),
                 ],
               ),
@@ -566,7 +667,12 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
   }
 
   // Dialog actions for Lahan
-  void _showApproveLahanDialog(BuildContext context, int id, String namaLahan, FarmingProvider provider) {
+  void _showApproveLahanDialog(
+    BuildContext context,
+    int id,
+    String namaLahan,
+    FarmingProvider provider,
+  ) {
     int? localSelectedPetaniId;
     final listPetani = provider.petaniSpasialList;
 
@@ -576,7 +682,9 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               title: Text(
                 'Setujui Pengajuan Lahan',
                 style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
@@ -587,20 +695,30 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                 children: [
                   Text(
                     'Anda akan menyetujui pengajuan "$namaLahan". Silakan pilih petani penggarap terlebih dahulu.',
-                    style: GoogleFonts.inter(fontSize: 13, color: Colors.grey[700]),
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: Colors.grey[700],
+                    ),
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<int>(
                     decoration: InputDecoration(
                       labelText: 'Pilih Penggarap',
                       labelStyle: GoogleFonts.inter(fontSize: 13),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                     ),
-                    value: localSelectedPetaniId,
+                    initialValue: localSelectedPetaniId,
                     items: listPetani.map<DropdownMenuItem<int>>((item) {
                       final name = item['nama_lengkap'] ?? item['nama'] ?? '-';
-                      final group = item['role_id'] == 5 ? '(Brigade Pangan)' : '(Kelompok Tani)';
+                      final group = item['role_id'] == 5
+                          ? '(Brigade Pangan)'
+                          : '(Kelompok Tani)';
                       return DropdownMenuItem<int>(
                         value: item['id'],
                         child: Text(
@@ -621,31 +739,46 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text('Batal', style: GoogleFonts.inter(color: Colors.grey[600])),
+                  child: Text(
+                    'Batal',
+                    style: GoogleFonts.inter(color: Colors.grey[600]),
+                  ),
                 ),
                 ElevatedButton(
-                  onPressed: localSelectedPetaniId == null 
-                      ? null 
+                  onPressed: localSelectedPetaniId == null
+                      ? null
                       : () async {
                           final provider = context.read<FarmingProvider>();
                           final messenger = ScaffoldMessenger.of(context);
                           Navigator.pop(context);
-                          final success = await provider.approveLahan(id, localSelectedPetaniId);
+                          final success = await provider.approveLahan(
+                            id,
+                            localSelectedPetaniId,
+                          );
                           messenger.showSnackBar(
                             SnackBar(
-                              content: Text(success 
-                                  ? 'Pengajuan lahan berhasil disetujui!' 
-                                  : 'Gagal menyetujui pengajuan lahan.'),
-                              backgroundColor: success ? Colors.green[800] : Colors.red[800],
+                              content: Text(
+                                success
+                                    ? 'Pengajuan lahan berhasil disetujui!'
+                                    : 'Gagal menyetujui pengajuan lahan.',
+                              ),
+                              backgroundColor: success
+                                  ? Colors.green[800]
+                                  : Colors.red[800],
                             ),
                           );
                         },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green[800],
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
-                  child: Text('Setujui Pengajuan', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                  child: Text(
+                    'Setujui Pengajuan',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             );
@@ -663,10 +796,15 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Text(
             'Tolak Pengajuan Lahan',
-            style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.red[800]),
+            style: GoogleFonts.outfit(
+              fontWeight: FontWeight.bold,
+              color: Colors.red[800],
+            ),
           ),
           content: Form(
             key: formKey,
@@ -676,16 +814,25 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
               children: [
                 Text(
                   'Alasan penolakan "$namaLahan" akan dikirimkan kepada petani sebagai pedoman perbaikan.',
-                  style: GoogleFonts.inter(fontSize: 13, color: Colors.grey[700]),
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: Colors.grey[700],
+                  ),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: controller,
                   maxLines: 3,
                   decoration: InputDecoration(
-                    hintText: 'Contoh: Alamat lahan belum lengkap, lokasi tidak sesuai wilayah.',
-                    hintStyle: GoogleFonts.inter(fontSize: 12, color: Colors.grey[400]),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    hintText:
+                        'Contoh: Alamat lahan belum lengkap, lokasi tidak sesuai wilayah.',
+                    hintStyle: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: Colors.grey[400],
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   validator: (val) {
                     if (val == null || val.trim().length < 5) {
@@ -700,7 +847,10 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Batal', style: GoogleFonts.inter(color: Colors.grey[600])),
+              child: Text(
+                'Batal',
+                style: GoogleFonts.inter(color: Colors.grey[600]),
+              ),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -708,13 +858,20 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                   final provider = context.read<FarmingProvider>();
                   final messenger = ScaffoldMessenger.of(context);
                   Navigator.pop(context);
-                  final success = await provider.rejectLahan(id, controller.text.trim());
+                  final success = await provider.rejectLahan(
+                    id,
+                    controller.text.trim(),
+                  );
                   messenger.showSnackBar(
                     SnackBar(
-                      content: Text(success 
-                          ? 'Pengajuan lahan berhasil ditolak!' 
-                          : 'Gagal menolak pengajuan lahan.'),
-                      backgroundColor: success ? Colors.orange[800] : Colors.red[800],
+                      content: Text(
+                        success
+                            ? 'Pengajuan lahan berhasil ditolak!'
+                            : 'Gagal menolak pengajuan lahan.',
+                      ),
+                      backgroundColor: success
+                          ? Colors.orange[800]
+                          : Colors.red[800],
                     ),
                   );
                 }
@@ -722,9 +879,14 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red[700],
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
-              child: Text('Kirim Penolakan', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+              child: Text(
+                'Kirim Penolakan',
+                style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         );
@@ -738,7 +900,9 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Text(
             'Setujui Laporan Panen',
             style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
@@ -750,29 +914,45 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Batal', style: GoogleFonts.inter(color: Colors.grey[600])),
+              child: Text(
+                'Batal',
+                style: GoogleFonts.inter(color: Colors.grey[600]),
+              ),
             ),
             ElevatedButton(
               onPressed: () async {
                 final provider = context.read<FarmingProvider>();
                 final messenger = ScaffoldMessenger.of(context);
                 Navigator.pop(context);
-                final success = await provider.verifikasiPanen(id, 'DITERIMA', '');
+                final success = await provider.verifikasiPanen(
+                  id,
+                  'DITERIMA',
+                  '',
+                );
                 messenger.showSnackBar(
                   SnackBar(
-                    content: Text(success 
-                        ? 'Laporan hasil panen berhasil disetujui!' 
-                        : 'Gagal memverifikasi laporan panen.'),
-                    backgroundColor: success ? Colors.green[800] : Colors.red[800],
+                    content: Text(
+                      success
+                          ? 'Laporan hasil panen berhasil disetujui!'
+                          : 'Gagal memverifikasi laporan panen.',
+                    ),
+                    backgroundColor: success
+                        ? Colors.green[800]
+                        : Colors.red[800],
                   ),
                 );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green[800],
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
-              child: Text('Ya, Setujui', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+              child: Text(
+                'Ya, Setujui',
+                style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         );
@@ -788,10 +968,15 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Text(
             'Tolak Laporan Panen',
-            style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.red[800]),
+            style: GoogleFonts.outfit(
+              fontWeight: FontWeight.bold,
+              color: Colors.red[800],
+            ),
           ),
           content: Form(
             key: formKey,
@@ -801,16 +986,25 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
               children: [
                 Text(
                   'Masukkan catatan alasan penolakan hasil panen "$namaLahan".',
-                  style: GoogleFonts.inter(fontSize: 13, color: Colors.grey[700]),
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: Colors.grey[700],
+                  ),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: controller,
                   maxLines: 3,
                   decoration: InputDecoration(
-                    hintText: 'Contoh: Berat hasil panen tidak realistis, atau dokumen pendukung salah.',
-                    hintStyle: GoogleFonts.inter(fontSize: 12, color: Colors.grey[400]),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    hintText:
+                        'Contoh: Berat hasil panen tidak realistis, atau dokumen pendukung salah.',
+                    hintStyle: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: Colors.grey[400],
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   validator: (val) {
                     if (val == null || val.trim().length < 5) {
@@ -825,7 +1019,10 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('Batal', style: GoogleFonts.inter(color: Colors.grey[600])),
+              child: Text(
+                'Batal',
+                style: GoogleFonts.inter(color: Colors.grey[600]),
+              ),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -833,13 +1030,21 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                   final provider = context.read<FarmingProvider>();
                   final messenger = ScaffoldMessenger.of(context);
                   Navigator.pop(context);
-                  final success = await provider.verifikasiPanen(id, 'DITOLAK', controller.text.trim());
+                  final success = await provider.verifikasiPanen(
+                    id,
+                    'DITOLAK',
+                    controller.text.trim(),
+                  );
                   messenger.showSnackBar(
                     SnackBar(
-                      content: Text(success 
-                          ? 'Laporan hasil panen ditolak!' 
-                          : 'Gagal memverifikasi laporan panen.'),
-                      backgroundColor: success ? Colors.orange[800] : Colors.red[800],
+                      content: Text(
+                        success
+                            ? 'Laporan hasil panen ditolak!'
+                            : 'Gagal memverifikasi laporan panen.',
+                      ),
+                      backgroundColor: success
+                          ? Colors.orange[800]
+                          : Colors.red[800],
                     ),
                   );
                 }
@@ -847,9 +1052,14 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red[700],
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
-              child: Text('Kirim Penolakan', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+              child: Text(
+                'Kirim Penolakan',
+                style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         );
@@ -861,7 +1071,8 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
   Widget _buildSpasialView(FarmingProvider provider) {
     // Filter spatial list based on tab & query
     bool hasSpatialData(dynamic item) {
-      final polygon = item['polygon_geojson'] ?? item['geojson'] ?? item['polygon_area'];
+      final polygon =
+          item['polygon_geojson'] ?? item['geojson'] ?? item['polygon_area'];
       return polygon != null && polygon.toString().isNotEmpty;
     }
 
@@ -877,13 +1088,15 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
       // query filter
       if (_spasialSearchQuery.isEmpty) return true;
       final name = (item['nama_lahan'] ?? '').toString().toLowerCase();
-      final owner = (item['pemilik_lahan'] ?? item['nama_petani'] ?? '').toString().toLowerCase();
+      final owner = (item['pemilik_lahan'] ?? item['nama_petani'] ?? '')
+          .toString()
+          .toLowerCase();
       final kec = (item['nama_kecamatan'] ?? '').toString().toLowerCase();
       final kel = (item['nama_kelurahan'] ?? '').toString().toLowerCase();
-      return name.contains(_spasialSearchQuery) || 
-             owner.contains(_spasialSearchQuery) || 
-             kec.contains(_spasialSearchQuery) || 
-             kel.contains(_spasialSearchQuery);
+      return name.contains(_spasialSearchQuery) ||
+          owner.contains(_spasialSearchQuery) ||
+          kec.contains(_spasialSearchQuery) ||
+          kel.contains(_spasialSearchQuery);
     }).toList();
 
     return Column(
@@ -982,18 +1195,27 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: mapped ? Colors.green[50] : Colors.amber[50],
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: mapped ? Colors.green[200]! : Colors.amber[200]!),
+                            border: Border.all(
+                              color: mapped
+                                  ? Colors.green[200]!
+                                  : Colors.amber[200]!,
+                            ),
                           ),
                           child: Text(
                             mapped ? 'SUDAH DIPETAKAN' : 'BELUM DIPETAKAN',
                             style: GoogleFonts.inter(
                               fontSize: 9,
                               fontWeight: FontWeight.bold,
-                              color: mapped ? Colors.green[800] : Colors.amber[800],
+                              color: mapped
+                                  ? Colors.green[800]
+                                  : Colors.amber[800],
                             ),
                           ),
                         ),
@@ -1005,19 +1227,29 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                     _buildDetailRow('Luas Lahan', luas),
                     if (mapped) ...[
                       _buildDetailRow('Latitude', '${item['latitude'] ?? '-'}'),
-                      _buildDetailRow('Longitude', '${item['longitude'] ?? '-'}'),
+                      _buildDetailRow(
+                        'Longitude',
+                        '${item['longitude'] ?? '-'}',
+                      ),
                     ],
                     const SizedBox(height: 16),
                     Align(
                       alignment: Alignment.centerRight,
                       child: ElevatedButton.icon(
                         onPressed: () => _showAturSpasialDialog(context, item),
-                        icon: const Icon(Icons.edit_location_alt_rounded, size: 16),
-                        label: Text(mapped ? 'Ubah Batas Wilayah' : 'Petakan Area Lahan'),
+                        icon: const Icon(
+                          Icons.edit_location_alt_rounded,
+                          size: 16,
+                        ),
+                        label: Text(
+                          mapped ? 'Ubah Batas Wilayah' : 'Petakan Area Lahan',
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.teal[800],
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
                       ),
                     ),
@@ -1032,10 +1264,18 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
 
   // Spatial data mapping form dialog (with Interactive map picker!)
   void _showAturSpasialDialog(BuildContext context, dynamic item) {
-    final latController = TextEditingController(text: item['latitude']?.toString() ?? '-3.300000');
-    final lngController = TextEditingController(text: item['longitude']?.toString() ?? '114.600000');
-    final geojsonController = TextEditingController(text: item['polygon_geojson'] ?? item['geojson'] ?? '');
-    final luasController = TextEditingController(text: item['luas_lahan_hektar']?.toString() ?? '');
+    final latController = TextEditingController(
+      text: item['latitude']?.toString() ?? '-3.300000',
+    );
+    final lngController = TextEditingController(
+      text: item['longitude']?.toString() ?? '114.600000',
+    );
+    final geojsonController = TextEditingController(
+      text: item['polygon_geojson'] ?? item['geojson'] ?? '',
+    );
+    final luasController = TextEditingController(
+      text: item['luas_lahan_hektar']?.toString() ?? '',
+    );
     final formKey = GlobalKey<FormState>();
 
     double currentLat = double.tryParse(latController.text) ?? -3.300000;
@@ -1047,13 +1287,15 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
               insetPadding: const EdgeInsets.all(12),
               title: Text(
                 'Atur Data Spasial Lahan',
                 style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
               ),
-              content: Container(
+              content: SizedBox(
                 width: MediaQuery.of(context).size.width * 0.9,
                 child: Form(
                   key: formKey,
@@ -1064,11 +1306,17 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                       children: [
                         Text(
                           'Peta Lokasi Sawah: "${item['nama_lahan']}"',
-                          style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
+                          style: GoogleFonts.inter(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
                         ),
                         Text(
                           'Ketuk pada peta untuk memindahkan titik tengah koordinat.',
-                          style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600]),
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            color: Colors.grey[600],
+                          ),
                         ),
                         const SizedBox(height: 12),
 
@@ -1081,21 +1329,28 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                               children: [
                                 FlutterMap(
                                   options: MapOptions(
-                                    initialCenter: LatLng(currentLat, currentLng),
+                                    initialCenter: LatLng(
+                                      currentLat,
+                                      currentLng,
+                                    ),
                                     initialZoom: 14,
                                     onTap: (tapPosition, point) {
                                       setDialogState(() {
                                         currentLat = point.latitude;
                                         currentLng = point.longitude;
-                                        latController.text = point.latitude.toStringAsFixed(6);
-                                        lngController.text = point.longitude.toStringAsFixed(6);
+                                        latController.text = point.latitude
+                                            .toStringAsFixed(6);
+                                        lngController.text = point.longitude
+                                            .toStringAsFixed(6);
                                       });
                                     },
                                   ),
                                   children: [
                                     TileLayer(
-                                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                      userAgentPackageName: 'com.agriculture.app',
+                                      urlTemplate:
+                                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                      userAgentPackageName:
+                                          'com.agriculture.app',
                                     ),
                                     MarkerLayer(
                                       markers: [
@@ -1104,8 +1359,8 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                                           width: 40,
                                           height: 40,
                                           child: const Icon(
-                                            Icons.location_on_rounded, 
-                                            color: Colors.red, 
+                                            Icons.location_on_rounded,
+                                            color: Colors.red,
                                             size: 38,
                                           ),
                                         ),
@@ -1121,9 +1376,18 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(8),
-                                      boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                                      boxShadow: const [
+                                        BoxShadow(
+                                          color: Colors.black26,
+                                          blurRadius: 4,
+                                        ),
+                                      ],
                                     ),
-                                    child: const Icon(Icons.touch_app_rounded, color: Colors.green, size: 20),
+                                    child: const Icon(
+                                      Icons.touch_app_rounded,
+                                      color: Colors.green,
+                                      size: 20,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -1138,14 +1402,20 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                             Expanded(
                               child: TextFormField(
                                 controller: latController,
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
                                 decoration: InputDecoration(
                                   labelText: 'Latitude',
                                   labelStyle: GoogleFonts.inter(fontSize: 12),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
                                 ),
                                 validator: (val) {
-                                  if (val == null || double.tryParse(val) == null) {
+                                  if (val == null ||
+                                      double.tryParse(val) == null) {
                                     return 'Harus angka';
                                   }
                                   return null;
@@ -1164,14 +1434,20 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                             Expanded(
                               child: TextFormField(
                                 controller: lngController,
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
                                 decoration: InputDecoration(
                                   labelText: 'Longitude',
                                   labelStyle: GoogleFonts.inter(fontSize: 12),
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
                                 ),
                                 validator: (val) {
-                                  if (val == null || double.tryParse(val) == null) {
+                                  if (val == null ||
+                                      double.tryParse(val) == null) {
                                     return 'Harus angka';
                                   }
                                   return null;
@@ -1191,11 +1467,15 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                         const SizedBox(height: 12),
                         TextFormField(
                           controller: luasController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           decoration: InputDecoration(
                             labelText: 'Luas Lahan Estimasi (Ha)',
                             labelStyle: GoogleFonts.inter(fontSize: 12),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
                           validator: (val) {
                             if (val == null || double.tryParse(val) == null) {
@@ -1211,16 +1491,23 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                           decoration: InputDecoration(
                             labelText: 'Batas Polygon (GeoJSON String)',
                             labelStyle: GoogleFonts.inter(fontSize: 12),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                            hintText: '{"type":"Polygon","coordinates":[[[114.6, -3.3], ...]]}',
-                            hintStyle: GoogleFonts.inter(fontSize: 11, color: Colors.grey[300]),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            hintText:
+                                '{"type":"Polygon","coordinates":[[[114.6, -3.3], ...]]}',
+                            hintStyle: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: Colors.grey[300],
+                            ),
                           ),
                           validator: (val) {
                             if (val == null || val.trim().isEmpty) {
                               return 'GeoJSON batas wilayah wajib diisi.';
                             }
                             // simple json validation
-                            if (!val.trim().startsWith('{') || !val.trim().endsWith('}')) {
+                            if (!val.trim().startsWith('{') ||
+                                !val.trim().endsWith('}')) {
                               return 'Format GeoJSON tidak valid.';
                             }
                             return null;
@@ -1234,7 +1521,10 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text('Batal', style: GoogleFonts.inter(color: Colors.grey[600])),
+                  child: Text(
+                    'Batal',
+                    style: GoogleFonts.inter(color: Colors.grey[600]),
+                  ),
                 ),
                 ElevatedButton(
                   onPressed: () async {
@@ -1253,13 +1543,20 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                         'longitude': double.parse(lngController.text),
                         'polygon_geojson': geojsonController.text.trim(),
                       };
-                      final success = await provider.updateSpasialLahan(item['id'], payload);
+                      final success = await provider.updateSpasialLahan(
+                        item['id'],
+                        payload,
+                      );
                       messenger.showSnackBar(
                         SnackBar(
-                          content: Text(success 
-                              ? 'Data spasial lahan berhasil disimpan!' 
-                              : 'Gagal menyimpan data spasial.'),
-                          backgroundColor: success ? Colors.green[800] : Colors.red[800],
+                          content: Text(
+                            success
+                                ? 'Data spasial lahan berhasil disimpan!'
+                                : 'Gagal menyimpan data spasial.',
+                          ),
+                          backgroundColor: success
+                              ? Colors.green[800]
+                              : Colors.red[800],
                         ),
                       );
                     }
@@ -1267,9 +1564,14 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.teal[800],
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
-                  child: Text('Simpan Peta', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                  child: Text(
+                    'Simpan Peta',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             );
@@ -1294,7 +1596,13 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFFE2E8F0)),
-            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
           ),
           child: Form(
             key: _parameterFormKey,
@@ -1316,9 +1624,11 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                   decoration: InputDecoration(
                     labelText: 'Pilih Lahan Sawah',
                     labelStyle: GoogleFonts.inter(fontSize: 13),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  value: _selectedLahanId,
+                  initialValue: _selectedLahanId,
                   items: acceptedLahan.map<DropdownMenuItem<int>>((item) {
                     return DropdownMenuItem<int>(
                       value: item['id'],
@@ -1347,8 +1657,13 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                     decoration: InputDecoration(
                       labelText: 'Tanggal Pengecekan',
                       labelStyle: GoogleFonts.inter(fontSize: 13),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      suffixIcon: const Icon(Icons.calendar_today_rounded, size: 18),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      suffixIcon: const Icon(
+                        Icons.calendar_today_rounded,
+                        size: 18,
+                      ),
                     ),
                     child: Text(
                       '${_tanggalCek.day}-${_tanggalCek.month}-${_tanggalCek.year}',
@@ -1364,16 +1679,24 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                     Expanded(
                       child: TextFormField(
                         controller: _phAirController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                         decoration: InputDecoration(
                           labelText: 'pH Air (0 - 14)',
                           labelStyle: GoogleFonts.inter(fontSize: 13),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         validator: (val) {
-                          if (val == null || val.isEmpty) return 'Wajib diisi';
+                          if (val == null || val.isEmpty) {
+                            return 'Wajib diisi';
+                          }
                           final num = double.tryParse(val);
-                          if (num == null || num < 0 || num > 14) return 'pH tidak valid';
+                          if (num == null || num < 0 || num > 14) {
+                            return 'pH tidak valid';
+                          }
                           return null;
                         },
                       ),
@@ -1382,15 +1705,23 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                     Expanded(
                       child: TextFormField(
                         controller: _tinggiAirController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                         decoration: InputDecoration(
                           labelText: 'Tinggi Air (cm)',
                           labelStyle: GoogleFonts.inter(fontSize: 13),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         validator: (val) {
-                          if (val == null || val.isEmpty) return 'Wajib diisi';
-                          if (double.tryParse(val) == null) return 'Harus angka';
+                          if (val == null || val.isEmpty) {
+                            return 'Wajib diisi';
+                          }
+                          if (double.tryParse(val) == null) {
+                            return 'Harus angka';
+                          }
                           return null;
                         },
                       ),
@@ -1407,11 +1738,21 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                         decoration: InputDecoration(
                           labelText: 'Status Air',
                           labelStyle: GoogleFonts.inter(fontSize: 13),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                        value: _statusAir,
-                        items: ['Normal', 'Pasang', 'Surut', 'Banjir'].map((st) {
-                          return DropdownMenuItem(value: st, child: Text(st, style: GoogleFonts.inter(fontSize: 12)));
+                        initialValue: _statusAir,
+                        items: ['Normal', 'Pasang', 'Surut', 'Banjir'].map((
+                          st,
+                        ) {
+                          return DropdownMenuItem(
+                            value: st,
+                            child: Text(
+                              st,
+                              style: GoogleFonts.inter(fontSize: 12),
+                            ),
+                          );
                         }).toList(),
                         onChanged: (val) {
                           if (val != null) {
@@ -1428,12 +1769,22 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                         decoration: InputDecoration(
                           labelText: 'Kekeruhan Air',
                           labelStyle: GoogleFonts.inter(fontSize: 13),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                        value: _kekeruhanAir,
-                        items: ['Jernih', 'Agak Keruh', 'Keruh', 'Sangat Keruh'].map((st) {
-                          return DropdownMenuItem(value: st, child: Text(st, style: GoogleFonts.inter(fontSize: 12)));
-                        }).toList(),
+                        initialValue: _kekeruhanAir,
+                        items: ['Jernih', 'Agak Keruh', 'Keruh', 'Sangat Keruh']
+                            .map((st) {
+                              return DropdownMenuItem(
+                                value: st,
+                                child: Text(
+                                  st,
+                                  style: GoogleFonts.inter(fontSize: 12),
+                                ),
+                              );
+                            })
+                            .toList(),
                         onChanged: (val) {
                           if (val != null) {
                             setState(() {
@@ -1454,7 +1805,9 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                   decoration: InputDecoration(
                     labelText: 'Catatan Lapangan',
                     labelStyle: GoogleFonts.inter(fontSize: 13),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -1465,9 +1818,12 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                     if (_parameterFormKey.currentState!.validate()) {
                       final payload = {
                         'lahan_id': _selectedLahanId,
-                        'tanggal_cek': '${_tanggalCek.year}-${_tanggalCek.month.toString().padLeft(2, '0')}-${_tanggalCek.day.toString().padLeft(2, '0')}',
+                        'tanggal_cek':
+                            '${_tanggalCek.year}-${_tanggalCek.month.toString().padLeft(2, '0')}-${_tanggalCek.day.toString().padLeft(2, '0')}',
                         'ph_air': double.parse(_phAirController.text),
-                        'tinggi_muka_air': double.parse(_tinggiAirController.text),
+                        'tinggi_muka_air': double.parse(
+                          _tinggiAirController.text,
+                        ),
                         'status_air': _statusAir,
                         'kekeruhan_air': _kekeruhanAir,
                         'catatan_petugas': _catatanPetugasController.text,
@@ -1486,10 +1842,14 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                       }
                       messenger.showSnackBar(
                         SnackBar(
-                          content: Text(success 
-                              ? 'Parameter lingkungan lapangan berhasil dicatat!' 
-                              : 'Gagal mencatat parameter lingkungan.'),
-                          backgroundColor: success ? Colors.green[800] : Colors.red[800],
+                          content: Text(
+                            success
+                                ? 'Parameter lingkungan lapangan berhasil dicatat!'
+                                : 'Gagal mencatat parameter lingkungan.',
+                          ),
+                          backgroundColor: success
+                              ? Colors.green[800]
+                              : Colors.red[800],
                         ),
                       );
                     }
@@ -1497,10 +1857,15 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3E7D00),
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  child: Text('Simpan Catatan Monitoring', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+                  child: Text(
+                    'Simpan Catatan Monitoring',
+                    style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
@@ -1529,10 +1894,13 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
             separatorBuilder: (context, index) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
               final item = monitoring[index];
-              final namaLahan = item['nama_lahan'] ?? item['lahan']?['nama_lahan'] ?? 'Lahan Sawah';
+              final namaLahan =
+                  item['nama_lahan'] ??
+                  item['lahan']?['nama_lahan'] ??
+                  'Lahan Sawah';
               final ph = item['ph_air']?.toString() ?? '-';
-              final tinggi = item['tinggi_muka_air'] != null 
-                  ? '${item['tinggi_muka_air']} cm' 
+              final tinggi = item['tinggi_muka_air'] != null
+                  ? '${item['tinggi_muka_air']} cm'
                   : '-';
               final status = item['status_air'] ?? '-';
               final kekeruhan = item['kekeruhan_air'] ?? '-';
@@ -1555,12 +1923,18 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                         Expanded(
                           child: Text(
                             namaLahan,
-                            style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: const Color(0xFF14280B)),
+                            style: GoogleFonts.outfit(
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF14280B),
+                            ),
                           ),
                         ),
                         Text(
                           tanggal,
-                          style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[500]),
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            color: Colors.grey[500],
+                          ),
                         ),
                       ],
                     ),
@@ -1574,13 +1948,19 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                     Row(
                       children: [
                         Expanded(child: _buildDetailRow('Status Air', status)),
-                        Expanded(child: _buildDetailRow('Kekeruhan', kekeruhan)),
+                        Expanded(
+                          child: _buildDetailRow('Kekeruhan', kekeruhan),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Catatan: $catatan',
-                      style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600], fontStyle: FontStyle.italic),
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        color: Colors.grey[600],
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
                   ],
                 ),
@@ -1588,6 +1968,43 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
             },
           ),
       ],
+    );
+  }
+
+  Widget _buildWilayahPetugasCard() {
+    final user = widget.user;
+    final desa = user?.wilayahKelurahanNama.join(', ');
+    final instansi = user?.instansiAsal == 'BPP'
+        ? (user?.namaBpp ?? 'BPP')
+        : 'DINAS PERTANIAN TANAMAN PANGAN DAN HORTIKULTURA';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Wilayah Kerja',
+            style: GoogleFonts.outfit(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF14280B),
+            ),
+          ),
+          const SizedBox(height: 8),
+          _buildDetailRow('Kecamatan', user?.wilayahKecamatanNama ?? '-'),
+          _buildDetailRow(
+            'Kelurahan/Desa',
+            (desa == null || desa.isEmpty) ? '-' : desa,
+          ),
+          _buildDetailRow('Asal Petugas', instansi),
+        ],
+      ),
     );
   }
 
@@ -1676,7 +2093,7 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
             child: Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: color.withOpacity(0.1),
+                  backgroundColor: color.withValues(alpha: 0.1),
                   child: Icon(icon, color: color),
                 ),
                 const SizedBox(width: 16),
@@ -1705,7 +2122,10 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Color(0xFF94A3B8),
+                ),
               ],
             ),
           ),
@@ -1744,7 +2164,12 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value, {bool isBoldValue = false, Color? valueColor}) {
+  Widget _buildDetailRow(
+    String label,
+    String value, {
+    bool isBoldValue = false,
+    Color? valueColor,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -1788,7 +2213,11 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
       alignment: Alignment.center,
       child: Column(
         children: [
-          const Icon(Icons.info_outline_rounded, color: Color(0xFFCBD5E1), size: 40),
+          const Icon(
+            Icons.info_outline_rounded,
+            color: Color(0xFFCBD5E1),
+            size: 40,
+          ),
           const SizedBox(height: 12),
           Text(
             text,
@@ -1804,6 +2233,7 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
     );
   }
 
+  // ignore: unused_element
   Widget _buildQueuePreview(FarmingProvider provider) {
     final latestLahan = provider.petugasPendingLahan.take(2).toList();
     final latestPanen = provider.petugasPendingPanen.take(2).toList();

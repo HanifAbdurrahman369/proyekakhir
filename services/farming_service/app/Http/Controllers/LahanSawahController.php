@@ -25,7 +25,7 @@ class LahanSawahController extends Controller
         $select = [
             'id',
             'pemilik_id',
-            'petani_id',
+
             'kecamatan_id',
             'kelurahan_id',
             'tipe_lahan_id',
@@ -34,6 +34,14 @@ class LahanSawahController extends Controller
             'alamat_detail',
             'status_verifikasi',
         ];
+
+        if (Schema::hasColumn('lahan_sawah', 'assigned_petugas_id')) {
+            $select[] = 'assigned_petugas_id';
+        }
+
+        if (Schema::hasColumn('lahan_sawah', 'luas_tanam_hektar')) {
+            $select[] = 'luas_tanam_hektar';
+        }
 
         if (Schema::hasColumn('lahan_sawah', 'alasan_penolakan')) {
             $select[] = 'alasan_penolakan';
@@ -49,10 +57,10 @@ class LahanSawahController extends Controller
         }
 
         $query = LahanSawah::with('pemilik:id,nama_lengkap');
-        if ($roleId === 1) {
+        if (in_array($roleId, [1, 5], true)) {
             $query->where('pemilik_id', $user->sub);
         } else {
-            $query->where('petani_id', $user->sub);
+            // ...
         }
 
         $data = $query->select($select)
@@ -91,13 +99,16 @@ class LahanSawahController extends Controller
             $query->where('status_spasial', 'SUDAH_DIPETAKAN');
         }
 
-        if ($roleId === 1) {
+        if (in_array($roleId, [1, 5], true)) {
             $query->where('pemilik_id', $userId);
         } else {
-            $query->where('petani_id', $userId);
+            // ...
         }
 
-        $select = ['id', 'pemilik_id', 'petani_id', 'nama_lahan', 'luas_lahan_hektar'];
+        $select = ['id', 'pemilik_id', 'nama_lahan', 'luas_lahan_hektar'];
+        if (Schema::hasColumn('lahan_sawah', 'luas_tanam_hektar')) {
+            $select[] = 'luas_tanam_hektar';
+        }
         if (Schema::hasColumn('lahan_sawah', 'status_spasial')) {
             $select[] = 'status_spasial';
         }
@@ -122,21 +133,35 @@ class LahanSawahController extends Controller
         ]);
     }
 
-    public function accepted()
+    public function accepted(Request $request)
     {
-        $data = LahanSawah::with(['kecamatanLahan', 'kelurahanLahan', 'pemilik:id,nama_lengkap'])
+        $select = [
+            'id',
+            'pemilik_id',
+
+            'nama_lahan',
+            'kecamatan_id',
+            'kelurahan_id',
+            'luas_lahan_hektar',
+            'alamat_detail',
+            'status_verifikasi',
+        ];
+
+        if (Schema::hasColumn('lahan_sawah', 'assigned_petugas_id')) {
+            $select[] = 'assigned_petugas_id';
+        }
+
+        if (Schema::hasColumn('lahan_sawah', 'luas_tanam_hektar')) {
+            $select[] = 'luas_tanam_hektar';
+        }
+
+        $query = LahanSawah::with(['kecamatanLahan', 'kelurahanLahan', 'pemilik:id,nama_lengkap'])
             ->where('status_verifikasi', 'DITERIMA')
-            ->select(
-                'id',
-                'pemilik_id',
-                'petani_id',
-                'nama_lahan',
-                'kecamatan_id',
-                'kelurahan_id',
-                'luas_lahan_hektar',
-                'alamat_detail',
-                'status_verifikasi'
-            )
+            ->select($select);
+
+        $this->applyPetugasWilayahScope($query, $request);
+
+        $data = $query
             ->orderBy('nama_lahan')
             ->get()
             ->values()
@@ -155,13 +180,17 @@ class LahanSawahController extends Controller
         ]);
     }
 
-    public function pending()
+    public function pending(Request $request)
     {
-        $data = LahanSawah::query()
+        $query = LahanSawah::query()
             ->leftJoin('users', 'lahan_sawah.pemilik_id', '=', 'users.id')
             ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
             ->leftJoin('kelurahan', 'lahan_sawah.kelurahan_id', '=', 'kelurahan.id')
-            ->where('lahan_sawah.status_verifikasi', 'PENDING')
+            ->where('lahan_sawah.status_verifikasi', 'PENDING');
+
+        $this->applyPetugasWilayahScope($query, $request, 'lahan_sawah');
+
+        $data = $query
             ->select(
                 'lahan_sawah.*',
                 'lahan_sawah.pemilik_id as user_id',
@@ -203,7 +232,14 @@ class LahanSawahController extends Controller
         $roleId = (int) ($user->role_id ?? $user->role ?? 0);
         $isOwner = (int) $data->pemilik_id === (int) $user->sub;
         $isPrivileged = in_array($roleId, [2, 3, 4], true);
-        $isAssignedBrigade = $roleId === 5 && (int) $data->petani_id === (int) $user->sub;
+        $isAssignedBrigade = false; // No longer applies
+
+        if ($roleId === 2 && !$this->petugasBolehMelihatLahan($request, $data)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lahan ini berada di luar wilayah kerja petugas.',
+            ], 403);
+        }
 
         if (!$isOwner && !$isPrivileged && !$isAssignedBrigade) {
             return response()->json([
@@ -225,7 +261,7 @@ class LahanSawahController extends Controller
     public function store(Request $request)
     {
         $user = $request->attributes->get('auth');
-        if ((int) ($user->role_id ?? 0) !== 1) {
+        if (!in_array((int) ($user->role_id ?? 0), [1, 5], true)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Pengajuan lahan baru hanya dapat dibuat oleh Kelompok Tani.',
@@ -236,15 +272,27 @@ class LahanSawahController extends Controller
             'kecamatan_id' => 'required',
             'kelurahan_id' => 'required',
             'tipe_lahan_id' => 'required',
-            'petani_id' => 'required|integer',
+
             'nama_lahan' => 'required|string|max:100',
             'alamat_detail' => 'required|string|max:150',
             'luas_lahan_hektar' => 'required|numeric|min:0.01',
+            'luas_tanam_hektar' => 'nullable|numeric|min:0.01',
         ]);
+
+        $luasLahan = (float) $request->luas_lahan_hektar;
+        $luasTanam = (float) ($request->input('luas_tanam_hektar') ?: $luasLahan);
+        if ($luasTanam > $luasLahan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Luas tanam tidak boleh lebih besar dari luas lahan.',
+            ], 422);
+        }
+
+        $assignedPetugasId = $this->findAssignedPetugasId((int) $request->kecamatan_id, (int) $request->kelurahan_id);
 
         $payload = [
             'pemilik_id' => $user->sub,
-            'petani_id' => $request->petani_id,
+
             'kecamatan_id' => $request->kecamatan_id,
             'kelurahan_id' => $request->kelurahan_id,
             'tipe_lahan_id' => $request->tipe_lahan_id,
@@ -262,6 +310,14 @@ class LahanSawahController extends Controller
             'butuh_bantuan_pemetaan' => false,
             'foto_lahan' => $request->foto_lahan ?? null,
         ];
+
+        if (Schema::hasColumn('lahan_sawah', 'assigned_petugas_id')) {
+            $payload['assigned_petugas_id'] = $assignedPetugasId;
+        }
+
+        if (Schema::hasColumn('lahan_sawah', 'luas_tanam_hektar')) {
+            $payload['luas_tanam_hektar'] = $luasTanam;
+        }
 
         if (Schema::hasColumn('lahan_sawah', 'alasan_penolakan')) {
             $payload['alasan_penolakan'] = null;
@@ -282,7 +338,8 @@ class LahanSawahController extends Controller
             'Petani mengajukan lahan baru: ' . $data->nama_lahan . '. Segera lakukan verifikasi.',
             'lahan_sawah',
             (int) $data->id,
-            '/verifikasi-data-petani?lahan_id=' . $data->id
+            '/verifikasi-data-petani?lahan_id=' . $data->id,
+            $assignedPetugasId
         );
 
         return response()->json([
@@ -312,15 +369,13 @@ class LahanSawahController extends Controller
             ], 400);
         }
 
-        if ($request->filled('petani_id') && !DB::table('users')
-            ->where('id', $request->input('petani_id'))
-            ->whereIn('role_id', [1, 5])
-            ->exists()) {
+        if ((int) ($user->role_id ?? $user->role ?? 0) === 2 && !$this->petugasBolehMelihatLahan($request, $data)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Petani penggarap wajib berasal dari Kelompok Tani atau Brigade Pangan.',
-            ], 422);
+                'message' => 'Lahan ini berada di luar wilayah kerja petugas.',
+            ], 403);
         }
+
 
         $updateData = [
             'status_verifikasi' => 'DITERIMA',
@@ -347,10 +402,13 @@ class LahanSawahController extends Controller
         }
 
         $fieldOpsional = [
-            'petani_id',
+
+            'kecamatan_id',
+            'kelurahan_id',
             'tipe_lahan_id',
             'tahun_lbs',
             'luas_lahan_hektar',
+            'luas_tanam_hektar',
             'latitude',
             'longitude',
             'foto_lahan',
@@ -361,6 +419,26 @@ class LahanSawahController extends Controller
             if ($request->filled($field)) {
                 $updateData[$field] = $request->input($field);
             }
+        }
+
+        $luasLahan = (float) ($updateData['luas_lahan_hektar'] ?? $data->luas_lahan_hektar);
+        $luasTanam = (float) ($updateData['luas_tanam_hektar'] ?? $data->luas_tanam_hektar ?? $luasLahan);
+        if ($luasTanam > $luasLahan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Luas tanam tidak boleh lebih besar dari luas lahan.',
+            ], 422);
+        }
+
+        if (Schema::hasColumn('lahan_sawah', 'luas_tanam_hektar')) {
+            $updateData['luas_tanam_hektar'] = $luasTanam;
+        }
+
+        if (Schema::hasColumn('lahan_sawah', 'assigned_petugas_id')) {
+            $updateData['assigned_petugas_id'] = $this->findAssignedPetugasId(
+                (int) ($updateData['kecamatan_id'] ?? $data->kecamatan_id),
+                (int) ($updateData['kelurahan_id'] ?? $data->kelurahan_id)
+            );
         }
 
         $data->update($updateData);
@@ -396,6 +474,13 @@ class LahanSawahController extends Controller
                 'success' => false,
                 'message' => 'Lahan sudah ditolak sebelumnya'
             ], 400);
+        }
+
+        if ((int) ($user->role_id ?? $user->role ?? 0) === 2 && !$this->petugasBolehMelihatLahan($request, $data)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lahan ini berada di luar wilayah kerja petugas.',
+            ], 403);
         }
 
         $payload = [
@@ -435,7 +520,7 @@ class LahanSawahController extends Controller
     public function resubmit(Request $request, $id)
     {
         $user = $request->attributes->get('auth');
-        if ((int) ($user->role_id ?? 0) !== 1) {
+        if (!in_array((int) ($user->role_id ?? 0), [1, 5], true)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Perbaikan pengajuan lahan hanya dapat dilakukan oleh Kelompok Tani.',
@@ -446,11 +531,23 @@ class LahanSawahController extends Controller
             'kecamatan_id' => 'required',
             'kelurahan_id' => 'required',
             'tipe_lahan_id' => 'required',
-            'petani_id' => 'required|integer',
+
             'nama_lahan' => 'required|string|max:100',
             'alamat_detail' => 'required|string|max:150',
             'luas_lahan_hektar' => 'required|numeric|min:0.01',
+            'luas_tanam_hektar' => 'nullable|numeric|min:0.01',
         ]);
+
+        $luasLahan = (float) $request->luas_lahan_hektar;
+        $luasTanam = (float) ($request->input('luas_tanam_hektar') ?: $luasLahan);
+        if ($luasTanam > $luasLahan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Luas tanam tidak boleh lebih besar dari luas lahan.',
+            ], 422);
+        }
+
+        $assignedPetugasId = $this->findAssignedPetugasId((int) $request->kecamatan_id, (int) $request->kelurahan_id);
 
         $data = LahanSawah::where('id', $id)
             ->where('pemilik_id', $user->sub)
@@ -474,7 +571,7 @@ class LahanSawahController extends Controller
             'kecamatan_id' => $request->kecamatan_id,
             'kelurahan_id' => $request->kelurahan_id,
             'tipe_lahan_id' => $request->tipe_lahan_id,
-            'petani_id' => $request->petani_id,
+
             'nama_lahan' => $request->nama_lahan,
             'alamat_detail' => $request->alamat_detail,
             'tahun_lbs' => $request->tahun_lbs ?? '2024',
@@ -483,6 +580,14 @@ class LahanSawahController extends Controller
             'alasan_penolakan' => null,
             'butuh_bantuan_pemetaan' => false,
         ];
+
+        if (Schema::hasColumn('lahan_sawah', 'assigned_petugas_id')) {
+            $payload['assigned_petugas_id'] = $assignedPetugasId;
+        }
+
+        if (Schema::hasColumn('lahan_sawah', 'luas_tanam_hektar')) {
+            $payload['luas_tanam_hektar'] = $luasTanam;
+        }
 
         if (Schema::hasColumn('lahan_sawah', 'alasan_penolakan')) {
             $payload['alasan_penolakan'] = null;
@@ -511,7 +616,8 @@ class LahanSawahController extends Controller
             'Petani memperbaiki dan mengajukan ulang lahan: ' . $data->fresh()->nama_lahan . '. Segera lakukan verifikasi.',
             'lahan_sawah',
             (int) $data->id,
-            '/verifikasi-data-petani?lahan_id=' . $data->id
+            '/verifikasi-data-petani?lahan_id=' . $data->id,
+            $assignedPetugasId
         );
 
         return response()->json([
@@ -524,7 +630,7 @@ class LahanSawahController extends Controller
     public function destroy(Request $request, $id)
     {
         $user = $request->attributes->get('auth');
-        if ((int) ($user->role_id ?? 0) !== 1) {
+        if (!in_array((int) ($user->role_id ?? 0), [1, 5], true)) {
             return response()->json(['success' => false, 'message' => 'Penghapusan lahan hanya tersedia untuk Kelompok Tani.'], 403);
         }
 
@@ -546,12 +652,12 @@ class LahanSawahController extends Controller
         return response()->json(['success' => true, 'message' => 'Pengajuan lahan berhasil dihapus.']);
     }
 
-    private function buatNotifikasiPetugas(string $judul, string $pesan, ?string $refType = null, ?int $refId = null, ?string $targetUrl = null): void
+    private function buatNotifikasiPetugas(string $judul, string $pesan, ?string $refType = null, ?int $refId = null, ?string $targetUrl = null, ?int $userIdPenerima = null): void
     {
         try {
             $payload = [
                 'role_id_penerima' => 2,
-                'user_id_penerima' => null,
+                'user_id_penerima' => $userIdPenerima,
                 'judul' => $judul,
                 'pesan' => $pesan,
                 'is_read' => 0,
@@ -601,5 +707,94 @@ class LahanSawahController extends Controller
         } catch (\Throwable $e) {
             Log::warning('Gagal menandai notifikasi lahan terbaca: ' . $e->getMessage());
         }
+    }
+
+    private function findAssignedPetugasId(?int $kecamatanId, ?int $kelurahanId): ?int
+    {
+        $petugas = DB::table('users')
+            ->join('komunitas', 'users.komunitas_id', '=', 'komunitas.id')
+            ->where('users.role_id', 2)
+            ->select('users.id', 'komunitas.wilayah_kecamatan_id', 'komunitas.wilayah_kelurahan_ids')
+            ->orderBy('users.id')
+            ->get();
+
+        foreach ($petugas as $row) {
+            if ($kelurahanId && in_array($kelurahanId, $this->kelurahanIds($row->wilayah_kelurahan_ids ?? null), true)) {
+                return (int) $row->id;
+            }
+        }
+
+        foreach ($petugas as $row) {
+            if ($kecamatanId && (int) ($row->wilayah_kecamatan_id ?? 0) === $kecamatanId) {
+                return (int) $row->id;
+            }
+        }
+
+        return null;
+    }
+
+    private function applyPetugasWilayahScope($query, Request $request, string $table = 'lahan_sawah'): void
+    {
+        $user = $request->attributes->get('auth');
+        if ((int) ($user->role_id ?? $user->role ?? 0) !== 2) {
+            return;
+        }
+
+        $wilayah = $this->petugasWilayah((int) ($user->sub ?? $user->id ?? 0));
+        if (!empty($wilayah['kelurahan_ids'])) {
+            $query->whereIn($table . '.kelurahan_id', $wilayah['kelurahan_ids']);
+            return;
+        }
+
+        if ($wilayah['kecamatan_id']) {
+            $query->where($table . '.kecamatan_id', $wilayah['kecamatan_id']);
+        }
+    }
+
+    private function petugasBolehMelihatLahan(Request $request, LahanSawah $lahan): bool
+    {
+        $user = $request->attributes->get('auth');
+        $wilayah = $this->petugasWilayah((int) ($user->sub ?? $user->id ?? 0));
+
+        if (empty($wilayah['kelurahan_ids']) && !$wilayah['kecamatan_id']) {
+            return true;
+        }
+
+        if (!empty($wilayah['kelurahan_ids'])) {
+            return in_array((int) $lahan->kelurahan_id, $wilayah['kelurahan_ids'], true);
+        }
+
+        return (int) $lahan->kecamatan_id === (int) $wilayah['kecamatan_id'];
+    }
+
+    private function petugasWilayah(int $userId): array
+    {
+        $petugas = DB::table('users')
+            ->join('komunitas', 'users.komunitas_id', '=', 'komunitas.id')
+            ->where('users.id', $userId)
+            ->where('users.role_id', 2)
+            ->select('komunitas.wilayah_kecamatan_id', 'komunitas.wilayah_kelurahan_ids')
+            ->first();
+
+        return [
+            'kecamatan_id' => $petugas?->wilayah_kecamatan_id ? (int) $petugas->wilayah_kecamatan_id : null,
+            'kelurahan_ids' => $this->kelurahanIds($petugas?->wilayah_kelurahan_ids ?? null),
+        ];
+    }
+
+    private function kelurahanIds($value): array
+    {
+        if (is_array($value)) {
+            return array_values(array_unique(array_map('intval', $value)));
+        }
+
+        if (is_string($value) && trim($value) !== '') {
+            $decoded = json_decode($value, true);
+            if (is_array($decoded)) {
+                return array_values(array_unique(array_map('intval', $decoded)));
+            }
+        }
+
+        return [];
     }
 }

@@ -19,7 +19,7 @@ class CheckAdminToken
         }
 
         // 2. Lempar token ke auth_service (Port 8001) untuk divalidasi keasliannya
-        $response = Http::withoutVerifying()->post('http://127.0.0.1:8001/api/verify', [
+        $response = Http::withHeaders(['Connection' => 'close'])->withoutVerifying()->post('http://127.0.0.1:8001/api/verify', [
             'token' => $token
         ]);
 

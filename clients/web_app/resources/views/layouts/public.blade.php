@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIG-PALA | Sistem Informasi Geografis Lahan Rawa</title>
+    <title>SiTani | Sistem Informasi Dinas Pertanian</title>
 
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,8 +19,8 @@
 
     <nav class="flex items-center justify-between px-8 md:px-16 py-4 border-b border-slate-100 shadow-sm fixed top-0 w-full bg-white/90 backdrop-blur-md z-[2000] transition-all">
         <div class="flex items-center gap-4">
-            <img src="{{ asset('storage/logo.png') }}" alt="Logo SIG-PALA" class="w-12 h-12 object-contain">
-            <p class="text-slate-900 font-extrabold text-2xl tracking-wide">SIG<span class="text-emerald-500">-PALA</span></p>
+            <img src="{{ asset('storage/logo.png') }}" alt="Logo SiTani" class="w-12 h-12 object-contain">
+            <p class="text-slate-900 font-extrabold text-2xl tracking-wide"><span class="text-[1.25em]">S</span>i<span class="text-emerald-500"><span class="text-[1.25em]">T</span>ani</span></p>
         </div>
 
         <div class="hidden md:flex justify-end items-center gap-10 font-semibold text-sm">
@@ -32,9 +32,28 @@
                 Login
             </a>
         </div>
+
+        <!-- Mobile Menu Button -->
+        <button id="mobile-menu-btn" class="md:hidden flex items-center justify-center p-2 text-slate-600 hover:text-emerald-600 focus:outline-none">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16m-7 6h7"></path>
+            </svg>
+        </button>
     </nav>
 
-    <main>
+    <!-- Mobile Menu Dropdown -->
+    <div id="mobile-menu" class="fixed top-[73px] left-0 w-full bg-white border-b border-slate-100 shadow-lg z-[1999] transform -translate-y-full opacity-0 transition-all duration-300 pointer-events-none md:hidden">
+        <div class="flex flex-col px-6 py-4 space-y-4 font-semibold text-sm">
+            <a href="{{ url('/') }}" class="text-slate-600 hover:text-emerald-600 py-2 border-b border-slate-50">BERANDA</a>
+            <a href="{{ route('statistik.publik') }}" class="text-slate-600 hover:text-emerald-600 py-2 border-b border-slate-50">DATA STATISTIK</a>
+            <a href="{{ route('map.full') }}" class="text-slate-600 hover:text-emerald-600 py-2 border-b border-slate-50">MAP EKSPLORASI</a>
+            <a href="/login" class="bg-emerald-600 text-white text-center py-3 rounded-xl mt-2 font-bold hover:bg-emerald-700 transition">
+                Login
+            </a>
+        </div>
+    </div>
+
+    <main class="mt-[73px]">
         @yield('content')
     </main>
 
@@ -43,9 +62,9 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 mb-16">
                 
                 <div class="space-y-6">
-                    <p class="text-white font-extrabold text-3xl tracking-wide">SIG<span class="text-emerald-500">-PALA</span></p>
+                    <p class="text-white font-extrabold text-3xl tracking-wide"><span class="text-[1.25em]">S</span>i<span class="text-emerald-500"><span class="text-[1.25em]">T</span>ani</span></p>
                     <p class="text-slate-400 font-medium text-base leading-relaxed">
-                        Sistem Informasi Geografis Produktivitas pada Lahan Rawa Kabupaten Barito Kuala. Transparansi data untuk kemajuan pertanian.
+                        SiTani ( Sistem informasi dinas pertanian ). Transparansi data untuk kemajuan pertanian.
                     </p>
                 </div>
                 
@@ -90,6 +109,30 @@
     </footer>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Mobile menu toggle
+        const btn = document.getElementById('mobile-menu-btn');
+        const menu = document.getElementById('mobile-menu');
+        if (btn && menu) {
+            btn.addEventListener('click', () => {
+                menu.classList.toggle('-translate-y-full');
+                menu.classList.toggle('opacity-0');
+                menu.classList.toggle('pointer-events-none');
+            });
+        }
 
+        // Auto-wrap tables to prevent horizontal overflow on mobile
+        document.addEventListener("DOMContentLoaded", function() {
+            document.querySelectorAll("table").forEach(function(table) {
+                const parent = table.parentElement;
+                if (parent && !parent.classList.contains("overflow-x-auto")) {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'overflow-x-auto w-full custom-scrollbar';
+                    parent.insertBefore(wrapper, table);
+                    wrapper.appendChild(table);
+                }
+            });
+        });
+    </script>
 </body>
 </html>

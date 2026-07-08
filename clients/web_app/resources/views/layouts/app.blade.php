@@ -178,6 +178,19 @@
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') closeSidebar();
         });
+
+        // Auto-wrap tables to prevent horizontal overflow on mobile
+        document.addEventListener("DOMContentLoaded", function() {
+            document.querySelectorAll("table").forEach(function(table) {
+                const parent = table.parentElement;
+                if (parent && !parent.classList.contains("overflow-x-auto")) {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'overflow-x-auto w-full custom-scrollbar';
+                    parent.insertBefore(wrapper, table);
+                    wrapper.appendChild(table);
+                }
+            });
+        });
     </script>
 
     @stack('scripts')

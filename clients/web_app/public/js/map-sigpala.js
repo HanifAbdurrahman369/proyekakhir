@@ -167,7 +167,7 @@ function sigpalaKecamatanPopup(props) {
                 <div><dt>Luas panen</dt><dd>${sigpalaNumber(props.total_luas_panen_ha)} ha</dd></div>
                 <div><dt>Lahan terdaftar</dt><dd>${sigpalaNumber(props.jumlah_lahan, 0)}</dd></div>
             </dl>
-            <a class="sigpala-popup-detail-button" href="${sigpalaEscapeHtml(detailHref)}">Detail Produktivitas</a>
+            <a class="sigpala-popup-detail-button" style="color: #ffffff !important;" href="${sigpalaEscapeHtml(detailHref)}">( Informasi Detail )</a>
         </div>
     `;
 }
@@ -183,6 +183,7 @@ function sigpalaLahanPopup(props) {
                 <div><dt>Pemilik</dt><dd>${sigpalaEscapeHtml(sigpalaDisplay(props.pemilik || props.pemilik_lahan))}</dd></div>
                 <div><dt>Kecamatan</dt><dd>${sigpalaEscapeHtml(sigpalaDisplay(props.nama_kecamatan || props.kecamatan))}</dd></div>
                 <div><dt>Luas</dt><dd>${sigpalaNumber(props.luas_ha || props.luas_lahan_hektar)} ha</dd></div>
+                <div><dt>Luas tanam</dt><dd>${sigpalaNumber(props.luas_tanam_ha || props.luas_tanam_hektar || props.luas_ha || props.luas_lahan_hektar)} ha</dd></div>
                 <div><dt>Produktivitas</dt><dd>${sigpalaNumber(props.produktivitas || props.produktivitas_ton_ha)} t/ha</dd></div>
             </dl>
             <button type="button" class="sigpala-popup-detail-button" data-lahan-detail-id="${id}">Detail Informasi</button>
@@ -686,6 +687,12 @@ document.addEventListener('DOMContentLoaded', function () {
             padding: 10px 12px;
             text-decoration: none;
             width: 100%;
+        }
+
+        .sigpala-popup-detail-button,
+        .sigpala-popup-detail-button:visited,
+        .sigpala-popup-detail-button:hover {
+            color: #fff !important;
         }
 
         .sigpala-popup-eyebrow {
@@ -1293,16 +1300,32 @@ document.addEventListener('DOMContentLoaded', function () {
     function renderKecamatanInsights() {
         if (!insightPanel) return;
 
-        const rows = allKecamatanFeatures
-            .map(feature => ({ feature, props: feature.properties || {} }))
+        const latestRowsByKecamatan = new Map();
+
+        allKecamatanFeatures.forEach(feature => {
+            const props = feature.properties || {};
+            const id = String(props.kecamatan_id || props.id || props.nama_kecamatan || '');
+            if (!id) return;
+
+            const existing = latestRowsByKecamatan.get(id);
+            const currentYear = Number(props.tahun_data_padi || 0);
+            const existingYear = Number(existing?.props?.tahun_data_padi || 0);
+
+            if (!existing || currentYear >= existingYear) {
+                latestRowsByKecamatan.set(id, { feature, props });
+            }
+        });
+
+        const rows = Array.from(latestRowsByKecamatan.values())
             .sort((a, b) => Number(b.props.produktivitas_ton_ha || 0) - Number(a.props.produktivitas_ton_ha || 0));
 
-        const statsRows = allKecamatanFeatures.map(feature => feature.properties || {});
+        const statsRows = rows.map(row => row.props || {});
         const totalKecamatan = statsRows.length;
         const totalLahan = statsRows.reduce((sum, row) => sum + Number(row.jumlah_lahan || 0), 0);
-        const totalLuas = statsRows.reduce((sum, row) => sum + Number(row.total_luas_ha || 0), 0);
+        const totalLuasPanen = statsRows.reduce((sum, row) => sum + Number(row.total_luas_panen_ha || row.total_luas_ha || 0), 0);
         const totalPanen = statsRows.reduce((sum, row) => sum + Number(row.total_panen_ton || 0), 0);
-        const avgProductivity = totalLuas > 0 ? totalPanen / totalLuas : 0;
+        const latestYear = statsRows.reduce((max, row) => Math.max(max, Number(row.tahun_data_padi || 0)), 0);
+        const avgProductivity = totalLuasPanen > 0 ? totalPanen / totalLuasPanen : 0;
         const distribution = statsRows.reduce((acc, row) => {
             const key = row.kategori_produktivitas || 'belum-data';
             acc[key] = (acc[key] || 0) + 1;
@@ -1351,6 +1374,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <div class="sigpala-priority-meta">
                     <span>${sigpalaNumber(totalKecamatan, 0)} kecamatan</span>
                     <span>${sigpalaNumber(totalLahan, 0)} lahan</span>
+                    ${latestYear > 0 ? `<span>Tahun data ${sigpalaNumber(latestYear, 0)}</span>` : ''}
                     <span>Rata-rata ${sigpalaNumber(avgProductivity)} t/ha</span>
                     ${(distribution['belum-data'] || 0) ? `<span>${sigpalaNumber(distribution['belum-data'], 0)} belum data</span>` : ''}
                 </div>
@@ -1570,6 +1594,7 @@ function showDetail(props) {
     const kelurahan = sigpalaDisplay(props.kelurahan || props.nama_kelurahan);
     const alamatDetail = sigpalaDisplay(props.alamat_detail);
     const luasHa = sigpalaNumber(props.luas_ha || props.luas_lahan_hektar);
+    const luasTanamHa = sigpalaNumber(props.luas_tanam_ha || props.luas_tanam_hektar || props.luas_ha || props.luas_lahan_hektar);
     const hasilPanen = sigpalaNumber(props.hasil_panen || props.hasil_panen_ton);
     const produktivitas = sigpalaNumber(props.produktivitas || props.produktivitas_ton_ha);
 
@@ -1601,6 +1626,7 @@ function showDetail(props) {
                 ${sigpalaDetailSection('Informasi Lokasi', [
                     ['Kecamatan / Kelurahan', `${kecamatan} / ${kelurahan}`],
                     ['Tipe Lahan / Tahun Basis', `${tipeLahan} / ${tahunLbs}`],
+                    ['Luas Tanam', `${luasTanamHa} hektar`],
                     ['Alamat Detail', alamatDetail]
                 ])}
                 <div style="background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);border:1.5px solid #86efac;border-radius:14px;padding:18px 20px;margin-top:12px;">

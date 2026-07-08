@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 
@@ -28,10 +27,5 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::post('/forget-password', [AuthController::class, 'resetPassword']);
 Route::post('/verify', [AuthController::class, 'verifyToken']);
 
-Route::middleware('jwt')->get('/profile', function (Request $request) {
-    return response()->json([
-        'success' => true,
-        'message' => 'Profile berhasil diakses',
-        'user' => $request->attributes->get('user')
-    ]);
-});
+Route::middleware('jwt')->get('/profile', [AuthController::class, 'profile']);
+Route::middleware('jwt')->match(['put', 'patch'], '/profile', [AuthController::class, 'updateProfile']);

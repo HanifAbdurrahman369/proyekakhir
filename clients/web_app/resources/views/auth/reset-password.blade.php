@@ -215,13 +215,13 @@
             </svg>
         </div>
         
-        <h3 class="text-lg font-bold text-gray-800 mb-2">Buka di Aplikasi SIG-PALA</h3>
+        <h3 class="text-lg font-bold text-gray-800 mb-2">Buka di Aplikasi SiTani</h3>
         <p class="text-xs text-gray-500 mb-6 leading-relaxed">
             Sistem mendeteksi Anda menggunakan perangkat mobile. Buka aplikasi untuk mengatur ulang password secara langsung dengan lebih mudah dan aman.
         </p>
         
         <!-- Button Buka Aplikasi -->
-        <a href="sigpala://reset-password/{{ $token }}?email={{ urlencode(request()->email) }}" 
+        <a href="sitani://reset-password/{{ $token }}?email={{ urlencode(request()->email) }}" 
            class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl text-sm transition mb-3 shadow-md shadow-green-100 block text-center">
             Buka Aplikasi Mobile
         </a>
@@ -246,7 +246,7 @@
             
             // Coba redirect otomatis setelah 800ms
             setTimeout(function() {
-                window.location.href = "sigpala://reset-password/{{ $token }}?email={{ urlencode(request()->email) }}";
+                window.location.href = "sitani://reset-password/{{ $token }}?email={{ urlencode(request()->email) }}";
             }, 800);
         }
     });

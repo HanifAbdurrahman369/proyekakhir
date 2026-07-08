@@ -12,13 +12,14 @@ class LahanSawah extends Model
 
     protected $fillable = [
         'pemilik_id',
-        'petani_id',
+        'assigned_petugas_id',
         'kecamatan_id',
         'kelurahan_id',
         'tipe_lahan_id',
         'nama_lahan',
         'tahun_lbs',
         'luas_lahan_hektar',
+        'luas_tanam_hektar',
         'hasil_panen_ton',
         'panen_terakhir_id',
         'produktivitas_ton_ha',
@@ -65,8 +66,5 @@ class LahanSawah extends Model
         return $this->belongsTo(User::class, 'pemilik_id');
     }
 
-    public function petani()
-    {
-        return $this->belongsTo(User::class, 'petani_id');
-    }
+
 }

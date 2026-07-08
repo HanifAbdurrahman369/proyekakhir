@@ -59,7 +59,7 @@
                 class="auth-input w-full px-4 py-3.5 border border-slate-200 rounded-2xl text-sm bg-white outline-none transition @error('jenis_kelompok') border-red-400 @enderror"
                 required>
             <option value="">Pilih sumber data petani</option>
-            <option value="kelompok_tani" @selected(old('jenis_kelompok') === 'kelompok_tani')>Kelompok Tani</option>
+            <option value="komunitas_tani" @selected(old('jenis_kelompok') === 'komunitas_tani')>Komunitas Tani</option>
             <option value="brigade_pangan" @selected(old('jenis_kelompok') === 'brigade_pangan')>Brigade Pangan</option>
         </select>
     </div>

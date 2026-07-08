@@ -405,7 +405,7 @@ class MasterController extends Controller
                     ->values()
                     ->toArray();
 
-            $output = "-- SIG-PALA Database Export\n";
+            $output = "-- SiTani Database Export\n";
             $output .= "-- Database: " . $this->databaseName() . "\n";
             $output .= "-- Generated: " . now() . "\n\n";
             $output .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
@@ -506,7 +506,7 @@ class MasterController extends Controller
             $html .= '</head>';
             $html .= '<body>';
 
-            $html .= '<h1>Export Data Master SIG-PALA</h1>';
+            $html .= '<h1>Export Data Master SiTani</h1>';
             $html .= '<p>Database: ' . e($this->databaseName()) . '</p>';
             $html .= '<p>Generated: ' . e((string) now()) . '</p>';
 

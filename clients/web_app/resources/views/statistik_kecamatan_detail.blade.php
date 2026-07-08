@@ -1,7 +1,7 @@
 @extends('layouts.public')
 
 @section('content')
-<div class="min-h-screen bg-slate-50 pt-28 pb-16 px-4 font-['Poppins']">
+<div class="statistik-detail-page min-h-screen bg-slate-50 pb-16 px-4 font-['Poppins']">
     <div class="mx-auto flex w-full max-w-7xl flex-col gap-8">
         <div class="flex flex-col gap-5 rounded-[2rem] border border-slate-100 bg-white p-6 shadow-sm md:p-8">
             <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -19,9 +19,6 @@
                     </a>
                     <a href="{{ route('statistik.publik') }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-bold text-slate-600 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700">
                         Data Statistik
-                    </a>
-                    <a id="download-excel" href="#" class="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-700">
-                        Download Excel
                     </a>
                 </div>
             </div>
@@ -88,6 +85,16 @@
 </div>
 
 <style>
+    .statistik-detail-page {
+        padding-top: 13rem;
+    }
+
+    @media (min-width: 768px) {
+        .statistik-detail-page {
+            padding-top: 14rem;
+        }
+    }
+
     .custom-select {
         appearance: none;
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
@@ -119,11 +126,7 @@
         return url.toString();
     }
 
-    function detailDownloadUrl(tahun = 'all') {
-        const url = new URL(`${gatewayBase}/api/statistik/kecamatan/${encodeURIComponent(resolvedKecamatanId || kecamatanIdentifier)}/excel`);
-        if (tahun && tahun !== 'all') url.searchParams.set('tahun', tahun);
-        return url.toString();
-    }
+
 
     function loadDetail(tahun = 'all') {
         const tbody = document.getElementById('detail-table-body');
@@ -158,8 +161,7 @@
         renderSummary(data.summary || {});
         renderRows(data.rows || []);
 
-        const download = document.getElementById('download-excel');
-        if (download) download.href = detailDownloadUrl(activeYear);
+
     }
 
     function populateYearFilter(years, activeYear) {

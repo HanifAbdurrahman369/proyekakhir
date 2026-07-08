@@ -30,7 +30,7 @@ class PejabatController extends Controller
         try {
 
             // Total produksi
-            $produksi = Http::withToken($token)
+            $produksi = Http::withHeaders(['Connection' => 'close'])->withoutVerifying()->withToken($token)
                 ->acceptJson()
                 ->get($this->gatewayUrl . '/api/produksi-pejabat');
 
@@ -39,7 +39,7 @@ class PejabatController extends Controller
             }
 
             // Total lahan
-            $lahan = Http::withToken($token)
+            $lahan = Http::withHeaders(['Connection' => 'close'])->withoutVerifying()->withToken($token)
                 ->acceptJson()
                 ->get($this->gatewayUrl . '/api/total-lahan');
 
@@ -49,7 +49,7 @@ class PejabatController extends Controller
 
             // Produksi per kecamatan
             $produksiKecamatan = [];
-            $kecamatanRes = Http::withToken($token)
+            $kecamatanRes = Http::withHeaders(['Connection' => 'close'])->withoutVerifying()->withToken($token)
                 ->acceptJson()
                 ->get($this->gatewayUrl . '/api/produksi-kecamatan');
 
@@ -58,7 +58,7 @@ class PejabatController extends Controller
             }
 
             // Top kecamatan
-            $top = Http::withToken($token)
+            $top = Http::withHeaders(['Connection' => 'close'])->withoutVerifying()->withToken($token)
                 ->acceptJson()
                 ->get($this->gatewayUrl . '/api/top-kecamatan');
 
@@ -67,7 +67,7 @@ class PejabatController extends Controller
             }
 
             // Produksi per Kelurahan
-            $kelurahan = Http::withToken($token)
+            $kelurahan = Http::withHeaders(['Connection' => 'close'])->withoutVerifying()->withToken($token)
                 ->acceptJson()
                 ->get($this->gatewayUrl . '/api/produksi-kelurahan');
 
@@ -97,23 +97,21 @@ class PejabatController extends Controller
     {
         $token = session('token');
 
-        $data = [];
+        $kecamatans = [];
 
         try {
-
-            $response = Http::withToken($token)
+            $response = Http::withHeaders(['Connection' => 'close'])->withoutVerifying()->withToken($token)
                 ->acceptJson()
-                ->get($this->gatewayUrl . '/api/produksi-kecamatan');
+                ->get($this->gatewayUrl . '/api/kecamatan');
 
             if ($response->successful()) {
-                $data = $response->json('data');
+                $kecamatans = $response->json('data') ?? [];
             }
-
         } catch (\Exception $e) {
             report($e);
         }
 
-        return view('partials.sidebar.pejabat.produksi-kecamatan', compact('data'));
+        return view('partials.sidebar.pejabat.produksi-kecamatan', compact('kecamatans'));
     }
 
     public function lahanKecamatan()
@@ -124,7 +122,7 @@ class PejabatController extends Controller
 
         try {
 
-            $response = Http::withToken($token)
+            $response = Http::withHeaders(['Connection' => 'close'])->withoutVerifying()->withToken($token)
                 ->acceptJson()
                 ->get($this->gatewayUrl . '/api/lahan-kecamatan');
 
@@ -145,31 +143,49 @@ class PejabatController extends Controller
     public function exportProduksiPDF(Request $request)
     {
         $token = $request->query('token') ?? session('token');
+        $kecamatanId = $request->query('kecamatan');
+        $tahun = $request->query('tahun');
 
         if (!$token) {
             abort(401, 'Unauthorized: Token tidak ditemukan');
         }
+        if (!$kecamatanId) {
+            abort(400, 'Bad Request: Kecamatan wajib dipilih');
+        }
 
         $data = [];
+        $kecamatan = [];
+        $summary = [];
 
         try {
+            $url = $this->gatewayUrl . '/api/statistik/kecamatan/' . urlencode($kecamatanId);
+            if ($tahun) {
+                $url .= '?tahun=' . urlencode($tahun);
+            }
+
             $response = Http::withoutVerifying()
                 ->withToken($token)
                 ->acceptJson()
-                ->get($this->gatewayUrl . '/api/produksi-kecamatan');
+                ->get($url);
 
             if ($response->failed()) {
                 abort(403, 'Akses ditolak atau token tidak valid');
             }
 
-            $data = $response->json('data') ?? [];
+            $resData = $response->json('data') ?? [];
+            $data = $resData['rows'] ?? [];
+            $kecamatan = $resData['kecamatan'] ?? [];
+            $summary = $resData['summary'] ?? [];
         } catch (\Exception $e) {
             report($e);
             abort(500, 'Terjadi kesalahan server internal');
         }
 
-        $pdf = Pdf::loadView('partials.sidebar.pejabat.produksi-kecamatan-pdf', compact('data'));
-        return $pdf->download('rekap-produksi-kecamatan.pdf');
+        $pdf = Pdf::loadView('partials.sidebar.pejabat.produksi-kecamatan-historis-pdf', compact('data', 'kecamatan', 'summary', 'tahun'))
+            ->setPaper('a4', 'landscape');
+        $filename = 'historis-produksi-' . strtolower(str_replace(' ', '-', $kecamatan['nama_kecamatan'] ?? 'kecamatan')) . ($tahun ? '-' . $tahun : '') . '.pdf';
+        
+        return $pdf->download($filename);
     }
 
     public function exportLahanPDF(Request $request)
@@ -281,10 +297,10 @@ class PejabatController extends Controller
             $response = Http::withoutVerifying()
                 ->withToken($token)
                 ->acceptJson()
-                ->get($this->gatewayUrl . '/api/statistik');
+                ->get($this->gatewayUrl . '/api/produksi-kelurahan');
 
             if ($response->successful()) {
-                $data = $response->json('data.lahan_all') ?? [];
+                $data = $response->json('data') ?? [];
             }
         } catch (\Exception $e) {
             report($e);
@@ -303,10 +319,10 @@ class PejabatController extends Controller
             $response = Http::withoutVerifying()
                 ->withToken($token)
                 ->acceptJson()
-                ->get($this->gatewayUrl . '/api/statistik');
+                ->get($this->gatewayUrl . '/api/produksi-kelurahan');
 
             if ($response->successful()) {
-                $data = $response->json('data.lahan_all') ?? [];
+                $data = $response->json('data') ?? [];
             }
         } catch (\Exception $e) {
             report($e);
@@ -320,24 +336,49 @@ class PejabatController extends Controller
     public function exportProduksiExcel(Request $request)
     {
         $token = $request->query('token') ?? session('token');
+        $kecamatanId = $request->query('kecamatan');
+        $tahun = $request->query('tahun');
+
+        if (!$token) {
+            abort(401, 'Unauthorized: Token tidak ditemukan');
+        }
+        if (!$kecamatanId) {
+            abort(400, 'Bad Request: Kecamatan wajib dipilih');
+        }
+
         $data = [];
+        $kecamatan = [];
+        $summary = [];
 
         try {
+            $url = $this->gatewayUrl . '/api/statistik/kecamatan/' . urlencode($kecamatanId);
+            if ($tahun) {
+                $url .= '?tahun=' . urlencode($tahun);
+            }
+
             $response = Http::withoutVerifying()
                 ->withToken($token)
                 ->acceptJson()
-                ->get($this->gatewayUrl . '/api/produksi-kecamatan');
+                ->get($url);
 
-            if ($response->successful()) {
-                $data = $response->json('data') ?? [];
+            if ($response->failed()) {
+                abort(403, 'Akses ditolak atau token tidak valid');
             }
+
+            $resData = $response->json('data') ?? [];
+            $data = $resData['rows'] ?? [];
+            $kecamatan = $resData['kecamatan'] ?? [];
+            $summary = $resData['summary'] ?? [];
         } catch (\Exception $e) {
             report($e);
+            abort(500, 'Terjadi kesalahan server internal');
         }
 
-        return response()->view('partials.sidebar.pejabat.produksi-kecamatan-excel', compact('data'))
+        $filename = 'historis-produksi-' . strtolower(str_replace(' ', '-', $kecamatan['nama_kecamatan'] ?? 'kecamatan')) . ($tahun ? '-' . $tahun : '') . '.xls';
+
+        return response()->view('partials.sidebar.pejabat.produksi-kecamatan-historis-excel', compact('data', 'kecamatan', 'summary', 'tahun'))
             ->header('Content-Type', 'application/vnd.ms-excel')
-            ->header('Content-Disposition', 'attachment; filename="rekap-produksi-kecamatan.xls"');
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
 
     public function exportProduksiKelurahanPDF(Request $request)
@@ -350,10 +391,10 @@ class PejabatController extends Controller
             $response = Http::withoutVerifying()
                 ->withToken($token)
                 ->acceptJson()
-                ->get($this->gatewayUrl . '/api/statistik');
+                ->get($this->gatewayUrl . '/api/produksi-kelurahan');
 
             if ($response->successful()) {
-                $rekap = $response->json('data.tabel_rekap') ?? [];
+                $rekap = $response->json('data') ?? [];
                 if ($kecamatan) {
                     $data = collect($rekap)->filter(function ($item) use ($kecamatan) {
                         return strtolower($item['nama_kecamatan']) === strtolower($kecamatan);
@@ -381,10 +422,10 @@ class PejabatController extends Controller
             $response = Http::withoutVerifying()
                 ->withToken($token)
                 ->acceptJson()
-                ->get($this->gatewayUrl . '/api/statistik');
+                ->get($this->gatewayUrl . '/api/produksi-kelurahan');
 
             if ($response->successful()) {
-                $rekap = $response->json('data.tabel_rekap') ?? [];
+                $rekap = $response->json('data') ?? [];
                 if ($kecamatan) {
                     $data = collect($rekap)->filter(function ($item) use ($kecamatan) {
                         return strtolower($item['nama_kecamatan']) === strtolower($kecamatan);

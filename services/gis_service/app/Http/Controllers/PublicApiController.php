@@ -16,6 +16,8 @@ class PublicApiController extends Controller
         $totalKelurahan = DB::table('kelurahan')->count();
         $totalLahanSawah = $this->lahanDiterimaQuery()->count();
         $totalLuasHektar = $this->lahanDiterimaQuery()->sum('luas_lahan_hektar');
+        $totalLuasTanamHektar = $this->lahanDiterimaQuery()
+            ->sum(DB::raw('COALESCE(luas_tanam_hektar, luas_lahan_hektar)'));
         $totalPanen = $this->totalPanenDiterimaPublik();
         $rekapRows = $this->buildTabelRekap();
         $rekapPadiKecamatan = $this->buildRekapPadiKecamatan();
@@ -29,6 +31,7 @@ class PublicApiController extends Controller
                     'total_kelurahan' => $totalKelurahan,
                     'total_lahan_sawah' => $totalLahanSawah,
                     'total_luas_ha' => round((float) $totalLuasHektar, 2),
+                    'total_luas_tanam_ha' => round((float) $totalLuasTanamHektar, 2),
                     'total_panen_ton' => round((float) $totalPanen, 2),
                 ],
                 'kecamatan_all' => DB::table('kecamatan')
@@ -49,6 +52,7 @@ class PublicApiController extends Controller
                         'lahan_sawah.id',
                         'lahan_sawah.nama_lahan',
                         'lahan_sawah.luas_lahan_hektar as luas',
+                        DB::raw('COALESCE(lahan_sawah.luas_tanam_hektar, lahan_sawah.luas_lahan_hektar) as luas_tanam'),
                         'kecamatan.nama_kecamatan',
                         'kelurahan.nama_kelurahan',
                         'pemilik.nama_lengkap as pemilik_nama',
@@ -150,7 +154,7 @@ class PublicApiController extends Controller
             ->select(
                 'lahan_sawah.id',
                 'lahan_sawah.pemilik_id',
-                'lahan_sawah.petani_id',
+                'lahan_sawah.assigned_petugas_id',
                 'lahan_sawah.kecamatan_id',
                 'lahan_sawah.kelurahan_id',
                 'lahan_sawah.tipe_lahan_id',
@@ -158,6 +162,7 @@ class PublicApiController extends Controller
                 'pemilik.nama_lengkap as pemilik_lahan',
                 'lahan_sawah.tahun_lbs',
                 'lahan_sawah.luas_lahan_hektar',
+                DB::raw('COALESCE(lahan_sawah.luas_tanam_hektar, lahan_sawah.luas_lahan_hektar) as luas_tanam_hektar'),
                 'lahan_sawah.hasil_panen_ton',
                 'lahan_sawah.produktivitas_ton_ha',
                 'lahan_sawah.alamat_detail',
@@ -195,7 +200,7 @@ class PublicApiController extends Controller
                     'id' => $row->id,
                     'user_id' => $row->pemilik_id,
                     'pemilik_id' => $row->pemilik_id,
-                    'petani_id' => $row->petani_id,
+                    'petani_id' => $row->assigned_petugas_id,
                     'kecamatan_id' => $row->kecamatan_id,
                     'kelurahan_id' => $row->kelurahan_id,
                     'tipe_lahan_id' => $row->tipe_lahan_id,
@@ -210,6 +215,8 @@ class PublicApiController extends Controller
 
                     'luas_lahan_hektar' => (float) $row->luas_lahan_hektar,
                     'luas_ha' => (float) $row->luas_lahan_hektar,
+                    'luas_tanam_hektar' => (float) $row->luas_tanam_hektar,
+                    'luas_tanam_ha' => (float) $row->luas_tanam_hektar,
 
                     'hasil_panen_ton' => (float) ($row->hasil_panen_ton ?? 0),
                     'hasil_panen' => (float) ($row->hasil_panen_ton ?? 0),
@@ -250,6 +257,7 @@ class PublicApiController extends Controller
                 'lahan_sawah.id',
                 'lahan_sawah.nama_lahan',
                 'lahan_sawah.luas_lahan_hektar',
+                DB::raw('COALESCE(lahan_sawah.luas_tanam_hektar, lahan_sawah.luas_lahan_hektar) as luas_tanam_hektar'),
                 'lahan_sawah.latitude',
                 'lahan_sawah.longitude',
                 DB::raw('ST_AsGeoJSON(lahan_sawah.polygon_area) as geojson'),
@@ -289,6 +297,7 @@ class PublicApiController extends Controller
                     'id' => $row->id,
                     'nama_lahan' => $row->nama_lahan,
                     'luas_lahan_hektar' => (float) $row->luas_lahan_hektar,
+                    'luas_tanam_hektar' => (float) $row->luas_tanam_hektar,
                     'sumber' => 'Huma',
                     'device_id' => $catatanVerifikasi['huma_device_id'] ?? '-',
                     'ph_tanah' => $catatanPetugas['ph_tanah'] ?? $row->ph_air ?? '-',
@@ -387,7 +396,11 @@ class PublicApiController extends Controller
 
         return $this->lahanDiterimaQuery()
             ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
-            ->select('kecamatan.nama_kecamatan', DB::raw('ROUND(COALESCE(SUM(lahan_sawah.luas_lahan_hektar),0), 2) as total_luas'))
+            ->select(
+                'kecamatan.nama_kecamatan',
+                DB::raw('ROUND(COALESCE(SUM(lahan_sawah.luas_lahan_hektar),0), 2) as total_luas'),
+                DB::raw('ROUND(COALESCE(SUM(COALESCE(lahan_sawah.luas_tanam_hektar, lahan_sawah.luas_lahan_hektar)),0), 2) as luas_tanam_ha')
+            )
             ->groupBy('kecamatan.nama_kecamatan')
             ->orderBy('kecamatan.nama_kecamatan')
             ->get();
@@ -401,7 +414,8 @@ class PublicApiController extends Controller
                 'lahan_sawah.tipe_lahan_id',
                 DB::raw("COALESCE(tipe_lahan.nama_tipe, 'Belum Ditentukan') as nama_tipe"),
                 DB::raw("COALESCE(tipe_lahan.nama_tipe, 'Belum Ditentukan') as tipe_lahan"),
-                DB::raw('ROUND(COALESCE(SUM(lahan_sawah.luas_lahan_hektar),0), 2) as total_luas')
+                DB::raw('ROUND(COALESCE(SUM(lahan_sawah.luas_lahan_hektar),0), 2) as total_luas'),
+                DB::raw('ROUND(COALESCE(SUM(COALESCE(lahan_sawah.luas_tanam_hektar, lahan_sawah.luas_lahan_hektar)),0), 2) as total_luas_tanam')
             )
             ->groupBy('lahan_sawah.tipe_lahan_id', 'tipe_lahan.nama_tipe')
             ->orderBy('tipe_lahan.nama_tipe')
@@ -436,8 +450,8 @@ class PublicApiController extends Controller
                 ->select(
                     'kecamatan.nama_kecamatan as nama_lahan',
                     DB::raw('ROUND(SUM(rp.hasil_panen_ton), 2) as total_panen'),
-                    DB::raw('ROUND(SUM(rp.luas_lahan_ha), 2) as total_luas_panen'),
-                    DB::raw('CASE WHEN SUM(rp.luas_lahan_ha) > 0 THEN ROUND(SUM(rp.hasil_panen_ton) / SUM(rp.luas_lahan_ha), 2) ELSE 0 END as produktivitas_ton_ha')
+                    DB::raw('ROUND(SUM(COALESCE(rp.luas_tanam_hektar, rp.luas_lahan_ha)), 2) as total_luas_panen'),
+                    DB::raw('CASE WHEN SUM(COALESCE(rp.luas_tanam_hektar, rp.luas_lahan_ha)) > 0 THEN ROUND(SUM(rp.hasil_panen_ton) / SUM(COALESCE(rp.luas_tanam_hektar, rp.luas_lahan_ha)), 2) ELSE 0 END as produktivitas_ton_ha')
                 )
                 ->groupBy('kecamatan.nama_kecamatan')
                 ->orderBy('kecamatan.nama_kecamatan')
@@ -457,7 +471,7 @@ class PublicApiController extends Controller
             ->select(
                 'kecamatan.nama_kecamatan as nama_lahan',
                 DB::raw('SUM(COALESCE(panen_lahan.total_panen,0)) as total_panen'),
-                DB::raw('CASE WHEN SUM(lahan_sawah.luas_lahan_hektar) > 0 THEN ROUND(SUM(COALESCE(panen_lahan.total_panen,0)) / SUM(lahan_sawah.luas_lahan_hektar), 2) ELSE 0 END as produktivitas_ton_ha')
+                DB::raw('CASE WHEN SUM(COALESCE(lahan_sawah.luas_tanam_hektar, lahan_sawah.luas_lahan_hektar)) > 0 THEN ROUND(SUM(COALESCE(panen_lahan.total_panen,0)) / SUM(COALESCE(lahan_sawah.luas_tanam_hektar, lahan_sawah.luas_lahan_hektar)), 2) ELSE 0 END as produktivitas_ton_ha')
             )
             ->groupBy('kecamatan.nama_kecamatan')
             ->orderBy('kecamatan.nama_kecamatan')
@@ -478,6 +492,7 @@ class PublicApiController extends Controller
                 'lahan_sawah.tahun_lbs',
                 'lahan_sawah.tipe_lahan_id',
                 'lahan_sawah.luas_lahan_hektar',
+                DB::raw('COALESCE(lahan_sawah.luas_tanam_hektar, lahan_sawah.luas_lahan_hektar) as luas_tanam_hektar'),
                 'kecamatan.nama_kecamatan',
                 'kelurahan.nama_kelurahan',
                 DB::raw("COALESCE(tipe_lahan.nama_tipe, 'Belum Ditentukan') as nama_tipe"),
@@ -504,6 +519,7 @@ class PublicApiController extends Controller
                             'tipe_lahan_id' => $firstTipe->tipe_lahan_id,
                             'nama_tipe' => $firstTipe->nama_tipe ?: 'Belum Ditentukan',
                             'total_luas' => round((float) $tipeItems->sum('luas_lahan_hektar'), 2),
+                            'total_luas_tanam' => round((float) $tipeItems->sum('luas_tanam_hektar'), 2),
                         ];
                     })
                     ->values()
@@ -515,6 +531,7 @@ class PublicApiController extends Controller
                     'tahun_lbs' => $first->tahun_lbs,
                     'jumlah_lahan' => $items->pluck('id')->unique()->count(),
                     'total_luas' => round((float) $items->sum('luas_lahan_hektar'), 2),
+                    'total_luas_tanam' => round((float) $items->sum('luas_tanam_hektar'), 2),
                     'total_panen' => round((float) $items->sum('total_panen_lahan'), 2),
                     'rincian_tipe_lahan' => $rincianTipe,
                     'tipe_lahan_ids' => collect($rincianTipe)->pluck('tipe_lahan_id')->filter()->values()->all(),
@@ -572,7 +589,13 @@ class PublicApiController extends Controller
                 's.sumber_data'
             )
             ->orderBy('k.nama_kecamatan')
-            ->get();
+            ->get()
+            ->map(function ($row) {
+                if ($row->tahun == 2025) {
+                    $row->is_sementara = 0;
+                }
+                return $row;
+            });
     }
 
     private function tahunStatistikPadiOptions()
@@ -643,7 +666,7 @@ class PublicApiController extends Controller
                     'luas_panen_terbaru_ha' => round((float) $latest->luas_panen_ha, 2),
                     'produktivitas_terbaru_ton_ha' => round((float) $latest->produktivitas_ton_ha, 3),
                     'produksi_terbaru_ton' => round((float) $latest->produksi_ton, 2),
-                    'is_sementara' => (bool) $latest->is_sementara,
+                    'is_sementara' => $latest->tahun == 2025 ? false : (bool) $latest->is_sementara,
                     'sumber_data' => $latest->sumber_data,
                 ];
             })
@@ -675,17 +698,20 @@ class PublicApiController extends Controller
             $query->where('s.tahun', (int) $tahun);
         }
 
-        return $query->get()->map(fn ($row) => [
-            'tahun' => (int) $row->tahun,
-            'luas_tanam_ha' => round((float) $row->luas_tanam_ha, 2),
-            'luas_panen_ha' => round((float) $row->luas_panen_ha, 2),
-            'produktivitas_kw_ha' => round((float) $row->produktivitas_kw_ha, 2),
-            'produktivitas_ton_ha' => round((float) $row->produktivitas_ton_ha, 3),
-            'produksi_ton' => round((float) $row->produksi_ton, 2),
-            'is_sementara' => (bool) $row->is_sementara,
-            'status_data' => $row->is_sementara ? 'Sementara' : 'Tetap',
-            'sumber_data' => $row->sumber_data,
-        ]);
+        return $query->get()->map(function ($row) {
+            $isSementara = (int) $row->tahun === 2025 ? false : (bool) $row->is_sementara;
+            return [
+                'tahun' => (int) $row->tahun,
+                'luas_tanam_ha' => round((float) $row->luas_tanam_ha, 2),
+                'luas_panen_ha' => round((float) $row->luas_panen_ha, 2),
+                'produktivitas_kw_ha' => round((float) $row->produktivitas_kw_ha, 2),
+                'produktivitas_ton_ha' => round((float) $row->produktivitas_ton_ha, 3),
+                'produksi_ton' => round((float) $row->produksi_ton, 2),
+                'is_sementara' => $isSementara,
+                'status_data' => $isSementara ? 'Sementara' : 'Tetap',
+                'sumber_data' => $row->sumber_data,
+            ];
+        });
     }
 
     private function summaryStatistikPadiRows($rows): array
@@ -1003,8 +1029,9 @@ class PublicApiController extends Controller
                 'lahan_sawah.kecamatan_id',
                 DB::raw('COUNT(DISTINCT lahan_sawah.id) as jumlah_lahan'),
                 DB::raw('ROUND(COALESCE(SUM(lahan_sawah.luas_lahan_hektar),0), 2) as total_luas_ha'),
+                DB::raw('ROUND(COALESCE(SUM(COALESCE(lahan_sawah.luas_tanam_hektar, lahan_sawah.luas_lahan_hektar)),0), 2) as luas_tanam_ha'),
                 DB::raw('ROUND(COALESCE(SUM(lahan_sawah.hasil_panen_ton),0), 2) as total_panen_lahan'),
-                DB::raw('CASE WHEN SUM(COALESCE(lahan_sawah.hasil_panen_ton,0)) > 0 AND SUM(lahan_sawah.luas_lahan_hektar) > 0 THEN ROUND(SUM(COALESCE(lahan_sawah.hasil_panen_ton,0)) / SUM(lahan_sawah.luas_lahan_hektar), 2) WHEN AVG(NULLIF(lahan_sawah.produktivitas_ton_ha,0)) IS NOT NULL THEN ROUND(AVG(NULLIF(lahan_sawah.produktivitas_ton_ha,0)), 2) ELSE 0 END as produktivitas_lahan')
+                DB::raw('CASE WHEN SUM(COALESCE(lahan_sawah.hasil_panen_ton,0)) > 0 AND SUM(COALESCE(lahan_sawah.luas_tanam_hektar, lahan_sawah.luas_lahan_hektar)) > 0 THEN ROUND(SUM(COALESCE(lahan_sawah.hasil_panen_ton,0)) / SUM(COALESCE(lahan_sawah.luas_tanam_hektar, lahan_sawah.luas_lahan_hektar)), 2) WHEN AVG(NULLIF(lahan_sawah.produktivitas_ton_ha,0)) IS NOT NULL THEN ROUND(AVG(NULLIF(lahan_sawah.produktivitas_ton_ha,0)), 2) ELSE 0 END as produktivitas_lahan')
             )
             ->where('lahan_sawah.status_verifikasi', 'DITERIMA')
             ->whereNotNull('lahan_sawah.kecamatan_id')
@@ -1025,8 +1052,8 @@ class PublicApiController extends Controller
                     'ls.kecamatan_id',
                     DB::raw('COUNT(DISTINCT ls.id) as jumlah_lahan_panen'),
                     DB::raw('ROUND(COALESCE(SUM(rp.hasil_panen_ton),0), 2) as total_panen_ton'),
-                    DB::raw('ROUND(COALESCE(SUM(rp.luas_lahan_ha),0), 2) as total_luas_panen_ha'),
-                    DB::raw('CASE WHEN SUM(COALESCE(rp.hasil_panen_ton,0)) > 0 AND SUM(rp.luas_lahan_ha) > 0 THEN ROUND(SUM(rp.hasil_panen_ton) / SUM(rp.luas_lahan_ha), 2) WHEN AVG(NULLIF(rp.produktivitas_ton_ha,0)) IS NOT NULL THEN ROUND(AVG(NULLIF(rp.produktivitas_ton_ha,0)), 2) ELSE 0 END as produktivitas_ton_ha')
+                    DB::raw('ROUND(COALESCE(SUM(COALESCE(rp.luas_tanam_hektar, rp.luas_lahan_ha)),0), 2) as total_luas_panen_ha'),
+                    DB::raw('CASE WHEN SUM(COALESCE(rp.hasil_panen_ton,0)) > 0 AND SUM(COALESCE(rp.luas_tanam_hektar, rp.luas_lahan_ha)) > 0 THEN ROUND(SUM(rp.hasil_panen_ton) / SUM(COALESCE(rp.luas_tanam_hektar, rp.luas_lahan_ha)), 2) WHEN AVG(NULLIF(rp.produktivitas_ton_ha,0)) IS NOT NULL THEN ROUND(AVG(NULLIF(rp.produktivitas_ton_ha,0)), 2) ELSE 0 END as produktivitas_ton_ha')
                 )
                 ->groupBy('ls.kecamatan_id')
                 ->get()
@@ -1073,7 +1100,8 @@ class PublicApiController extends Controller
                 $pakaiPanen = $panen && (float) $panen->total_luas_panen_ha > 0;
 
                 $totalLuasHa = (float) ($lahan->total_luas_ha ?? 0);
-                $totalLuasPanenHa = $pakaiPanen ? (float) $panen->total_luas_panen_ha : $totalLuasHa;
+                $luasTanamHa = (float) ($lahan->luas_tanam_ha ?? $totalLuasHa);
+                $totalLuasPanenHa = $pakaiPanen ? (float) $panen->total_luas_panen_ha : $luasTanamHa;
                 $totalPanenTon = $pakaiPanen ? (float) $panen->total_panen_ton : (float) ($lahan->total_panen_lahan ?? 0);
                 $produktivitas = $pakaiPanen
                     ? (float) $panen->produktivitas_ton_ha
@@ -1089,6 +1117,7 @@ class PublicApiController extends Controller
 
                     $totalPanenTon = (float) ($kecamatan->produksi ?? 0);
                     $totalLuasHa = (float) ($kecamatan->luas_tanam_ha ?? $totalLuasHa);
+                    $luasTanamHa = (float) ($kecamatan->luas_tanam_ha ?? $luasTanamHa);
                     $totalLuasPanenHa = (float) ($kecamatan->luas_panen_ha ?? $totalLuasPanenHa);
 
                     if ($produktivitas > 0 || $totalPanenTon > 0) {
@@ -1100,7 +1129,7 @@ class PublicApiController extends Controller
                     $kecamatanId => [
                         'jumlah_lahan' => $jumlahLahan,
                         'total_luas_ha' => $totalLuasHa,
-                        'luas_tanam_ha' => $totalLuasHa,
+                        'luas_tanam_ha' => $luasTanamHa,
                         'total_luas_panen_ha' => $totalLuasPanenHa,
                         'total_panen_ton' => $totalPanenTon,
                         'produktivitas_ton_ha' => $produktivitas,

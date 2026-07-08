@@ -11,9 +11,8 @@ import 'providers/auth_provider.dart';
 import 'services/farming_service.dart';
 import 'providers/farming_provider.dart';
 import 'screens/home/home_screen.dart';
-import 'screens/landing_screen.dart';
+import 'screens/auth/login_screen.dart';
 import 'screens/auth/reset_password_screen.dart';
-
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,9 +27,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         // 1. ApiClient (Singleton HTTP Client)
-        Provider<ApiClient>(
-          create: (_) => ApiClient(),
-        ),
+        Provider<ApiClient>(create: (_) => ApiClient()),
         // 2. AuthService & FarmingService
         ProxyProvider<ApiClient, AuthService>(
           update: (_, apiClient, _) => AuthService(apiClient),
@@ -51,7 +48,7 @@ class MyApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
-        title: 'SITANI Mobile',
+        title: 'SiTani Mobile',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           useMaterial3: true,
@@ -101,21 +98,25 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
 
     // Tangani link jika aplikasi sedang aktif atau berada di background
-    _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
-      _handleDeepLink(uri);
-    }, onError: (err) {
-      debugPrint('Error listening to uri link stream: $err');
-    });
+    _linkSubscription = _appLinks.uriLinkStream.listen(
+      (uri) {
+        _handleDeepLink(uri);
+      },
+      onError: (err) {
+        debugPrint('Error listening to uri link stream: $err');
+      },
+    );
   }
 
   void _handleDeepLink(Uri uri) {
     debugPrint('Received Deep Link: $uri');
-    if (uri.scheme == 'sigpala' && uri.host == 'reset-password') {
+    if ((uri.scheme == 'sigpala' || uri.scheme == 'sitani') &&
+        uri.host == 'reset-password') {
       final pathSegments = uri.pathSegments;
       String token = pathSegments.isNotEmpty ? pathSegments.first : '';
       String email = uri.queryParameters['email'] ?? '';
 
-      // Cek format alternatif query parameter: sigpala://reset-password?token={token}&email={email}
+      // Cek format alternatif query parameter: sitani://reset-password?token={token}&email={email}
       if (token.isEmpty) {
         token = uri.queryParameters['token'] ?? '';
       }
@@ -125,10 +126,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ResetPasswordScreen(
-                token: token,
-                email: email,
-              ),
+              builder: (context) =>
+                  ResetPasswordScreen(token: token, email: email),
             ),
           );
         });
@@ -153,9 +152,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(
-                color: Colors.green,
-              ),
+              CircularProgressIndicator(color: Colors.green),
               SizedBox(height: 16),
               Text(
                 'Memuat Aplikasi...',
@@ -170,11 +167,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
       );
     }
 
-    // Arahkan ke HomeScreen jika terautentikasi, jika tidak ke LandingScreen
+    // Arahkan ke HomeScreen jika terautentikasi, jika tidak ke LoginScreen
     if (authProvider.isAuthenticated) {
       return const HomeScreen();
     } else {
-      return const LandingScreen();
+      return const LoginScreen();
     }
   }
 }

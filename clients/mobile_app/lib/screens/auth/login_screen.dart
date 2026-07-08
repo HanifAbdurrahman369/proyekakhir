@@ -900,7 +900,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     // Footer
                     Center(
                       child: Text(
-                        '🌾 2026 — SIG-PALA',
+                        '2026 - SiTani',
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,

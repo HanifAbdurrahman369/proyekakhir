@@ -22,18 +22,18 @@ class RiwayatPanenController extends Controller
 
         $query = DB::table('panen_padi as rp')
             ->leftJoin('users as pemilik', 'pemilik.id', '=', 'rp.pemilik_id')
-            ->leftJoin('users as penggarap', 'penggarap.id', '=', 'rp.petani_id')
+
             ->select([
                 'rp.*',
                 'pemilik.nama_lengkap as nama_pemilik',
-                'penggarap.nama_lengkap as nama_penggarap',
+
             ])
             ->whereDate('rp.tanggal_panen', '<=', now()->toDateString());
 
-        if ($roleId === 1) {
+        if (in_array($roleId, [1, 5], true)) {
             $query->where('rp.pemilik_id', $userId);
         } else {
-            $query->where('rp.petani_id', $userId);
+            // ...
         }
 
         $perPage = min(50, max(1, (int) $request->get('per_page', 10)));
@@ -53,16 +53,18 @@ class RiwayatPanenController extends Controller
             'hasil_panen' => (float) $item->hasil_panen_ton,
             'hasil_panen_ton' => (float) $item->hasil_panen_ton,
             'luas_lahan_hektar' => (float) $item->luas_lahan_ha,
+            'luas_tanam_hektar' => (float) ($item->luas_tanam_hektar ?? $item->luas_lahan_ha),
             'produktivitas_ton_ha' => (float) $item->produktivitas_ton_ha,
             'status_aktif' => 'NONAKTIF',
             'status_verifikasi' => $item->status_verifikasi,
             'catatan_verifikasi' => $item->catatan_verifikasi ?? '',
             'nama_pemilik' => $item->nama_pemilik,
-            'nama_penggarap' => $item->nama_penggarap,
+            'nama_penggarap' => null,
             'lahan' => [
                 'id' => (int) $item->lahan_id,
                 'nama_lahan' => $item->nama_lahan,
                 'luas_lahan_hektar' => (float) $item->luas_lahan_ha,
+                'luas_tanam_hektar' => (float) ($item->luas_tanam_hektar ?? $item->luas_lahan_ha),
             ],
             'bibit' => [
                 'id' => (int) $item->bibit_id,

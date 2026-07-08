@@ -93,13 +93,16 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
     final roleId = user?.roleId ?? 1;
     final roleName = roleId == 5 ? 'Brigade Pangan' : 'Kelompok Tani';
 
+    final lahanList = farmingProvider.lahanData['data'] as List<dynamic>? ?? [];
+    final hasOwnLand = lahanList.any((l) => (l['pemilik_id'] ?? 0).toString() == (user?.id ?? 0).toString());
+
     // Pengecekan masa tanam (Sesuai logic backend web app)
     final currentMonth = DateTime.now().month;
     final isKelompokTaniAllowed = (currentMonth >= 1 && currentMonth <= 9);
     final isBrigadePanganAllowed = [10, 11, 12, 1].contains(currentMonth);
     final isAllowedToPlant =
         (roleId == 1 && isKelompokTaniAllowed) ||
-        (roleId == 5 && isBrigadePanganAllowed);
+        (roleId == 5 && (isBrigadePanganAllowed || hasOwnLand));
 
     if (farmingProvider.isLoading &&
         farmingProvider.lahanData['data'].isEmpty) {
@@ -148,7 +151,6 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
       );
     }
 
-    final lahanList = farmingProvider.lahanData['data'] as List<dynamic>;
     final totalLahan = farmingProvider.lahanData['total'] ?? 0;
     final activeCycles = farmingProvider.mySiklusTanam;
     final totalProduksi = farmingProvider.totalProduksi;

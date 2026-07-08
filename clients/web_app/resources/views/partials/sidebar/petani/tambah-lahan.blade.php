@@ -169,19 +169,7 @@
                             required>
                     </div>
 
-                    <div>
-                        <label class="block mb-2 font-medium text-gray-700">Tugaskan Penggarap</label>
-                        <select name="petani_id" id="petani_id"
-                                class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-primary-500 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-                                required>
-                            <option value="">Pilih Penggarap</option>
-                            @foreach($petani as $item)
-                                <option value="{{ $item['id'] }}" @selected((string)$field('petani_id') === (string)$item['id'])>
-                                    {{ $item['nama_lengkap'] ?? $item['nama'] }} {{ isset($item['role_id']) && $item['role_id'] == 5 ? '(Brigade Pangan)' : '(Kelompok Tani)' }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+
 
                     <div>
                         <label class="block mb-2 font-medium text-gray-700">Status Pengajuan</label>

@@ -13,15 +13,14 @@ class AuthService {
     try {
       final response = await _apiClient.dio.post(
         ApiEndpoints.login,
-        data: {
-          'email': email,
-          'password': password,
-        },
+        data: {'email': email, 'password': password},
       );
-      
+
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
-      final message = e.response?.data['message'] ?? 'Gagal melakukan login. Silakan periksa jaringan Anda.';
+      final message =
+          e.response?.data['message'] ??
+          'Gagal melakukan login. Silakan periksa jaringan Anda.';
       throw Exception(message);
     }
   }
@@ -45,19 +44,19 @@ class AuthService {
           'jenis_kelompok': jenisKelompok,
         },
       );
-      
+
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       final errorData = e.response?.data;
       String errorMsg = 'Registrasi gagal.';
-      
+
       if (errorData != null && errorData['errors'] != null) {
         final errors = errorData['errors'] as Map<String, dynamic>;
         errorMsg = errors.values.map((e) => (e as List).join(', ')).join('\n');
       } else if (errorData != null && errorData['message'] != null) {
         errorMsg = errorData['message'];
       }
-      
+
       throw Exception(errorMsg);
     }
   }
@@ -69,7 +68,36 @@ class AuthService {
       final userData = response.data['user'];
       return User.fromJson(userData as Map<String, dynamic>);
     } on DioException catch (e) {
-      final message = e.response?.data['message'] ?? 'Gagal memuat profil pengguna.';
+      final message =
+          e.response?.data['message'] ?? 'Gagal memuat profil pengguna.';
+      throw Exception(message);
+    }
+  }
+
+  /// Memperbarui data profil user aktif tanpa mengubah password atau role.
+  Future<User> updateProfile({
+    required String namaLengkap,
+    required String email,
+    String? noHp,
+    String? alamat,
+  }) async {
+    try {
+      final response = await _apiClient.dio.put(
+        ApiEndpoints.profile,
+        data: {
+          'nama_lengkap': namaLengkap,
+          'email': email,
+          'no_hp': noHp,
+          'alamat': alamat,
+        },
+      );
+      final userData = response.data['user'];
+      return User.fromJson(userData as Map<String, dynamic>);
+    } on DioException catch (e) {
+      final errorData = e.response?.data;
+      final message = errorData is Map && errorData['message'] != null
+          ? errorData['message'].toString()
+          : 'Gagal memperbarui profil pengguna.';
       throw Exception(message);
     }
   }
@@ -79,13 +107,13 @@ class AuthService {
     try {
       final response = await _apiClient.dio.post(
         ApiEndpoints.forgotPassword,
-        data: {
-          'email': email,
-        },
+        data: {'email': email},
       );
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
-      final message = e.response?.data['message'] ?? 'Gagal mengirim link reset password. Silakan periksa jaringan Anda.';
+      final message =
+          e.response?.data['message'] ??
+          'Gagal mengirim link reset password. Silakan periksa jaringan Anda.';
       throw Exception(message);
     }
   }
@@ -109,8 +137,28 @@ class AuthService {
       );
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
-      final message = e.response?.data['message'] ?? 'Gagal mengubah password. Silakan periksa token Anda.';
+      final message =
+          e.response?.data['message'] ??
+          'Gagal mengubah password. Silakan periksa token Anda.';
       throw Exception(message);
+    }
+  }
+
+  Future<Map<String, dynamic>> getUsers({int page = 1}) async {
+    try {
+      final response = await _apiClient.dio.get('/users', queryParameters: {'page': page});
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Gagal memuat pengguna.');
+    }
+  }
+
+  Future<Map<String, dynamic>> getKomunitas({int page = 1}) async {
+    try {
+      final response = await _apiClient.dio.get('/komunitas', queryParameters: {'page': page});
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Gagal memuat komunitas.');
     }
   }
 }

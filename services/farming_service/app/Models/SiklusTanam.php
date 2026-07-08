@@ -12,9 +12,10 @@ class SiklusTanam extends Model
 
     protected $fillable = [
         'lahan_id',
+        'luas_tanam_hektar',
         'bibit_id',
+        'pemilik_id',
         'pupuk_id',
-        'petani_id',
         'tanggal_tanam',
         'tanggal_pemupukan',
         'takaran_pupuk_kg',
@@ -33,6 +34,7 @@ class SiklusTanam extends Model
         'tanggal_tanam' => 'date',
         'estimasi_tanggal_panen' => 'date',
         'tanggal_pemupukan' => 'date',
+        'luas_tanam_hektar' => 'float',
         'takaran_pupuk_kg' => 'float',
         'pemupukan_dicatat_at' => 'datetime',
         'diverifikasi_at' => 'datetime',
@@ -53,10 +55,7 @@ class SiklusTanam extends Model
         return $this->belongsTo(JenisPupuk::class, 'pupuk_id');
     }
 
-    public function petani()
-    {
-        return $this->belongsTo(User::class, 'petani_id');
-    }
+
 
     public function panen()
     {

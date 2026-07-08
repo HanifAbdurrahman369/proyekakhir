@@ -6,17 +6,17 @@ class ApiClient {
   final Dio dio;
 
   ApiClient()
-      : dio = Dio(
-          BaseOptions(
-            baseUrl: ApiEndpoints.baseUrl,
-            connectTimeout: const Duration(seconds: 10),
-            receiveTimeout: const Duration(seconds: 10),
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-          ),
-        ) {
+    : dio = Dio(
+        BaseOptions(
+          baseUrl: ApiEndpoints.baseUrl,
+          connectTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(seconds: 30),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        ),
+      ) {
     _initInterceptors();
   }
 
@@ -39,12 +39,14 @@ class ApiClient {
     );
 
     // Menampilkan log request/response di console untuk mempermudah debugging
-    dio.interceptors.add(LogInterceptor(
-      requestHeader: true,
-      requestBody: true,
-      responseHeader: false,
-      responseBody: true,
-      error: true,
-    ));
+    dio.interceptors.add(
+      LogInterceptor(
+        requestHeader: true,
+        requestBody: true,
+        responseHeader: false,
+        responseBody: true,
+        error: true,
+      ),
+    );
   }
 }

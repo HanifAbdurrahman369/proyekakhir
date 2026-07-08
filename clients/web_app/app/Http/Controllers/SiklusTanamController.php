@@ -32,7 +32,8 @@ class SiklusTanamController extends Controller
         $currentMonth = (int) now()->format('n');
         $isKelompokTaniAllowed = ($currentMonth >= 1 && $currentMonth <= 9);
         $isBrigadePanganAllowed = in_array($currentMonth, [10, 11, 12, 1], true);
-        $isAllowed = ($roleId === 1 && $isKelompokTaniAllowed) || ($roleId === 5 && $isBrigadePanganAllowed);
+        $hasOwnLand = ($roleId === 5 && (session('total_lahan') ?? 0) > 0);
+        $isAllowed = ($roleId === 1 && $isKelompokTaniAllowed) || ($roleId === 5 && $isBrigadePanganAllowed) || $hasOwnLand;
 
         if (!$isAllowed) {
             $msg = $roleId === 5 
@@ -91,6 +92,7 @@ class SiklusTanamController extends Controller
     {
         $request->validate([
             'lahan_id' => 'required|integer',
+            'luas_tanam_hektar' => 'required|numeric|min:0.01',
             'bibit_id' => 'required|integer',
             'tanggal_tanam' => 'required|date|before_or_equal:today',
             'estimasi_hari_tanam' => 'required|integer|min:1',
@@ -115,7 +117,8 @@ class SiklusTanamController extends Controller
         $currentMonth = (int) now()->format('n');
         $isKelompokTaniAllowed = ($currentMonth >= 1 && $currentMonth <= 9);
         $isBrigadePanganAllowed = in_array($currentMonth, [10, 11, 12, 1], true);
-        $isAllowed = ($roleId === 1 && $isKelompokTaniAllowed) || ($roleId === 5 && $isBrigadePanganAllowed);
+        $hasOwnLand = ($roleId === 5 && (session('total_lahan') ?? 0) > 0);
+        $isAllowed = ($roleId === 1 && $isKelompokTaniAllowed) || ($roleId === 5 && $isBrigadePanganAllowed) || $hasOwnLand;
 
         if (!$isAllowed) {
             $msg = $roleId === 5 
@@ -130,6 +133,7 @@ class SiklusTanamController extends Controller
         $response = Http::withToken($token)
             ->post($this->gatewayUrl() . '/api/activities', [
                 'lahan_id' => $request->lahan_id,
+                'luas_tanam_hektar' => $request->luas_tanam_hektar,
                 'bibit_id' => $request->bibit_id,
                 'tanggal_tanam' => $request->tanggal_tanam,
                 'estimasi_hari_tanam' => $request->estimasi_hari_tanam,
@@ -162,7 +166,8 @@ class SiklusTanamController extends Controller
         $currentMonth = (int) now()->format('n');
         $isKelompokTaniAllowed = ($currentMonth >= 1 && $currentMonth <= 9);
         $isBrigadePanganAllowed = in_array($currentMonth, [10, 11, 12, 1], true);
-        $isAllowed = ($roleId === 1 && $isKelompokTaniAllowed) || ($roleId === 5 && $isBrigadePanganAllowed);
+        $hasOwnLand = ($roleId === 5 && (session('total_lahan') ?? 0) > 0);
+        $isAllowed = ($roleId === 1 && $isKelompokTaniAllowed) || ($roleId === 5 && $isBrigadePanganAllowed) || $hasOwnLand;
 
         if (!$isAllowed) {
             $msg = $roleId === 5 
@@ -196,7 +201,8 @@ class SiklusTanamController extends Controller
         $currentMonth = (int) now()->format('n');
         $isKelompokTaniAllowed = ($currentMonth >= 1 && $currentMonth <= 9);
         $isBrigadePanganAllowed = in_array($currentMonth, [10, 11, 12, 1], true);
-        $isAllowed = ($roleId === 1 && $isKelompokTaniAllowed) || ($roleId === 5 && $isBrigadePanganAllowed);
+        $hasOwnLand = ($roleId === 5 && (session('total_lahan') ?? 0) > 0);
+        $isAllowed = ($roleId === 1 && $isKelompokTaniAllowed) || ($roleId === 5 && $isBrigadePanganAllowed) || $hasOwnLand;
 
         if (!$isAllowed) {
             $msg = $roleId === 5 
@@ -207,6 +213,7 @@ class SiklusTanamController extends Controller
 
         $validated = $request->validate([
             'lahan_id' => 'required|integer',
+            'luas_tanam_hektar' => 'required|numeric|min:0.01',
             'bibit_id' => 'required|integer',
             'tanggal_tanam' => 'required|date|before_or_equal:today',
             'estimasi_hari_tanam' => 'required|integer|min:1',
@@ -232,7 +239,8 @@ class SiklusTanamController extends Controller
         $currentMonth = (int) now()->format('n');
         $isKelompokTaniAllowed = ($currentMonth >= 1 && $currentMonth <= 9);
         $isBrigadePanganAllowed = in_array($currentMonth, [10, 11, 12, 1], true);
-        $isAllowed = ($roleId === 1 && $isKelompokTaniAllowed) || ($roleId === 5 && $isBrigadePanganAllowed);
+        $hasOwnLand = ($roleId === 5 && (session('total_lahan') ?? 0) > 0);
+        $isAllowed = ($roleId === 1 && $isKelompokTaniAllowed) || ($roleId === 5 && $isBrigadePanganAllowed) || $hasOwnLand;
 
         if (!$isAllowed) {
             $msg = $roleId === 5 

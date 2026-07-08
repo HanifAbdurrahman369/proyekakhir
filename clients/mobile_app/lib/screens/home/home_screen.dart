@@ -13,9 +13,10 @@ import 'lapor_tanam_screen.dart';
 import 'lapor_panen_screen.dart';
 import 'sebaran_lahan_screen.dart';
 import 'dashboards/produksi_daerah_screen.dart';
-import 'petugas_notifikasi_screen.dart';
+import 'petugas_lahan_termonitor_screen.dart';
 import 'petugas_spasial_screen.dart';
 import 'petugas_verifikasi_screen.dart';
+import 'edit_profile_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -103,6 +104,7 @@ class HomeScreen extends StatelessWidget {
     // Builder untuk Sidebar Drawer
     Widget buildDrawer(User? user) {
       final roleId = user?.roleId ?? 1;
+      final wilayahDesa = user?.wilayahKelurahanNama.join(', ');
       final roleName = switch (roleId) {
         1 => 'Kelompok Tani',
         2 => 'Petugas Lapangan',
@@ -195,6 +197,25 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (roleId == 2 &&
+                      ((user?.wilayahKecamatanNama ?? '').isNotEmpty ||
+                          (wilayahDesa ?? '').isNotEmpty)) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      [
+                        if ((user?.wilayahKecamatanNama ?? '').isNotEmpty)
+                          user!.wilayahKecamatanNama!,
+                        if ((wilayahDesa ?? '').isNotEmpty) wilayahDesa!,
+                      ].join(' - '),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -288,8 +309,35 @@ class HomeScreen extends StatelessWidget {
                       onTap: () => Navigator.pop(context),
                     ),
                     _buildDrawerItem(
+                      icon: Icons.map_rounded,
+                      label: 'Manajemen Data Spasial',
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PetugasSpasialScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildDrawerItem(
+                      icon: Icons.sensors_rounded,
+                      label: 'Lahan Termonitor (IoT)',
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const PetugasLahanTermonitorScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildDrawerItem(
                       icon: Icons.verified_user_rounded,
-                      label: 'Verifikasi Data',
+                      label: 'Verifikasi Data Petani',
                       onTap: () {
                         Navigator.pop(context);
                         Navigator.push(
@@ -302,28 +350,14 @@ class HomeScreen extends StatelessWidget {
                       },
                     ),
                     _buildDrawerItem(
-                      icon: Icons.map_rounded,
-                      label: 'Manajemen Spasial',
+                      icon: Icons.manage_accounts_rounded,
+                      label: 'Edit Profil',
                       onTap: () {
                         Navigator.pop(context);
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const PetugasSpasialScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildDrawerItem(
-                      icon: Icons.notifications_active_rounded,
-                      label: 'Notifikasi',
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                const PetugasNotifikasiScreen(),
+                            builder: (context) => const EditProfileScreen(),
                           ),
                         );
                       },
@@ -515,6 +549,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  // ignore: unused_element
   void _showProduksiDaerahInfoDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -528,7 +563,7 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
         content: Text(
-          'Grafik tren produksi bulanan sudah tersedia di dashboard Statistik Utama. Untuk laporan analisis produksi daerah interaktif yang lebih lengkap (termasuk filter tipe lahan dan grafik produktivitas), silakan buka aplikasi SITANI versi Web.',
+          'Grafik tren produksi bulanan sudah tersedia di dashboard Statistik Utama. Untuk laporan analisis produksi daerah interaktif yang lebih lengkap (termasuk filter tipe lahan dan grafik produktivitas), silakan buka aplikasi SiTani versi Web.',
           style: GoogleFonts.inter(
             fontSize: 14,
             height: 1.5,
@@ -549,4 +584,5 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
     );
-  }}
+  }
+}

@@ -99,10 +99,13 @@
                         
                         <div>
                             <label class="mb-1.5 block text-xs font-bold text-slate-700">Lahan sawah</label>
-                            <select name="lahan_id" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#5EA500] focus:border-[#5EA500] focus:outline-none focus:ring-2 focus:ring-[#5EA500]/20">
+                            <select name="lahan_id" id="lahan-select" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#5EA500] focus:border-[#5EA500] focus:outline-none focus:ring-2 focus:ring-[#5EA500]/20">
                                 <option value="">Pilih lahan terverifikasi</option>
                                 @foreach($lahan ?? [] as $item)
-                                    <option value="{{ $item['id'] }}" @selected((string) old('lahan_id', $editTanam['lahan_id'] ?? '') === (string) $item['id'])>
+                                    <option value="{{ $item['id'] }}"
+                                            data-luas-lahan="{{ $item['luas_lahan_hektar'] ?? 0 }}"
+                                            data-luas-tanam="{{ $item['luas_tanam_hektar'] ?? $item['luas_lahan_hektar'] ?? 0 }}"
+                                            @selected((string) old('lahan_id', $editTanam['lahan_id'] ?? '') === (string) $item['id'])>
                                         {{ $item['nama_lahan'] }} - {{ $item['pemilik_lahan'] ?? 'Pemilik belum dicatat' }}
                                     </option>
                                 @endforeach
@@ -110,6 +113,14 @@
                             @if(empty($lahan))
                                 <p class="mt-1.5 text-[11px] text-amber-700">Belum ada lahan terverifikasi yang ditugaskan untuk akun ini.</p>
                             @endif
+                        </div>
+                        <div>
+                            <label class="mb-1.5 block text-xs font-bold text-slate-700">Luas tanam (hektar)</label>
+                            <input type="number" name="luas_tanam_hektar" id="luas-tanam-input" min="0.01" step="0.01" required
+                                   value="{{ old('luas_tanam_hektar', $editTanam['luas_tanam_hektar'] ?? '') }}"
+                                   placeholder="Cth: 1.25"
+                                   class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#5EA500] focus:border-[#5EA500] focus:outline-none focus:ring-2 focus:ring-[#5EA500]/20">
+                            <p id="luas-tanam-hint" class="mt-1 text-[10px] text-slate-500">Masukkan luas lahan yang benar-benar ditanami padi.</p>
                         </div>
                         <div>
                             <label class="mb-1.5 block text-xs font-bold text-slate-700">Jenis bibit</label>
@@ -186,18 +197,81 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const lahanSelect = document.getElementById('lahan-select');
+            const luasTanamInput = document.getElementById('luas-tanam-input');
+            const luasTanamHint = document.getElementById('luas-tanam-hint');
             const bibitSelect = document.getElementById('bibit-select');
             const estimasiHariInput = document.getElementById('estimasi-hari');
 
-            bibitSelect.addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                const defaultHari = selectedOption.getAttribute('data-hari');
+            function syncLuasTanam() {
+                if (!lahanSelect || !luasTanamInput) return;
+                const selectedOption = lahanSelect.options[lahanSelect.selectedIndex];
+                const luasLahan = selectedOption ? selectedOption.getAttribute('data-luas-lahan') : '';
+                const luasTanam = selectedOption ? selectedOption.getAttribute('data-luas-tanam') : '';
+
+                if (!luasTanamInput.value && luasTanam) {
+                    luasTanamInput.value = luasTanam;
+                }
+
+                if (luasLahan) {
+                    luasTanamInput.max = luasLahan;
+                    luasTanamHint.textContent = `Maksimal ${Number(luasLahan).toLocaleString('id-ID')} ha sesuai luas lahan.`;
+                } else {
+                    luasTanamInput.removeAttribute('max');
+                    luasTanamHint.textContent = 'Masukkan luas lahan yang benar-benar ditanami padi.';
+                }
+            }
+
+            lahanSelect?.addEventListener('change', function() {
+                if (luasTanamInput) luasTanamInput.value = '';
+                syncLuasTanam();
+            });
+            syncLuasTanam();
+
+            const tanggalTanamInput = document.querySelector('input[name="tanggal_tanam"]');
+            
+            function calculateEstimasiPanen() {
+                if (!bibitSelect) return;
+                const selectedOption = bibitSelect.options[bibitSelect.selectedIndex];
+                const namaBibit = selectedOption ? selectedOption.textContent.toLowerCase() : '';
+                const defaultHari = selectedOption ? selectedOption.getAttribute('data-hari') : '';
+                
                 if (defaultHari) {
                     estimasiHariInput.value = defaultHari;
                 } else {
                     estimasiHariInput.value = '';
                 }
-            });
+                
+                let hintEl = document.getElementById('estimasi-panen-hint');
+                if (!hintEl) {
+                    hintEl = document.createElement('p');
+                    hintEl.id = 'estimasi-panen-hint';
+                    hintEl.className = 'mt-2 text-[11px] font-bold text-[#3E7D00]';
+                    estimasiHariInput.parentNode.appendChild(hintEl);
+                }
+                
+                if (namaBibit.includes('inpara')) {
+                    const tglTanam = new Date(tanggalTanamInput.value);
+                    if (!isNaN(tglTanam)) {
+                        const tglA = new Date(tglTanam);
+                        tglA.setDate(tglA.getDate() + 102);
+                        const tglB = new Date(tglTanam);
+                        tglB.setDate(tglB.getDate() + 131);
+                        
+                        const formatA = tglA.toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric'});
+                        const formatB = tglB.toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric'});
+                        
+                        hintEl.textContent = `Estimasi Masa Tanam: 102 - 131 Hari. Perkiraan Panen: ${formatA} hingga ${formatB}`;
+                    } else {
+                        hintEl.textContent = '';
+                    }
+                } else {
+                    hintEl.textContent = '';
+                }
+            }
+
+            bibitSelect?.addEventListener('change', calculateEstimasiPanen);
+            tanggalTanamInput?.addEventListener('change', calculateEstimasiPanen);
         });
     </script>
 
@@ -215,7 +289,8 @@
                                 <h3 class="text-sm font-bold text-[#14280b]">{{ $siklus['nama_lahan'] }}</h3>
                                 <span class="rounded-full bg-[#edf8dc] px-2 py-0.5 text-[10px] font-bold text-[#3E7D00]">{{ $siklus['nama_bibit'] }}</span>
                             </div>
-                            <p class="mt-1 text-[11px] text-slate-500">Tanam {{ \Carbon\Carbon::parse($siklus['tanggal_tanam'])->format('d M Y') }} · Estimasi {{ \Carbon\Carbon::parse($siklus['estimasi_tanggal_panen'])->format('d M Y') }}</p>
+                            <p class="mt-1 text-[11px] text-slate-500">Tanam {{ \Carbon\Carbon::parse($siklus['tanggal_tanam'])->format('d M Y') }} · Estimasi {{ \Carbon\Carbon::parse($siklus['estimasi_tanggal_panen'])->format('d M Y') }}{{ !empty($siklus['estimasi_tanggal_panen_akhir']) ? ' - ' . \Carbon\Carbon::parse($siklus['estimasi_tanggal_panen_akhir'])->format('d M Y') : '' }}</p>
+                            <p class="mt-1 text-[11px] text-slate-500">Luas tanam: {{ number_format((float) ($siklus['luas_tanam_hektar'] ?? 0), 2, ',', '.') }} ha</p>
                             @if(!empty($siklus['pemupukan_awal']))
                                 <p class="mt-1 text-[11px] text-slate-500">
                                     Pemupukan awal: {{ $siklus['pemupukan_awal']['nama_pupuk'] ?? '-' }}

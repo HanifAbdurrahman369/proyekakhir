@@ -15,7 +15,8 @@
         $currentMonth = (int) now()->format('n');
         $isKelompokTaniAllowed = ($currentMonth >= 1 && $currentMonth <= 9);
         $isBrigadePanganAllowed = in_array($currentMonth, [10, 11, 12, 1], true);
-        $isAllowedToPlant = ($roleId === 1 && $isKelompokTaniAllowed) || ($roleId === 5 && $isBrigadePanganAllowed);
+        $hasOwnLand = ($roleId === 5 && $totalLahan > 0);
+        $isAllowedToPlant = ($roleId === 1 && $isKelompokTaniAllowed) || ($roleId === 5 && $isBrigadePanganAllowed) || $hasOwnLand;
     @endphp
 
     <header class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -25,7 +26,7 @@
             <p class="mt-1 text-sm text-slate-500 leading-relaxed">Pantau proses tanam, pemupukan, dan riwayat panen yang terhubung dengan akun Anda.</p>
         </div>
         <div class="flex flex-wrap gap-2">
-            @if($roleId === 1)
+            @if(in_array($roleId, [1, 5], true))
                 <a href="{{ route('tambah.lahan') }}" class="inline-flex items-center gap-2 rounded-[26px] border border-[#3E7D00] bg-white px-5 py-2.5 text-xs font-semibold text-[#3E7D00] hover:bg-[#edf8dc] transition shadow-[0_14px_38px_rgba(32,60,16,.06)]">
                     <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -52,7 +53,7 @@
                 </button>
             @endif
 
-            @if($roleId === 1)
+            @if(in_array($roleId, [1, 5], true))
                 <a href="{{ route('lapor.panen') }}" class="inline-flex items-center gap-2 rounded-[26px] bg-[#203c10] px-5 py-2.5 text-xs font-semibold text-white hover:bg-[#14280b] transition shadow-[0_14px_38px_rgba(32,60,16,.06)]">
                     <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M19 15c-1.1 0-2 .9-2 2v3c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h3V4H5C2.8 4 1 5.8 1 8v12c0 2.2 1.8 4 4 4h10c2.2 0 4-1.8 4-4v-3c0-1.1-.9-2-2-2zm-3-4V3c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h6c1.1 0 2-.9 2-2zm-2 0H8V3h6v8z"/>
@@ -116,7 +117,7 @@
                     <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                         <div>
                             <h3 class="text-sm font-bold text-[#14280b]">{{ $siklus['nama_lahan'] }}</h3>
-                            <p class="mt-1 text-[11px] text-slate-500">{{ $siklus['nama_bibit'] }} · {{ $siklus['peran_pelapor'] === 'brigade_pangan' ? 'Dikelola Brigade Pangan' : 'Dikelola Kelompok Tani' }}</p>
+                            <p class="mt-1 text-[11px] text-slate-500">{{ $siklus['nama_bibit'] }} · Dikelola Sendiri</p>
                         </div>
                         <span class="w-fit rounded-full bg-[#edf8dc] px-2.5 py-1 text-[10px] font-bold text-[#3E7D00]">Panen {{ \Carbon\Carbon::parse($siklus['estimasi_tanggal_panen'])->format('d M Y') }}</span>
                     </div>
@@ -127,7 +128,7 @@
                         <span>{{ $siklus['progress_persen'] }}% masa tanam</span>
                         <span>{{ $siklus['hari_tersisa'] }} hari tersisa</span>
                     </div>
-                    @if($roleId === 1 && $siklus['can_report_harvest'])
+                    @if(in_array($roleId, [1, 5], true) && $siklus['can_report_harvest'])
                         <div class="mt-3"><a href="{{ route('lapor.panen') }}" class="text-xs font-bold text-[#3E7D00] hover:underline">Input hasil panen</a></div>
                     @endif
                 </article>
@@ -159,7 +160,7 @@
                         @if($status === 'DITOLAK')
                             <div class="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
                                 <p>{{ $item['alasan_penolakan'] ?? $item['catatan_verifikasi'] ?? 'Pengajuan perlu diperbaiki.' }}</p>
-                                @if($roleId === 1)
+                                @if(in_array($roleId, [1, 5], true))
                                     <a href="{{ route('lahan.edit', $item['id']) }}" class="mt-2 inline-block font-bold hover:underline">Perbaiki pengajuan</a>
                                 @endif
                             </div>

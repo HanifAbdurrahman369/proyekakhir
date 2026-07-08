@@ -378,7 +378,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           // Footer
                           Center(
                             child: Text(
-                              '🌾 2026 — SIG-PALA',
+                              '2026 - SiTani',
                               style: GoogleFonts.inter(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,

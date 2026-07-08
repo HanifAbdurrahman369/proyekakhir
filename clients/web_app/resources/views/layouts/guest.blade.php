@@ -63,7 +63,7 @@
             </div>
 
             <p class="text-center text-xs mt-6 font-medium" style="color:#497D00;">
-                🌾 {{ date('Y') }} — SIG-PALA
+                {{ date('Y') }} - SiTani
             </p>
         </section>
     </main>

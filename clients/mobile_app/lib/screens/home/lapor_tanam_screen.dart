@@ -13,6 +13,7 @@ class LaporTanamScreen extends StatefulWidget {
 class _LaporTanamScreenState extends State<LaporTanamScreen> {
   final _formKey = GlobalKey<FormState>();
   final _estimasiHariController = TextEditingController();
+  final _luasTanamController = TextEditingController();
   final _takaranController = TextEditingController();
 
   String? _selectedLahanId;
@@ -33,15 +34,38 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
   @override
   void dispose() {
     _estimasiHariController.dispose();
+    _luasTanamController.dispose();
     _takaranController.dispose();
     super.dispose();
+  }
+
+  void _onLahanChanged(String? lahanId, List<dynamic> lahanList) {
+    setState(() {
+      _selectedLahanId = lahanId;
+      if (lahanId != null) {
+        final lahan = lahanList.firstWhere(
+          (item) => item['id'].toString() == lahanId,
+          orElse: () => null,
+        );
+        final luasTanam =
+            lahan?['luas_tanam_hektar'] ?? lahan?['luas_lahan_hektar'];
+        if (luasTanam != null) {
+          _luasTanamController.text = luasTanam.toString();
+        }
+      } else {
+        _luasTanamController.clear();
+      }
+    });
   }
 
   void _onBibitChanged(String? bibitId, List<dynamic> bibitList) {
     setState(() {
       _selectedBibitId = bibitId;
       if (bibitId != null) {
-        final bibit = bibitList.firstWhere((item) => item['id'].toString() == bibitId, orElse: () => null);
+        final bibit = bibitList.firstWhere(
+          (item) => item['id'].toString() == bibitId,
+          orElse: () => null,
+        );
         if (bibit != null && bibit['masa_tanam_hari'] != null) {
           _estimasiHariController.text = bibit['masa_tanam_hari'].toString();
         }
@@ -86,8 +110,18 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
 
   String _formatDate(DateTime date) {
     final months = [
-      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
@@ -97,8 +131,18 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
     try {
       final parsed = DateTime.parse(dateStr);
       final months = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-        'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'Mei',
+        'Jun',
+        'Jul',
+        'Ags',
+        'Sep',
+        'Okt',
+        'Nov',
+        'Des',
       ];
       return '${parsed.day} ${months[parsed.month - 1]} ${parsed.year}';
     } catch (_) {
@@ -112,7 +156,9 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
     if (_tanggalPemupukan.isBefore(_tanggalTanam)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Tanggal pemupukan tidak boleh lebih awal dari tanggal tanam.'),
+          content: Text(
+            'Tanggal pemupukan tidak boleh lebih awal dari tanggal tanam.',
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -122,11 +168,14 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
     final provider = context.read<FarmingProvider>();
     final payload = {
       'lahan_id': int.tryParse(_selectedLahanId ?? ''),
+      'luas_tanam_hektar': double.tryParse(_luasTanamController.text.trim()),
       'bibit_id': int.tryParse(_selectedBibitId ?? ''),
-      'tanggal_tanam': '${_tanggalTanam.year}-${_tanggalTanam.month.toString().padLeft(2, '0')}-${_tanggalTanam.day.toString().padLeft(2, '0')}',
+      'tanggal_tanam':
+          '${_tanggalTanam.year}-${_tanggalTanam.month.toString().padLeft(2, '0')}-${_tanggalTanam.day.toString().padLeft(2, '0')}',
       'estimasi_hari_tanam': int.tryParse(_estimasiHariController.text.trim()),
       'pupuk_id': int.tryParse(_selectedPupukId ?? ''),
-      'tanggal_pemupukan': '${_tanggalPemupukan.year}-${_tanggalPemupukan.month.toString().padLeft(2, '0')}-${_tanggalPemupukan.day.toString().padLeft(2, '0')}',
+      'tanggal_pemupukan':
+          '${_tanggalPemupukan.year}-${_tanggalPemupukan.month.toString().padLeft(2, '0')}-${_tanggalPemupukan.day.toString().padLeft(2, '0')}',
       'takaran': double.tryParse(_takaranController.text.trim()),
     };
 
@@ -146,6 +195,7 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
         _selectedBibitId = null;
         _selectedPupukId = null;
         _estimasiHariController.clear();
+        _luasTanamController.clear();
         _takaranController.clear();
         _tanggalTanam = DateTime.now();
         _tanggalPemupukan = DateTime.now();
@@ -154,14 +204,22 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text('Gagal Lapor Tanam', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-          content: Text(provider.errorMessage ?? 'Terjadi kesalahan sistem.', style: GoogleFonts.inter()),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            'Gagal Lapor Tanam',
+            style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+          ),
+          content: Text(
+            provider.errorMessage ?? 'Terjadi kesalahan sistem.',
+            style: GoogleFonts.inter(),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: Text('OK', style: TextStyle(color: Colors.green[800])),
-            )
+            ),
           ],
         ),
       );
@@ -173,8 +231,14 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Hapus Laporan Tanam', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-        content: Text('Apakah Anda yakin ingin menghapus laporan tanam ini?', style: GoogleFonts.inter()),
+        title: Text(
+          'Hapus Laporan Tanam',
+          style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'Apakah Anda yakin ingin menghapus laporan tanam ini?',
+          style: GoogleFonts.inter(),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -204,7 +268,9 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(provider.errorMessage ?? 'Gagal menghapus laporan tanam.'),
+            content: Text(
+              provider.errorMessage ?? 'Gagal menghapus laporan tanam.',
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -242,7 +308,10 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
             children: [
               // Header Info
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEDF8DC),
                   border: Border.all(color: const Color(0xFFDFECCC)),
@@ -278,7 +347,11 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                       Expanded(
                         child: Text(
                           'Gagal memuat beberapa data:\n${farmingProvider.errorMessage}',
-                          style: GoogleFonts.inter(color: Colors.red[800], fontSize: 13, fontWeight: FontWeight.w500),
+                          style: GoogleFonts.inter(
+                            color: Colors.red[800],
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ],
@@ -307,11 +380,19 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.grass_rounded, color: Colors.green[800], size: 20),
+                          Icon(
+                            Icons.grass_rounded,
+                            color: Colors.green[800],
+                            size: 20,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             'Informasi Tanam',
-                            style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.green[800]),
+                            style: GoogleFonts.outfit(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green[800],
+                            ),
                           ),
                         ],
                       ),
@@ -321,8 +402,13 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                       DropdownButtonFormField<String>(
                         isExpanded: true,
                         initialValue: _selectedLahanId,
-                        style: GoogleFonts.inter(fontSize: 14, color: Colors.black),
-                        decoration: _buildInputDecoration('Pilih Lahan Terverifikasi'),
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: Colors.black,
+                        ),
+                        decoration: _buildInputDecoration(
+                          'Pilih Lahan Terverifikasi',
+                        ),
                         items: farmingProvider.lahanDropdownList.map((item) {
                           return DropdownMenuItem<String>(
                             value: item['id'].toString(),
@@ -333,8 +419,47 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                             ),
                           );
                         }).toList(),
-                        onChanged: (val) => setState(() => _selectedLahanId = val),
-                        validator: (value) => value == null ? 'Lahan wajib dipilih' : null,
+                        onChanged: (val) => _onLahanChanged(
+                          val,
+                          farmingProvider.lahanDropdownList,
+                        ),
+                        validator: (value) =>
+                            value == null ? 'Lahan wajib dipilih' : null,
+                      ),
+                      const SizedBox(height: 16),
+
+                      _buildLabel('Luas Tanam (Ha)'),
+                      TextFormField(
+                        controller: _luasTanamController,
+                        style: GoogleFonts.inter(fontSize: 14),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: _buildInputDecoration('Contoh: 1.25'),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Wajib diisi';
+                          }
+                          final val = double.tryParse(value);
+                          if (val == null || val <= 0) {
+                            return 'Harus positif';
+                          }
+                          if (_selectedLahanId != null) {
+                            final lahan = farmingProvider.lahanDropdownList
+                                .firstWhere(
+                                  (item) =>
+                                      item['id'].toString() == _selectedLahanId,
+                                  orElse: () => null,
+                                );
+                            final luasLahan = double.tryParse(
+                              (lahan?['luas_lahan_hektar'] ?? '').toString(),
+                            );
+                            if (luasLahan != null && val > luasLahan) {
+                              return 'Maksimal ${luasLahan.toStringAsFixed(2)} ha';
+                            }
+                          }
+                          return null;
+                        },
                       ),
                       const SizedBox(height: 16),
 
@@ -342,7 +467,10 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                       DropdownButtonFormField<String>(
                         isExpanded: true,
                         initialValue: _selectedBibitId,
-                        style: GoogleFonts.inter(fontSize: 14, color: Colors.black),
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: Colors.black,
+                        ),
                         decoration: _buildInputDecoration('Pilih Bibit'),
                         items: farmingProvider.bibitList.map((item) {
                           return DropdownMenuItem<String>(
@@ -354,8 +482,10 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                             ),
                           );
                         }).toList(),
-                        onChanged: (val) => _onBibitChanged(val, farmingProvider.bibitList),
-                        validator: (value) => value == null ? 'Bibit wajib dipilih' : null,
+                        onChanged: (val) =>
+                            _onBibitChanged(val, farmingProvider.bibitList),
+                        validator: (value) =>
+                            value == null ? 'Bibit wajib dipilih' : null,
                       ),
                       const SizedBox(height: 16),
 
@@ -370,23 +500,36 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                                 InkWell(
                                   onTap: () => _selectDate(context, true),
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 14,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
-                                      border: Border.all(color: const Color(0xFFCBD5E1)),
+                                      border: Border.all(
+                                        color: const Color(0xFFCBD5E1),
+                                      ),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Expanded(
                                           child: Text(
                                             _formatDate(_tanggalTanam),
-                                            style: GoogleFonts.inter(fontSize: 14, color: Colors.black),
+                                            style: GoogleFonts.inter(
+                                              fontSize: 14,
+                                              color: Colors.black,
+                                            ),
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
-                                        Icon(Icons.calendar_today_rounded, size: 18, color: Colors.green[800]),
+                                        Icon(
+                                          Icons.calendar_today_rounded,
+                                          size: 18,
+                                          color: Colors.green[800],
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -404,11 +547,17 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                                   controller: _estimasiHariController,
                                   style: GoogleFonts.inter(fontSize: 14),
                                   keyboardType: TextInputType.number,
-                                  decoration: _buildInputDecoration('Contoh: 120'),
+                                  decoration: _buildInputDecoration(
+                                    'Contoh: 120',
+                                  ),
                                   validator: (value) {
-                                    if (value == null || value.trim().isEmpty) return 'Wajib diisi';
+                                    if (value == null || value.trim().isEmpty) {
+                                      return 'Wajib diisi';
+                                    }
                                     final val = int.tryParse(value);
-                                    if (val == null || val <= 0) return 'Harus positif';
+                                    if (val == null || val <= 0) {
+                                      return 'Harus positif';
+                                    }
                                     return null;
                                   },
                                 ),
@@ -439,11 +588,19 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.science_rounded, color: Colors.teal[800], size: 20),
+                          Icon(
+                            Icons.science_rounded,
+                            color: Colors.teal[800],
+                            size: 20,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             'Informasi Pemupukan Awal',
-                            style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.teal[800]),
+                            style: GoogleFonts.outfit(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.teal[800],
+                            ),
                           ),
                         ],
                       ),
@@ -453,7 +610,10 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                       DropdownButtonFormField<String>(
                         isExpanded: true,
                         initialValue: _selectedPupukId,
-                        style: GoogleFonts.inter(fontSize: 14, color: Colors.black),
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: Colors.black,
+                        ),
                         decoration: _buildInputDecoration('Pilih Pupuk'),
                         items: farmingProvider.pupukList.map((item) {
                           return DropdownMenuItem<String>(
@@ -465,8 +625,10 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                             ),
                           );
                         }).toList(),
-                        onChanged: (val) => setState(() => _selectedPupukId = val),
-                        validator: (value) => value == null ? 'Pupuk wajib dipilih' : null,
+                        onChanged: (val) =>
+                            setState(() => _selectedPupukId = val),
+                        validator: (value) =>
+                            value == null ? 'Pupuk wajib dipilih' : null,
                       ),
                       const SizedBox(height: 16),
 
@@ -481,23 +643,36 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                                 InkWell(
                                   onTap: () => _selectDate(context, false),
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 14,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
-                                      border: Border.all(color: const Color(0xFFCBD5E1)),
+                                      border: Border.all(
+                                        color: const Color(0xFFCBD5E1),
+                                      ),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Expanded(
                                           child: Text(
                                             _formatDate(_tanggalPemupukan),
-                                            style: GoogleFonts.inter(fontSize: 14, color: Colors.black),
+                                            style: GoogleFonts.inter(
+                                              fontSize: 14,
+                                              color: Colors.black,
+                                            ),
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
-                                        Icon(Icons.calendar_today_rounded, size: 18, color: Colors.teal[800]),
+                                        Icon(
+                                          Icons.calendar_today_rounded,
+                                          size: 18,
+                                          color: Colors.teal[800],
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -514,12 +689,21 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                                 TextFormField(
                                   controller: _takaranController,
                                   style: GoogleFonts.inter(fontSize: 14),
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                  decoration: _buildInputDecoration('Contoh: 20'),
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                  decoration: _buildInputDecoration(
+                                    'Contoh: 20',
+                                  ),
                                   validator: (value) {
-                                    if (value == null || value.trim().isEmpty) return 'Wajib diisi';
+                                    if (value == null || value.trim().isEmpty) {
+                                      return 'Wajib diisi';
+                                    }
                                     final val = double.tryParse(value);
-                                    if (val == null || val <= 0) return 'Harus positif';
+                                    if (val == null || val <= 0) {
+                                      return 'Harus positif';
+                                    }
                                     return null;
                                   },
                                 ),
@@ -541,14 +725,26 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                   backgroundColor: Colors.green[800],
                   foregroundColor: Colors.white,
                   minimumSize: const Size(double.infinity, 52),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   elevation: 0,
                 ),
                 child: farmingProvider.isLoading
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
                     : Text(
                         'Mulai Proses Tanam & Pemupukan',
-                        style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14),
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
               ),
               const SizedBox(height: 24),
@@ -556,7 +752,11 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
               // Section: Proses Tanam Berjalan
               Text(
                 'Proses Tanam Berjalan',
-                style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
+                style: GoogleFonts.outfit(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF1E293B),
+                ),
               ),
               const SizedBox(height: 12),
 
@@ -574,7 +774,11 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                     child: Center(
                       child: Text(
                         'Belum ada proses tanam aktif.',
-                        style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 12, fontWeight: FontWeight.w500),
+                        style: GoogleFonts.inter(
+                          color: Colors.grey[500],
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ),
@@ -586,7 +790,9 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                   itemCount: farmingProvider.mySiklusTanam.length,
                   itemBuilder: (context, index) {
                     final siklus = farmingProvider.mySiklusTanam[index];
-                    final progress = double.tryParse(siklus['progress_persen'].toString()) ?? 0.0;
+                    final progress =
+                        double.tryParse(siklus['progress_persen'].toString()) ??
+                        0.0;
 
                     return Card(
                       margin: const EdgeInsets.only(bottom: 12),
@@ -606,22 +812,36 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         siklus['nama_lahan'] ?? '-',
-                                        style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
+                                        style: GoogleFonts.outfit(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFF1E293B),
+                                        ),
                                       ),
                                       const SizedBox(height: 2),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFEDF8DC),
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                         child: Text(
                                           siklus['nama_bibit'] ?? '-',
-                                          style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold, color: const Color(0xFF3E7D00)),
+                                          style: GoogleFonts.inter(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                            color: const Color(0xFF3E7D00),
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -629,7 +849,10 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                                 ),
                                 IconButton(
                                   onPressed: () => _deleteSiklus(siklus['id']),
-                                  icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+                                  icon: const Icon(
+                                    Icons.delete_outline_rounded,
+                                    color: Colors.red,
+                                  ),
                                 ),
                               ],
                             ),
@@ -641,22 +864,38 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                                 Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.calendar_today, size: 10, color: Colors.grey[400]),
+                                    Icon(
+                                      Icons.calendar_today,
+                                      size: 10,
+                                      color: Colors.grey[400],
+                                    ),
                                     const SizedBox(width: 4),
                                     Text(
                                       'Tanam: ${_formatDateStr(siklus['tanggal_tanam'])}',
-                                      style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600], fontWeight: FontWeight.w500),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11,
+                                        color: Colors.grey[600],
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
                                   ],
                                 ),
                                 Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.event_available, size: 10, color: Colors.grey[400]),
+                                    Icon(
+                                      Icons.event_available,
+                                      size: 10,
+                                      color: Colors.grey[400],
+                                    ),
                                     const SizedBox(width: 4),
                                     Text(
                                       'Panen: ${_formatDateStr(siklus['estimasi_tanggal_panen'])}',
-                                      style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600], fontWeight: FontWeight.w500),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11,
+                                        color: Colors.grey[600],
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -666,9 +905,20 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                               const SizedBox(height: 4),
                               Text(
                                 'Pemupukan awal: ${siklus['pemupukan_awal']['nama_pupuk'] ?? '-'} (${siklus['pemupukan_awal']['takaran'] ?? '0'} kg)',
-                                style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[500]),
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  color: Colors.grey[500],
+                                ),
                               ),
                             ],
+                            const SizedBox(height: 4),
+                            Text(
+                              'Luas tanam: ${siklus['luas_tanam_hektar'] ?? '-'} ha',
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: Colors.grey[500],
+                              ),
+                            ),
                             const SizedBox(height: 12),
                             // Progress bar
                             ClipRRect(
@@ -686,11 +936,19 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                               children: [
                                 Text(
                                   '${progress.toStringAsFixed(0)}% masa tanam',
-                                  style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey[600]),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[600],
+                                  ),
                                 ),
                                 Text(
                                   '${siklus['hari_tersisa'] ?? 0} hari lagi',
-                                  style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: const Color(0xFF3E7D00)),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color(0xFF3E7D00),
+                                  ),
                                 ),
                               ],
                             ),
@@ -721,7 +979,11 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
         children: [
           Text(
             'Panduan 3 Langkah Memulai Masa Tanam',
-            style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
+            style: GoogleFonts.outfit(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF1E293B),
+            ),
           ),
           const SizedBox(height: 12),
           Row(
@@ -745,16 +1007,26 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
         children: [
           CircleAvatar(
             radius: 12,
-            backgroundColor: isActive ? Colors.green[800] : const Color(0xFFF1F5F9),
+            backgroundColor: isActive
+                ? Colors.green[800]
+                : const Color(0xFFF1F5F9),
             child: Text(
               number,
-              style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: isActive ? Colors.white : const Color(0xFF64748B)),
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: isActive ? Colors.white : const Color(0xFF64748B),
+              ),
             ),
           ),
           const SizedBox(height: 4),
           Text(
             title,
-            style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold, color: isActive ? Colors.green[800] : const Color(0xFF334155)),
+            style: GoogleFonts.inter(
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+              color: isActive ? Colors.green[800] : const Color(0xFF334155),
+            ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -765,7 +1037,11 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
   Widget _buildConnector() {
     return const Padding(
       padding: EdgeInsets.only(top: 8, left: 1, right: 1),
-      child: Icon(Icons.arrow_forward_rounded, size: 10, color: Color(0xFF94A3B8)),
+      child: Icon(
+        Icons.arrow_forward_rounded,
+        size: 10,
+        color: Color(0xFF94A3B8),
+      ),
     );
   }
 
@@ -774,7 +1050,11 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
       padding: const EdgeInsets.only(bottom: 6, left: 2),
       child: Text(
         text,
-        style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF475569)),
+        style: GoogleFonts.inter(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: const Color(0xFF475569),
+        ),
       ),
     );
   }
@@ -786,10 +1066,22 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
       filled: true,
       fillColor: Colors.white,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.green[800]!, width: 2)),
-      errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.red, width: 1)),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.green[800]!, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.red, width: 1),
+      ),
     );
   }
 }

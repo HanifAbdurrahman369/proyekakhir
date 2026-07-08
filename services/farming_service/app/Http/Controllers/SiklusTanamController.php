@@ -37,6 +37,7 @@ class SiklusTanamController extends Controller
     {
         $request->validate([
             'lahan_id' => 'required|integer',
+            'luas_tanam_hektar' => 'required|numeric|min:0.01',
             'bibit_id' => 'required|integer',
             'tanggal_tanam' => 'required|date|before_or_equal:today',
             'estimasi_hari_tanam' => 'nullable|integer|min:1|max:730',
@@ -55,7 +56,15 @@ class SiklusTanamController extends Controller
             return $this->forbidden('Lahan tidak terdaftar untuk petani ini atau belum disetujui.');
         }
 
-        $aturan = $this->validasiAturanTanam($roleId, (int) $request->bibit_id, $request->tanggal_tanam);
+        $luasTanam = (float) $request->luas_tanam_hektar;
+        if ($luasTanam > (float) $lahan->luas_lahan_hektar) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Luas tanam tidak boleh lebih besar dari luas lahan.',
+            ], 422);
+        }
+
+        $aturan = $this->validasiAturanTanam($roleId, (int) $request->bibit_id, $request->tanggal_tanam, $lahan, $userId);
         if ($aturan['error']) {
             return response()->json(['success' => false, 'message' => $aturan['error']], 422);
         }
@@ -82,7 +91,8 @@ class SiklusTanamController extends Controller
             return response()->json(['success' => false, 'message' => 'Jenis pupuk tidak ditemukan.'], 422);
         }
 
-        $estimasiHari = (int) ($request->input('estimasi_hari_tanam') ?: $bibit->masa_tanam_hari);
+        $estimasiHari = (int) ($request->input('estimasi_hari_tanam') ?: ($bibit->estimasi_hari_min ?? $bibit->masa_tanam_hari));
+        $estimasiHariMax = (int) ($bibit->estimasi_hari_max ?? $estimasiHari);
 
         $data = DB::transaction(function () use (
             $lahan,
@@ -91,14 +101,17 @@ class SiklusTanamController extends Controller
             $tanggalTanam,
             $tanggalPemupukan,
             $estimasiHari,
+            $estimasiHariMax,
             $pupuk,
+            $luasTanam,
             $request
         ) {
             $tanam = SiklusTanam::create([
                 'lahan_id' => $lahan->id,
+                'luas_tanam_hektar' => $luasTanam,
                 'bibit_id' => $bibit->id,
                 'pupuk_id' => $pupuk->id,
-                'petani_id' => $userId,
+                'pemilik_id' => $userId,
                 'tanggal_tanam' => $tanggalTanam->toDateString(),
                 'tanggal_pemupukan' => $tanggalPemupukan->toDateString(),
                 'takaran_pupuk_kg' => $request->takaran,
@@ -106,12 +119,13 @@ class SiklusTanamController extends Controller
                 'pemupukan_dicatat_at' => now(),
                 'estimasi_hari' => $estimasiHari,
                 'estimasi_tanggal_panen' => $tanggalTanam->copy()->addDays($estimasiHari)->toDateString(),
+                'estimasi_tanggal_panen_akhir' => $tanggalTanam->copy()->addDays($estimasiHariMax)->toDateString(),
                 'status_aktif' => 'AKTIF',
                 'status_verifikasi' => 'PENDING',
             ]);
 
             DB::table('lahan_sawah')->where('id', $lahan->id)->update([
-                'petani_id' => $userId,
+                'luas_tanam_hektar' => $luasTanam,
                 'updated_at' => now(),
             ]);
 
@@ -165,14 +179,13 @@ class SiklusTanamController extends Controller
             ], 422);
         }
 
-        $luas = (float) $tanam->lahan->luas_lahan_hektar;
+        $luas = (float) ($tanam->luas_tanam_hektar ?: $tanam->lahan->luas_tanam_hektar ?: $tanam->lahan->luas_lahan_hektar);
         $hasil = (float) $request->hasil_panen;
         $payload = [
             'tanam_padi_id' => $tanam->id,
             'lahan_id' => $tanam->lahan_id,
             'bibit_id' => $tanam->bibit_id,
-            'pemilik_id' => $userId,
-            'petani_id' => $tanam->petani_id,
+            'pemilik_id' => $tanam->pemilik_id,
             'diverifikasi_oleh' => null,
             'nama_lahan' => $tanam->lahan->nama_lahan,
             'nama_bibit' => $tanam->bibit->nama_bibit,
@@ -181,6 +194,7 @@ class SiklusTanamController extends Controller
             'tanggal_panen' => $tanggalPanen->toDateString(),
             'hasil_panen_ton' => $hasil,
             'luas_lahan_ha' => $luas,
+            'luas_tanam_hektar' => $luas,
             'produktivitas_ton_ha' => $luas > 0 ? round($hasil / $luas, 2) : 0,
             'status_verifikasi' => 'PENDING',
             'catatan_verifikasi' => null,
@@ -196,7 +210,8 @@ class SiklusTanamController extends Controller
             'Kelompok Tani mengirim laporan panen untuk lahan ' . $tanam->lahan->nama_lahan . '.',
             'panen_padi',
             (int) $laporan->id,
-            '/verifikasi-data-petani?tipe=panen&id=' . $laporan->id
+            '/verifikasi-data-petani?tipe=panen&id=' . $laporan->id,
+            $tanam->lahan->assigned_petugas_id ? (int) $tanam->lahan->assigned_petugas_id : null
         );
 
         return response()->json([
@@ -234,10 +249,11 @@ class SiklusTanamController extends Controller
         }
 
         $hasil = (float) $request->hasil_panen;
-        $luas = (float) $laporan->luas_lahan_ha;
+        $luas = (float) ($laporan->luas_tanam_hektar ?: $laporan->luas_lahan_ha);
         $laporan->update([
             'tanggal_panen' => $tanggalPanen->toDateString(),
             'hasil_panen_ton' => $hasil,
+            'luas_tanam_hektar' => $luas,
             'produktivitas_ton_ha' => $luas > 0 ? round($hasil / $luas, 2) : 0,
             'status_verifikasi' => 'PENDING',
             'catatan_verifikasi' => null,
@@ -250,7 +266,8 @@ class SiklusTanamController extends Controller
             'Kelompok Tani mengajukan ulang laporan panen yang telah diperbaiki.',
             'panen_padi',
             (int) $laporan->id,
-            '/verifikasi-data-petani?tipe=panen&id=' . $laporan->id
+            '/verifikasi-data-petani?tipe=panen&id=' . $laporan->id,
+            $this->assignedPetugasLahan((int) $laporan->lahan_id)
         );
 
         return response()->json([
@@ -267,8 +284,10 @@ class SiklusTanamController extends Controller
         if ($roleId === self::ROLE_KELOMPOK_TANI) {
             $query->where('pp.pemilik_id', $userId);
         } elseif ($roleId === self::ROLE_BRIGADE_PANGAN) {
-            $query->where('pp.petani_id', $userId);
-        } elseif ($roleId !== self::ROLE_PETUGAS) {
+            $query->where('pp.pemilik_id', $userId);
+        } elseif ($roleId === self::ROLE_PETUGAS) {
+            $this->applyPetugasWilayahScope($query, $userId);
+        } else {
             return $this->forbidden('Detail laporan panen tidak dapat diakses.');
         }
 
@@ -294,6 +313,7 @@ class SiklusTanamController extends Controller
     {
         $request->validate([
             'lahan_id' => 'required|integer',
+            'luas_tanam_hektar' => 'required|numeric|min:0.01',
             'bibit_id' => 'required|integer',
             'tanggal_tanam' => 'required|date|before_or_equal:today',
             'estimasi_hari_tanam' => 'nullable|integer|min:1|max:730',
@@ -307,7 +327,7 @@ class SiklusTanamController extends Controller
             return $this->forbidden('Anda tidak memiliki akses untuk mengubah laporan tanam.');
         }
 
-        $data = SiklusTanam::where('id', $id)->where('petani_id', $userId)->first();
+        $data = SiklusTanam::where('id', $id)->where('pemilik_id', $userId)->first();
         if (!$data) {
             return response()->json(['success' => false, 'message' => 'Data tanam tidak ditemukan.'], 404);
         }
@@ -316,9 +336,21 @@ class SiklusTanamController extends Controller
         }
 
         $lahan = $this->lahanTanamYangDiizinkan($userId, $roleId, (int) $request->lahan_id);
-        $aturan = $this->validasiAturanTanam($roleId, (int) $request->bibit_id, $request->tanggal_tanam);
-        if (!$lahan || $aturan['error']) {
-            return response()->json(['success' => false, 'message' => $aturan['error'] ?: 'Lahan tidak tersedia.'], 422);
+        if (!$lahan) {
+            return response()->json(['success' => false, 'message' => 'Lahan tidak tersedia atau tidak diizinkan.'], 422);
+        }
+
+        $aturan = $this->validasiAturanTanam($roleId, (int) $request->bibit_id, $request->tanggal_tanam, $lahan, $userId);
+        if ($aturan['error']) {
+            return response()->json(['success' => false, 'message' => $aturan['error']], 422);
+        }
+
+        $luasTanam = (float) $request->luas_tanam_hektar;
+        if ($luasTanam > (float) $lahan->luas_lahan_hektar) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Luas tanam tidak boleh lebih besar dari luas lahan.',
+            ], 422);
         }
 
         $tanggalTanam = Carbon::parse($request->tanggal_tanam);
@@ -332,10 +364,12 @@ class SiklusTanamController extends Controller
             return response()->json(['success' => false, 'message' => 'Jenis pupuk tidak ditemukan.'], 422);
         }
 
-        $estimasiHari = (int) ($request->input('estimasi_hari_tanam') ?: $aturan['bibit']->masa_tanam_hari);
-        DB::transaction(function () use ($data, $lahan, $aturan, $tanggalTanam, $tanggalPemupukan, $estimasiHari, $pupuk, $request, $userId) {
+        $estimasiHari = (int) ($request->input('estimasi_hari_tanam') ?: ($aturan['bibit']->estimasi_hari_min ?? $aturan['bibit']->masa_tanam_hari));
+        $estimasiHariMax = (int) ($aturan['bibit']->estimasi_hari_max ?? $estimasiHari);
+        DB::transaction(function () use ($data, $lahan, $aturan, $tanggalTanam, $tanggalPemupukan, $estimasiHari, $estimasiHariMax, $pupuk, $luasTanam, $request, $userId) {
             $data->update([
                 'lahan_id' => $lahan->id,
+                'luas_tanam_hektar' => $luasTanam,
                 'bibit_id' => $aturan['bibit']->id,
                 'pupuk_id' => $pupuk->id,
                 'tanggal_tanam' => $tanggalTanam->toDateString(),
@@ -345,6 +379,12 @@ class SiklusTanamController extends Controller
                 'pemupukan_dicatat_at' => now(),
                 'estimasi_hari' => $estimasiHari,
                 'estimasi_tanggal_panen' => $tanggalTanam->copy()->addDays($estimasiHari)->toDateString(),
+                'estimasi_tanggal_panen_akhir' => $tanggalTanam->copy()->addDays($estimasiHariMax)->toDateString(),
+            ]);
+
+            DB::table('lahan_sawah')->where('id', $lahan->id)->update([
+                'luas_tanam_hektar' => $luasTanam,
+                'updated_at' => now(),
             ]);
         });
 
@@ -362,7 +402,7 @@ class SiklusTanamController extends Controller
             return $this->forbidden('Anda tidak memiliki akses untuk menghapus laporan tanam.');
         }
 
-        $data = SiklusTanam::where('id', $id)->where('petani_id', $userId)->first();
+        $data = SiklusTanam::where('id', $id)->where('pemilik_id', $userId)->first();
         if (!$data) {
             return response()->json(['success' => false, 'message' => 'Data tanam tidak ditemukan.'], 404);
         }
@@ -383,7 +423,7 @@ class SiklusTanamController extends Controller
         if ($roleId === self::ROLE_KELOMPOK_TANI) {
             $query->where('pemilik_id', $userId);
         } elseif ($roleId === self::ROLE_BRIGADE_PANGAN) {
-            $query->where('petani_id', $userId);
+            $query->where('pemilik_id', $userId);
         } else {
             return $this->forbidden('Ringkasan produksi hanya tersedia untuk petani.');
         }
@@ -396,14 +436,17 @@ class SiklusTanamController extends Controller
 
     public function getPendingVerifications(Request $request)
     {
-        [, $roleId] = $this->authUser($request);
+        [$petugasId, $roleId] = $this->authUser($request);
         if ($roleId !== self::ROLE_PETUGAS) {
             return $this->forbidden('Antrean verifikasi hanya dapat diakses petugas.');
         }
 
-        $data = $this->queryHasilPanen()
-            ->where('pp.status_verifikasi', 'PENDING')
-            ->orderByDesc('pp.created_at')
+        $query = $this->queryHasilPanen()
+            ->where('pp.status_verifikasi', 'PENDING');
+
+        $this->applyPetugasWilayahScope($query, $petugasId);
+
+        $data = $query->orderByDesc('pp.created_at')
             ->get()
             ->map(fn ($row) => $this->formatHasilPanen($row));
 
@@ -437,6 +480,9 @@ class SiklusTanamController extends Controller
             }
             if ($panen->status_verifikasi === 'DITERIMA') {
                 return ['status' => 409, 'body' => ['success' => false, 'message' => 'Laporan panen sudah pernah disetujui.']];
+            }
+            if (!$this->petugasBolehVerifikasiLahan($petugasId, (int) $panen->lahan_id)) {
+                return ['status' => 403, 'body' => ['success' => false, 'message' => 'Laporan panen berada di luar wilayah kerja petugas.']];
             }
 
             $panen->update([
@@ -484,6 +530,9 @@ class SiklusTanamController extends Controller
         }
         if ($panen->status_verifikasi === 'DITERIMA') {
             return response()->json(['success' => false, 'message' => 'Hasil panen yang sudah diterima tidak boleh ditolak ulang.'], 400);
+        }
+        if (!$this->petugasBolehVerifikasiLahan($petugasId, (int) $panen->lahan_id)) {
+            return response()->json(['success' => false, 'message' => 'Laporan panen berada di luar wilayah kerja petugas.'], 403);
         }
 
         $panen->update([
@@ -613,15 +662,19 @@ class SiklusTanamController extends Controller
             ->join('tanam_padi as tp', 'tp.id', '=', 'pp.tanam_padi_id')
             ->join('lahan_sawah as ls', 'ls.id', '=', 'pp.lahan_id')
             ->leftJoin('users as pemilik', 'pemilik.id', '=', 'pp.pemilik_id')
-            ->leftJoin('users as petani', 'petani.id', '=', 'pp.petani_id')
+
             ->leftJoin('jenis_bibit as jb', 'jb.id', '=', 'pp.bibit_id')
             ->leftJoin('kecamatan as kc', 'kc.id', '=', 'ls.kecamatan_id')
             ->leftJoin('kelurahan as kl', 'kl.id', '=', 'ls.kelurahan_id')
             ->select([
                 'pp.*',
+                'tp.luas_tanam_hektar as tanam_luas_tanam_hektar',
                 'tp.estimasi_hari',
                 'tp.estimasi_tanggal_panen',
+                'tp.estimasi_tanggal_panen_akhir',
                 'tp.status_aktif',
+                'ls.luas_lahan_hektar as lahan_luas_lahan_hektar',
+                'ls.luas_tanam_hektar as lahan_luas_tanam_hektar',
                 'ls.hasil_panen_ton as lahan_hasil_panen_ton',
                 'ls.produktivitas_ton_ha as lahan_produktivitas_ton_ha',
                 'ls.alamat_detail',
@@ -630,7 +683,6 @@ class SiklusTanamController extends Controller
                 'pemilik.nama_lengkap as nama_pemilik',
                 'pemilik.email as email_pemilik',
                 'pemilik.no_hp as no_hp_pemilik',
-                'petani.nama_lengkap as nama_petani',
                 'jb.masa_tanam_hari',
                 'kc.nama_kecamatan',
                 'kl.nama_kelurahan',
@@ -653,6 +705,8 @@ class SiklusTanamController extends Controller
             'bibit_id' => (int) $row->bibit_id,
             'tanggal_tanam' => $row->tanggal_tanam,
             'estimasi_panen' => (int) ($row->estimasi_hari ?? 0),
+            'estimasi_tanggal_panen' => $row->estimasi_tanggal_panen,
+            'estimasi_tanggal_panen_akhir' => $row->estimasi_tanggal_panen_akhir,
             'status_aktif' => $row->status_aktif,
             'tanggal_panen' => $row->tanggal_panen,
             'hasil_panen' => (float) $row->hasil_panen_ton,
@@ -666,14 +720,13 @@ class SiklusTanamController extends Controller
             'nama_petani' => $this->safeText($row->nama_pemilik),
             'email_petani' => $this->safeText($row->email_pemilik),
             'no_hp_petani' => $this->safeText($row->no_hp_pemilik),
-            'nama_penggarap' => $this->safeText($row->nama_petani),
-            'penggarap_user_id' => (int) $row->petani_id,
             'nama_bibit' => $this->safeText($row->nama_bibit),
             'varietas' => $this->safeText($row->varietas),
             'masa_tanam_hari' => (int) ($row->masa_tanam_hari ?? $row->estimasi_hari ?? 0),
             'nama_lahan' => $this->safeText($row->nama_lahan),
             'pemilik_lahan' => $this->safeText($row->nama_pemilik),
-            'luas_lahan_hektar' => (float) $row->luas_lahan_ha,
+            'luas_lahan_hektar' => (float) ($row->lahan_luas_lahan_hektar ?? $row->luas_lahan_ha),
+            'luas_tanam_hektar' => (float) ($row->luas_tanam_hektar ?? $row->tanam_luas_tanam_hektar ?? $row->luas_lahan_ha),
             'produktivitas_pengajuan_ton_ha' => (float) $row->produktivitas_ton_ha,
             'lahan_hasil_panen_ton' => (float) ($row->lahan_hasil_panen_ton ?? 0),
             'lahan_produktivitas_ton_ha' => (float) ($row->lahan_produktivitas_ton_ha ?? 0),
@@ -692,7 +745,8 @@ class SiklusTanamController extends Controller
                 'id' => (int) $row->lahan_id,
                 'nama_lahan' => $this->safeText($row->nama_lahan),
                 'pemilik_lahan' => $this->safeText($row->nama_pemilik),
-                'luas_lahan_hektar' => (float) $row->luas_lahan_ha,
+                'luas_lahan_hektar' => (float) ($row->lahan_luas_lahan_hektar ?? $row->luas_lahan_ha),
+                'luas_tanam_hektar' => (float) ($row->lahan_luas_tanam_hektar ?? $row->luas_tanam_hektar ?? $row->luas_lahan_ha),
             ],
         ];
     }
@@ -711,6 +765,7 @@ class SiklusTanamController extends Controller
 
         DB::table('lahan_sawah')->where('id', $lahanId)->update([
             'hasil_panen_ton' => $panen->hasil_panen_ton,
+            'luas_tanam_hektar' => $panen->luas_tanam_hektar ?: $panen->luas_lahan_ha,
             'produktivitas_ton_ha' => $panen->produktivitas_ton_ha,
             'panen_terakhir_id' => $panen->id,
             'updated_at' => now(),
@@ -722,7 +777,7 @@ class SiklusTanamController extends Controller
         if ($roleId === self::ROLE_KELOMPOK_TANI) {
             $query->whereHas('lahan', fn ($q) => $q->where('pemilik_id', $userId));
         } elseif ($roleId === self::ROLE_BRIGADE_PANGAN) {
-            $query->where('petani_id', $userId);
+            $query->where('pemilik_id', $userId);
         } else {
             $query->whereRaw('1 = 0');
         }
@@ -731,18 +786,22 @@ class SiklusTanamController extends Controller
     private function lahanTanamYangDiizinkan(int $userId, int $roleId, int $lahanId): ?LahanSawah
     {
         $query = LahanSawah::where('id', $lahanId)->where('status_verifikasi', 'DITERIMA');
+        
         if ($roleId === self::ROLE_KELOMPOK_TANI) {
+            return $query->where('pemilik_id', $userId)->first();
+        } elseif ($roleId === self::ROLE_BRIGADE_PANGAN) {
             return $query->where(function ($q) use ($userId) {
-                $q->where('pemilik_id', $userId)->orWhere('petani_id', $userId);
+                $q->where('pemilik_id', $userId)
+                  ->orWhereHas('pemilik', function ($q2) {
+                      $q2->where('role_id', self::ROLE_KELOMPOK_TANI);
+                  });
             })->first();
         }
-        if ($roleId === self::ROLE_BRIGADE_PANGAN) {
-            return $query->where('petani_id', $userId)->first();
-        }
+        
         return null;
     }
 
-    private function validasiAturanTanam(int $roleId, int $bibitId, string $tanggalTanam): array
+    private function validasiAturanTanam(int $roleId, int $bibitId, string $tanggalTanam, LahanSawah $lahan, int $userId): array
     {
         $bibit = DB::table('jenis_bibit')->where('id', $bibitId)->first();
         if (!$bibit) {
@@ -754,9 +813,13 @@ class SiklusTanamController extends Controller
         if ($roleId === self::ROLE_KELOMPOK_TANI && ($varietas !== 'lokal' || $bulan < 1 || $bulan > 9)) {
             return ['error' => 'Kelompok Tani menggunakan bibit lokal pada Januari sampai September.', 'bibit' => $bibit];
         }
-        if ($roleId === self::ROLE_BRIGADE_PANGAN
-            && ($varietas !== 'unggul' || !in_array($bulan, [10, 11, 12, 1], true))) {
-            return ['error' => 'Brigade Pangan menggunakan bibit unggul pada Oktober sampai Januari.', 'bibit' => $bibit];
+        
+        if ($roleId === self::ROLE_BRIGADE_PANGAN) {
+            if ((int) $lahan->pemilik_id !== $userId) {
+                if ($varietas !== 'unggul' || !in_array($bulan, [10, 11, 12, 1], true)) {
+                    return ['error' => 'Brigade Pangan menggunakan bibit unggul pada Oktober sampai Januari di lahan kelompok tani.', 'bibit' => $bibit];
+                }
+            }
         }
 
         return ['error' => null, 'bibit' => $bibit];
@@ -794,10 +857,11 @@ class SiklusTanamController extends Controller
             'hasil_panen' => $item->panen?->hasil_panen_ton,
             'status_verifikasi' => $item->status_verifikasi,
             'peran_pelapor' => $roleId === self::ROLE_BRIGADE_PANGAN ? 'brigade_pangan' : 'kelompok_tani',
-            'created_by' => (int) $item->petani_id,
-            'petani_id' => (int) $item->petani_id,
+            'created_by' => (int) $item->pemilik_id,
             'nama_lahan' => $item->lahan?->nama_lahan ?? '-',
             'pemilik_lahan' => $pemilik,
+            'luas_lahan_hektar' => (float) ($item->lahan?->luas_lahan_hektar ?? 0),
+            'luas_tanam_hektar' => (float) ($item->luas_tanam_hektar ?: $item->lahan?->luas_tanam_hektar ?: $item->lahan?->luas_lahan_hektar ?: 0),
             'nama_bibit' => $item->bibit?->nama_bibit ?? '-',
             'varietas' => $item->bibit?->varietas,
             'masa_tanam_hari' => (int) ($item->bibit?->masa_tanam_hari ?? $item->estimasi_hari),
@@ -808,8 +872,8 @@ class SiklusTanamController extends Controller
             'pupuk_id' => $pemupukanAwal['pupuk_id'],
             'tanggal_pemupukan' => $pemupukanAwal['tanggal_pemupukan'],
             'takaran' => $pemupukanAwal['takaran'],
-            'can_edit' => (int) $item->petani_id === $userId && $item->status_aktif === 'AKTIF' && !$item->panen,
-            'can_delete' => (int) $item->petani_id === $userId && $item->status_aktif === 'AKTIF' && !$item->panen,
+            'can_edit' => (int) $item->pemilik_id === $userId && $item->status_aktif === 'AKTIF',
+            'can_delete' => (int) $item->pemilik_id === $userId && $item->status_aktif === 'AKTIF' && !$item->panen,
             'can_report_harvest' => $roleId === self::ROLE_KELOMPOK_TANI
                 && (int) ($item->lahan?->pemilik_id ?? 0) === $userId
                 && $item->status_aktif === 'AKTIF'
@@ -818,12 +882,12 @@ class SiklusTanamController extends Controller
         ];
     }
 
-    private function buatNotifikasiPetugas(string $judul, string $pesan, ?string $refType, ?int $refId, ?string $targetUrl): void
+    private function buatNotifikasiPetugas(string $judul, string $pesan, ?string $refType, ?int $refId, ?string $targetUrl, ?int $userIdPenerima = null): void
     {
         try {
             DB::table('notifikasi')->insert([
                 'role_id_penerima' => self::ROLE_PETUGAS,
-                'user_id_penerima' => null,
+                'user_id_penerima' => $userIdPenerima,
                 'judul' => $judul,
                 'pesan' => $pesan,
                 'ref_type' => $refType,
@@ -844,6 +908,79 @@ class SiklusTanamController extends Controller
             ->where('ref_type', 'panen_padi')
             ->where('ref_id', $id)
             ->update(['is_read' => 1, 'updated_at' => now()]);
+    }
+
+    private function assignedPetugasLahan(int $lahanId): ?int
+    {
+        $value = DB::table('lahan_sawah')->where('id', $lahanId)->value('assigned_petugas_id');
+        return $value ? (int) $value : null;
+    }
+
+    private function applyPetugasWilayahScope($query, int $petugasId): void
+    {
+        $wilayah = $this->petugasWilayah($petugasId);
+        if (!empty($wilayah['kelurahan_ids'])) {
+            $query->whereIn('ls.kelurahan_id', $wilayah['kelurahan_ids']);
+            return;
+        }
+
+        if ($wilayah['kecamatan_id']) {
+            $query->where('ls.kecamatan_id', $wilayah['kecamatan_id']);
+        }
+    }
+
+    private function petugasBolehVerifikasiLahan(int $petugasId, int $lahanId): bool
+    {
+        $wilayah = $this->petugasWilayah($petugasId);
+        if (!$wilayah['kecamatan_id'] && empty($wilayah['kelurahan_ids'])) {
+            return true;
+        }
+
+        $lahan = DB::table('lahan_sawah')
+            ->where('id', $lahanId)
+            ->select('kecamatan_id', 'kelurahan_id')
+            ->first();
+
+        if (!$lahan) {
+            return false;
+        }
+
+        if (!empty($wilayah['kelurahan_ids'])) {
+            return in_array((int) $lahan->kelurahan_id, $wilayah['kelurahan_ids'], true);
+        }
+
+        return (int) $lahan->kecamatan_id === (int) $wilayah['kecamatan_id'];
+    }
+
+    private function petugasWilayah(int $petugasId): array
+    {
+        $petugas = DB::table('users')
+            ->join('komunitas', 'users.komunitas_id', '=', 'komunitas.id')
+            ->where('users.id', $petugasId)
+            ->where('users.role_id', self::ROLE_PETUGAS)
+            ->select('komunitas.wilayah_kecamatan_id', 'komunitas.wilayah_kelurahan_ids')
+            ->first();
+
+        return [
+            'kecamatan_id' => $petugas?->wilayah_kecamatan_id ? (int) $petugas->wilayah_kecamatan_id : null,
+            'kelurahan_ids' => $this->kelurahanIds($petugas?->wilayah_kelurahan_ids ?? null),
+        ];
+    }
+
+    private function kelurahanIds($value): array
+    {
+        if (is_array($value)) {
+            return array_values(array_unique(array_map('intval', $value)));
+        }
+
+        if (is_string($value) && trim($value) !== '') {
+            $decoded = json_decode($value, true);
+            if (is_array($decoded)) {
+                return array_values(array_unique(array_map('intval', $decoded)));
+            }
+        }
+
+        return [];
     }
 
     private function authUser(Request $request): array

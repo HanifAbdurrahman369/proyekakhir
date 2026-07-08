@@ -1,6 +1,6 @@
 class ApiEndpoints {
-  // Jika menggunakan USB debugging dengan adb reverse (direkomendasikan):
-  static const String baseUrl = 'http://127.0.0.1:8003/api';
+  // Menggunakan 10.0.2.2 untuk mengakses localhost komputer host dari Emulator Android Studio
+  static const String baseUrl = 'http://10.0.2.2:8003/api';
   
   // Jika menggunakan koneksi Wi-Fi langsung (sesuaikan dengan IP lokal saat ini):
   // static const String baseUrl = 'http://10.191.194.225:8003/api';

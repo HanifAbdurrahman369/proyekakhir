@@ -15,7 +15,6 @@ class LaporPanen extends Model
         'lahan_id',
         'bibit_id',
         'pemilik_id',
-        'petani_id',
         'diverifikasi_oleh',
         'nama_lahan',
         'nama_bibit',
@@ -24,6 +23,7 @@ class LaporPanen extends Model
         'tanggal_panen',
         'hasil_panen_ton',
         'luas_lahan_ha',
+        'luas_tanam_hektar',
         'produktivitas_ton_ha',
         'status_verifikasi',
         'catatan_verifikasi',
@@ -33,6 +33,7 @@ class LaporPanen extends Model
     protected $casts = [
         'hasil_panen_ton' => 'float',
         'luas_lahan_ha' => 'float',
+        'luas_tanam_hektar' => 'float',
         'produktivitas_ton_ha' => 'float',
         'tanggal_tanam' => 'date',
         'tanggal_panen' => 'date',

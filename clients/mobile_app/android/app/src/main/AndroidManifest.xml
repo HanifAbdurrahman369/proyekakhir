@@ -2,7 +2,7 @@
     android:installLocation="auto">
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="mobile_app"
+        android:label="SiTani"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">
@@ -32,6 +32,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="sigpala" android:host="reset-password" />
+                <data android:scheme="sitani" android:host="reset-password" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

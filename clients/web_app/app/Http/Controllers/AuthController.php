@@ -16,8 +16,8 @@ class AuthController extends Controller
 
     private function generateMathCaptcha(Request $request): void
     {
-        $angkaPertama = random_int(1, 15);
-        $angkaKedua = random_int(1, 15);
+        $angkaPertama = random_int(1, 9);
+        $angkaKedua = random_int(1, 9);
 
         $request->session()->put('math_captcha_question', "{$angkaPertama} + {$angkaKedua}");
         $request->session()->put('math_captcha_answer', $angkaPertama + $angkaKedua);
@@ -91,7 +91,8 @@ class AuthController extends Controller
         |--------------------------------------------------------------------------
         */
         try {
-            $response = Http::withoutVerifying()
+            $response = Http::withHeaders(['Connection' => 'close'])
+                ->withoutVerifying()
                 ->timeout(10)
                 ->post($this->gatewayUrl() . '/api/login', [
                     'email' => $request->email,
@@ -201,7 +202,7 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'nama_lengkap' => 'required|string|max:255',
             'email' => 'required|email',
-            'jenis_kelompok' => 'required|in:kelompok_tani,brigade_pangan',
+            'jenis_kelompok' => 'required|in:komunitas_tani,brigade_pangan',
             'password' => 'required|string|min:6|confirmed',
         ], [
             'nama_lengkap.required' => 'Nama lengkap wajib diisi.',
@@ -221,7 +222,8 @@ class AuthController extends Controller
         }
 
         try {
-            $response = Http::withoutVerifying()
+            $response = Http::withHeaders(['Connection' => 'close'])
+                ->withoutVerifying()
                 ->timeout(10)
                 ->post($this->gatewayUrl() . '/api/register', [
                     'nama_lengkap' => $request->nama_lengkap,
@@ -239,7 +241,8 @@ class AuthController extends Controller
         }
 
         if ($response->successful()) {
-            $loginResponse = Http::withoutVerifying()
+            $loginResponse = Http::withHeaders(['Connection' => 'close'])
+                ->withoutVerifying()
                 ->timeout(10)
                 ->post($this->gatewayUrl() . '/api/login', [
                     'email' => $request->email,
@@ -286,13 +289,21 @@ class AuthController extends Controller
             'email' => 'required|email'
         ]);
 
-        $response = Http::withoutVerifying()
-            ->post($this->gatewayUrl() . '/api/forgot-password', [
-                'email' => $request->email
-            ]);
+        try {
+            $response = Http::withHeaders(['Connection' => 'close'])->withoutVerifying()
+                ->timeout(15)
+                ->acceptJson()
+                ->post($this->gatewayUrl() . '/api/forgot-password', [
+                    'email' => $request->email
+                ]);
+        } catch (\Throwable $e) {
+            return back()->withErrors([
+                'email' => 'Layanan reset password belum dapat dihubungi. Silakan coba lagi beberapa saat.',
+            ])->withInput($request->only('email'));
+        }
 
         if ($response->successful()) {
-            return back()->with('status', 'Link reset password dikirim ke email');
+            return back()->with('status', 'Link reset password sudah dikirim ke email jika akun terdaftar.');
         }
 
         // Ambil pesan error asli dari API/Gateway jika ada
@@ -304,7 +315,7 @@ class AuthController extends Controller
 
         return back()->withErrors([
             'email' => $errorMsg
-        ]);
+        ])->withInput($request->only('email'));
     }
 
     public function resetPassword(Request $request)
@@ -318,8 +329,16 @@ class AuthController extends Controller
             'password.confirmed' => 'Konfirmasi password tidak cocok.'
         ]);
 
-        $response = Http::withoutVerifying()
-            ->post($this->gatewayUrl() . '/api/forget-password', $request->all());
+        try {
+            $response = Http::withHeaders(['Connection' => 'close'])->withoutVerifying()
+                ->timeout(15)
+                ->acceptJson()
+                ->post($this->gatewayUrl() . '/api/reset-password', $request->all());
+        } catch (\Throwable $e) {
+            return back()->withErrors([
+                'reset' => 'Layanan reset password belum dapat dihubungi. Silakan coba lagi beberapa saat.',
+            ])->withInput($request->except(['password', 'password_confirmation']));
+        }
 
         if ($response->successful()) {
             return redirect('/login')->with('success', 'Password berhasil direset');
@@ -329,7 +348,7 @@ class AuthController extends Controller
         $responseData = $response->json();
 
         if (isset($responseData['errors']) && is_array($responseData['errors'])) {
-            return back()->withErrors($responseData['errors'])->withInput($request->except('password'));
+            return back()->withErrors($responseData['errors'])->withInput($request->except(['password', 'password_confirmation']));
         }
 
         if (isset($responseData['message'])) {
@@ -338,6 +357,94 @@ class AuthController extends Controller
 
         return back()->withErrors([
             'reset' => $errorMsg
-        ])->withInput($request->except('password'));
+        ])->withInput($request->except(['password', 'password_confirmation']));
+    }
+
+    public function profile()
+    {
+        $token = session('token');
+        if (!$token) {
+            return redirect('/login')->with('error', 'Session login habis, silakan login kembali.');
+        }
+
+        try {
+            $response = Http::withHeaders(['Connection' => 'close'])->withToken($token)
+                ->acceptJson()
+                ->withoutVerifying()
+                ->timeout(15)
+                ->get($this->gatewayUrl() . '/api/auth/profile');
+        } catch (\Throwable $e) {
+            $response = null;
+        }
+
+        $user = $response?->successful()
+            ? ($response->json('user') ?? session('user', []))
+            : session('user', []);
+
+        $kecamatan = [];
+        $kelurahan = [];
+        
+        if ((int) ($user['role_id'] ?? session('role_id')) === 2) {
+            try {
+                $kecamatan = Http::get($this->gatewayUrl() . '/api/kecamatan')->json()['data'] ?? [];
+                $kelurahan = Http::get($this->gatewayUrl() . '/api/kelurahan')->json()['data'] ?? [];
+            } catch (\Throwable $e) {
+                // ignore
+            }
+        }
+
+        return view('auth.profile', [
+            'user' => $user,
+            'kecamatan' => $kecamatan,
+            'kelurahan' => $kelurahan
+        ]);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $validated = $request->validate([
+            'nama_lengkap' => 'required|string|max:150',
+            'email' => 'required|email',
+            'no_hp' => 'nullable|string|max:20',
+            'alamat' => 'nullable|string',
+            'wilayah_kecamatan_id' => 'nullable|integer',
+            'wilayah_kelurahan_id' => 'nullable|integer',
+        ]);
+
+        $token = session('token');
+        if (!$token) {
+            return redirect('/login')->with('error', 'Session login habis, silakan login kembali.');
+        }
+
+        try {
+            $response = Http::withHeaders(['Connection' => 'close'])->withToken($token)
+                ->acceptJson()
+                ->withoutVerifying()
+                ->timeout(15)
+                ->put($this->gatewayUrl() . '/api/auth/profile', $validated);
+        } catch (\Throwable $e) {
+            return back()
+                ->withInput()
+                ->withErrors(['profile' => 'Layanan profil belum dapat dihubungi. Silakan coba lagi beberapa saat.']);
+        }
+
+        if ($response->successful()) {
+            $user = $response->json('user') ?? [];
+            session([
+                'user' => $user,
+                'role_id' => $user['role_id'] ?? session('role_id'),
+            ]);
+
+            return back()->with('success', 'Profil berhasil diperbarui.');
+        }
+
+        $responseData = $response->json();
+        if (isset($responseData['errors']) && is_array($responseData['errors'])) {
+            return back()->withInput()->withErrors($responseData['errors']);
+        }
+
+        return back()
+            ->withInput()
+            ->withErrors(['profile' => $responseData['message'] ?? 'Profil gagal diperbarui.']);
     }
 }

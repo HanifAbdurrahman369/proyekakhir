@@ -28,7 +28,7 @@ class AuthProvider extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       _token = prefs.getString('auth_token');
-      
+
       if (_token != null) {
         // Ambil data profil terbaru untuk memastikan token masih valid
         _currentUser = await _authService.getProfile();
@@ -51,10 +51,10 @@ class AuthProvider extends ChangeNotifier {
     try {
       final data = await _authService.login(email, password);
       _token = data['token'] as String;
-      
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('auth_token', _token!);
-      
+
       _currentUser = User.fromJson(data['user'] as Map<String, dynamic>);
     } finally {
       _isLoading = false;
@@ -97,6 +97,29 @@ class AuthProvider extends ChangeNotifier {
       await prefs.remove('auth_token');
       _token = null;
       _currentUser = null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Menangani aksi edit profil pengguna aktif
+  Future<void> updateProfile({
+    required String namaLengkap,
+    required String email,
+    String? noHp,
+    String? alamat,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      _currentUser = await _authService.updateProfile(
+        namaLengkap: namaLengkap,
+        email: email,
+        noHp: noHp,
+        alamat: alamat,
+      );
     } finally {
       _isLoading = false;
       notifyListeners();

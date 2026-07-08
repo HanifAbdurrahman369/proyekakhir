@@ -36,6 +36,18 @@ Route::post('/reset-password', [
 /*
 /*
 =====================================
+API KOMUNITAS / GAPOKTAN
+=====================================
+*/
+use App\Http\Controllers\KomunitasController;
+
+Route::get('/komunitas', [KomunitasController::class, 'index']);
+Route::post('/komunitas', [KomunitasController::class, 'store']);
+Route::put('/komunitas/{id}', [KomunitasController::class, 'update']);
+Route::delete('/komunitas/{id}', [KomunitasController::class, 'destroy']);
+
+/*
+=====================================
 API CRUD MANAJEMEN USER (UNTUK ADMIN)
 =====================================
 */

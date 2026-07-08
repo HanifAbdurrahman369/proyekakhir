@@ -1,121 +1,80 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../../models/user.dart';
+import '../../../services/auth_service.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../core/network/api_client.dart';
+import '../../admin_komunitas_screen.dart';
 
-class AdminDashboard extends StatelessWidget {
+class AdminDashboard extends StatefulWidget {
   final User? user;
 
   const AdminDashboard({super.key, required this.user});
 
   @override
+  State<AdminDashboard> createState() => _AdminDashboardState();
+}
+
+class _AdminDashboardState extends State<AdminDashboard> {
+  bool _isLoading = true;
+  int _totalUsers = 0;
+  int _totalKomunitas = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchStats();
+  }
+
+  Future<void> _fetchStats() async {
+    try {
+      final authService = AuthService(ApiClient());
+      final usersRes = await authService.getUsers();
+      final komunitasRes = await authService.getKomunitas();
+      
+      if (mounted) {
+        setState(() {
+          // get total from meta if paginated, else count data length
+          _totalUsers = usersRes['meta']?['total'] ?? (usersRes['data'] as List?)?.length ?? 0;
+          _totalKomunitas = komunitasRes['meta']?['total'] ?? (komunitasRes['data'] as List?)?.length ?? 0;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Profile Card
-          // _buildProfileCard(),
-          // const SizedBox(height: 28),
-          
-          // Statistics
           Text(
-            'Status Sistem SIG-PALA',
+            'Status Sistem SiTani',
             style: GoogleFonts.outfit(
-              fontSize: 18,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF0F172A),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 24),
           Row(
             children: [
               Expanded(
-                child: _buildStatCard(
-                  title: 'Total Akun User',
-                  value: '45 Akun',
-                  subtitle: 'Dalam Database',
-                  icon: Icons.people_rounded,
-                  color: Colors.teal,
-                ),
+                child: _buildStatCard('Total Pengguna', _totalUsers.toString(), Icons.people),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _buildStatCard(
-                  title: 'Status Microservice',
-                  value: '8 Aktif',
-                  subtitle: 'Semua Port Up',
-                  icon: Icons.dns_rounded,
-                  color: Colors.orange,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 28),
-
-          // Quick Action Menu Title
-          Text(
-            'Akses Fitur Administrator',
-            style: GoogleFonts.outfit(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF0F172A),
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          // Quick Action Grid
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1.1,
-            children: [
-              _buildQuickActionCard(
-                title: 'Kelola Pengguna',
-                subtitle: 'Manajemen akun user & role',
-                icon: Icons.person_add_rounded,
-                color: Colors.teal.shade700,
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Membuka Manajemen Akun User...')),
-                  );
-                },
-              ),
-              _buildQuickActionCard(
-                title: 'Data Master',
-                subtitle: 'Kelola tabel master sistem',
-                icon: Icons.table_chart_rounded,
-                color: Colors.orange.shade800,
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Membuka Manajemen Ekosistem Data Master...')),
-                  );
-                },
-              ),
-              _buildQuickActionCard(
-                title: 'Eksekusi SQL',
-                subtitle: 'Bypass DBA Service Command',
-                icon: Icons.terminal_rounded,
-                color: Colors.blue.shade700,
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Membuka Konsol SQL Administrator...')),
-                  );
-                },
-              ),
-              _buildQuickActionCard(
-                title: 'Notifikasi',
-                subtitle: 'Pengumuman sistem global',
-                icon: Icons.notifications_active_rounded,
-                color: Colors.red.shade700,
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Membuka Notifikasi Global...')),
-                  );
-                },
+                child: _buildStatCard('Total Komunitas', _totalKomunitas.toString(), Icons.groups),
               ),
             ],
           ),
@@ -124,113 +83,41 @@ class AdminDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard({
-    required String title,
-    required String value,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-  }) {
+  Widget _buildStatCard(String title, String value, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(10),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            backgroundColor: color.withValues(alpha: 0.1),
-            radius: 20,
-            child: Icon(icon, color: color, size: 20),
-          ),
+          Icon(icon, color: Colors.green, size: 32),
           const SizedBox(height: 12),
           Text(
             value,
-            style: GoogleFonts.outfit(
-              fontSize: 20,
+            style: GoogleFonts.inter(
+              fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF0F172A),
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 4),
           Text(
             title,
             style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF64748B),
-            ),
-          ),
-          Text(
-            subtitle,
-            style: GoogleFonts.inter(
-              fontSize: 10,
-              color: const Color(0xFF94A3B8),
+              fontSize: 14,
+              color: Colors.grey[600],
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActionCard({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                CircleAvatar(
-                  backgroundColor: color.withValues(alpha: 0.1),
-                  child: Icon(icon, color: color),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: GoogleFonts.outfit(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF0F172A),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        color: const Color(0xFF64748B),
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }

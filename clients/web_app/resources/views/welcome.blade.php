@@ -14,14 +14,14 @@
             <span class="text-emerald-300 text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase">Platform Geospasial Pertanian</span>
         </div>
 
-        <h1 class="text-6xl sm:text-7xl md:text-9xl font-black tracking-tight mb-4">
-            <span class="text-white drop-shadow-lg">SIG</span><span class="text-emerald-400 drop-shadow-[0_0_20px_rgba(52,211,153,0.4)]"> - PALA</span>
+        <h1 class="text-5xl sm:text-7xl md:text-9xl font-black tracking-tight mb-4 flex justify-center items-baseline">
+            <span class="text-white drop-shadow-lg"><span class="text-[1.2em]">S</span>i</span><span class="text-emerald-400 drop-shadow-[0_0_20px_rgba(52,211,153,0.4)]"><span class="text-[1.2em]">T</span>ani</span>
         </h1>
         
         <div class="w-24 h-1.5 bg-emerald-500 rounded-full mb-8 shadow-[0_0_15px_rgba(16,185,129,0.5)]"></div>
 
         <p class="text-emerald-50 text-sm sm:text-lg md:text-xl max-w-2xl font-medium tracking-wide leading-relaxed drop-shadow-md">
-            SISTEM INFORMASI GEOGRAFIS PRODUKTIVITAS <br class="hidden sm:block"> PADA LAHAN RAWA BARITO KUALA
+            SiTani ( Sistem informasi dinas pertanian )
         </p>
     </div>
 
@@ -36,27 +36,27 @@
                     <div class="w-1 h-6 bg-emerald-500 rounded-full"></div>
                     <p class="text-emerald-600 text-xs font-bold tracking-[0.2em] uppercase">Layanan Informasi Publik</p>
                 </div>
-                <h2 class="text-slate-900 text-4xl sm:text-5xl font-extrabold leading-[1.15] tracking-tight">
+                <h2 class="text-slate-900 text-3xl sm:text-4xl md:text-5xl font-extrabold leading-[1.15] tracking-tight">
                     Transparansi Data & <br>
                     <span class="text-emerald-600">Visualisasi Lahan Rawa</span>
                 </h2>
             </div>
             
-            <p class="text-slate-500 text-lg leading-relaxed font-medium">
-                SIG-PALA adalah platform geospasial yang dirancang khusus untuk memetakan ketersediaan lahan pertanian rawa di Kabupaten Barito Kuala secara akurat, modern, dan transparan bagi publik.
+            <p class="text-slate-500 text-base sm:text-lg leading-relaxed font-medium">
+                SiTani adalah sistem informasi dinas pertanian yang dirancang khusus untuk memetakan ketersediaan lahan pertanian rawa di Kabupaten Barito Kuala secara akurat, modern, dan transparan bagi publik.
             </p>
 
-            <div class="grid grid-cols-3 gap-6 pt-6 border-t border-slate-100">
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 pt-6 border-t border-slate-100">
                 <div>
-                    <p class="text-3xl font-black text-emerald-600 mb-1">17+</p>
+                    <p class="text-2xl sm:text-3xl font-black text-emerald-600 mb-1">17+</p>
                     <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-snug">Kecamatan<br>Terpetakan</p>
                 </div>
                 <div>
-                    <p class="text-3xl font-black text-emerald-600 mb-1">Real<span class="text-emerald-400">-time</span></p>
+                    <p class="text-2xl sm:text-3xl font-black text-emerald-600 mb-1">Real<span class="text-emerald-400">-time</span></p>
                     <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-snug">Pembaruan<br>Data API</p>
                 </div>
-                <div>
-                    <p class="text-3xl font-black text-emerald-600 mb-1">Open</p>
+                <div class="col-span-2 sm:col-span-1">
+                    <p class="text-2xl sm:text-3xl font-black text-emerald-600 mb-1">Open</p>
                     <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-snug">Akses Data<br>Publik</p>
                 </div>
             </div>

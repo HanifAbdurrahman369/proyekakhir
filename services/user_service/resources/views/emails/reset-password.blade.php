@@ -117,11 +117,11 @@
     <div class="wrapper">
         <div class="container">
             <div class="header">
-                <h1>SIG-PALA</h1>
+                <h1>SiTani</h1>
             </div>
             <div class="content">
                 <p class="greeting">Halo, {{ $nama }}!</p>
-                <p class="text">Kami menerima permintaan untuk mereset password akun Anda pada Sistem Informasi Geografis Lahan Pertanian (SIG-PALA).</p>
+                <p class="text">Kami menerima permintaan untuk mereset password akun Anda pada SiTani, Sistem Informasi Dinas Pertanian.</p>
                 
                 <div class="btn-container">
                     <a href="{{ $url }}" class="btn">Reset Password Sekarang</a>

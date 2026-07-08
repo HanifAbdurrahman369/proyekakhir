@@ -23,6 +23,7 @@ Route::middleware(\App\Http\Middleware\JwtMiddleware::class)->group(function () 
     Route::get('/produksi-pejabat', [StatistikController::class, 'produksiPejabat']);
     Route::get('/total-lahan', [StatistikController::class, 'totalLahan']);
     Route::get('/produksi-kecamatan', [StatistikController::class, 'produksiPerKecamatan']);
+    Route::get('/produksi-kelurahan', [StatistikController::class, 'produksiKelurahan']);
     Route::get('/lahan-kecamatan', [StatistikController::class, 'lahanPerKecamatan']);
     Route::get('/produksi-bulanan', [StatistikController::class, 'produksiBulanan']);
     Route::get('/top-kecamatan', [StatistikController::class, 'topKecamatan']);

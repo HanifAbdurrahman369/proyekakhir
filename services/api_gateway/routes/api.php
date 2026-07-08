@@ -36,7 +36,8 @@ function proxyRequest(Request $request, string $serviceUrl, string $path)
     }
 
     $options = [
-        'headers' => $headers,
+        'headers' => array_merge($headers, ['Connection' => 'close']),
+        'http_errors' => false,
         'query'   => $request->query(),
         'timeout' => 60,
     ];
@@ -127,9 +128,14 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/auth/{any?}
 
 /*
 |--------------------------------------------------------------------------
-| 3. ROLE PETUGAS - Manajemen Data Spasial
+| 3. ROLE PETUGAS - Manajemen Data Spasial & Komunitas
 |--------------------------------------------------------------------------
 */
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/komunitas/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    $path = trim('komunitas/' . $any, '/');
+    return proxyRequest($request, $serviceMap['user'], $path);
+})->where('any', '.*');
 
 Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/spasial-lahan/{any?}', function (Request $request, $any = '') use ($serviceMap) {
     $path = trim('spasial-lahan/' . $any, '/');
@@ -182,6 +188,11 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/total-lahan
 
 Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/produksi-kecamatan/{any?}', function (Request $request, $any = '') use ($serviceMap) {
     $path = trim('produksi-kecamatan/' . $any, '/');
+    return proxyRequest($request, $serviceMap['farming'], $path);
+})->where('any', '.*');
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/produksi-kelurahan/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    $path = trim('produksi-kelurahan/' . $any, '/');
     return proxyRequest($request, $serviceMap['farming'], $path);
 })->where('any', '.*');
 
@@ -267,6 +278,11 @@ Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/tipe-lahan/
 
 Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/users/{any?}', function (Request $request, $any = '') use ($serviceMap) {
     $path = trim('users/' . $any, '/');
+    return proxyRequest($request, $serviceMap['user'], $path);
+})->where('any', '.*');
+
+Route::match(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], '/komunitas/{any?}', function (Request $request, $any = '') use ($serviceMap) {
+    $path = trim('komunitas/' . $any, '/');
     return proxyRequest($request, $serviceMap['user'], $path);
 })->where('any', '.*');
 

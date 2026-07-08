@@ -275,7 +275,7 @@
     </table>
 
     <div class="footer">
-        Laporan Eksekutif ini dibuat otomatis oleh Sistem SiTani (SIG-PALA).
+        Laporan Eksekutif ini dibuat otomatis oleh Sistem SiTani.
     </div>
 
 </body>

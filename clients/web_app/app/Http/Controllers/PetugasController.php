@@ -231,6 +231,37 @@ class PetugasController extends Controller
         ]);
     }
 
+    public function manajemenKomunitas(Request $request)
+    {
+        $komunitas = $this->getData('/komunitas', []);
+        
+        $gapoktan = array_filter($komunitas, fn($k) => $k['jenis_komunitas'] === 'gapoktan');
+
+        return view('dashboard.petugas', [
+            'page' => 'manajemen-komunitas',
+            'komunitas' => $komunitas,
+            'gapoktan' => $gapoktan,
+        ]);
+    }
+
+    public function storeKomunitas(Request $request)
+    {
+        $response = $this->postData('/komunitas', $request->all());
+        return response()->json($response->json(), $response->status());
+    }
+
+    public function updateKomunitas(Request $request, $id)
+    {
+        $response = $this->putData('/komunitas/' . $id, $request->all());
+        return response()->json($response->json(), $response->status());
+    }
+
+    public function destroyKomunitas($id)
+    {
+        $response = $this->deleteData('/komunitas/' . $id);
+        return response()->json($response->json(), $response->status());
+    }
+
     public function pendingCounts()
     {
         $pendingLahan = $this->getData('/lahan/pending', []);

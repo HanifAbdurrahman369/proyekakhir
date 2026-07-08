@@ -17,6 +17,14 @@ class Kelompok extends Model
         'alamat',
         'status_keanggotaan',
         'komunitas_induk_id',
+        'wilayah_kecamatan_id',
+        'wilayah_kelurahan_ids',
+        'instansi_asal',
+        'nama_bpp',
+    ];
+
+    protected $casts = [
+        'wilayah_kelurahan_ids' => 'array',
     ];
 
     public function users()

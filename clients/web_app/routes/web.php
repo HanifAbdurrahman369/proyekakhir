@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\KomunitasAdminController;
 use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\PetugasController;
 use App\Http\Controllers\PetaniController;
@@ -15,7 +16,7 @@ use App\Http\Controllers\ProduksiDaerahController;
 |--------------------------------------------------------------------------
 | Web Routes - Frontend web_app (Port 8080)
 |--------------------------------------------------------------------------
-| Ini adalah pusat kendali antarmuka (UI) dari sistem SIG-PALA.
+| Ini adalah pusat kendali antarmuka (UI) dari sistem SiTani.
 | Semua rute di bawah ini bertugas merender Blade HTML dan meneruskan
 | operasi logika ke backend via API Gateway (Port 8003).
 |--------------------------------------------------------------------------
@@ -47,8 +48,11 @@ Route::get('/reset-password/{token}', function ($token) {
 })->name('password.reset');
 Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
 
-// Profil Pengguna (Wajib Login JWT)
-Route::get('/profile', [AuthController::class, 'profile'])->middleware('jwt');
+// Profil Pengguna
+Route::middleware(['role:1,2,3,4,5'])->group(function () {
+    Route::get('/profile', [AuthController::class, 'profile'])->name('profile');
+    Route::put('/profile', [AuthController::class, 'updateProfile'])->name('profile.update');
+});
 
 
 /*
@@ -106,6 +110,10 @@ Route::middleware(['role:2'])->group(function () {
     Route::get('/manajemen-data-spasial', [PetugasController::class, 'manajemenDataSpasial']);
     Route::get('/lahan-termonitor', [PetugasController::class, 'lahanTermonitor']);
     Route::get('/verifikasi-data-petani', [PetugasController::class, 'verifikasiDataPetani']);  
+    Route::get('/manajemen-komunitas', [PetugasController::class, 'manajemenKomunitas']);
+    Route::post('/petugas/komunitas', [PetugasController::class, 'storeKomunitas']);
+    Route::put('/petugas/komunitas/{id}', [PetugasController::class, 'updateKomunitas']);
+    Route::delete('/petugas/komunitas/{id}', [PetugasController::class, 'destroyKomunitas']);
     Route::get('/petugas/pending-counts', [PetugasController::class, 'pendingCounts']);
     Route::post('/petugas/spasial/simpan', [PetugasController::class, 'storeSpasial']);
     Route::put('/petugas/spasial/{id}', [PetugasController::class, 'updateSpasial']);
@@ -132,7 +140,7 @@ Route::middleware(['role:1,5'])->group(function () {
     Route::post('/input-pemupukan', [SiklusTanamController::class, 'storePemupukan'])->name('input.pemupukan.store');
 });
 
-Route::middleware(['role:1'])->group(function () {
+Route::middleware(['role:1,5'])->group(function () {
     Route::get('/tambah-lahan', [LahanSawahController::class, 'create'])->name('tambah.lahan');
     Route::post('/lahan/store', [LahanSawahController::class, 'storeLahan'])->name('lahan.store');
     Route::get('/lahan/{id}/edit', [LahanSawahController::class, 'edit'])->name('lahan.edit');
@@ -153,7 +161,7 @@ Route::middleware(['role:1'])->group(function () {
 Route::middleware(['role:4'])->group(function () {
     
     // Halaman Dashboard Admin Terpadu
-    Route::get('/dashboard-admin', [AdminUserController::class, 'index']);
+    Route::get('/dashboard-admin', [AdminUserController::class, 'dashboard']);
     
     // Operasi CRUD Akun User Dinamis
     Route::prefix('admin/users')->group(function () {
@@ -161,6 +169,15 @@ Route::middleware(['role:4'])->group(function () {
         Route::post('/', [AdminUserController::class, 'store']);
         Route::put('/{id}', [AdminUserController::class, 'update']);
         Route::delete('/{id}', [AdminUserController::class, 'destroy']);
+    });
+
+    // Operasi CRUD Komunitas
+    Route::prefix('admin/komunitas')->group(function () {
+        Route::post('/', [KomunitasAdminController::class, 'store']);
+        Route::put('/{id}', [KomunitasAdminController::class, 'update']);
+        Route::delete('/{id}', [KomunitasAdminController::class, 'destroy']);
+        Route::post('/import', [KomunitasAdminController::class, 'import']);
+        Route::get('/export', [KomunitasAdminController::class, 'export']);
     });
 
     // Operasi CRUD Ekosistem Data Master (DBA Service Bypass)

@@ -5,7 +5,7 @@
         <div class="h-1.5 w-24 bg-emerald-500 mx-auto rounded-full mt-4 shadow-sm"></div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 w-full max-w-7xl">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 w-full max-w-7xl">
         <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 text-center flex flex-col justify-center group">
             <p class="text-slate-400 text-sm font-bold uppercase tracking-widest mb-4 group-hover:text-emerald-500 transition-colors">Total Kecamatan</p>
             <p class="text-5xl font-black text-slate-800" id="stat-kecamatan">...</p>
@@ -21,6 +21,10 @@
         <div class="bg-emerald-500 p-8 rounded-[2rem] shadow-lg shadow-emerald-200/50 hover:shadow-emerald-400 transition-all duration-500 text-center flex flex-col justify-center group">
             <p class="text-emerald-50 text-sm font-bold uppercase tracking-widest mb-4">Total Luas Lahan</p>
             <p class="text-5xl font-black text-white" id="stat-total-luas">...</p>
+        </div>
+        <div class="bg-blue-500 p-8 rounded-[2rem] shadow-lg shadow-blue-200/50 hover:shadow-blue-400 transition-all duration-500 text-center flex flex-col justify-center group">
+            <p class="text-blue-50 text-sm font-bold uppercase tracking-widest mb-4">Total Luas Tanam</p>
+            <p class="text-5xl font-black text-white" id="stat-total-luas-tanam">...</p>
         </div>
     </div>
 
@@ -58,12 +62,26 @@
     @if(isset($showTable) && $showTable)
     <div class="w-full max-w-7xl mt-10">
         <div class="bg-white/80 backdrop-blur-md p-8 rounded-[2.5rem] shadow-sm border border-slate-100 mb-8">
-            <div class="max-w-4xl space-y-3">
-                <p class="text-emerald-600 text-xs font-bold uppercase tracking-[0.24em]">Data Lahan Sawah Terdaftar</p>
-                <h3 class="text-slate-900 font-extrabold text-2xl md:text-3xl tracking-tight">Rekapitulasi Lahan Sawah yang Sudah Terverifikasi</h3>
-                <p class="text-slate-500 text-sm md:text-base font-medium leading-relaxed">
-                    Tabel ini berisi rekap lahan sawah yang sudah terdaftar dan diterima dalam sistem SIG-PALA. Data diringkas menurut kecamatan, tahun basis LBS, jumlah lahan, total luas, tipe lahan, hasil panen, dan produktivitas dari lahan yang tercatat di basis data aplikasi.
-                </p>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                <div class="max-w-4xl space-y-3">
+                    <p class="text-emerald-600 text-xs font-bold uppercase tracking-[0.24em]">Data Lahan Sawah Terdaftar</p>
+                    <h3 class="text-slate-900 font-extrabold text-2xl md:text-3xl tracking-tight">Rekapitulasi Lahan Sawah yang Sudah Terverifikasi</h3>
+                    <p class="text-slate-500 text-sm md:text-base font-medium leading-relaxed">
+                        Tabel ini berisi rekap lahan sawah yang sudah terdaftar dan diterima dalam sistem SiTani. Data diringkas menurut kecamatan, tahun basis LBS, jumlah lahan, total luas, luas tanam, tipe lahan, hasil panen, dan produktivitas dari lahan yang tercatat di basis data aplikasi.
+                    </p>
+                </div>
+                
+                @if(isset($isPejabat) && $isPejabat)
+                <div class="flex flex-col sm:flex-row gap-3 mt-4 sm:mt-0">
+                    <a href="{{ route('pejabat.produksi_kelurahan.pdf') }}?token={{ session('token') }}" target="_blank"
+                       class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold text-white bg-gradient-to-r from-rose-600 to-rose-500 shadow-md hover:scale-105 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                        Export PDF
+                    </a>
+                </div>
+                @endif
             </div>
         </div>
         
@@ -118,20 +136,21 @@
 
         <div class="bg-white rounded-[3rem] shadow-sm border border-slate-100 overflow-hidden relative">
             <div class="overflow-x-auto custom-scrollbar">
-                <table class="w-full text-left whitespace-nowrap min-w-[1120px]">
+                <table class="w-full text-left whitespace-nowrap min-w-[1240px]">
                     <thead class="bg-slate-50 border-b border-slate-100 text-slate-400 font-bold uppercase tracking-[0.15em] text-[11px]">
                         <tr>
                             <th class="py-6 px-8">Kecamatan</th>
                             <th class="py-6 px-6 text-center">Tahun LBS</th>
                             <th class="py-6 px-6 text-center">Jumlah Lahan</th>
                             <th class="py-6 px-6 text-center">Total Luas (Ha)</th>
+                            <th class="py-6 px-6 text-center">Luas Tanam (Ha)</th>
                             <th class="py-6 px-6 text-center bg-slate-100/50">Rincian Per Tipe (Ha)</th> 
                             <th class="py-6 px-8 text-right bg-emerald-50/50 text-emerald-700">Hasil Panen (Ton)</th>
                             <th class="py-6 px-8 text-right bg-blue-50/50 text-blue-700">Produktivitas</th>
                         </tr>
                     </thead>
                     <tbody id="tabel-rekap-body" class="text-slate-600 divide-y divide-slate-50 text-base font-normal">
-                        <tr><td colspan="7" class="py-20 text-center italic text-slate-300">Menyusun data statistik...</td></tr>
+                        <tr><td colspan="8" class="py-20 text-center italic text-slate-300">Menyusun data statistik...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -211,6 +230,7 @@
                     document.getElementById('stat-kelurahan').innerText = data.summary.total_kelurahan;
                     document.getElementById('stat-total-lahan').innerText = data.summary.total_lahan_sawah;
                     document.getElementById('stat-total-luas').innerText = data.summary.total_luas_ha + " Ha";
+                    document.getElementById('stat-total-luas-tanam').innerText = (data.summary.total_luas_tanam_ha || data.summary.total_luas_ha) + " Ha";
 
                     renderCharts(data);
                     globalData = data.tabel_rekap;
@@ -259,8 +279,9 @@
 
         filteredData = globalData.filter(item => {
             const totalLuas = parseFloat(item.total_luas || 0);
+            const totalLuasTanam = parseFloat(item.total_luas_tanam || item.total_luas || 0);
             const totalPanen = parseFloat(item.total_panen || 0);
-            const prod = totalLuas > 0 ? (totalPanen / totalLuas) : 0;
+            const prod = totalLuasTanam > 0 ? (totalPanen / totalLuasTanam) : 0;
 
             const lokasi = `${item.nama_kecamatan || ''}`.toLowerCase();
             const tipeIds = (item.tipe_lahan_ids || []).map(value => String(value));
@@ -277,8 +298,10 @@
             if (sort === 'total_luas') return b.total_luas - a.total_luas;
             if (sort === 'total_panen') return b.total_panen - a.total_panen;
             if (sort === 'rataProduktivitas') {
-                const prodA = a.total_luas > 0 ? a.total_panen / a.total_luas : 0;
-                const prodB = b.total_luas > 0 ? b.total_panen / b.total_luas : 0;
+                const luasA = a.total_luas_tanam || a.total_luas || 0;
+                const luasB = b.total_luas_tanam || b.total_luas || 0;
+                const prodA = luasA > 0 ? a.total_panen / luasA : 0;
+                const prodB = luasB > 0 ? b.total_panen / luasB : 0;
                 return prodB - prodA;
             }
             return 0;
@@ -295,7 +318,7 @@
         tbody.innerHTML = '';
 
         if(filteredData.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="py-20 text-center text-slate-400 font-medium text-base">Data tidak ditemukan.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="py-20 text-center text-slate-400 font-medium text-base">Data tidak ditemukan.</td></tr>';
             return;
         }
 
@@ -304,8 +327,9 @@
 
         paginated.forEach((item, index) => {
             const totalLuas = parseFloat(item.total_luas || 0);
+            const totalLuasTanam = parseFloat(item.total_luas_tanam || item.total_luas || 0);
             const totalPanen = parseFloat(item.total_panen || 0);
-            const prod = totalLuas > 0 ? (totalPanen / totalLuas) : 0;
+            const prod = totalLuasTanam > 0 ? (totalPanen / totalLuasTanam) : 0;
             const bg = index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30';
 
             const tipeRincian = Array.isArray(item.rincian_tipe_lahan) ? item.rincian_tipe_lahan : [];
@@ -320,9 +344,10 @@
 
             tipeRincian.forEach((tipe, tipeIndex) => {
                 const val = parseFloat(tipe.total_luas || 0);
+                const valTanam = parseFloat(tipe.total_luas_tanam || tipe.total_luas || 0);
                 if (val > 0) {
                     tipeBadges += `<span class="px-2.5 py-1.5 ${badgeClasses[tipeIndex % badgeClasses.length]} text-sm font-medium rounded-xl border">
-                        ${tipe.nama_tipe || 'Belum Ditentukan'}: ${val.toFixed(2)} Ha
+                        ${tipe.nama_tipe || 'Belum Ditentukan'}: ${val.toFixed(2)} Ha / tanam ${valTanam.toFixed(2)} Ha
                     </span>`;
                 }
             });
@@ -336,6 +361,7 @@
                     <td class="py-5 px-6 text-center font-normal text-slate-400 text-base">${item.tahun_lbs || '-'}</td>
                     <td class="py-5 px-6 text-center font-normal text-base">${item.jumlah_lahan} Lahan</td>
                     <td class="py-5 px-6 text-center font-normal text-base">${totalLuas.toFixed(2)} Ha</td>
+                    <td class="py-5 px-6 text-center font-normal text-blue-700 bg-blue-50/20 text-base">${totalLuasTanam.toFixed(2)} Ha</td>
                     <td class="py-5 px-6 text-center bg-slate-50/50">${tipeBadges}</td>
                     <td class="py-5 px-8 text-right font-normal text-emerald-600 bg-emerald-50/20 text-base">${totalPanen.toFixed(2)} Ton</td>
                     <td class="py-5 px-8 text-right bg-blue-50/20">

@@ -99,7 +99,7 @@
             <div class="glass-card rounded-2xl p-5 md:p-6">
                 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
                     <div>
-                        <p class="text-primary-700 text-xs font-bold uppercase tracking-[0.22em] mb-2">SIG-PALA BATOLA</p>
+                        <p class="text-primary-700 text-xs font-bold uppercase tracking-[0.22em] mb-2">SiTani BATOLA</p>
                         <h1 class="text-2xl md:text-3xl font-extrabold text-primary-900">Dashboard Petugas</h1>
                         <p class="text-sm text-slate-500 mt-2 max-w-3xl">
                             Verifikasi pengajuan petani, kelola data spasial lahan, dan input parameter lingkungan lapangan.
@@ -107,10 +107,10 @@
                     </div>
                     <div class="flex flex-wrap gap-2">
                         <a href="{{ url('/dashboard-petugas') }}" class="px-4 py-2 rounded-xl text-sm font-bold transition {{ $isActive('dashboard') }}">Dashboard</a>
-                        <a href="{{ url('/verifikasi-data-petani') }}" class="px-4 py-2 rounded-xl text-sm font-bold transition {{ $isActive('verifikasi-data-petani') }}">Verifikasi</a>
-                        <a href="{{ url('/manajemen-data-spasial') }}" class="px-4 py-2 rounded-xl text-sm font-bold transition {{ $isActive('manajemen-data-spasial') }}">Data Spasial</a>
+                        <a href="{{ url('/manajemen-data-spasial') }}" class="px-4 py-2 rounded-xl text-sm font-bold transition {{ $isActive('manajemen-data-spasial') }}">Data Spasial Lahan</a>
                         <a href="{{ url('/lahan-termonitor') }}" class="px-4 py-2 rounded-xl text-sm font-bold transition {{ $isActive('lahan-termonitor') }}">Lahan Termonitor</a>
-                    </div>
+                        <a href="{{ url('/verifikasi-data-petani') }}" class="px-4 py-2 rounded-xl text-sm font-bold transition {{ $isActive('verifikasi-data-petani') }}">Verifikasi</a>
+                        <a href="{{ url('/manajemen-komunitas') }}" class="px-4 py-2 rounded-xl text-sm font-bold transition {{ $isActive('manajemen-komunitas') }}">Komunitas</a></div>
                 </div>
             </div>
         @endunless
@@ -161,6 +161,251 @@
             </div>
         @endif
 
+        @if($page === 'manajemen-komunitas')
+            <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-primary-900">Manajemen Komunitas & Gapoktan</h1>
+                    <p class="text-sm text-slate-500 mt-1">Kelola data Kelompok Tani, Brigade Pangan, dan Gapoktan sebagai rujukan registrasi NIK.</p>
+                </div>
+                <button onclick="bukaModalTambahKomunitas()" class="flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-primary-700">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    Tambah Data
+                </button>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+                            <tr>
+                                <th class="px-6 py-4 font-bold">Nama Entitas</th>
+                                <th class="px-6 py-4 font-bold">Jenis / NIK</th>
+                                <th class="px-6 py-4 font-bold">Ketua / Penanggung Jawab</th>
+                                <th class="px-6 py-4 font-bold">Kontak & Alamat</th>
+                                <th class="px-6 py-4 font-bold">Induk (Gapoktan)</th>
+                                <th class="px-6 py-4 font-bold text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @forelse($komunitas as $item)
+                                <tr class="hover:bg-slate-50">
+                                    <td class="px-6 py-4">
+                                        <p class="font-bold text-primary-900">{{ $item['nama_komunitas'] ?? '-' }}</p>
+                                        <span class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold {{ $item['status_keanggotaan'] === 'AKTIF' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                            {{ $item['status_keanggotaan'] }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <p class="font-bold text-primary-700 uppercase">{{ str_replace('_', ' ', $item['jenis_komunitas']) }}</p>
+                                        <p class="text-xs text-slate-500 mt-1">NIK: {{ $item['nik'] ?? '-' }}</p>
+                                    </td>
+                                    <td class="px-6 py-4">{{ $item['nama'] }}</td>
+                                    <td class="px-6 py-4">
+                                        <p>{{ $item['nomor_hp'] ?? '-' }}</p>
+                                        <p class="text-xs text-slate-500 truncate max-w-[150px]">{{ $item['alamat'] ?? '-' }}</p>
+                                    </td>
+                                    <td class="px-6 py-4">{{ $item['kelompok_tani_induk']['nama_komunitas'] ?? '-' }}</td>
+                                    <td class="px-6 py-4 text-right">
+                                        <button onclick="editKomunitas({{ json_encode($item) }})" class="text-blue-600 hover:text-blue-800 text-sm font-bold mr-3">Edit</button>
+                                        <button onclick="hapusKomunitas({{ $item['id'] }})" class="text-red-600 hover:text-red-800 text-sm font-bold">Hapus</button>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="px-6 py-8 text-center text-slate-500">
+                                        <div class="flex flex-col items-center justify-center">
+                                            <svg class="h-12 w-12 text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                                            <p>Belum ada data komunitas.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Modal Form Komunitas -->
+            <div id="modalKomunitas" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm transition-opacity flex justify-center items-center p-4">
+                <div class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                    <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
+                        <h3 class="text-lg font-bold text-primary-900" id="modalKomunitasTitle">Tambah Komunitas / Gapoktan</h3>
+                        <button type="button" onclick="tutupModalKomunitas()" class="text-slate-400 hover:text-slate-600 transition">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                    <div class="p-6 overflow-y-auto">
+                        <form id="formKomunitas" onsubmit="simpanKomunitas(event)" class="space-y-5">
+                            <input type="hidden" id="komunitas_id" name="komunitas_id">
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">Jenis Entitas</label>
+                                    <select id="jenis_komunitas" name="jenis_komunitas" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none" required onchange="toggleInduk()">
+                                        <option value="komunitas_tani">Komunitas Tani</option>
+                                        <option value="brigade_pangan">Brigade Pangan</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">Nama Entitas (Komunitas)</label>
+                                    <input type="text" id="nama_komunitas" name="nama_komunitas" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none" placeholder="Cth: Gapoktan Maju Jaya" required>
+                                </div>
+                                <div>
+                                    <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">NIK Ketua / Penanggung Jawab</label>
+                                    <input type="text" id="nik" name="nik" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none" placeholder="16 digit NIK" required>
+                                </div>
+                                <div>
+                                    <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">Nama Ketua / Penanggung Jawab</label>
+                                    <input type="text" id="nama" name="nama" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none" required>
+                                </div>
+                                <div>
+                                    <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">Nomor HP</label>
+                                    <input type="text" id="nomor_hp" name="nomor_hp" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none">
+                                </div>
+                                <div id="divInduk">
+                                    <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">Induk Gapoktan (Opsional)</label>
+                                    <select id="komunitas_induk_id" name="komunitas_induk_id" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none">
+                                        <option value="">- Tidak Ada -</option>
+                                        @foreach($gapoktan ?? [] as $g)
+                                            <option value="{{ $g['id'] }}">{{ $g['nama_komunitas'] }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">Alamat Sekretariat</label>
+                                <textarea id="alamat" name="alamat" rows="2" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none"></textarea>
+                            </div>
+                            
+                            <div id="divStatus" class="hidden">
+                                <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">Status Keanggotaan</label>
+                                <select id="status_keanggotaan" name="status_keanggotaan" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none">
+                                    <option value="AKTIF">Aktif</option>
+                                    <option value="TIDAK_AKTIF">Tidak Aktif</option>
+                                </select>
+                            </div>
+                            
+                            <div class="flex justify-end gap-3 pt-5 border-t border-slate-100">
+                                <button type="button" onclick="tutupModalKomunitas()" class="px-5 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">Batal</button>
+                                <button type="submit" id="btnSubmitKomunitas" class="px-5 py-2.5 rounded-xl font-bold text-white bg-primary-600 hover:bg-primary-700 transition">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            @push('scripts')
+            <script>
+                function toggleInduk() {
+                    const jenis = document.getElementById('jenis_komunitas').value;
+                    const divInduk = document.getElementById('divInduk');
+                    if (jenis === 'gapoktan') {
+                        divInduk.classList.add('hidden');
+                        document.getElementById('komunitas_induk_id').value = '';
+                    } else {
+                        divInduk.classList.remove('hidden');
+                    }
+                }
+
+                function bukaModalTambahKomunitas() {
+                    document.getElementById('formKomunitas').reset();
+                    document.getElementById('komunitas_id').value = '';
+                    document.getElementById('modalKomunitasTitle').textContent = 'Tambah Komunitas / Gapoktan';
+                    document.getElementById('divStatus').classList.add('hidden');
+                    document.getElementById('modalKomunitas').classList.remove('hidden');
+                    toggleInduk();
+                }
+
+                function tutupModalKomunitas() {
+                    document.getElementById('modalKomunitas').classList.add('hidden');
+                }
+
+                function editKomunitas(data) {
+                    document.getElementById('komunitas_id').value = data.id;
+                    document.getElementById('jenis_komunitas').value = data.jenis_komunitas;
+                    document.getElementById('nama_komunitas').value = data.nama_komunitas || '';
+                    document.getElementById('nik').value = data.nik || '';
+                    document.getElementById('nama').value = data.nama || '';
+                    document.getElementById('nomor_hp').value = data.nomor_hp || '';
+                    document.getElementById('alamat').value = data.alamat || '';
+                    document.getElementById('komunitas_induk_id').value = data.komunitas_induk_id || '';
+                    document.getElementById('status_keanggotaan').value = data.status_keanggotaan || 'AKTIF';
+                    
+                    document.getElementById('modalKomunitasTitle').textContent = 'Edit Komunitas / Gapoktan';
+                    document.getElementById('divStatus').classList.remove('hidden');
+                    document.getElementById('modalKomunitas').classList.remove('hidden');
+                    toggleInduk();
+                }
+
+                function simpanKomunitas(e) {
+                    e.preventDefault();
+                    const id = document.getElementById('komunitas_id').value;
+                    const url = id ? `/petugas/komunitas/${id}` : '/petugas/komunitas';
+                    const method = id ? 'PUT' : 'POST';
+                    const data = {
+                        jenis_komunitas: document.getElementById('jenis_komunitas').value,
+                        nama_komunitas: document.getElementById('nama_komunitas').value,
+                        nik: document.getElementById('nik').value,
+                        nama: document.getElementById('nama').value,
+                        nomor_hp: document.getElementById('nomor_hp').value,
+                        alamat: document.getElementById('alamat').value,
+                        komunitas_induk_id: document.getElementById('komunitas_induk_id').value,
+                    };
+                    if (id) {
+                        data.status_keanggotaan = document.getElementById('status_keanggotaan').value;
+                    }
+
+                    // Add CSRF token for web_app routes
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+                    fetch(url, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Authorization': 'Bearer {{ session('token') }}'
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(r => r.json())
+                    .then(res => {
+                        if (res.success) {
+                            alert(res.message);
+                            location.reload();
+                        } else {
+                            alert(res.message || 'Gagal menyimpan data.');
+                        }
+                    })
+                    .catch(err => alert('Terjadi kesalahan sistem.'));
+                }
+
+                function hapusKomunitas(id) {
+                    if (confirm('Yakin ingin menghapus komunitas ini? Data pengguna yang terkait juga mungkin akan terpengaruh.')) {
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                        
+                        fetch(`/petugas/komunitas/${id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': csrfToken,
+                                'Authorization': 'Bearer {{ session('token') }}'
+                            }
+                        })
+                        .then(r => r.json())
+                        .then(res => {
+                            if (res.success) {
+                                alert(res.message);
+                                location.reload();
+                            } else {
+                                alert(res.message || 'Gagal menghapus data.');
+                            }
+                        })
+                        .catch(err => alert('Terjadi kesalahan sistem.'));
+                    }
+                }
+            </script>
+            @endpush
+        @endif
+
         @if($page === 'verifikasi-data-petani')
             <div class="space-y-6">
                 <div class="soft-card bg-white rounded-2xl border border-primary-100 overflow-hidden">
@@ -198,14 +443,14 @@
                                             'luas_lahan_hektar' => $angka($ambil($item, ['luas_lahan_hektar'], 0)),
                                             'alamat_detail' => $ambil($item, ['alamat_detail'], ''),
                                             'status_verifikasi' => $ambil($item, ['status_verifikasi'], 'PENDING'),
-                                            'petani_id' => $ambil($item, ['petani_id']),
                                         ];
                                         $lahanDetailJson = htmlspecialchars(json_encode($lahanDetailPayload, JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8');
                                     @endphp
                                     <tr class="{{ (string)request('lahan_id') === (string)$lahanId ? 'bg-primary-50' : '' }}">
                                         <td class="px-5 py-4">
                                             <p class="font-bold text-primary-900">{{ $ambil($item, ['nama_petani','petani.nama_lengkap','user.nama_lengkap']) }}</p>
-                                            <p class="text-xs text-slate-500">{{ $ambil($item, ['email_petani','petani.email','user.email']) }}</p>
+                                            <p class="text-[10px] font-bold text-primary-700 uppercase mt-0.5">{{ $ambil($item, ['petani.role_id', 'user.role_id']) == 5 ? 'Brigade Pangan' : 'Kelompok Tani' }}</p>
+                                            <p class="text-xs text-slate-500 mt-1">{{ $ambil($item, ['email_petani','petani.email','user.email']) }}</p>
                                         </td>
                                         <td class="px-5 py-4">
                                             <p class="font-bold text-primary-900">{{ $ambil($item, ['nama_lahan','lahan.nama_lahan']) }}</p>
@@ -264,6 +509,7 @@
                                     <th class="px-5 py-4">Lahan</th>
                                     <th class="px-5 py-4">Bibit</th>
                                     <th class="px-5 py-4">Tanggal Tanam</th>
+                                    <th class="px-5 py-4">Estimasi Panen</th>
                                     <th class="px-5 py-4">Tanggal Panen</th>
                                     <th class="px-5 py-4">Hasil</th>
                                     <th class="px-5 py-4">Status</th>
@@ -274,9 +520,10 @@
                                 @forelse($panenPending as $panen)
                                     <tr class="{{ (string)request('id') === (string)$ambil($panen, ['id'], '') ? 'bg-primary-50' : '' }}">
                                         <td class="px-5 py-4">
-                                            <p class="font-bold text-primary-900">{{ $ambil($panen, ['nama_petani','petani.nama_lengkap','user.nama_lengkap']) }}</p>
-                                            <p class="text-xs text-slate-500">Email: {{ $ambil($panen, ['email_petani','petani.email','user.email']) }}</p>
-                                            <p class="text-xs text-slate-500">No HP: {{ $ambil($panen, ['no_hp_petani','petani.no_hp','user.no_hp']) }}</p>
+                                            <p class="font-bold text-primary-900">{{ $ambil($panen, ['nama_pemilik', 'pemilik.nama_lengkap', 'user.nama_lengkap']) }}</p>
+                                            <p class="text-[10px] font-bold text-primary-700 uppercase mt-0.5">{{ $ambil($panen, ['pemilik.role_id', 'user.role_id']) == 5 ? 'Brigade Pangan' : 'Kelompok Tani' }}</p>
+                                            <p class="text-xs text-slate-500 mt-1">Email: {{ $ambil($panen, ['email_pemilik', 'pemilik.email', 'user.email']) }}</p>
+                                            <p class="text-xs text-slate-500">No HP: {{ $ambil($panen, ['no_hp_pemilik', 'pemilik.no_hp', 'user.no_hp']) }}</p>
                                         </td>
                                         <td class="px-5 py-4">
                                             <p class="font-bold text-primary-900">{{ $ambil($panen, ['nama_lahan','lahan.nama_lahan']) }}</p>
@@ -288,8 +535,14 @@
                                             <p class="text-xs text-slate-500">Varietas: {{ $ambil($panen, ['varietas','bibit.varietas']) }}</p>
                                             <p class="text-xs text-slate-500">Masa tanam: {{ $ambil($panen, ['masa_tanam_hari','bibit.masa_tanam_hari'], '-') }} hari</p>
                                         </td>
-                                        <td class="px-5 py-4 text-slate-700">{{ $ambil($panen, ['tanggal_tanam']) }}</td>
-                                        <td class="px-5 py-4 text-slate-700">{{ $ambil($panen, ['tanggal_panen']) }}</td>
+                                        <td class="px-5 py-4 text-slate-700">{{ \Carbon\Carbon::parse($ambil($panen, ['tanggal_tanam']))->format('d M Y') }}</td>
+                                        <td class="px-5 py-4 text-slate-700 whitespace-nowrap">
+                                            {{ $ambil($panen, ['estimasi_tanggal_panen']) ? \Carbon\Carbon::parse($ambil($panen, ['estimasi_tanggal_panen']))->format('d M Y') : '-' }}
+                                            @if($ambil($panen, ['estimasi_tanggal_panen_akhir']))
+                                                <br>s/d<br>{{ \Carbon\Carbon::parse($ambil($panen, ['estimasi_tanggal_panen_akhir']))->format('d M Y') }}
+                                            @endif
+                                        </td>
+                                        <td class="px-5 py-4 text-slate-700">{{ \Carbon\Carbon::parse($ambil($panen, ['tanggal_panen']))->format('d M Y') }}</td>
                                         <td class="px-5 py-4"><p class="font-extrabold text-primary-700">{{ $angka($ambil($panen, ['hasil_panen'], 0)) }} Ton</p></td>
                                         <td class="px-5 py-4">
                                             <div class="flex flex-col gap-1">
@@ -342,6 +595,7 @@
                                     <p class="text-xs font-bold text-slate-500 uppercase">Pengaju</p>
                                     <p id="detailPengaju" class="text-primary-900 font-bold mt-2">-</p>
                                     <p id="detailEmail" class="text-sm text-slate-500 mt-1">-</p>
+                                    <p id="detailNoHp" class="text-sm text-slate-500 mt-1">-</p>
                                 </div>
                                 <div class="rounded-2xl border border-primary-100 p-4">
                                     <p class="text-xs font-bold text-slate-500 uppercase">Pemilik Lahan</p>
@@ -366,14 +620,6 @@
                                 <button type="button" id="detailRejectButton" class="px-5 py-3 rounded-2xl bg-red-50 text-red-600 border border-red-200 font-bold hover:bg-red-600 hover:text-white transition">Tolak</button>
                                 <form method="POST" action="#" id="detailApproveForm" class="flex-1 sm:flex-none flex flex-col sm:flex-row gap-3 items-center" onsubmit="return confirm('Setujui pengajuan lahan ini? Pastikan seluruh detail pengajuan sudah sesuai.');">
                                     @csrf
-                                    <div class="w-full sm:w-auto">
-                                        <select name="petani_id" id="modal_petani_id" class="w-full rounded-2xl border border-primary-200 px-4 py-3 text-sm text-primary-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20" required>
-                                            <option value="">Pilih Penggarap</option>
-                                            @foreach($petani as $item)
-                                                <option value="{{ $item['id'] }}">{{ $item['nama_lengkap'] ?? $item['nama'] }} {{ isset($item['role_id']) && $item['role_id'] == 5 ? '(Brigade Pangan)' : '(Kelompok Tani)' }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
                                     <button class="w-full sm:w-auto px-5 py-3 rounded-2xl bg-green-50 text-green-700 border border-green-200 font-bold hover:bg-green-600 hover:text-white transition whitespace-nowrap">Setujui Pengajuan</button>
                                 </form>
                             </div>
@@ -724,10 +970,10 @@
                         </div>
                     </div>
 
-                    <!-- Tabel Data Tersimpan (SIGPALA) -->
+                    <!-- Tabel Data Tersimpan (SiTani) -->
                     <div class="soft-card bg-white rounded-2xl border border-primary-100 p-5">
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-extrabold text-primary-900">Data Termonitor (SIGPALA)</h3>
+                            <h3 class="text-lg font-extrabold text-primary-900">Data Termonitor (SiTani)</h3>
                             <span class="px-3 py-1 bg-green-50 text-green-700 border border-green-200 text-xs font-bold rounded-full">Tersimpan</span>
                         </div>
                         <div class="overflow-x-auto max-h-80 overflow-y-auto">
@@ -873,21 +1119,14 @@
                         activeRejectUrl = this.dataset.rejectUrl || '';
                         activeRejectName = data.nama_lahan || 'Pengajuan lahan';
                         
-                        document.getElementById('detailKecamatan').textContent = data.nama_kecamatan || '-';
-                        document.getElementById('detailKelurahan').textContent = data.nama_kelurahan || '-';
-                        document.getElementById('detailLuas').textContent = data.luas_lahan_hektar ? `${data.luas_lahan_hektar} Ha` : '0 Ha';
-                        document.getElementById('detailAlamat').textContent = data.alamat_detail || 'Tidak ada alamat lengkap.';
-
                         if (approveForm) approveForm.action = this.dataset.approveUrl || '#';
                         if (detailRejectButton) detailRejectButton.dataset.rejectUrl = activeRejectUrl;
 
-                        const modalPetaniId = document.getElementById('modal_petani_id');
-                        if (modalPetaniId) modalPetaniId.value = data.petani_id || '';
-
                         setText('detailNamaLahan', data.nama_lahan);
                         setText('detailSubLahan', `${data.nama_kecamatan || '-'} / ${data.nama_kelurahan || '-'}`);
-                        setText('detailPengaju', data.nama_petani);
-                        setText('detailEmail', data.email_petani);
+                        setText('detailPengaju', data.nama_pemilik || data.pemilik_lahan);
+                        setText('detailEmail', data.email_pemilik);
+                        setText('detailNoHp', data.no_hp_pemilik);
                         setText('detailPemilik', data.pemilik_lahan);
                         setText('detailStatus', data.status_verifikasi || 'PENDING');
                         setText('detailWilayah', `${data.nama_kecamatan || '-'} / ${data.nama_kelurahan || '-'}`);
