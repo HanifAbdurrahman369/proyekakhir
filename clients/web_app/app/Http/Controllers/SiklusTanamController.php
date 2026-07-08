@@ -29,18 +29,6 @@ class SiklusTanamController extends Controller
         }
 
         $roleId = (int) session('role_id');
-        $currentMonth = (int) now()->format('n');
-        $isKelompokTaniAllowed = ($currentMonth >= 1 && $currentMonth <= 9);
-        $isBrigadePanganAllowed = in_array($currentMonth, [10, 11, 12, 1], true);
-        $hasOwnLand = ($roleId === 5 && (session('total_lahan') ?? 0) > 0);
-        $isAllowed = ($roleId === 1 && $isKelompokTaniAllowed) || ($roleId === 5 && $isBrigadePanganAllowed) || $hasOwnLand;
-
-        if (!$isAllowed) {
-            $msg = $roleId === 5 
-                ? 'Masa tanam Brigade Pangan hanya diperbolehkan pada bulan Oktober - Januari.' 
-                : 'Masa tanam Kelompok Tani hanya diperbolehkan pada bulan Januari - September.';
-            return redirect('/dashboard-petani')->with('error', $msg);
-        }
 
         $lahanResponse = Http::withToken($token)
             ->acceptJson()
@@ -114,18 +102,6 @@ class SiklusTanamController extends Controller
         }
 
         $roleId = (int) session('role_id');
-        $currentMonth = (int) now()->format('n');
-        $isKelompokTaniAllowed = ($currentMonth >= 1 && $currentMonth <= 9);
-        $isBrigadePanganAllowed = in_array($currentMonth, [10, 11, 12, 1], true);
-        $hasOwnLand = ($roleId === 5 && (session('total_lahan') ?? 0) > 0);
-        $isAllowed = ($roleId === 1 && $isKelompokTaniAllowed) || ($roleId === 5 && $isBrigadePanganAllowed) || $hasOwnLand;
-
-        if (!$isAllowed) {
-            $msg = $roleId === 5 
-                ? 'Gagal: Saat ini bukan jadwal masa tanam Brigade Pangan (Oktober - Januari).' 
-                : 'Gagal: Saat ini bukan jadwal masa tanam Kelompok Tani (Januari - September).';
-            return redirect()->back()->with('error', $msg);
-        }
 
         /**
          * KIRIM KE MICROSERVICE DENGAN BEARER TOKEN
@@ -163,18 +139,6 @@ class SiklusTanamController extends Controller
         }
 
         $roleId = (int) session('role_id');
-        $currentMonth = (int) now()->format('n');
-        $isKelompokTaniAllowed = ($currentMonth >= 1 && $currentMonth <= 9);
-        $isBrigadePanganAllowed = in_array($currentMonth, [10, 11, 12, 1], true);
-        $hasOwnLand = ($roleId === 5 && (session('total_lahan') ?? 0) > 0);
-        $isAllowed = ($roleId === 1 && $isKelompokTaniAllowed) || ($roleId === 5 && $isBrigadePanganAllowed) || $hasOwnLand;
-
-        if (!$isAllowed) {
-            $msg = $roleId === 5 
-                ? 'Masa tanam Brigade Pangan hanya diperbolehkan pada bulan Oktober - Januari.' 
-                : 'Masa tanam Kelompok Tani hanya diperbolehkan pada bulan Januari - September.';
-            return redirect('/dashboard-petani')->with('error', $msg);
-        }
 
         $detail = Http::withToken($token)->acceptJson()->get($this->gatewayUrl() . '/api/activities/' . $id);
         if (!$detail->successful()) {
@@ -198,18 +162,6 @@ class SiklusTanamController extends Controller
     public function updateTanam(Request $request, $id)
     {
         $roleId = (int) session('role_id');
-        $currentMonth = (int) now()->format('n');
-        $isKelompokTaniAllowed = ($currentMonth >= 1 && $currentMonth <= 9);
-        $isBrigadePanganAllowed = in_array($currentMonth, [10, 11, 12, 1], true);
-        $hasOwnLand = ($roleId === 5 && (session('total_lahan') ?? 0) > 0);
-        $isAllowed = ($roleId === 1 && $isKelompokTaniAllowed) || ($roleId === 5 && $isBrigadePanganAllowed) || $hasOwnLand;
-
-        if (!$isAllowed) {
-            $msg = $roleId === 5 
-                ? 'Gagal: Saat ini bukan jadwal masa tanam Brigade Pangan (Oktober - Januari).' 
-                : 'Gagal: Saat ini bukan jadwal masa tanam Kelompok Tani (Januari - September).';
-            return redirect()->back()->with('error', $msg);
-        }
 
         $validated = $request->validate([
             'lahan_id' => 'required|integer',
@@ -236,18 +188,6 @@ class SiklusTanamController extends Controller
     public function destroyTanam($id)
     {
         $roleId = (int) session('role_id');
-        $currentMonth = (int) now()->format('n');
-        $isKelompokTaniAllowed = ($currentMonth >= 1 && $currentMonth <= 9);
-        $isBrigadePanganAllowed = in_array($currentMonth, [10, 11, 12, 1], true);
-        $hasOwnLand = ($roleId === 5 && (session('total_lahan') ?? 0) > 0);
-        $isAllowed = ($roleId === 1 && $isKelompokTaniAllowed) || ($roleId === 5 && $isBrigadePanganAllowed) || $hasOwnLand;
-
-        if (!$isAllowed) {
-            $msg = $roleId === 5 
-                ? 'Gagal: Saat ini bukan jadwal masa tanam Brigade Pangan (Oktober - Januari).' 
-                : 'Gagal: Saat ini bukan jadwal masa tanam Kelompok Tani (Januari - September).';
-            return redirect()->back()->with('error', $msg);
-        }
 
         $response = Http::withToken(session('token'))
             ->acceptJson()

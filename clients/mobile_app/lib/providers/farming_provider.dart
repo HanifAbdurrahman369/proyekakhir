@@ -385,6 +385,45 @@ class FarmingProvider extends ChangeNotifier {
     }
   }
 
+  /// Memperbarui laporan tanam ke microservice
+  Future<bool> updateLaporTanam(int id, Map<String, dynamic> payload) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _farmingService.updateLaporTanam(id, payload);
+      _mySiklusTanam = await _farmingService.getMySiklusTanam();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Mengirim laporan pemupukan susulan ke microservice
+  Future<bool> submitPemupukan(Map<String, dynamic> payload) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _farmingService.submitPemupukan(payload);
+      // Refresh list riwayat pemupukan
+      await fetchRiwayatPupuk(page: 1);
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   /// Menghapus siklus tanam aktif milik petani
   Future<bool> deleteSiklusTanam(int id) async {
     _isLoading = true;

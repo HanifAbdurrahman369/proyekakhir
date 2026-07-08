@@ -5,6 +5,7 @@ import '../../../models/user.dart';
 import '../../../providers/farming_provider.dart';
 import '../tambah_lahan_screen.dart';
 import '../lapor_tanam_screen.dart';
+import '../edit_lapor_tanam_screen.dart';
 import '../lapor_panen_screen.dart';
 
 class PetaniDashboard extends StatefulWidget {
@@ -60,27 +61,6 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
     } catch (_) {
       return dateStr;
     }
-  }
-
-  // Helper untuk format nama bulan Indonesia
-  String _getIndonesianMonthName(int month) {
-    final months = [
-      'Januari',
-      'Februari',
-      'Maret',
-      'April',
-      'Mei',
-      'Juni',
-      'Juli',
-      'Agustus',
-      'September',
-      'Oktober',
-      'November',
-      'Desember',
-    ];
-    return months[month - 1];
-  }
-
   // Helper untuk format desimal ke koma Indonesia
   String _formatDouble(double value) {
     return value.toStringAsFixed(2).replaceAll('.', ',');
@@ -94,15 +74,6 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
     final roleName = roleId == 5 ? 'Brigade Pangan' : 'Kelompok Tani';
 
     final lahanList = farmingProvider.lahanData['data'] as List<dynamic>? ?? [];
-    final hasOwnLand = lahanList.any((l) => (l['pemilik_id'] ?? 0).toString() == (user?.id ?? 0).toString());
-
-    // Pengecekan masa tanam (Sesuai logic backend web app)
-    final currentMonth = DateTime.now().month;
-    final isKelompokTaniAllowed = (currentMonth >= 1 && currentMonth <= 9);
-    final isBrigadePanganAllowed = [10, 11, 12, 1].contains(currentMonth);
-    final isAllowedToPlant =
-        (roleId == 1 && isKelompokTaniAllowed) ||
-        (roleId == 5 && (isBrigadePanganAllowed || hasOwnLand));
 
     if (farmingProvider.isLoading &&
         farmingProvider.lahanData['data'].isEmpty) {
@@ -278,27 +249,21 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                 Expanded(
                   child: _buildActionButton(
                     label: 'Lapor Tanam',
-                    icon: isAllowedToPlant ? Icons.grass_rounded : Icons.lock_outline_rounded,
-                    onPressed: isAllowedToPlant
-                        ? () async {
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const LaporTanamScreen(),
-                              ),
-                            );
-                            if (!context.mounted) return;
-                            context.read<FarmingProvider>().fetchDashboardData(
-                              lahanPage: _currentLahanPage,
-                            );
-                          }
-                        : null,
-                    textColor: isAllowedToPlant
-                        ? Colors.white
-                        : Colors.grey.shade500,
-                    bgColor: isAllowedToPlant
-                        ? const Color(0xFF3E7D00)
-                        : Colors.grey[300]!,
+                    icon: Icons.grass_rounded,
+                    onPressed: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LaporTanamScreen(),
+                        ),
+                      );
+                      if (!context.mounted) return;
+                      context.read<FarmingProvider>().fetchDashboardData(
+                        lahanPage: _currentLahanPage,
+                      );
+                    },
+                    textColor: Colors.white,
+                    bgColor: const Color(0xFF3E7D00),
                   ),
                 ),
                 if (roleId == 1) ...[
@@ -328,53 +293,7 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
             ),
             const SizedBox(height: 16),
 
-            // 5. Lock Alert Banner
-            if (!isAllowedToPlant) ...[
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFFBEB),
-                  border: Border.all(color: const Color(0xFFFDE68A)),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      Icons.warning_amber_rounded,
-                      color: Color(0xFFD97706),
-                      size: 20,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Masa Tanam Sedang Terkunci',
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFF92400E),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Saat ini (Bulan ${_getIndonesianMonthName(currentMonth)}) bukan jadwal masa tanam Anda. Masa tanam untuk ${roleId == 5 ? 'Brigade Pangan adalah Oktober - Januari' : 'Kelompok Tani adalah Januari - September'}. Tombol lapor tanam dinonaktifkan sementara.',
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              color: const Color(0xFFB45309),
-                              height: 1.4,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
+            // 5. Removed Lock Alert Banner
 
             // 6. Statistics Card (Aturan Masa Tanam)
             LayoutBuilder(
@@ -690,6 +609,33 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                                   ),
                                 ),
                               ],
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          InkWell(
+                            onTap: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EditLaporTanamScreen(cycleData: cycle),
+                                ),
+                              );
+                              if (!context.mounted) return;
+                              context.read<FarmingProvider>().fetchDashboardData(
+                                lahanPage: _currentLahanPage,
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.blue[50],
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.edit_note_rounded,
+                                size: 16,
+                                color: Colors.blue[700],
+                              ),
                             ),
                           ),
                         ],

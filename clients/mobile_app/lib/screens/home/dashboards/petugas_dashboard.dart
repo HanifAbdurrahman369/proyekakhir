@@ -7,6 +7,7 @@ import '../../../models/user.dart';
 import '../../../providers/farming_provider.dart';
 import '../petugas_lahan_termonitor_content.dart';
 import '../petugas_verifikasi_screen.dart';
+import '../../admin_komunitas_screen.dart';
 
 class PetugasDashboard extends StatefulWidget {
   final User? user;
@@ -339,6 +340,21 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
               _currentView = 'termonitor';
             });
             provider.fetchLahanTermonitorData();
+          },
+        ),
+        const SizedBox(height: 12),
+        _buildActionMenuCard(
+          title: 'Manajemen Komunitas',
+          subtitle: 'Kelola data kelompok tani dan brigade pangan.',
+          icon: Icons.groups_rounded,
+          color: Colors.indigo[600]!,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AdminKomunitasScreen(),
+              ),
+            );
           },
         ),
       ],

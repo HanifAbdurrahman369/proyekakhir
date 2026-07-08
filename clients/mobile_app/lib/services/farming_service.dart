@@ -191,6 +191,21 @@ class FarmingService {
     }
   }
 
+  /// Mengupdate laporan tanam
+  Future<Map<String, dynamic>> updateLaporTanam(
+    int id,
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      final response = await _apiClient.dio.put('/activities/$id', data: data);
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      final message =
+          e.response?.data['message'] ?? 'Gagal memperbarui laporan tanam.';
+      throw Exception(message);
+    }
+  }
+
   /// Menghapus siklus tanam berjalan
   Future<Map<String, dynamic>> deleteSiklusTanam(int id) async {
     try {
@@ -199,6 +214,20 @@ class FarmingService {
     } on DioException catch (e) {
       final message =
           e.response?.data['message'] ?? 'Gagal menghapus laporan tanam.';
+      throw Exception(message);
+    }
+  }
+
+  /// Mengirim catatan pemupukan susulan
+  Future<Map<String, dynamic>> submitPemupukan(
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      final response = await _apiClient.dio.post('/siklus-pupuk', data: data);
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      final message =
+          e.response?.data['message'] ?? 'Gagal menyimpan catatan pemupukan.';
       throw Exception(message);
     }
   }

@@ -163,13 +163,6 @@ class SiklusTanamController extends Controller
         }
 
         $tanggalPanen = Carbon::parse($request->tanggal_panen);
-        if ($tanam->estimasi_tanggal_panen && $tanggalPanen->lt(Carbon::parse($tanam->estimasi_tanggal_panen))) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Laporan panen belum dapat dibuat sebelum estimasi panen '
-                    . Carbon::parse($tanam->estimasi_tanggal_panen)->format('d-m-Y') . '.',
-            ], 422);
-        }
 
         $laporan = LaporPanen::where('tanam_padi_id', $tanam->id)->first();
         if ($laporan && $laporan->status_verifikasi !== 'DITOLAK') {
@@ -236,17 +229,12 @@ class SiklusTanamController extends Controller
         $laporan = LaporPanen::with('siklusTanam')
             ->where('id', $id)
             ->where('pemilik_id', $userId)
-            ->where('status_verifikasi', 'DITOLAK')
             ->first();
         if (!$laporan) {
-            return response()->json(['success' => false, 'message' => 'Laporan panen ditolak tidak ditemukan.'], 404);
+            return response()->json(['success' => false, 'message' => 'Laporan panen tidak ditemukan atau akses ditolak.'], 404);
         }
 
         $tanggalPanen = Carbon::parse($request->tanggal_panen);
-        if ($laporan->siklusTanam?->estimasi_tanggal_panen
-            && $tanggalPanen->lt(Carbon::parse($laporan->siklusTanam->estimasi_tanggal_panen))) {
-            return response()->json(['success' => false, 'message' => 'Tanggal panen masih sebelum estimasi panen.'], 422);
-        }
 
         $hasil = (float) $request->hasil_panen;
         $luas = (float) ($laporan->luas_tanam_hektar ?: $laporan->luas_lahan_ha);
@@ -331,8 +319,8 @@ class SiklusTanamController extends Controller
         if (!$data) {
             return response()->json(['success' => false, 'message' => 'Data tanam tidak ditemukan.'], 404);
         }
-        if ($data->status_aktif === 'NONAKTIF' || LaporPanen::where('tanam_padi_id', $id)->where('status_verifikasi', 'DITERIMA')->exists()) {
-            return response()->json(['success' => false, 'message' => 'Data tanam yang telah dipanen tidak boleh diubah.'], 400);
+        if ($data->status_aktif === 'NONAKTIF') {
+            return response()->json(['success' => false, 'message' => 'Data tanam yang sudah tidak aktif (NONAKTIF) tidak boleh diubah.'], 400);
         }
 
         $lahan = $this->lahanTanamYangDiizinkan($userId, $roleId, (int) $request->lahan_id);
@@ -810,8 +798,12 @@ class SiklusTanamController extends Controller
 
         $bulan = (int) Carbon::parse($tanggalTanam)->format('n');
         $varietas = mb_strtolower((string) $bibit->varietas);
-        if ($roleId === self::ROLE_KELOMPOK_TANI && ($varietas !== 'lokal' || $bulan < 1 || $bulan > 9)) {
-            return ['error' => 'Kelompok Tani menggunakan bibit lokal pada Januari sampai September.', 'bibit' => $bibit];
+        if ($roleId === self::ROLE_KELOMPOK_TANI) {
+            if ((int) $lahan->pemilik_id !== $userId) {
+                if ($varietas !== 'lokal' || $bulan < 1 || $bulan > 9) {
+                    return ['error' => 'Kelompok Tani menggunakan bibit lokal pada Januari sampai September.', 'bibit' => $bibit];
+                }
+            }
         }
         
         if ($roleId === self::ROLE_BRIGADE_PANGAN) {

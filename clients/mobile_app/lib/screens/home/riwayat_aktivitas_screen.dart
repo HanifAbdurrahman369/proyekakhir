@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../providers/farming_provider.dart';
+import 'input_pemupukan_sheet.dart';
 
 class RiwayatAktivitasScreen extends StatefulWidget {
   const RiwayatAktivitasScreen({super.key});
@@ -71,7 +72,10 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
     return val.toString();
   }
 
-  Future<void> _showContactOfficerDialog(BuildContext context, String namaLahan) async {
+  Future<void> _showContactOfficerDialog(
+    BuildContext context,
+    String namaLahan,
+  ) async {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -81,7 +85,12 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
           ),
           backgroundColor: Colors.white,
           surfaceTintColor: Colors.white,
-          titlePadding: const EdgeInsets.only(left: 24, right: 16, top: 16, bottom: 0),
+          titlePadding: const EdgeInsets.only(
+            left: 24,
+            right: 16,
+            top: 16,
+            bottom: 0,
+          ),
           title: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -127,7 +136,9 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                     height: 1.5,
                   ),
                   children: [
-                    const TextSpan(text: 'Untuk melanjutkan ke tahap pemetaan lahan '),
+                    const TextSpan(
+                      text: 'Untuk melanjutkan ke tahap pemetaan lahan ',
+                    ),
                     TextSpan(
                       text: namaLahan,
                       style: const TextStyle(
@@ -135,7 +146,10 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                         color: Color(0xFF059669),
                       ),
                     ),
-                    const TextSpan(text: ', silakan segera menghubungi petugas dinas pertanian.'),
+                    const TextSpan(
+                      text:
+                          ', silakan segera menghubungi petugas dinas pertanian.',
+                    ),
                   ],
                 ),
               ),
@@ -152,7 +166,11 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
             ],
           ),
           actionsAlignment: MainAxisAlignment.center,
-          actionsPadding: const EdgeInsets.only(left: 24, right: 24, bottom: 24),
+          actionsPadding: const EdgeInsets.only(
+            left: 24,
+            right: 24,
+            bottom: 24,
+          ),
           actions: [
             SizedBox(
               width: double.infinity,
@@ -164,7 +182,9 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                   } else {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Tidak dapat membuka WhatsApp.')),
+                        const SnackBar(
+                          content: Text('Tidak dapat membuka WhatsApp.'),
+                        ),
                       );
                     }
                   }
@@ -236,7 +256,45 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
             _buildPupukTab(farmingProvider),
           ],
         ),
+        floatingActionButton: Builder(
+          builder: (BuildContext context) {
+            final tabController = DefaultTabController.of(context);
+            return AnimatedBuilder(
+              animation: tabController,
+              builder: (context, child) {
+                if (tabController.index == 2) {
+                  return FloatingActionButton.extended(
+                    onPressed: () => _showInputPemupukanSheet(context),
+                    backgroundColor: Colors.green[800],
+                    foregroundColor: Colors.white,
+                    icon: const Icon(Icons.add_rounded),
+                    label: Text(
+                      'Pemupukan',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            );
+          },
+        ),
       ),
+    );
+  }
+
+  // ================= DIALOG / BOTTOM SHEET PEMUPUKAN =================
+  void _showInputPemupukanSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (BuildContext context) {
+        return const InputPemupukanSheet();
+      },
     );
   }
 
@@ -415,13 +473,16 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                             ),
                           ),
                         ],
-                        if (statusRaw == 'DITERIMA' && statusSpasial == 'BELUM_DIPETAKAN') ...[
+                        if (statusRaw == 'DITERIMA' &&
+                            statusSpasial == 'BELUM_DIPETAKAN') ...[
                           const SizedBox(height: 12),
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton.icon(
-                              onPressed: () =>
-                                  _showContactOfficerDialog(context, item['nama_lahan'] ?? '-'),
+                              onPressed: () => _showContactOfficerDialog(
+                                context,
+                                item['nama_lahan'] ?? '-',
+                              ),
                               icon: const Icon(
                                 Icons.chat_bubble_outline_rounded,
                                 size: 18,
@@ -632,38 +693,36 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
                             ),
                           ),
                         ],
-                        if (statusRaw == 'DITOLAK') ...[
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: () =>
-                                  _showUpdatePanenDialog(context, item),
-                              icon: const Icon(
-                                Icons.edit_note_rounded,
-                                size: 18,
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () =>
+                                _showUpdatePanenDialog(context, item),
+                            icon: const Icon(
+                              Icons.edit_note_rounded,
+                              size: 18,
+                            ),
+                            label: Text(
+                              'Perbaiki Laporan Panen',
+                              style: GoogleFonts.inter(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
                               ),
-                              label: Text(
-                                'Perbaiki Laporan Panen',
-                                style: GoogleFonts.inter(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
-                                ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF3E7D00),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 12,
                               ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF3E7D00),
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
                               ),
                             ),
                           ),
-                        ],
+                        ),
                       ],
                     ),
                   ),
