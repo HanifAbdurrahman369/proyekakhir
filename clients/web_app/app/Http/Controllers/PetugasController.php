@@ -159,16 +159,17 @@ class PetugasController extends Controller
             ->filter(function ($lahan) use ($punyaPolygon) {
                 $statusVerifikasi = strtoupper((string) data_get($lahan, 'status_verifikasi', ''));
 
-                return $statusVerifikasi === 'DITERIMA' && !$punyaPolygon($lahan);
+                return $statusVerifikasi === 'DITERIMA' && !$punyaPolygon($lahan) && !str_starts_with($lahan['id'] ?? '', 'H-');
             })
             ->values()
             ->all();
 
-        $totalSpasialTerdata = collect($spasialRows)
-            ->pluck('id')
-            ->filter()
-            ->unique()
-            ->count();
+        $lahanTermonitor = collect($spasialRows)
+            ->filter(fn ($lahan) => str_starts_with($lahan['id'] ?? '', 'H-'))
+            ->values()
+            ->all();
+
+        $totalSpasialTerdata = count($lahanBelumDipetakan) + count($lahanLamaSpasial);
 
         $spasialSummary = $spasialResponse['summary'] ?? [
             'total' => is_countable($spasialRows) ? count($spasialRows) : 0,
@@ -178,6 +179,7 @@ class PetugasController extends Controller
         $spasialSummary['total'] = $totalSpasialTerdata;
         $spasialSummary['sudah_dipetakan'] = count($lahanLamaSpasial);
         $spasialSummary['belum_dipetakan'] = count($lahanBelumDipetakan);
+        $spasialSummary['termonitor'] = count($lahanTermonitor);
         $spasialSummary['persentase_lengkap'] = $spasialSummary['total'] > 0
             ? round(($spasialSummary['sudah_dipetakan'] / $spasialSummary['total']) * 100, 2)
             : 0;
@@ -195,6 +197,7 @@ class PetugasController extends Controller
             'lahanDiterima' => $lahanDiterima,
             'lahanBelumDipetakan' => $lahanBelumDipetakan,
             'lahanLamaSpasial' => $lahanLamaSpasial,
+            'lahanTermonitor' => $lahanTermonitor,
             'highlightLahanId' => $request->query('lahan_id'),
         ]);
     }
@@ -247,6 +250,12 @@ class PetugasController extends Controller
     public function storeKomunitas(Request $request)
     {
         $response = $this->postData('/komunitas', $request->all());
+        return response()->json($response->json(), $response->status());
+    }
+
+    public function syncLahanTermonitor(Request $request)
+    {
+        $response = $this->postData('/lahan-termonitor/sync', $request->all());
         return response()->json($response->json(), $response->status());
     }
 

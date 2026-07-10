@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\LahanSawah;
+use App\Models\LahanHuma;
 use App\Models\MonitoringKondisi;
 use App\Models\Kecamatan;
 use Illuminate\Support\Facades\Http;
@@ -32,7 +33,7 @@ class HumaIntegrationService
 
     private function humaLahanQuery()
     {
-        return $this->whereJsonTextValue(LahanSawah::query(), 'catatan_verifikasi', 'source', 'huma');
+        return $this->whereJsonTextValue(LahanHuma::query(), 'catatan_verifikasi', 'source', 'huma');
     }
 
     private function humaLahanByLandId($landId)
@@ -51,51 +52,63 @@ class HumaIntegrationService
     }
 
     /**
-     * Get preview of lands and sensors from Huma (Mocked)
+     * Get preview of lands and sensors from Huma
      */
     public function getPreview()
     {
-        $lands = $this->fetchMockLands();
+        $lands = $this->fetchHumaData();
         
         $previewLands = [];
         $previewSensors = [];
 
         foreach ($lands as $land) {
             // Check sync status for land
-            $existingLahan = $this->humaLahanByLandId($land['id'])->first();
+            $existingLahan = $this->humaLahanByLandId($land['land_id'])->first();
             
             $statusLahan = $existingLahan ? 'Sudah Ada / Akan Update' : 'Baru';
 
-            // Check if polygon has valid kecamatan
-            $kecamatanId = $this->findKecamatanIdByCoordinate($land['latitude'], $land['longitude']);
+            // Find kecamatan by district_name or coordinate
+            $kecamatanId = null;
+            if (!empty($land['district_name'])) {
+                $kec = Kecamatan::where('nama_kecamatan', 'LIKE', '%' . $land['district_name'] . '%')->first();
+                if ($kec) {
+                    $kecamatanId = $kec->id;
+                }
+            }
+            if (!$kecamatanId && $land['latitude'] && $land['longitude']) {
+                $kecamatanId = $this->findKecamatanIdByCoordinate($land['latitude'], $land['longitude']);
+            }
+            
             $statusWilayah = $kecamatanId ? 'Valid' : 'Gagal Validasi';
             if (!$kecamatanId) {
                 $statusLahan = 'Gagal Validasi Wilayah';
             }
 
             $previewLands[] = [
-                'huma_land_id' => $land['id'],
-                'nama_lahan' => $land['name'],
-                'device_id' => $land['device_id'],
+                'huma_land_id' => $land['land_id'],
+                'nama_lahan' => $land['land_name'],
+                'device_id' => $land['land_id'], // API Huma asli tidak mengekspos device_id di root, gunakan land_id sebagai referensi
                 'luas' => $land['land_area'],
-                'alamat' => $land['address'],
+                'alamat' => $land['address'] ?? '-',
                 'latitude' => $land['latitude'],
                 'longitude' => $land['longitude'],
-                'status_polygon' => 'Valid',
+                'status_polygon' => 'Tidak Tersedia',
                 'status_wilayah' => $statusWilayah,
                 'status_sinkron' => $statusLahan,
             ];
 
-            // Mock latest sensor
-            $sensor = $this->fetchMockLatestSensor($land['id'], $land['device_id']);
+            // Sensor
+            $sensor = $land['latest_sensor'] ?? null;
             if ($sensor) {
-                $existingSensor = $this->humaSensorByLogId($sensor['sensor_log_id'])->first();
+                // Generate a pseudo-ID for sensor log based on recorded_at since real API doesn't give sensor_log_id
+                $sensorLogId = md5($land['land_id'] . $sensor['recorded_at']);
+                $existingSensor = $this->humaSensorByLogId($sensorLogId)->first();
                 $statusSensor = $existingSensor ? 'Sudah Ada' : 'Baru';
 
                 $previewSensors[] = [
-                    'huma_land_id' => $land['id'],
-                    'nama_lahan' => $land['name'],
-                    'device_id' => $land['device_id'],
+                    'huma_land_id' => $land['land_id'],
+                    'nama_lahan' => $land['land_name'],
+                    'device_id' => $land['land_id'],
                     'ph_tanah' => $sensor['ph_level'],
                     'n' => $sensor['n_level'],
                     'p' => $sensor['p_level'],
@@ -121,47 +134,72 @@ class HumaIntegrationService
      */
     public function syncData()
     {
-        $lands = $this->fetchMockLands();
+        $lands = $this->fetchHumaData();
         $syncedLands = 0;
         $syncedSensors = 0;
 
         foreach ($lands as $land) {
-            $kecamatanId = $this->findKecamatanIdByCoordinate($land['latitude'], $land['longitude']);
+            $kecamatanId = null;
+            if (!empty($land['district_name'])) {
+                $kec = Kecamatan::where('nama_kecamatan', 'LIKE', '%' . $land['district_name'] . '%')->first();
+                if ($kec) {
+                    $kecamatanId = $kec->id;
+                }
+            }
+            if (!$kecamatanId && $land['latitude'] && $land['longitude']) {
+                $kecamatanId = $this->findKecamatanIdByCoordinate($land['latitude'], $land['longitude']);
+            }
             
             if (!$kecamatanId) {
                 continue; // Skip if invalid territory
             }
 
             // Upsert Lahan
-            $lahan = $this->humaLahanByLandId($land['id'])->first();
+            $lahan = $this->humaLahanByLandId($land['land_id'])->first();
 
+            $ownerName = $land['owner']['name'] ?? 'Petani Huma';
             $catatanVerifikasi = [
                 'source' => 'huma',
-                'huma_land_id' => $land['id'],
+                'huma_land_id' => $land['land_id'],
                 'huma_external_id' => $land['external_id'],
-                'huma_device_id' => $land['device_id'],
+                'huma_device_id' => $land['land_id'],
                 'huma_soil_type' => $land['soil_type'],
                 'last_synced_at' => now()->toDateTimeString(),
+                'huma_owner_name' => $ownerName,
             ];
 
             if (!$lahan) {
-                $lahan = new LahanSawah();
+                $lahan = new LahanHuma();
                 $lahan->created_at = now();
             }
 
-            $lahan->pemilik_id = $this->defaultOwnerId;
+            $lahan->pemilik_id = null;
 
             $lahan->kecamatan_id = $kecamatanId;
-            $lahan->nama_lahan = $land['name'];
-            $lahan->alamat_detail = $land['address'];
+            $lahan->nama_lahan = $land['land_name'];
+            $lahan->alamat_detail = $land['address'] ?? '-';
             $lahan->luas_lahan_hektar = $land['land_area'];
             $lahan->latitude = $land['latitude'];
             $lahan->longitude = $land['longitude'];
-            $lahan->koordinat_tengah = $land['latitude'] . ',' . $land['longitude'];
-            $lahan->polygon_area = json_encode($land['polygon_data']);
-            $lahan->status_verifikasi = 'DITERIMA';
+            
+            if ($land['latitude'] && $land['longitude']) {
+                $lahan->koordinat_tengah = $land['latitude'] . ',' . $land['longitude'];
+            }
+            
+            // Polygon is generally not provided by Huma, so we'll skip inserting polygon_area here if not found.
+            // If Huma suddenly provides polygon_data in the future, we parse it:
+            if (isset($land['polygon_data'])) {
+                $geoJsonStr = json_encode($land['polygon_data']);
+                $lahan->polygon_area = \Illuminate\Support\Facades\DB::raw("ST_GeomFromGeoJSON('{$geoJsonStr}')");
+            }
+            
+            // Status verifikasi depends on validation_status from API if applicable, but we default to DITERIMA for monitoring
+            $lahan->status_verifikasi = (strtolower($land['validation_status']) === 'diterima') ? 'DITERIMA' : 'PENDING';
             $lahan->verified_by = 1;
-            $lahan->verified_at = now();
+            if ($lahan->status_verifikasi === 'DITERIMA') {
+                $lahan->verified_at = now();
+            }
+            
             $lahan->catatan_verifikasi = json_encode($catatanVerifikasi);
             $lahan->updated_at = now();
             $lahan->save();
@@ -169,25 +207,28 @@ class HumaIntegrationService
             $syncedLands++;
 
             // Sync Sensor
-            $sensor = $this->fetchMockLatestSensor($land['id'], $land['device_id']);
+            $sensor = $land['latest_sensor'] ?? null;
             if ($sensor) {
-                $existingSensor = $this->humaSensorByLogId($sensor['sensor_log_id'])->first();
+                $sensorLogId = md5($land['land_id'] . $sensor['recorded_at']);
+                $existingSensor = $this->humaSensorByLogId($sensorLogId)->first();
+                
                 if (!$existingSensor) {
                     $catatanPetugas = [
                         'source' => 'huma',
-                        'huma_land_id' => $land['id'],
-                        'huma_device_id' => $land['device_id'],
-                        'huma_sensor_log_id' => $sensor['sensor_log_id'],
+                        'huma_land_id' => $land['land_id'],
+                        'huma_device_id' => $land['land_id'],
+                        'huma_sensor_log_id' => $sensorLogId,
                         'ph_tanah' => $sensor['ph_level'],
                         'n_level' => $sensor['n_level'],
                         'p_level' => $sensor['p_level'],
                         'k_level' => $sensor['k_level'],
                         'water_level' => $sensor['water_level'],
                         'recorded_at' => $sensor['recorded_at'],
+                        'rekomendasi_pupuk' => $land['latest_recommendations'] ?? [],
                     ];
 
-                    MonitoringKondisi::create([
-                        'lahan_id' => $lahan->id,
+                    $sensorLog = MonitoringKondisi::create([
+                        'lahan_huma_id' => $lahan->id,
                         'tanggal_cek' => $sensor['recorded_at'],
                         'ph_air' => $sensor['ph_level'],
                         'tinggi_muka_air' => $sensor['water_level'],
@@ -198,6 +239,29 @@ class HumaIntegrationService
                         'created_by' => 1,
                     ]);
                     $syncedSensors++;
+
+                    // Analisis Anomali dan Kirim Notifikasi
+                    $anomali = [];
+                    if ($sensor['ph_level'] < 5.5) {
+                        $anomali[] = 'pH terlalu asam (' . $sensor['ph_level'] . ')';
+                    } elseif ($sensor['ph_level'] > 7.5) {
+                        $anomali[] = 'pH terlalu basa (' . $sensor['ph_level'] . ')';
+                    }
+
+                    if (count($anomali) > 0) {
+                        \Illuminate\Support\Facades\DB::table('notifikasi')->insert([
+                            'role_id_penerima' => 1,
+                            'user_id_penerima' => $lahan->pemilik_id,
+                            'judul' => 'Peringatan Dini IoT: ' . $lahan->nama_lahan,
+                            'pesan' => 'Terdeteksi kondisi lahan tidak ideal: ' . implode(', ', $anomali) . '. Segera periksa lahan Anda.',
+                            'ref_type' => 'monitoring_kondisi',
+                            'ref_id' => $sensorLog->id,
+                            'target_url' => '/petani/lahan',
+                            'is_read' => false,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
                 }
             }
         }
@@ -290,50 +354,25 @@ class HumaIntegrationService
     }
 
     /**
-     * MOCK DATA
+     * REAL API INTEGRATION
      */
-    private function fetchMockLands()
+    private function fetchHumaData()
     {
-        return [
-            [
-                'id' => 3,
-                'external_id' => null,
-                'device_id' => 2,
-                'name' => 'Sawah Petak C',
-                'address' => 'Jl. Padi No 123',
-                'polygon_data' => [
-                    "type" => "Polygon",
-                    "coordinates" => [
-                        [
-                            [114.6139164, -3.0996579],
-                            [114.6564616, -3.1024005],
-                            [114.6468546, -3.1421677],
-                            [114.6139164, -3.0996579]
-                        ]
-                    ]
-                ],
-                'land_area' => 40,
-                'latitude' => -3.12091285,
-                'longitude' => 114.61734753,
-                'soil_type' => 'rawa_pasang_surut_a',
-                'validation_status' => 'diterima',
-            ]
-        ];
-    }
-
-    private function fetchMockLatestSensor($landId, $deviceId)
-    {
-        return [
-            'land_id' => $landId,
-            'device_id' => $deviceId,
-            'sensor_log_id' => rand(100, 999), // Randomize to simulate new data on each fetch if needed. Wait, if we randomize, sync status will always be 'Baru'. Let's keep it static for now, and maybe one dynamic.
-            'sensor_log_id' => 24, // Static
-            'ph_level' => 4.5,
-            'n_level' => 0.15,
-            'p_level' => 25,
-            'k_level' => 0.35,
-            'water_level' => 7,
-            'recorded_at' => now()->subMinutes(10)->toDateTimeString(),
-        ];
+        try {
+            $response = \Illuminate\Support\Facades\Http::timeout(10)->get('https://crsa-batola.poliban.ac.id/api/integration/latest-data');
+            
+            if ($response->successful()) {
+                $data = $response->json();
+                if (isset($data['success']) && $data['success'] && isset($data['data'])) {
+                    return $data['data'];
+                }
+            }
+            
+            \Illuminate\Support\Facades\Log::error('[HUMA API] Gagal mengambil data', ['status' => $response->status()]);
+            return [];
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('[HUMA API] Exception: ' . $e->getMessage());
+            return [];
+        }
     }
 }

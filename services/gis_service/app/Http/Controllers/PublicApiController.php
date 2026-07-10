@@ -250,18 +250,17 @@ class PublicApiController extends Controller
 
     public function getMapLahanTermonitor()
     {
-        $rows = DB::table('lahan_sawah')
-            ->leftJoin('monitoring_kondisi', 'lahan_sawah.id', '=', 'monitoring_kondisi.lahan_id')
-            ->whereRaw("JSON_EXTRACT(lahan_sawah.catatan_verifikasi, '$.source') = 'huma'")
+        $rows = DB::table('lahan_huma')
+            ->leftJoin('monitoring_kondisi', 'lahan_huma.id', '=', 'monitoring_kondisi.lahan_huma_id')
             ->select(
-                'lahan_sawah.id',
-                'lahan_sawah.nama_lahan',
-                'lahan_sawah.luas_lahan_hektar',
-                DB::raw('COALESCE(lahan_sawah.luas_tanam_hektar, lahan_sawah.luas_lahan_hektar) as luas_tanam_hektar'),
-                'lahan_sawah.latitude',
-                'lahan_sawah.longitude',
-                DB::raw('ST_AsGeoJSON(lahan_sawah.polygon_area) as geojson'),
-                'lahan_sawah.catatan_verifikasi',
+                'lahan_huma.id',
+                'lahan_huma.nama_lahan',
+                'lahan_huma.luas_lahan_hektar',
+                'lahan_huma.luas_lahan_hektar as luas_tanam_hektar',
+                'lahan_huma.latitude',
+                'lahan_huma.longitude',
+                DB::raw('ST_AsGeoJSON(lahan_huma.polygon_area) as geojson'),
+                'lahan_huma.catatan_verifikasi',
                 'monitoring_kondisi.catatan_petugas',
                 'monitoring_kondisi.ph_air',
                 'monitoring_kondisi.tanggal_cek'
@@ -287,8 +286,8 @@ class PublicApiController extends Controller
                 continue;
             }
 
-            $catatanVerifikasi = json_decode($row->catatan_verifikasi, true);
-            $catatanPetugas = json_decode($row->catatan_petugas, true);
+            $catatanVerifikasi = json_decode($row->catatan_verifikasi ?? '{}', true);
+            $catatanPetugas = json_decode($row->catatan_petugas ?? '{}', true);
 
             $features[] = [
                 'type' => 'Feature',
@@ -304,7 +303,8 @@ class PublicApiController extends Controller
                     'n_level' => $catatanPetugas['n_level'] ?? '-',
                     'p_level' => $catatanPetugas['p_level'] ?? '-',
                     'k_level' => $catatanPetugas['k_level'] ?? '-',
-                    'waktu_rekam' => $row->tanggal_cek ?? '-'
+                    'waktu_rekam' => $row->tanggal_cek ?? '-',
+                    'rekomendasi_pupuk' => $catatanPetugas['rekomendasi_pupuk'] ?? []
                 ]
             ];
         }

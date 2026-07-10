@@ -74,7 +74,11 @@
                             <select name="wilayah_kecamatan_id" id="kecamatan_id" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#65bd00] focus:ring-[#65bd00]">
                                 <option value="">Pilih Kecamatan</option>
                                 @foreach($kecamatan ?? [] as $item)
-                                    <option value="{{ $item['id'] }}" @selected((string)old('wilayah_kecamatan_id', $user['wilayah_kecamatan_id'] ?? '') === (string)$item['id'])>
+                                    @php
+                                        $oldKec = old('wilayah_kecamatan_id', $user['wilayah_kecamatan_id'] ?? '');
+                                        $oldKec = is_array($oldKec) ? ($oldKec[0] ?? '') : $oldKec;
+                                    @endphp
+                                    <option value="{{ $item['id'] }}" @selected((string)$oldKec === (string)$item['id'])>
                                         {{ $item['nama_kecamatan'] ?? $item['nama'] }}
                                     </option>
                                 @endforeach
@@ -86,9 +90,14 @@
                                 <option value="">Pilih Kelurahan</option>
                                 @foreach($kelurahan ?? [] as $item)
                                     @php
-                                        $selectedKelurahanId = is_array($user['wilayah_kelurahan_ids'] ?? null) && count($user['wilayah_kelurahan_ids']) > 0 ? $user['wilayah_kelurahan_ids'][0] : ($user['wilayah_kelurahan_ids'] ?? '');
+                                        $rawKelIds = $user['wilayah_kelurahan_ids'] ?? '';
+                                        $kelIds = is_string($rawKelIds) ? json_decode($rawKelIds, true) : $rawKelIds;
+                                        $selectedKelurahanId = (is_array($kelIds) && count($kelIds) > 0) ? $kelIds[0] : '';
+                                        
+                                        $oldKel = old('wilayah_kelurahan_id', $selectedKelurahanId);
+                                        $oldKel = is_array($oldKel) ? ($oldKel[0] ?? '') : $oldKel;
                                     @endphp
-                                    <option value="{{ $item['id'] }}" data-kecamatan-id="{{ $item['kecamatan_id'] ?? '' }}" @selected((string)old('wilayah_kelurahan_id', $selectedKelurahanId) === (string)$item['id'])>
+                                    <option value="{{ $item['id'] }}" data-kecamatan-id="{{ $item['kecamatan_id'] ?? '' }}" @selected((string)$oldKel === (string)$item['id'])>
                                         {{ $item['nama_kelurahan'] ?? $item['nama'] }}
                                     </option>
                                 @endforeach

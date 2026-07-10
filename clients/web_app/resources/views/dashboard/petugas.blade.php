@@ -42,11 +42,15 @@
     $lahanLamaSpasial = isset($lahanLamaSpasial)
         ? collect($lahanLamaSpasial)->values()
         : collect($spasialRows)
-            ->filter(fn($item) => $punyaSpasialLengkap($item))
+            ->filter(fn($item) => $punyaSpasialLengkap($item) && !str_starts_with($item['id'] ?? '', 'H-'))
             ->values();
+    $lahanTermonitor = isset($lahanTermonitor) 
+        ? collect($lahanTermonitor)->values() 
+        : collect($spasialRows)->filter(fn($item) => str_starts_with($item['id'] ?? '', 'H-'))->values();
     $totalSpasial = data_get($spasialSummary, 'total', is_countable($spasialRows) ? count($spasialRows) : 0);
     $sudahDipetakan = data_get($spasialSummary, 'sudah_dipetakan', $lahanLamaSpasial->count());
     $belumDipetakan = data_get($spasialSummary, 'belum_dipetakan', $lahanBaruSpasial->count());
+    $termonitorCount = data_get($spasialSummary, 'termonitor', $lahanTermonitor->count());
     $persentaseLengkap = data_get($spasialSummary, 'persentase_lengkap', $totalSpasial > 0 ? round(($sudahDipetakan / $totalSpasial) * 100, 2) : 0);
 @endphp
 
@@ -95,7 +99,7 @@
 
 @section('content')
     <div class="space-y-6">
-        @unless(in_array($page, ['manajemen-data-spasial', 'verifikasi-data-petani'], true))
+        @if($page === 'dashboard')
             <div class="glass-card rounded-2xl p-5 md:p-6">
                 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
                     <div>
@@ -113,7 +117,7 @@
                         <a href="{{ url('/manajemen-komunitas') }}" class="px-4 py-2 rounded-xl text-sm font-bold transition {{ $isActive('manajemen-komunitas') }}">Komunitas</a></div>
                 </div>
             </div>
-        @endunless
+        @endif
 
         @if(session('success'))
             <div class="rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-green-800 text-sm font-semibold">{{ session('success') }}</div>
@@ -164,8 +168,8 @@
         @if($page === 'manajemen-komunitas')
             <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 class="text-2xl font-bold text-primary-900">Manajemen Komunitas & Gapoktan</h1>
-                    <p class="text-sm text-slate-500 mt-1">Kelola data Kelompok Tani, Brigade Pangan, dan Gapoktan sebagai rujukan registrasi NIK.</p>
+                    <h1 class="text-2xl font-bold text-primary-900">Manajemen Komunitas</h1>
+                    <p class="text-sm text-slate-500 mt-1">Kelola data Kelompok Tani dan Brigade Pangan.</p>
                 </div>
                 <button onclick="bukaModalTambahKomunitas()" class="flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-primary-700">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -182,7 +186,6 @@
                                 <th class="px-6 py-4 font-bold">Jenis / NIK</th>
                                 <th class="px-6 py-4 font-bold">Ketua / Penanggung Jawab</th>
                                 <th class="px-6 py-4 font-bold">Kontak & Alamat</th>
-                                <th class="px-6 py-4 font-bold">Induk (Gapoktan)</th>
                                 <th class="px-6 py-4 font-bold text-right">Aksi</th>
                             </tr>
                         </thead>
@@ -204,7 +207,6 @@
                                         <p>{{ $item['nomor_hp'] ?? '-' }}</p>
                                         <p class="text-xs text-slate-500 truncate max-w-[150px]">{{ $item['alamat'] ?? '-' }}</p>
                                     </td>
-                                    <td class="px-6 py-4">{{ $item['kelompok_tani_induk']['nama_komunitas'] ?? '-' }}</td>
                                     <td class="px-6 py-4 text-right">
                                         <button onclick="editKomunitas({{ json_encode($item) }})" class="text-blue-600 hover:text-blue-800 text-sm font-bold mr-3">Edit</button>
                                         <button onclick="hapusKomunitas({{ $item['id'] }})" class="text-red-600 hover:text-red-800 text-sm font-bold">Hapus</button>
@@ -229,7 +231,7 @@
             <div id="modalKomunitas" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm transition-opacity flex justify-center items-center p-4">
                 <div class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
                     <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
-                        <h3 class="text-lg font-bold text-primary-900" id="modalKomunitasTitle">Tambah Komunitas / Gapoktan</h3>
+                        <h3 class="text-lg font-bold text-primary-900" id="modalKomunitasTitle">Tambah Komunitas</h3>
                         <button type="button" onclick="tutupModalKomunitas()" class="text-slate-400 hover:text-slate-600 transition">
                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
@@ -241,14 +243,14 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div>
                                     <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">Jenis Entitas</label>
-                                    <select id="jenis_komunitas" name="jenis_komunitas" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none" required onchange="toggleInduk()">
-                                        <option value="komunitas_tani">Komunitas Tani</option>
+                                    <select id="jenis_komunitas" name="jenis_komunitas" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none" required>
+                                        <option value="kelompok_tani">Kelompok Tani</option>
                                         <option value="brigade_pangan">Brigade Pangan</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">Nama Entitas (Komunitas)</label>
-                                    <input type="text" id="nama_komunitas" name="nama_komunitas" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none" placeholder="Cth: Gapoktan Maju Jaya" required>
+                                    <input type="text" id="nama_komunitas" name="nama_komunitas" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none" placeholder="Cth: Kelompok Tani Maju Jaya" required>
                                 </div>
                                 <div>
                                     <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">NIK Ketua / Penanggung Jawab</label>
@@ -262,20 +264,28 @@
                                     <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">Nomor HP</label>
                                     <input type="text" id="nomor_hp" name="nomor_hp" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none">
                                 </div>
-                                <div id="divInduk">
-                                    <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">Induk Gapoktan (Opsional)</label>
-                                    <select id="komunitas_induk_id" name="komunitas_induk_id" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none">
-                                        <option value="">- Tidak Ada -</option>
-                                        @foreach($gapoktan ?? [] as $g)
-                                            <option value="{{ $g['id'] }}">{{ $g['nama_komunitas'] }}</option>
-                                        @endforeach
-                                    </select>
+                                <div>
+                                    <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">ID Kecamatan</label>
+                                    <input type="number" id="wilayah_kecamatan_id" name="wilayah_kecamatan_id" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none" placeholder="ID Kecamatan">
+                                </div>
+                                <div>
+                                    <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">Instansi Asal</label>
+                                    <input type="text" id="instansi_asal" name="instansi_asal" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">Nama BPP</label>
+                                    <input type="text" id="nama_bpp" name="nama_bpp" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none">
                                 </div>
                             </div>
                             
                             <div>
                                 <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">Alamat Sekretariat</label>
                                 <textarea id="alamat" name="alamat" rows="2" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none"></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">IDs Kelurahan (JSON format)</label>
+                                <input type="text" id="wilayah_kelurahan_ids" name="wilayah_kelurahan_ids" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none" placeholder='Contoh: [1,2,3]'>
                             </div>
                             
                             <div id="divStatus" class="hidden">
@@ -296,24 +306,12 @@
             </div>
             @push('scripts')
             <script>
-                function toggleInduk() {
-                    const jenis = document.getElementById('jenis_komunitas').value;
-                    const divInduk = document.getElementById('divInduk');
-                    if (jenis === 'gapoktan') {
-                        divInduk.classList.add('hidden');
-                        document.getElementById('komunitas_induk_id').value = '';
-                    } else {
-                        divInduk.classList.remove('hidden');
-                    }
-                }
-
                 function bukaModalTambahKomunitas() {
                     document.getElementById('formKomunitas').reset();
                     document.getElementById('komunitas_id').value = '';
-                    document.getElementById('modalKomunitasTitle').textContent = 'Tambah Komunitas / Gapoktan';
+                    document.getElementById('modalKomunitasTitle').textContent = 'Tambah Komunitas';
                     document.getElementById('divStatus').classList.add('hidden');
                     document.getElementById('modalKomunitas').classList.remove('hidden');
-                    toggleInduk();
                 }
 
                 function tutupModalKomunitas() {
@@ -328,13 +326,17 @@
                     document.getElementById('nama').value = data.nama || '';
                     document.getElementById('nomor_hp').value = data.nomor_hp || '';
                     document.getElementById('alamat').value = data.alamat || '';
-                    document.getElementById('komunitas_induk_id').value = data.komunitas_induk_id || '';
+                    
+                    document.getElementById('wilayah_kecamatan_id').value = data.wilayah_kecamatan_id || '';
+                    document.getElementById('wilayah_kelurahan_ids').value = data.wilayah_kelurahan_ids ? (typeof data.wilayah_kelurahan_ids === 'object' ? JSON.stringify(data.wilayah_kelurahan_ids) : data.wilayah_kelurahan_ids) : '';
+                    document.getElementById('instansi_asal').value = data.instansi_asal || '';
+                    document.getElementById('nama_bpp').value = data.nama_bpp || '';
+                    
                     document.getElementById('status_keanggotaan').value = data.status_keanggotaan || 'AKTIF';
                     
-                    document.getElementById('modalKomunitasTitle').textContent = 'Edit Komunitas / Gapoktan';
+                    document.getElementById('modalKomunitasTitle').textContent = 'Edit Komunitas';
                     document.getElementById('divStatus').classList.remove('hidden');
                     document.getElementById('modalKomunitas').classList.remove('hidden');
-                    toggleInduk();
                 }
 
                 function simpanKomunitas(e) {
@@ -349,8 +351,21 @@
                         nama: document.getElementById('nama').value,
                         nomor_hp: document.getElementById('nomor_hp').value,
                         alamat: document.getElementById('alamat').value,
-                        komunitas_induk_id: document.getElementById('komunitas_induk_id').value,
+                        wilayah_kecamatan_id: document.getElementById('wilayah_kecamatan_id').value || null,
+                        instansi_asal: document.getElementById('instansi_asal').value,
+                        nama_bpp: document.getElementById('nama_bpp').value,
                     };
+                    
+                    const kelurahanInput = document.getElementById('wilayah_kelurahan_ids').value;
+                    if (kelurahanInput) {
+                        try {
+                            data.wilayah_kelurahan_ids = JSON.parse(kelurahanInput);
+                        } catch (e) {
+                            data.wilayah_kelurahan_ids = kelurahanInput;
+                        }
+                    } else {
+                        data.wilayah_kelurahan_ids = null;
+                    }
                     if (id) {
                         data.status_keanggotaan = document.getElementById('status_keanggotaan').value;
                     }
@@ -665,7 +680,7 @@
                     </div>
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 min-w-0">
                         <div class="rounded-2xl border border-primary-100 bg-white/80 px-4 py-3">
-                            <p class="text-[10px] text-slate-400 font-bold uppercase">Total</p>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">Total (SiTani)</p>
                             <p class="text-lg font-extrabold text-primary-900">{{ $totalSpasial }}</p>
                         </div>
                         <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
@@ -690,7 +705,7 @@
                             <h2 class="text-lg font-extrabold text-primary-900 mt-1">Sumber Data Pemetaan</h2>
                         </div>
                         <div class="p-4 space-y-4">
-                            <div class="grid md:grid-cols-2 gap-3">
+                            <div class="grid md:grid-cols-3 gap-3">
                                 <button type="button" class="spatial-choice sourceToggle is-active rounded-2xl px-4 py-3 text-left transition" data-source="baru">
                                     <span class="block text-sm font-extrabold">Lahan Belum Dipetakan</span>
                                     <span class="block text-xs mt-1">{{ $lahanBaruSpasial->count() }} disetujui, belum memiliki polygon</span>
@@ -698,6 +713,10 @@
                                 <button type="button" class="spatial-choice sourceToggle rounded-2xl px-4 py-3 text-left transition" data-source="lama">
                                     <span class="block text-sm font-extrabold">Lahan Sudah Dipetakan</span>
                                     <span class="block text-xs mt-1">{{ $lahanLamaSpasial->count() }} data memiliki polygon</span>
+                                </button>
+                                <button type="button" class="spatial-choice sourceToggle rounded-2xl px-4 py-3 text-left transition" data-source="termonitor">
+                                    <span class="block text-sm font-extrabold text-slate-800">Lahan Termonitor (Huma)</span>
+                                    <span class="block text-xs mt-1">{{ $termonitorCount }} lahan terhubung sensor IoT Huma</span>
                                 </button>
                             </div>
 
@@ -737,6 +756,23 @@
                                         </button>
                                     @empty
                                         <div class="rounded-2xl border border-primary-100 bg-white px-4 py-8 text-center text-sm text-slate-500">Belum ada lahan yang sudah memiliki polygon.</div>
+                                    @endforelse
+                                </div>
+
+                                <div id="sourceListTermonitor" class="spatial-list space-y-2 hidden">
+                                    @forelse($lahanTermonitor as $item)
+                                        <button type="button" class="spatial-row btnPilihLahan w-full rounded-2xl p-4 text-left transition hover:bg-primary-50" data-source="termonitor" data-lahan-id="{{ $ambil($item, ['id']) }}" data-search="{{ strtolower($ambil($item, ['nama_lahan']) . ' ' . $ambil($item, ['nama_kecamatan']) . ' ' . $ambil($item, ['nama_kelurahan']) . ' ' . $ambil($item, ['pemilik_lahan','nama_petani'])) }}">
+                                            <span class="flex items-start justify-between gap-3">
+                                                <span>
+                                                    <span class="block font-extrabold text-primary-900">{{ $ambil($item, ['nama_lahan']) }}</span>
+                                                    <span class="block text-xs text-slate-500 mt-1">{{ $ambil($item, ['nama_kecamatan']) }} / {{ $ambil($item, ['nama_kelurahan']) }}</span>
+                                                </span>
+                                                <span class="px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold">TERMONITOR</span>
+                                            </span>
+                                            <span class="block text-xs text-slate-500 mt-3">{{ $angka($ambil($item, ['luas_lahan_hektar'], 0)) }} Ha - Huma IoT ({{ $ambil($item, ['pemilik_lahan','nama_petani']) }})</span>
+                                        </button>
+                                    @empty
+                                        <div class="rounded-2xl border border-primary-100 bg-white px-4 py-8 text-center text-sm text-slate-500">Belum ada lahan termonitor IoT Huma.</div>
                                     @endforelse
                                 </div>
 
@@ -933,37 +969,48 @@
                     </button>
                 </div>
 
-                <div class="grid xl:grid-cols-2 gap-6">
+                <div class="space-y-6">
                     <!-- Tabel Preview Data (Dari API Huma) -->
                     <div class="soft-card bg-white rounded-2xl border border-primary-100 p-5">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="text-lg font-extrabold text-primary-900">Preview Data (Dari Huma)</h3>
                             <span class="px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold rounded-full">Belum Tersimpan</span>
                         </div>
-                        <div class="overflow-x-auto max-h-80 overflow-y-auto">
-                            <table class="w-full text-left text-sm">
-                                <thead class="bg-primary-50 sticky top-0">
+                        <div class="overflow-x-auto max-h-[500px] overflow-y-auto">
+                            <table class="w-full text-left text-sm whitespace-nowrap">
+                                <thead class="bg-primary-50 sticky top-0 z-10">
                                     <tr>
-                                        <th class="px-4 py-3 font-bold text-primary-900 rounded-l-xl">Lahan</th>
-                                        <th class="px-4 py-3 font-bold text-primary-900">Device ID</th>
-                                        <th class="px-4 py-3 font-bold text-primary-900 rounded-r-xl">Sensor Logs</th>
+                                        <th class="px-4 py-3 font-bold text-primary-900 rounded-l-xl">Device ID</th>
+                                        <th class="px-4 py-3 font-bold text-primary-900">Nama Lahan</th>
+                                        <th class="px-4 py-3 font-bold text-primary-900">Alamat</th>
+                                        <th class="px-4 py-3 font-bold text-primary-900">Koordinat</th>
+                                        <th class="px-4 py-3 font-bold text-primary-900">pH</th>
+                                        <th class="px-4 py-3 font-bold text-primary-900">N-P-K</th>
+                                        <th class="px-4 py-3 font-bold text-primary-900">Water Lvl</th>
+                                        <th class="px-4 py-3 font-bold text-primary-900">Rekomendasi Pupuk</th>
+                                        <th class="px-4 py-3 font-bold text-primary-900 rounded-r-xl">Waktu Rekam</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-primary-100">
                                     @forelse($previewData['lands'] ?? [] as $land)
                                         @php
-                                            $logsCount = collect($previewData['sensors'] ?? [])->where('device_id', $land['device_id'])->count();
+                                            $sensor = collect($previewData['sensors'] ?? [])->where('device_id', $land['device_id'])->first();
                                         @endphp
-                                        <tr>
-                                            <td class="px-4 py-3">
-                                                <p class="font-bold text-primary-800">{{ $land['name'] ?? '-' }}</p>
-                                                <p class="text-xs text-slate-500">{{ $land['address'] ?? '-' }}</p>
+                                        <tr class="hover:bg-slate-50 transition">
+                                            <td class="px-4 py-3 font-mono text-xs text-slate-600">{{ $land['device_id'] ?? '-' }}</td>
+                                            <td class="px-4 py-3 font-bold text-primary-800">{{ $land['nama_lahan'] ?? ($land['name'] ?? '-') }}</td>
+                                            <td class="px-4 py-3 text-xs text-slate-600">{{ $land['alamat'] ?? ($land['address'] ?? '-') }}</td>
+                                            <td class="px-4 py-3 text-xs text-slate-600">{{ $land['latitude'] ?? '-' }}, {{ $land['longitude'] ?? '-' }}</td>
+                                            <td class="px-4 py-3 text-slate-700 font-bold">{{ $sensor['ph_tanah'] ?? '-' }}</td>
+                                            <td class="px-4 py-3 text-slate-600 text-xs">
+                                                N: {{ $sensor['n'] ?? '-' }}, P: {{ $sensor['p'] ?? '-' }}, K: {{ $sensor['k'] ?? '-' }}
                                             </td>
-                                            <td class="px-4 py-3 text-slate-600 font-mono text-xs">{{ $land['device_id'] ?? '-' }}</td>
-                                            <td class="px-4 py-3 text-slate-600"><span class="font-bold text-primary-700">{{ $logsCount }}</span> logs</td>
+                                            <td class="px-4 py-3 text-slate-600 text-xs">{{ $sensor['water_level'] ?? '-' }}</td>
+                                            <td class="px-4 py-3 text-slate-600 text-xs">-</td>
+                                            <td class="px-4 py-3 text-slate-500 text-[10px]">{{ $sensor['waktu_rekam'] ?? '-' }}</td>
                                         </tr>
                                     @empty
-                                        <tr><td colspan="3" class="px-4 py-8 text-center text-slate-500">Tidak ada data preview dari Huma.</td></tr>
+                                        <tr><td colspan="9" class="px-4 py-8 text-center text-slate-500">Tidak ada data preview dari Huma.</td></tr>
                                     @endforelse
                                 </tbody>
                             </table>
@@ -976,14 +1023,19 @@
                             <h3 class="text-lg font-extrabold text-primary-900">Data Termonitor (SiTani)</h3>
                             <span class="px-3 py-1 bg-green-50 text-green-700 border border-green-200 text-xs font-bold rounded-full">Tersimpan</span>
                         </div>
-                        <div class="overflow-x-auto max-h-80 overflow-y-auto">
-                            <table class="w-full text-left text-sm">
-                                <thead class="bg-primary-50 sticky top-0">
+                        <div class="overflow-x-auto max-h-[500px] overflow-y-auto">
+                            <table class="w-full text-left text-sm whitespace-nowrap">
+                                <thead class="bg-primary-50 sticky top-0 z-10">
                                     <tr>
-                                        <th class="px-4 py-3 font-bold text-primary-900 rounded-l-xl">Lahan</th>
-                                        <th class="px-4 py-3 font-bold text-primary-900">Device ID</th>
-                                        <th class="px-4 py-3 font-bold text-primary-900">Status</th>
-                                        <th class="px-4 py-3 font-bold text-primary-900 rounded-r-xl">Sensor Terbaru</th>
+                                        <th class="px-4 py-3 font-bold text-primary-900 rounded-l-xl">Device ID</th>
+                                        <th class="px-4 py-3 font-bold text-primary-900">Nama Lahan</th>
+                                        <th class="px-4 py-3 font-bold text-primary-900">Alamat</th>
+                                        <th class="px-4 py-3 font-bold text-primary-900">Koordinat</th>
+                                        <th class="px-4 py-3 font-bold text-primary-900">pH</th>
+                                        <th class="px-4 py-3 font-bold text-primary-900">N-P-K</th>
+                                        <th class="px-4 py-3 font-bold text-primary-900">Water Lvl</th>
+                                        <th class="px-4 py-3 font-bold text-primary-900">Rekomendasi Pupuk</th>
+                                        <th class="px-4 py-3 font-bold text-primary-900 rounded-r-xl">Waktu Rekam</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-primary-100">
@@ -991,30 +1043,32 @@
                                         @php
                                             $catatanVerifikasi = json_decode($lahan['catatan_verifikasi'] ?? '{}', true);
                                             $deviceId = $catatanVerifikasi['huma_device_id'] ?? '-';
-                                            $humaStatus = $catatanVerifikasi['huma_status'] ?? '-';
                                             
                                             // Cari log terbaru untuk lahan ini
                                             $latestLog = collect($monitoringHuma)->where('lahan_id', $lahan['id'])->first();
                                             $catatanPetugas = $latestLog ? json_decode($latestLog['catatan_petugas'] ?? '{}', true) : null;
                                         @endphp
-                                        <tr>
-                                            <td class="px-4 py-3">
-                                                <p class="font-bold text-primary-800">{{ $lahan['nama_lahan'] ?? '-' }}</p>
-                                                <p class="text-xs text-slate-500">{{ $lahan['nama_kecamatan'] ?? '-' }}</p>
+                                        <tr class="hover:bg-slate-50 transition">
+                                            <td class="px-4 py-3 font-mono text-xs text-slate-600">{{ $deviceId }}</td>
+                                            <td class="px-4 py-3 font-bold text-primary-800">{{ $lahan['nama_lahan'] ?? '-' }}</td>
+                                            <td class="px-4 py-3 text-xs text-slate-600">{{ $lahan['alamat_detail'] ?? '-' }}</td>
+                                            <td class="px-4 py-3 text-xs text-slate-600">{{ $lahan['latitude'] ?? '-' }}, {{ $lahan['longitude'] ?? '-' }}</td>
+                                            <td class="px-4 py-3 text-slate-700 font-bold">{{ $catatanPetugas['ph_tanah'] ?? '-' }}</td>
+                                            <td class="px-4 py-3 text-slate-600 text-xs">
+                                                N: {{ $catatanPetugas['n_level'] ?? '-' }}, P: {{ $catatanPetugas['p_level'] ?? '-' }}, K: {{ $catatanPetugas['k_level'] ?? '-' }}
                                             </td>
-                                            <td class="px-4 py-3 text-slate-600 font-mono text-xs">{{ $deviceId }}</td>
-                                            <td class="px-4 py-3 text-slate-600 text-xs">{{ $humaStatus }}</td>
-                                            <td class="px-4 py-3">
-                                                @if($catatanPetugas)
-                                                    <p class="text-xs text-slate-600">pH: <span class="font-bold text-primary-700">{{ $catatanPetugas['ph_tanah'] ?? '-' }}</span></p>
-                                                    <p class="text-[10px] text-slate-400">{{ $latestLog['tanggal_cek'] ?? '-' }}</p>
+                                            <td class="px-4 py-3 text-slate-600 text-xs">{{ $catatanPetugas['water_level'] ?? '-' }}</td>
+                                            <td class="px-4 py-3 text-slate-600 text-xs">
+                                                @if(isset($catatanPetugas['rekomendasi_pupuk']) && is_array($catatanPetugas['rekomendasi_pupuk']))
+                                                    {{ implode(', ', $catatanPetugas['rekomendasi_pupuk']) }}
                                                 @else
-                                                    <span class="text-xs text-slate-400">Belum ada</span>
+                                                    -
                                                 @endif
                                             </td>
+                                            <td class="px-4 py-3 text-slate-500 text-[10px]">{{ $latestLog['tanggal_cek'] ?? '-' }}</td>
                                         </tr>
                                     @empty
-                                        <tr><td colspan="4" class="px-4 py-8 text-center text-slate-500">Belum ada lahan Huma yang tersimpan.</td></tr>
+                                        <tr><td colspan="9" class="px-4 py-8 text-center text-slate-500">Belum ada lahan Huma yang tersimpan.</td></tr>
                                     @endforelse
                                 </tbody>
                             </table>
@@ -1034,12 +1088,13 @@
                                 this.disabled = true;
                                 
                                 try {
-                                    const response = await fetch('/api/lahan-termonitor/sync', {
+                                    const response = await fetch('/petugas/lahan-termonitor/sync', {
                                         method: 'POST',
                                         headers: {
                                             'Content-Type': 'application/json',
                                             'Accept': 'application/json',
                                             'Authorization': 'Bearer ' + '{{ session("token") }}',
+                                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                                         }
                                     });
                                     
@@ -1288,10 +1343,12 @@
                         form.action = `${updateBaseUrl}/${id}`;
                         methodInput.value = 'PUT';
                         if (modeBadge) {
-                            modeBadge.textContent = source === 'baru' ? 'Belum Dipetakan' : 'Sudah Dipetakan';
+                            modeBadge.textContent = source === 'baru' ? 'Belum Dipetakan' : (source === 'termonitor' ? 'Termonitor' : 'Sudah Dipetakan');
                             modeBadge.className = source === 'baru'
                                 ? 'px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200'
-                                : 'px-3 py-1 rounded-full bg-primary-50 text-primary-700 text-xs font-bold border border-primary-100';
+                                : (source === 'termonitor' 
+                                    ? 'px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200'
+                                    : 'px-3 py-1 rounded-full bg-primary-50 text-primary-700 text-xs font-bold border border-primary-100');
                         }
                     } else {
                         form.action = storeUrl;
@@ -1309,7 +1366,7 @@
                 const itemsPerPage = 5;
 
                 function renderSpatialList() {
-                    const activeListId = currentSpatialSource === 'baru' ? 'sourceListBaru' : 'sourceListLama';
+                    const activeListId = currentSpatialSource === 'baru' ? 'sourceListBaru' : (currentSpatialSource === 'termonitor' ? 'sourceListTermonitor' : 'sourceListLama');
                     const activeList = document.getElementById(activeListId);
                     if (!activeList) return;
 
@@ -1375,6 +1432,7 @@
 
                     document.getElementById('sourceListBaru')?.classList.toggle('hidden', source !== 'baru');
                     document.getElementById('sourceListLama')?.classList.toggle('hidden', source !== 'lama');
+                    document.getElementById('sourceListTermonitor')?.classList.toggle('hidden', source !== 'termonitor');
 
                     renderSpatialList();
                 }
@@ -1763,7 +1821,7 @@
 
                     const lokasi = [data.nama_kecamatan, data.nama_kelurahan].filter(Boolean).join(' / ') || 'Lokasi belum lengkap';
                     const pemilik = data.pemilik_lahan || data.nama_petani || 'Pemilik belum diisi';
-                    if (selectedSourceLabel) selectedSourceLabel.textContent = source === 'baru' ? 'Lahan belum dipetakan' : 'Lahan sudah dipetakan';
+                    if (selectedSourceLabel) selectedSourceLabel.textContent = source === 'baru' ? 'Lahan belum dipetakan' : (source === 'termonitor' ? 'Lahan termonitor' : 'Lahan sudah dipetakan');
                     if (selectedLahanTitle) selectedLahanTitle.textContent = data.nama_lahan || 'Lahan Sawah Terpilih';
                     if (selectedLahanMeta) selectedLahanMeta.textContent = `${lokasi} - ${pemilik}`;
                     if (selectedMapLabel) {

@@ -13,24 +13,27 @@ class LahanSawahController extends Controller
 {
     public function index(Request $request)
     {
-        $query = $this->baseLahanQuery();
+        $unionQuery = $this->baseLahanQuery();
+        
+        $query = DB::table(DB::raw("({$unionQuery->toSql()}) as combined"))
+            ->mergeBindings($unionQuery);
 
         $status = strtoupper((string) $request->query('status', 'DITERIMA'));
         if ($status !== 'ALL') {
-            $query->where('lahan_sawah.status_verifikasi', $status);
+            $query->where('status_verifikasi', $status);
         }
 
         if ($request->filled('kecamatan_id')) {
-            $query->where('lahan_sawah.kecamatan_id', $request->query('kecamatan_id'));
+            $query->where('kecamatan_id', $request->query('kecamatan_id'));
         }
 
         if ($request->filled('kelurahan_id')) {
-            $query->where('lahan_sawah.kelurahan_id', $request->query('kelurahan_id'));
+            $query->where('kelurahan_id', $request->query('kelurahan_id'));
         }
 
         $rows = $query
-            ->orderByRaw("CASE WHEN lahan_sawah.status_verifikasi = 'DITERIMA' THEN 0 ELSE 1 END")
-            ->orderBy('lahan_sawah.nama_lahan')
+            ->orderByRaw("CASE WHEN status_verifikasi = 'DITERIMA' THEN 0 ELSE 1 END")
+            ->orderBy('nama_lahan')
             ->get()
             ->map(fn ($row) => $this->normalisasiLahan($row))
             ->values()
@@ -79,8 +82,12 @@ class LahanSawahController extends Controller
 
     public function update(Request $request, $id)
     {
-        $existing = DB::table('lahan_sawah')
-            ->where('id', $id)
+        $isHuma = str_starts_with($id, 'H-');
+        $realId = (int) str_replace(['S-', 'H-'], '', $id);
+        $tableName = $isHuma ? 'lahan_huma' : 'lahan_sawah';
+
+        $existing = DB::table($tableName)
+            ->where('id', $realId)
             ->select('status_verifikasi')
             ->first();
 
@@ -99,17 +106,17 @@ class LahanSawahController extends Controller
 
         $payload['status_spasial'] = 'SUDAH_DIPETAKAN';
 
-        if (Schema::hasColumn('lahan_sawah', 'updated_at')) {
+        if (Schema::hasColumn($tableName, 'updated_at')) {
             $payload['updated_at'] = now();
         }
 
         try {
-            DB::transaction(function () use ($id, $payload, $geometry) {
-                DB::table('lahan_sawah')
-                    ->where('id', $id)
-                    ->update($this->filterExistingColumns('lahan_sawah', $payload));
+            DB::transaction(function () use ($realId, $tableName, $payload, $geometry) {
+                DB::table($tableName)
+                    ->where('id', $realId)
+                    ->update($this->filterExistingColumns($tableName, $payload));
 
-                $this->simpanPolygonWajib((int) $id, $geometry);
+                $this->simpanPolygonWajib($realId, $geometry, $tableName);
             });
 
             return response()->json([
@@ -129,7 +136,11 @@ class LahanSawahController extends Controller
 
     public function destroy($id)
     {
-        if (!$this->lahanAda($id)) {
+        $isHuma = str_starts_with($id, 'H-');
+        $realId = (int) str_replace(['S-', 'H-'], '', $id);
+        $tableName = $isHuma ? 'lahan_huma' : 'lahan_sawah';
+
+        if (!DB::table($tableName)->where('id', $realId)->exists()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Data lahan tidak ditemukan.',
@@ -137,9 +148,9 @@ class LahanSawahController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($id) {
-                if (Schema::hasColumn('lahan_sawah', 'polygon_area')) {
-                    DB::statement('UPDATE lahan_sawah SET polygon_area = NULL WHERE id = ?', [$id]);
+            DB::transaction(function () use ($realId, $tableName) {
+                if (Schema::hasColumn($tableName, 'polygon_area')) {
+                    DB::statement("UPDATE $tableName SET polygon_area = NULL WHERE id = ?", [$realId]);
                 }
 
                 $payload = [
@@ -149,21 +160,21 @@ class LahanSawahController extends Controller
                     'status_spasial' => 'BELUM_DIPETAKAN',
                 ];
 
-                if (Schema::hasColumn('lahan_sawah', 'polygon_geojson')) {
+                if (Schema::hasColumn($tableName, 'polygon_geojson')) {
                     $payload['polygon_geojson'] = null;
                 }
 
-                if (Schema::hasColumn('lahan_sawah', 'spasial_updated_at')) {
+                if (Schema::hasColumn($tableName, 'spasial_updated_at')) {
                     $payload['spasial_updated_at'] = now();
                 }
 
-                if (Schema::hasColumn('lahan_sawah', 'updated_at')) {
+                if (Schema::hasColumn($tableName, 'updated_at')) {
                     $payload['updated_at'] = now();
                 }
 
-                DB::table('lahan_sawah')
-                    ->where('id', $id)
-                    ->update($this->filterExistingColumns('lahan_sawah', $payload));
+                DB::table($tableName)
+                    ->where('id', $realId)
+                    ->update($this->filterExistingColumns($tableName, $payload));
             });
 
             return response()->json([
@@ -293,17 +304,17 @@ class LahanSawahController extends Controller
         return $geometry;
     }
 
-    private function simpanPolygonWajib(int $lahanId, array $geometry): void
+    private function simpanPolygonWajib(int $lahanId, array $geometry, string $tableName = 'lahan_sawah'): void
     {
-        if (!Schema::hasColumn('lahan_sawah', 'polygon_area')) {
+        if (!Schema::hasColumn($tableName, 'polygon_area')) {
             throw new \RuntimeException('Kolom polygon_area belum tersedia.');
         }
 
         $geojson = json_encode($geometry, JSON_UNESCAPED_UNICODE);
 
-        if (Schema::hasColumn('lahan_sawah', 'polygon_geojson')) {
+        if (Schema::hasColumn($tableName, 'polygon_geojson')) {
             DB::statement(
-                'UPDATE lahan_sawah SET polygon_area = ST_GeomFromGeoJSON(?), polygon_geojson = ? WHERE id = ?',
+                "UPDATE $tableName SET polygon_area = ST_GeomFromGeoJSON(?), polygon_geojson = ? WHERE id = ?",
                 [$geojson, $geojson, $lahanId]
             );
 
@@ -311,78 +322,94 @@ class LahanSawahController extends Controller
         }
 
         DB::statement(
-            'UPDATE lahan_sawah SET polygon_area = ST_GeomFromGeoJSON(?) WHERE id = ?',
+            "UPDATE $tableName SET polygon_area = ST_GeomFromGeoJSON(?) WHERE id = ?",
             [$geojson, $lahanId]
         );
     }
 
     private function baseLahanQuery()
     {
-        return DB::table('lahan_sawah')
+        $sitani = DB::table('lahan_sawah')
             ->leftJoin('users as pemilik', 'lahan_sawah.pemilik_id', '=', 'pemilik.id')
-            ->leftJoin('users as petani', 'lahan_sawah.petani_id', '=', 'petani.id')
             ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
             ->leftJoin('kelurahan', 'lahan_sawah.kelurahan_id', '=', 'kelurahan.id')
             ->leftJoin('tipe_lahan', 'lahan_sawah.tipe_lahan_id', '=', 'tipe_lahan.id')
-            ->select($this->selectLahanWithGeo());
+            ->select($this->selectLahanWithGeo('lahan_sawah'));
+
+        $huma = DB::table('lahan_huma')
+            ->leftJoin('users as pemilik', 'lahan_huma.pemilik_id', '=', 'pemilik.id')
+            ->leftJoin('kecamatan', 'lahan_huma.kecamatan_id', '=', 'kecamatan.id')
+            ->select($this->selectLahanWithGeo('lahan_huma'));
+
+        return $sitani->union($huma);
     }
 
-    private function selectLahanWithGeo(): array
+    private function selectLahanWithGeo(string $table = 'lahan_sawah'): array
     {
+        $prefix = $table === 'lahan_huma' ? 'H-' : 'S-';
         $select = [
-            'lahan_sawah.id',
-            'lahan_sawah.pemilik_id',
-            'lahan_sawah.pemilik_id as user_id',
-            'lahan_sawah.petani_id',
-            'lahan_sawah.kecamatan_id',
-            'lahan_sawah.kelurahan_id',
-            'lahan_sawah.tipe_lahan_id',
-            'lahan_sawah.nama_lahan',
-            'pemilik.nama_lengkap as pemilik_lahan',
-            'lahan_sawah.luas_lahan_hektar',
-            'lahan_sawah.hasil_panen_ton',
-            'lahan_sawah.produktivitas_ton_ha',
-            'lahan_sawah.alamat_detail',
-            'lahan_sawah.koordinat_tengah',
-            'lahan_sawah.latitude',
-            'lahan_sawah.longitude',
-            'lahan_sawah.foto_lahan',
-            'lahan_sawah.status_verifikasi',
-            'petani.nama_lengkap as nama_petani',
-            'petani.email as email_petani',
+            DB::raw("CONCAT('$prefix', $table.id) as id"),
+            "$table.pemilik_id",
+            "$table.pemilik_id as user_id",
+            "$table.kecamatan_id",
+            $table === 'lahan_sawah' ? "$table.kelurahan_id" : DB::raw("NULL as kelurahan_id"),
+            $table === 'lahan_sawah' ? "$table.tipe_lahan_id" : DB::raw("NULL as tipe_lahan_id"),
+            "$table.nama_lahan",
+            $table === 'lahan_huma' ? DB::raw("COALESCE(JSON_UNQUOTE(JSON_EXTRACT($table.catatan_verifikasi, '$.\"huma_owner_name\"')), pemilik.nama_lengkap) as pemilik_lahan") : 'pemilik.nama_lengkap as pemilik_lahan',
+            "$table.luas_lahan_hektar",
+            $table === 'lahan_sawah' ? "$table.hasil_panen_ton" : DB::raw("NULL as hasil_panen_ton"),
+            $table === 'lahan_sawah' ? "$table.produktivitas_ton_ha" : DB::raw("NULL as produktivitas_ton_ha"),
+            "$table.alamat_detail",
+            "$table.koordinat_tengah",
+            "$table.latitude",
+            "$table.longitude",
+            $table === 'lahan_sawah' ? "$table.foto_lahan" : DB::raw("NULL as foto_lahan"),
+            "$table.status_verifikasi",
+            $table === 'lahan_huma' ? DB::raw("COALESCE(JSON_UNQUOTE(JSON_EXTRACT($table.catatan_verifikasi, '$.\"huma_owner_name\"')), pemilik.nama_lengkap) as nama_petani") : 'pemilik.nama_lengkap as nama_petani',
+            'pemilik.email as email_petani',
             'kecamatan.nama_kecamatan',
-            'kelurahan.nama_kelurahan',
-            'tipe_lahan.nama_tipe',
+            $table === 'lahan_sawah' ? 'kelurahan.nama_kelurahan' : DB::raw("NULL as nama_kelurahan"),
+            $table === 'lahan_sawah' ? 'tipe_lahan.nama_tipe' : DB::raw("NULL as nama_tipe"),
         ];
 
-        if (Schema::hasColumn('lahan_sawah', 'tahun_lbs')) {
-            $select[] = 'lahan_sawah.tahun_lbs';
+        if (Schema::hasColumn($table, 'tahun_lbs')) {
+            $select[] = "$table.tahun_lbs";
+        } else {
+            $select[] = DB::raw("NULL as tahun_lbs");
         }
 
-        if (Schema::hasColumn('lahan_sawah', 'created_at')) {
-            $select[] = 'lahan_sawah.created_at';
+        if (Schema::hasColumn($table, 'created_at')) {
+            $select[] = "$table.created_at";
+        } else {
+            $select[] = DB::raw("NULL as created_at");
         }
 
-        if (Schema::hasColumn('lahan_sawah', 'updated_at')) {
-            $select[] = 'lahan_sawah.updated_at';
+        if (Schema::hasColumn($table, 'updated_at')) {
+            $select[] = "$table.updated_at";
+        } else {
+            $select[] = DB::raw("NULL as updated_at");
         }
 
-        if (Schema::hasColumn('lahan_sawah', 'status_spasial')) {
-            $select[] = 'lahan_sawah.status_spasial';
+        if (Schema::hasColumn($table, 'status_spasial')) {
+            $select[] = "$table.status_spasial";
+        } else {
+            // Check dynamically if polygon_area is null
+            $select[] = DB::raw("CASE WHEN $table.polygon_area IS NOT NULL THEN 'SUDAH_DIPETAKAN' ELSE 'BELUM_DIPETAKAN' END as status_spasial");
         }
 
-        $select[] = Schema::hasColumn('lahan_sawah', 'polygon_area')
-            ? DB::raw('ST_AsGeoJSON(lahan_sawah.polygon_area) as polygon_geojson')
-            : DB::raw('NULL as polygon_geojson');
+        $select[] = Schema::hasColumn($table, 'polygon_area')
+            ? DB::raw("ST_AsGeoJSON($table.polygon_area) as polygon_geojson")
+            : DB::raw("NULL as polygon_geojson");
 
         return $select;
     }
 
     private function getDetailLahan($id): ?array
     {
-        $row = $this->baseLahanQuery()
-            ->where('lahan_sawah.id', $id)
-            ->first();
+        $rows = $this->baseLahanQuery()->get();
+        // We filter manually because baseLahanQuery returns a union query
+        // that we cannot easily ->where() on the aliased ID in some SQL dialects
+        $row = $rows->firstWhere('id', $id);
 
         return $row ? $this->normalisasiLahan($row) : null;
     }
