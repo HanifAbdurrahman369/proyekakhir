@@ -61,6 +61,8 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
     } catch (_) {
       return dateStr;
     }
+  }
+
   // Helper untuk format desimal ke koma Indonesia
   String _formatDouble(double value) {
     return value.toStringAsFixed(2).replaceAll('.', ',');

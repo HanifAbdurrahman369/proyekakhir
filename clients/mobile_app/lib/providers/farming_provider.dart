@@ -581,13 +581,15 @@ class FarmingProvider extends ChangeNotifier {
         _farmingService.getPetaniSpasial(),
         _farmingService.getAcceptedLahan(),
         _farmingService.getMonitoring(),
+        _farmingService.getSpasialLahan(),
       ]);
 
       _pendingLahanList = results[0];
       _pendingPanenList = results[1];
-      _spasialLahanList = results[2];
+      _petaniSpasialList = results[2];
       _acceptedLahanList = results[3];
       _monitoringList = results[4];
+      _spasialLahanList = results[5];
 
       _pendingLahanCount = _pendingLahanList.length;
       _pendingPanenCount = _pendingPanenList.length;

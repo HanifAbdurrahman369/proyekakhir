@@ -42,6 +42,7 @@ dependencies:
   latlong2: ^0.9.1
   url_launcher: ^6.3.2
   app_links: 7.0.0
+  intl: ^0.20.3
 
 dev_dependencies:
   flutter_test:

@@ -77,6 +77,7 @@ class AuthController extends Controller
     {
         try {
             $response = Http::withoutVerifying()
+                ->acceptJson()
                 ->timeout(15)
                 ->post(
                     'http://127.0.0.1:8002/api/forgot-password',
@@ -139,6 +140,7 @@ class AuthController extends Controller
     {
         try {
             $response = Http::withoutVerifying()
+                ->acceptJson()
                 ->timeout(15)
                 ->post(
                     'http://127.0.0.1:8002/api/reset-password',
