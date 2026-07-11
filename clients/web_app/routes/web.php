@@ -115,6 +115,7 @@ Route::middleware(['role:2'])->group(function () {
     Route::put('/petugas/komunitas/{id}', [PetugasController::class, 'updateKomunitas']);
     Route::delete('/petugas/komunitas/{id}', [PetugasController::class, 'destroyKomunitas']);
     Route::get('/petugas/pending-counts', [PetugasController::class, 'pendingCounts']);
+    Route::post('/petugas/lahan-termonitor/sync', [PetugasController::class, 'syncLahanTermonitor']);
     Route::post('/petugas/spasial/simpan', [PetugasController::class, 'storeSpasial']);
     Route::put('/petugas/spasial/{id}', [PetugasController::class, 'updateSpasial']);
     Route::delete('/petugas/spasial/{id}', [PetugasController::class, 'destroySpasial']);

@@ -43,9 +43,17 @@ class LahanTermonitorController extends Controller
     public function index()
     {
         $lands = $this->humaService->getLahanTermonitor();
+        
+        $formatted = $lands->map(function ($land) {
+            $catatan = json_decode($land->catatan_verifikasi, true);
+            $land->pemilik_lahan = $catatan['huma_owner_name'] ?? 'Petani Huma';
+            $land->nama_petani = $catatan['huma_owner_name'] ?? 'Petani Huma';
+            return $land;
+        });
+
         return response()->json([
             'success' => true,
-            'data' => $lands
+            'data' => $formatted
         ]);
     }
 
