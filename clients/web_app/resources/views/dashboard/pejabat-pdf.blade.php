@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Laporan Statistik Eksekutif SiTani</title>
+    <title>Laporan Statistik Eksekutif SiPetani</title>
     <style>
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -13,7 +13,7 @@
             line-height: 1.5;
         }
         .header-banner {
-            border-bottom: 2px solid #3e7d00;
+            border-bottom: 2px solid #047857;
             padding-bottom: 18px;
             margin-bottom: 30px;
             color: #1a1a1a;
@@ -64,7 +64,7 @@
         }
         .header-banner .app-name {
             font-weight: bold;
-            color: #3e7d00;
+            color: #047857;
             font-size: 18px;
             margin-bottom: 2px;
             letter-spacing: 0.5px;
@@ -145,7 +145,7 @@
             font-weight: bold;
         }
         .text-green {
-            color: #3E7D00;
+            color: #047857;
         }
         .text-emerald {
             color: #047857;
@@ -173,7 +173,7 @@
                 </td>
                 <td class="title-container">
                     <div class="system-subtitle">Sistem Informasi</div>
-                    <div class="system-title">Dinas Pertanian</div>
+                    <div class="system-title">Pemetaan Tanaman Padi</div>
                 </td>
                 <td class="info-container">
                     <div>Laporan Statistik Eksekutif (Dashboard Pejabat)</div>
@@ -275,7 +275,7 @@
     </table>
 
     <div class="footer">
-        Laporan Eksekutif ini dibuat otomatis oleh Sistem SiTani.
+        Laporan Eksekutif ini dibuat otomatis oleh Sistem SiPetani.
     </div>
 
 </body>

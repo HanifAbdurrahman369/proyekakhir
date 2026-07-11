@@ -52,14 +52,14 @@
     {{-- INFO CARD --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 
-        <div class="bg-green-50 border border-green-100 rounded-xl p-4">
+        <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-4">
 
-            <p class="text-xs uppercase tracking-wider text-green-700 font-semibold">
+            <p class="text-xs uppercase tracking-wider text-emerald-700 font-semibold">
                 Latitude
             </p>
 
             <p id="latitude"
-               class="text-lg font-bold text-green-900 mt-1">
+               class="text-lg font-bold text-emerald-900 mt-1">
                 -
             </p>
 
@@ -201,7 +201,7 @@
         if(type === 'success') {
 
             alertBox.className =
-                'mb-4 p-4 rounded-lg border text-sm bg-green-100 text-green-700 border-green-200';
+                'mb-4 p-4 rounded-lg border text-sm bg-emerald-100 text-emerald-700 border-emerald-200';
 
         } else {
 

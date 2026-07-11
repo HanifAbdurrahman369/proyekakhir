@@ -209,20 +209,20 @@
 <div id="mobile-redirect-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900 bg-opacity-80 backdrop-blur-sm">
     <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-gray-100 flex flex-col items-center text-center">
         <!-- Icon Phone with Animation -->
-        <div class="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center text-green-600 mb-4 animate-bounce">
+        <div class="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600 mb-4 animate-bounce">
             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
             </svg>
         </div>
         
-        <h3 class="text-lg font-bold text-gray-800 mb-2">Buka di Aplikasi SiTani</h3>
+        <h3 class="text-lg font-bold text-gray-800 mb-2">Buka di Aplikasi SiPetani</h3>
         <p class="text-xs text-gray-500 mb-6 leading-relaxed">
             Sistem mendeteksi Anda menggunakan perangkat mobile. Buka aplikasi untuk mengatur ulang password secara langsung dengan lebih mudah dan aman.
         </p>
         
         <!-- Button Buka Aplikasi -->
-        <a href="sitani://reset-password/{{ $token }}?email={{ urlencode(request()->email) }}" 
-           class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl text-sm transition mb-3 shadow-md shadow-green-100 block text-center">
+        <a href="sipetani://reset-password/{{ $token }}?email={{ urlencode(request()->email) }}" 
+           class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl text-sm transition mb-3 shadow-md shadow-emerald-100 block text-center">
             Buka Aplikasi Mobile
         </a>
         
@@ -246,7 +246,7 @@
             
             // Coba redirect otomatis setelah 800ms
             setTimeout(function() {
-                window.location.href = "sitani://reset-password/{{ $token }}?email={{ urlencode(request()->email) }}";
+                window.location.href = "sipetani://reset-password/{{ $token }}?email={{ urlencode(request()->email) }}";
             }, 800);
         }
     });

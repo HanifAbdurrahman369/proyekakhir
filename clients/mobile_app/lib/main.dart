@@ -48,7 +48,7 @@ class MyApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
-        title: 'SiTani Mobile',
+        title: 'SiPetani Mobile',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           useMaterial3: true,
@@ -110,13 +110,13 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   void _handleDeepLink(Uri uri) {
     debugPrint('Received Deep Link: $uri');
-    if ((uri.scheme == 'sigpala' || uri.scheme == 'sitani') &&
+    if ((uri.scheme == 'sigpala' || uri.scheme == 'sipetani') &&
         uri.host == 'reset-password') {
       final pathSegments = uri.pathSegments;
       String token = pathSegments.isNotEmpty ? pathSegments.first : '';
       String email = uri.queryParameters['email'] ?? '';
 
-      // Cek format alternatif query parameter: sitani://reset-password?token={token}&email={email}
+      // Cek format alternatif query parameter: sipetani://reset-password?token={token}&email={email}
       if (token.isEmpty) {
         token = uri.queryParameters['token'] ?? '';
       }

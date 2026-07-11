@@ -27,6 +27,7 @@ class _EditLaporTanamScreenState extends State<EditLaporTanamScreen> {
 
   DateTime _tanggalTanam = DateTime.now();
   DateTime _tanggalPemupukan = DateTime.now();
+  DateTime? _tanggalPanenEstimasi;
 
   @override
   void initState() {
@@ -36,13 +37,21 @@ class _EditLaporTanamScreenState extends State<EditLaporTanamScreen> {
     _selectedLahanId = data['lahan_id']?.toString();
     _selectedBibitId = data['bibit_id']?.toString();
     
-    _estimasiHariController.text = data['estimasi_panen_hari']?.toString() ?? '';
-    _luasTanamController.text = data['luas_lahan_hektar']?.toString() ?? '';
+    _estimasiHariController.text = data['estimasi_panen_hari']?.toString() ?? data['masa_tanam_hari']?.toString() ?? data['estimasi_panen']?.toString() ?? '';
+    _luasTanamController.text = data['luas_tanam_hektar']?.toString() ?? data['luas_lahan_hektar']?.toString() ?? '';
     
     if (data['tanggal_tanam'] != null) {
       _tanggalTanam = DateTime.tryParse(data['tanggal_tanam'].toString()) ?? DateTime.now();
     }
-    
+
+    if (data['pemupukan_awal'] != null) {
+      _selectedPupukId = data['pemupukan_awal']['pupuk_id']?.toString();
+      _takaranController.text = data['pemupukan_awal']['takaran']?.toString() ?? '';
+      if (data['pemupukan_awal']['tanggal_pemupukan'] != null) {
+        _tanggalPemupukan = DateTime.tryParse(data['pemupukan_awal']['tanggal_pemupukan'].toString()) ?? _tanggalTanam;
+      }
+    }
+        
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<FarmingProvider>().fetchTanamMetadata();
     });
@@ -90,12 +99,30 @@ class _EditLaporTanamScreenState extends State<EditLaporTanamScreen> {
     });
   }
 
-  Future<void> _selectDate(BuildContext context, bool isTanam) async {
+  Future<void> _selectDate(BuildContext context, int type) async {
+    final DateTime initialDate;
+    final DateTime firstDate;
+    final DateTime lastDate;
+    
+    if (type == 0) {
+      initialDate = _tanggalTanam;
+      firstDate = DateTime(2020);
+      lastDate = DateTime.now();
+    } else if (type == 1) {
+      initialDate = _tanggalPemupukan;
+      firstDate = DateTime(2020);
+      lastDate = DateTime.now();
+    } else {
+      initialDate = _tanggalPanenEstimasi ?? _tanggalTanam.add(const Duration(days: 100));
+      firstDate = _tanggalTanam;
+      lastDate = DateTime.now().add(const Duration(days: 730));
+    }
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: isTanam ? _tanggalTanam : _tanggalPemupukan,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -112,15 +139,17 @@ class _EditLaporTanamScreenState extends State<EditLaporTanamScreen> {
 
     if (picked != null) {
       setState(() {
-        if (isTanam) {
+        if (type == 0) {
           _tanggalTanam = picked;
-          // Set pemupukan date to match tanam if it becomes earlier
           if (_tanggalPemupukan.isBefore(_tanggalTanam)) {
             _tanggalPemupukan = _tanggalTanam;
           }
-        } else {
+        } else if (type == 1) {
           _tanggalPemupukan = picked;
+        } else {
+          _tanggalPanenEstimasi = picked;
         }
+        _calculateEstimasiHari();
       });
     }
   }
@@ -167,6 +196,26 @@ class _EditLaporTanamScreenState extends State<EditLaporTanamScreen> {
     }
   }
 
+
+  void _calculateEstimasiHari() {
+    if (_tanggalPanenEstimasi != null) {
+      final diff = _tanggalPanenEstimasi!.difference(_tanggalTanam).inDays;
+      if (diff > 0) {
+        _estimasiHariController.text = diff.toString();
+        return;
+      }
+    }
+    if (_selectedBibitId != null) {
+      final farmingProvider = context.read<FarmingProvider>();
+      final bibit = farmingProvider.bibitList.firstWhere(
+        (item) => item['id'].toString() == _selectedBibitId,
+        orElse: () => null,
+      );
+      if (bibit != null && bibit['masa_tanam_hari'] != null) {
+        _estimasiHariController.text = bibit['masa_tanam_hari'].toString();
+      }
+    }
+  }
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -489,7 +538,7 @@ class _EditLaporTanamScreenState extends State<EditLaporTanamScreen> {
                               children: [
                                 _buildLabel('Tanggal Tanam'),
                                 InkWell(
-                                  onTap: () => _selectDate(context, true),
+                                  onTap: () => _selectDate(context, 0),
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 16,
@@ -533,7 +582,51 @@ class _EditLaporTanamScreenState extends State<EditLaporTanamScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildLabel('Estimasi (Hari)'),
+                                _buildLabel('Tgl Panen (Opsional)'),
+                                InkWell(
+                                  onTap: () => _selectDate(context, 2),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 14,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      border: Border.all(
+                                        color: const Color(0xFFCBD5E1),
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            _tanggalPanenEstimasi != null ? _formatDate(_tanggalPanenEstimasi!) : 'Pilih',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 14,
+                                              color: Colors.black,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        Icon(
+                                          Icons.calendar_today_rounded,
+                                          size: 18,
+                                          color: Colors.green[800],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      _buildLabel('Estimasi (Hari)'),
                                 TextFormField(
                                   controller: _estimasiHariController,
                                   style: GoogleFonts.inter(fontSize: 14),

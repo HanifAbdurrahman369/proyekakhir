@@ -1,10 +1,10 @@
 <aside id="appSidebar"
-       class="sitani-sidebar fixed lg:sticky top-0 lg:top-[72px] left-0 z-50 lg:z-30 w-[250px] lg:w-60 h-screen lg:h-[calc(100vh-72px)] flex-shrink-0 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-out overflow-y-auto border-r"
+       class="sipetani-sidebar fixed lg:sticky top-0 lg:top-[72px] left-0 z-50 lg:z-30 w-[250px] lg:w-60 h-screen lg:h-[calc(100vh-72px)] flex-shrink-0 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-out overflow-y-auto border-r"
        style="background:rgba(255,255,255,.88); border-color:#e7efd8; box-shadow:16px 0 50px rgba(32,60,16,.06); backdrop-filter:blur(16px);">
     <div class="p-3.5 lg:p-4">
         <div class="lg:hidden flex items-center justify-between mb-5">
             <div>
-                <p class="text-xs font-bold" style="color:#3E7D00;">SiTani</p>
+                <p class="text-xs font-bold" style="color:#047857;">SiPetani</p>
                 <p class="text-[11px] text-slate-400">Menu navigasi</p>
             </div>
             <button type="button" onclick="closeSidebar()" class="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center">

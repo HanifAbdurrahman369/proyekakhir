@@ -260,15 +260,66 @@ class PublicApiController extends Controller
                 'lahan_huma.latitude',
                 'lahan_huma.longitude',
                 DB::raw('ST_AsGeoJSON(lahan_huma.polygon_area) as geojson'),
-                'lahan_huma.catatan_verifikasi',
-                'monitoring_kondisi.catatan_petugas',
+                'lahan_huma.device_id',
+                'lahan_huma.external_id',
+                'lahan_huma.nama_pemilik',
+                'lahan_huma.district_name',
+                'lahan_huma.tipe_tanah',
+                'lahan_huma.status_verifikasi',
+                'monitoring_kondisi.id as monitoring_kondisi_id',
                 'monitoring_kondisi.ph_air',
+                'monitoring_kondisi.tinggi_muka_air',
+                'monitoring_kondisi.n_level',
+                'monitoring_kondisi.p_level',
+                'monitoring_kondisi.k_level',
+                'monitoring_kondisi.is_shared',
                 'monitoring_kondisi.tanggal_cek'
             )
             // Lakukan pengelompokan jika ada multiple monitoring
             ->orderBy('monitoring_kondisi.tanggal_cek', 'desc')
             ->get()
             ->unique('id'); // Ambil latest sensor per lahan
+
+        $monitoringIds = $rows->pluck('monitoring_kondisi_id')->filter()->toArray();
+        $rekomendasiList = [];
+        if (!empty($monitoringIds)) {
+            $reks = DB::table('rekomendasi_huma')
+                ->whereIn('monitoring_kondisi_id', $monitoringIds)
+                ->orderBy('tanggal_rekomendasi', 'desc')
+                ->get();
+
+            $groupedReks = $reks->groupBy('rekomendasi_id_huma');
+
+            foreach ($groupedReks as $rekId => $items) {
+                // First item gives the header info
+                $first = $items->first();
+                $details = [];
+                
+                foreach ($items as $item) {
+                    if ($item->nama_pupuk) {
+                        $details[] = [
+                            'fertilizer_name' => $item->nama_pupuk,
+                            'dose_amount' => $item->dosis,
+                            'unit' => $item->satuan,
+                            'notes' => $item->catatan
+                        ];
+                    }
+                }
+                
+                $rekomendasiList[$first->monitoring_kondisi_id][] = [
+                    'id' => $first->rekomendasi_id_huma,
+                    'date' => $first->tanggal_rekomendasi,
+                    'current_ph' => $first->current_ph,
+                    'current_water' => $first->current_water,
+                    'current_n' => $first->current_n,
+                    'current_p' => $first->current_p,
+                    'current_k' => $first->current_k,
+                    'water_status' => $first->water_status,
+                    'status' => $first->status_tindakan,
+                    'details' => $details
+                ];
+            }
+        }
 
         $features = [];
 
@@ -286,9 +337,6 @@ class PublicApiController extends Controller
                 continue;
             }
 
-            $catatanVerifikasi = json_decode($row->catatan_verifikasi ?? '{}', true);
-            $catatanPetugas = json_decode($row->catatan_petugas ?? '{}', true);
-
             $features[] = [
                 'type' => 'Feature',
                 'geometry' => $geometry,
@@ -298,13 +346,20 @@ class PublicApiController extends Controller
                     'luas_lahan_hektar' => (float) $row->luas_lahan_hektar,
                     'luas_tanam_hektar' => (float) $row->luas_tanam_hektar,
                     'sumber' => 'Huma',
-                    'device_id' => $catatanVerifikasi['huma_device_id'] ?? '-',
-                    'ph_tanah' => $catatanPetugas['ph_tanah'] ?? $row->ph_air ?? '-',
-                    'n_level' => $catatanPetugas['n_level'] ?? '-',
-                    'p_level' => $catatanPetugas['p_level'] ?? '-',
-                    'k_level' => $catatanPetugas['k_level'] ?? '-',
+                    'device_id' => $row->device_id ?? '-',
+                    'external_id' => $row->external_id ?? '-',
+                    'pemilik_lahan' => $row->nama_pemilik ?? 'Petani Huma',
+                    'jenis_tanah' => $row->tipe_tanah ?? '-',
+                    'district_name' => $row->district_name ?? '-',
+                    'status_verifikasi' => $row->status_verifikasi ?? '-',
+                    'is_shared' => $row->is_shared ? true : false,
+                    'ph_tanah' => $row->ph_air ?? '-',
+                    'n_level' => $row->n_level ?? '-',
+                    'p_level' => $row->p_level ?? '-',
+                    'k_level' => $row->k_level ?? '-',
+                    'water_level' => $row->tinggi_muka_air ?? '-',
                     'waktu_rekam' => $row->tanggal_cek ?? '-',
-                    'rekomendasi_pupuk' => $catatanPetugas['rekomendasi_pupuk'] ?? []
+                    'rekomendasi_pupuk' => $rekomendasiList[$row->monitoring_kondisi_id] ?? []
                 ]
             ];
         }

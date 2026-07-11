@@ -5,13 +5,13 @@
 @section('content')
 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-7">
     <div>
-        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-bold bg-[#edf8dc] text-[#3E7D00] border border-[#dfeccc]">Dashboard Pejabat</span>
+        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-bold bg-[#edf8dc] text-[#047857] border border-[#dfeccc]">Dashboard Pejabat</span>
         <h1 class="text-2xl sm:text-3xl font-extrabold text-[#14280b] mt-3 tracking-tight">Statistik Eksekutif</h1>
         <p class="text-sm text-slate-500 mt-1">Analisis Data Komoditas Daerah — {{ now()->translatedFormat('F Y') }}</p>
     </div>
 
     <a href="{{ route('pejabat.cetak') }}" target="_blank"
-       class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold text-white bg-gradient-to-r from-[#3E7D00] to-[#65bd00] shadow-md hover:scale-105 transition">
+       class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold text-white bg-gradient-to-r from-[#047857] to-[#65bd00] shadow-md hover:scale-105 transition">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
         </svg>
@@ -38,10 +38,10 @@
 
         <div>
             <div class="w-full bg-slate-100 h-2 mt-4 rounded-full overflow-hidden">
-                <div class="bg-[#3E7D00] h-full w-[75%]"></div>
+                <div class="bg-[#047857] h-full w-[75%]"></div>
             </div>
 
-            <p class="text-xs text-green-700 mt-3 font-medium">
+            <p class="text-xs text-emerald-700 mt-3 font-medium">
                 Klik untuk detail per kecamatan →
             </p>
         </div>
@@ -68,7 +68,7 @@
                 <div class="bg-emerald-500 h-full w-[60%]"></div>
             </div>
 
-            <p class="text-xs text-green-700 mt-3 font-medium">
+            <p class="text-xs text-emerald-700 mt-3 font-medium">
                 Klik untuk luas lahan per kecamatan →
             </p>
         </div>
@@ -105,10 +105,10 @@ foreach($produksiKecamatan as $item) {
                 <div class="space-y-2 {{ $isHidden }}">
                     <div class="flex justify-between items-center">
                         <span class="text-sm font-bold text-slate-700">{{ $item['nama_kecamatan'] ?? '-' }}</span>
-                        <span class="text-sm font-extrabold text-[#3E7D00]">{{ number_format($total, 2) }} Ton</span>
+                        <span class="text-sm font-extrabold text-[#047857]">{{ number_format($total, 2) }} Ton</span>
                     </div>
                     <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-                        <div class="h-full bg-gradient-to-r from-[#65bd00] to-[#3E7D00] rounded-full transition-all duration-500" style="width: {{ $percent }}%"></div>
+                        <div class="h-full bg-gradient-to-r from-[#65bd00] to-[#047857] rounded-full transition-all duration-500" style="width: {{ $percent }}%"></div>
                     </div>
                 </div>
             @empty
@@ -118,7 +118,7 @@ foreach($produksiKecamatan as $item) {
 
         @if(count($produksiKecamatan) > 5)
             <div class="text-center mt-6">
-                <button id="toggleKecamatanBtn" onclick="toggleExtraKecamatan()" class="px-5 py-2.5 rounded-xl text-xs font-bold text-[#3E7D00] bg-[#edf8dc] hover:bg-[#e2f2cc] transition-all border border-[#dfeccc]">
+                <button id="toggleKecamatanBtn" onclick="toggleExtraKecamatan()" class="px-5 py-2.5 rounded-xl text-xs font-bold text-[#047857] bg-[#edf8dc] hover:bg-[#e2f2cc] transition-all border border-[#dfeccc]">
                     Tampilkan Seluruh Kecamatan
                 </button>
             </div>

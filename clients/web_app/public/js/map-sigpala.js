@@ -231,11 +231,11 @@ document.addEventListener('DOMContentLoaded', function () {
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
 
         :root {
-            --green-50: #f0fdf4;
-            --green-100: #dcfce7;
-            --green-200: #bbf7d0;
-            --green-600: #16a34a;
-            --green-700: #15803d;
+            --green-50: #ecfdf5;
+            --green-100: #d1fae5;
+            --green-200: #a7f3d0;
+            --green-600: #059669;
+            --green-700: #047857;
             --slate-50: #f8fafc;
             --slate-100: #f1f5f9;
             --slate-200: #e2e8f0;
@@ -776,6 +776,15 @@ document.addEventListener('DOMContentLoaded', function () {
             width: 18px;
         }
 
+        .sigpala-huma-marker {
+            background: #3b82f6;
+            border: 2px solid #ffffff;
+            border-radius: 999px;
+            box-shadow: 0 0 0 5px rgba(59,130,246,.22), 0 10px 24px rgba(15,23,42,.22);
+            height: 18px;
+            width: 18px;
+        }
+
         @media (max-width: 640px) {
             #side-panel {
                 width: 100% !important;
@@ -834,11 +843,6 @@ document.addEventListener('DOMContentLoaded', function () {
     styleSheet.innerText = baseStyles;
     document.head.appendChild(styleSheet);
 
-    const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap &copy; CARTO',
-        subdomains: 'abcd',
-        maxZoom: 20
-    });
     const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM' });
     const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri Satellite' });
     const terrain = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { attribution: 'OpenTopoMap' });
@@ -846,7 +850,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const map = L.map('map', {
         center: [-3.0000, 114.6000],
         zoom: 10,
-        layers: [cartoLight]
+        layers: [osm]
     });
 
     map.createPane('sigpalaKecamatanPane');
@@ -862,7 +866,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const humaGroup = L.layerGroup().addTo(map);
 
     L.control.layers({
-        'Peta Ringan': cartoLight,
         'Peta Standar': osm,
         'Citra Satelit': satellite,
         'Peta Topografi': terrain
@@ -878,7 +881,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let allKecamatanFeatures = [];
     let allLahanFeatures = [];
-    let selectedKecamatanLayer = null;
+    let allHumaFeatures = [];
     let selectedKecamatanLayer = null;
     const kecamatanLayersById = new Map();
     const lahanLayersById = new Map();
@@ -961,28 +964,30 @@ document.addEventListener('DOMContentLoaded', function () {
         if (results[3].status === 'fulfilled') {
             const featureCollection = normalizeFeatureCollection(results[3].value);
             const humaFeatures = featureCollection.features || [];
+            allHumaFeatures = humaFeatures;
             humaFeaturesById.clear();
             
             L.geoJSON(humaFeatures, {
                 pane: 'sigpalaHumaPane',
                 pointToLayer: function (feature, latlng) {
                     const marker = L.circleMarker(latlng, {
+                        pane: 'sigpalaHumaPane',
                         radius: 6,
-                        color: '#166534',
+                        color: '#1e40af',
                         weight: 1.5,
-                        fillColor: '#22c55e',
+                        fillColor: '#3b82f6',
                         fillOpacity: 0.78,
-                        className: 'sigpala-lahan-marker'
+                        className: 'sigpala-huma-marker'
                     });
                     marker.sigpalaIsCoordinateMarker = true;
                     return marker;
                 },
                 style: function(feature) {
                     return {
-                        color: '#166534',
+                        color: '#1e40af',
                         weight: 1.25,
                         opacity: 0.95,
-                        fillColor: '#22c55e',
+                        fillColor: '#3b82f6',
                         fillOpacity: 0.34
                     };
                 },
@@ -1001,19 +1006,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             <h3 class="text-sky-900 mb-2">${sigpalaEscapeHtml(p.nama_lahan)}</h3>
                             <dl class="text-sm">
                                 <div class="flex justify-between py-1 border-b border-sky-100"><dt class="text-slate-500">Device ID</dt><dd class="font-mono text-xs">${sigpalaEscapeHtml(p.device_id)}</dd></div>
-                                <div class="flex justify-between py-1 border-b border-sky-100"><dt class="text-slate-500">pH Tanah</dt><dd class="font-bold ${parseFloat(ph) < 5.5 || parseFloat(ph) > 7.5 ? 'text-amber-600' : 'text-green-600'}">${sigpalaEscapeHtml(ph)}</dd></div>
                                 <div class="flex justify-between py-1 border-b border-sky-100"><dt class="text-slate-500">Koordinat</dt><dd class="font-mono text-xs">${feature.geometry.coordinates ? feature.geometry.coordinates[1].toFixed(5) + ', ' + feature.geometry.coordinates[0].toFixed(5) : '-'}</dd></div>
-                                <div class="flex justify-between py-1 border-b border-sky-100"><dt class="text-slate-500">Nitrogen (N)</dt><dd class="font-bold">${sigpalaEscapeHtml(p.n_level)}</dd></div>
-                                <div class="flex justify-between py-1 border-b border-sky-100"><dt class="text-slate-500">Fosfor (P)</dt><dd class="font-bold">${sigpalaEscapeHtml(p.p_level)}</dd></div>
-                                <div class="flex justify-between py-1 border-b border-sky-100"><dt class="text-slate-500">Kalium (K)</dt><dd class="font-bold">${sigpalaEscapeHtml(p.k_level)}</dd></div>
-                                ${p.rekomendasi_pupuk && Array.isArray(p.rekomendasi_pupuk) && p.rekomendasi_pupuk.length > 0 
-                                    ? `<div class="py-2 border-b border-sky-100">
-                                        <dt class="text-slate-500 mb-1">Rekomendasi Pupuk</dt>
-                                        <dd class="flex flex-wrap gap-1">
-                                            ${p.rekomendasi_pupuk.map(pupuk => `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-md text-xs font-semibold">${sigpalaEscapeHtml(pupuk)}</span>`).join('')}
-                                        </dd>
-                                       </div>` 
-                                    : ''}
                                 <div class="flex justify-between py-1 mt-1"><dt class="text-slate-500 text-xs">Pembaruan</dt><dd class="text-xs">${sigpalaEscapeHtml(p.waktu_rekam)}</dd></div>
                             </dl>
                             <button type="button" class="sigpala-popup-detail-button w-full mt-3 flex justify-center py-2" data-huma-detail-id="${p.land_id || p.id || p.device_id}">Detail Informasi</button>
@@ -1158,7 +1151,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     </div>
                     <div style="display:flex;align-items:center;gap:9px">
                         <span class="sigpala-lahan-marker" style="height:14px;width:14px;box-shadow:0 0 0 4px rgba(22,163,74,.18)"></span>
-                        <span>Titik koordinat lahan</span>
+                        <span>Titik koordinat lahan SiPetani</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:9px">
+                        <span class="sigpala-huma-marker" style="height:14px;width:14px;box-shadow:0 0 0 4px rgba(59,130,246,.18)"></span>
+                        <span>Titik koordinat lahan Huma</span>
                     </div>
                     <div style="display:flex;align-items:center;gap:9px">
                         <span style="width:20px;height:2px;background:#1f2937;border-radius:99px"></span>
@@ -1220,6 +1217,7 @@ document.addEventListener('DOMContentLoaded', function () {
             pane: 'sigpalaLahanPane',
             pointToLayer: function (feature, latlng) {
                 const marker = L.circleMarker(latlng, {
+                    pane: 'sigpalaLahanPane',
                     radius: 6,
                     color: '#166534',
                     weight: 1.5,
@@ -1259,12 +1257,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const marker = L.circleMarker(center, {
                 pane: 'sigpalaLahanPane',
-                radius: 8,
-                color: '#ffffff',
-                weight: 2,
-                fillColor: '#16a34a',
-                fillOpacity: 0.95,
-                opacity: 1,
+                radius: 6,
+                color: '#166534',
+                weight: 1.5,
+                fillColor: '#22c55e',
+                fillOpacity: 0.78,
                 className: 'sigpala-lahan-marker'
             }).addTo(lahanGroup);
             marker.sigpalaIsCoordinateMarker = true;
@@ -1494,6 +1491,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 return n.includes(query) || p.includes(query);
             });
 
+            // 4. Search Huma matches
+            const humaMatches = allHumaFeatures.filter(f => {
+                const n = (f.properties.nama_lahan || '').toLowerCase();
+                const d = (f.properties.device_id || '').toLowerCase();
+                return n.includes(query) || d.includes(query);
+            });
+
             const matches = [];
 
             // Add Kecamatan (Max 3)
@@ -1526,6 +1530,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             });
 
+            // Add Huma (Max 6)
+            humaMatches.slice(0, 6).forEach(h => {
+                matches.push({
+                    type: 'huma',
+                    title: h.properties.nama_lahan,
+                    subtitle: `Lahan Huma | Device ID: ${h.properties.device_id || '-'}`,
+                    feature: h
+                });
+            });
+
             if (matches.length > 0) {
                 matches.forEach(match => {
                     const div = document.createElement('div');
@@ -1545,6 +1559,14 @@ document.addEventListener('DOMContentLoaded', function () {
                             <div class="w-8 h-8 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center flex-shrink-0">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                </svg>
+                            </div>
+                        `;
+                    } else if (match.type === 'huma') {
+                        iconHtml = `
+                            <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
                                 </svg>
                             </div>
                         `;
@@ -1582,12 +1604,16 @@ document.addEventListener('DOMContentLoaded', function () {
                                 map.fitBounds(targetLayer.getBounds(), { padding: [36, 36] });
                             }
                             closeSidePanel();
-                        } else if (match.type === 'lahan') {
+                        } else if (match.type === 'lahan' || match.type === 'huma') {
                             const targetLayer = L.geoJSON(match.feature);
                             if (targetLayer.getBounds().isValid()) {
                                 map.fitBounds(targetLayer.getBounds(), { maxZoom: 16 });
                             }
-                            showDetail(match.feature.properties);
+                            if (match.type === 'lahan') {
+                                showDetail(match.feature.properties);
+                            } else {
+                                showHumaDetail(match.feature.properties);
+                            }
                         }
                     });
                     searchResults.appendChild(div);
@@ -1690,10 +1716,10 @@ function showHumaDetail(props) {
     const namaLahan = sigpalaDisplay(props.nama_lahan);
     const pemilik = sigpalaDisplay(props.petani || props.pemilik_lahan);
     const perangkatId = sigpalaDisplay(props.device_id);
-    const ph = props.ph_tanah || '-';
-    const n = props.n_level || '-';
-    const p = props.p_level || '-';
-    const k = props.k_level || '-';
+    const ph = (props.ph_tanah !== null && props.ph_tanah !== undefined && props.ph_tanah !== '') ? props.ph_tanah : '-';
+    const n = (props.n_level !== null && props.n_level !== undefined && props.n_level !== '-' && props.n_level !== '') ? sigpalaNumber(props.n_level) + ' mg/kg' : '-';
+    const p = (props.p_level !== null && props.p_level !== undefined && props.p_level !== '-' && props.p_level !== '') ? sigpalaNumber(props.p_level) + ' mg/kg' : '-';
+    const k = (props.k_level !== null && props.k_level !== undefined && props.k_level !== '-' && props.k_level !== '') ? sigpalaNumber(props.k_level) + ' mg/kg' : '-';
     const statusAlat = sigpalaDisplay(props.status_alat);
     const waktuRekam = sigpalaDisplay(props.waktu_rekam);
 
@@ -1708,41 +1734,101 @@ function showHumaDetail(props) {
                 </div>
             </div>
 
-            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:0 16px;margin-top:-28px;position:relative;z-index:2;">
-                <div style="background:white;border-radius:12px;border:1px solid #e2e8f0;box-shadow:0 4px 16px rgba(0,0,0,.08);padding:12px 14px;text-align:center;">
-                    <p style="margin:0 0 2px;font-size:10px;font-weight:700;color:#0284c7;text-transform:uppercase;letter-spacing:.8px;">pH Tanah</p>
-                    <p style="margin:0;font-size:22px;font-weight:850;color:${parseFloat(ph) < 5.5 || parseFloat(ph) > 7.5 ? '#d97706' : '#16a34a'};line-height:1.1;">${sigpalaEscapeHtml(String(ph))}</p>
+            <div style="padding:0 16px;margin-top:-28px;position:relative;z-index:2;display:flex;flex-direction:column;gap:12px;">
+                <!-- Highlight NPK dan pH -->
+                <div style="background:white;border-radius:12px;border:1px solid #e2e8f0;box-shadow:0 4px 16px rgba(0,0,0,.08);overflow:hidden;">
+                    <div style="background:#f1f5f9;padding:8px 14px;border-bottom:1px solid #e2e8f0;">
+                        <p style="margin:0;font-size:11px;font-weight:800;color:#334155;text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:6px;">
+                            <span style="display:inline-block;width:12px;height:12px;background:#38bdf8;border-radius:50%;"></span>
+                            Status Tanah & Nutrisi
+                        </p>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;">
+                        <div style="padding:12px 14px;border-right:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9;text-align:center;">
+                            <p style="margin:0 0 2px;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;">pH Tanah</p>
+                            <p style="margin:0;font-size:22px;font-weight:850;color:${parseFloat(ph) < 5.5 || parseFloat(ph) > 7.5 ? '#d97706' : '#16a34a'};line-height:1.1;">${sigpalaEscapeHtml(String(ph))}</p>
+                        </div>
+                        <div style="padding:12px 14px;border-bottom:1px solid #f1f5f9;text-align:center;">
+                            <p style="margin:0 0 2px;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;">Nitrogen (N)</p>
+                            <p style="margin:0;font-size:16px;font-weight:800;color:#0f172a;line-height:1.1;margin-top:5px;">${n}</p>
+                        </div>
+                        <div style="padding:12px 14px;border-right:1px solid #f1f5f9;text-align:center;">
+                            <p style="margin:0 0 2px;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;">Fosfor (P)</p>
+                            <p style="margin:0;font-size:16px;font-weight:800;color:#0f172a;line-height:1.1;margin-top:5px;">${p}</p>
+                        </div>
+                        <div style="padding:12px 14px;text-align:center;">
+                            <p style="margin:0 0 2px;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;">Kalium (K)</p>
+                            <p style="margin:0;font-size:16px;font-weight:800;color:#0f172a;line-height:1.1;margin-top:5px;">${k}</p>
+                        </div>
+                    </div>
                 </div>
-                <div style="background:white;border-radius:12px;border:1px solid #e2e8f0;box-shadow:0 4px 16px rgba(0,0,0,.08);padding:12px 14px;text-align:center;">
-                    <p style="margin:0 0 2px;font-size:10px;font-weight:700;color:#0284c7;text-transform:uppercase;letter-spacing:.8px;">Device ID</p>
-                    <p style="margin:0;font-size:15px;font-weight:850;color:#0f172a;line-height:1.1;margin-top:5px;word-break:break-all;">${sigpalaEscapeHtml(String(perangkatId))}</p>
-                </div>
+
+                <!-- Highlight Rekomendasi Pupuk -->
+                ${(function() {
+                    let rek = props.rekomendasi_pupuk;
+                    if (typeof rek === 'string') {
+                        try { rek = JSON.parse(rek); } catch(e) { rek = [rek]; }
+                    }
+                    if (rek && Array.isArray(rek) && rek.length > 0) {
+                        return `
+                        <div style="background:linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);border-radius:12px;border:1px solid #bbf7d0;box-shadow:0 4px 16px rgba(34,197,94,.12);padding:14px;position:relative;">
+                            <p style="margin:0 0 8px;font-size:11px;font-weight:800;color:#166534;text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:6px;">
+                                💡 Rekomendasi Pupuk
+                            </p>
+                            <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                                ${(function() {
+                                    let tags = [];
+                                    let renderedDetails = false;
+                                    rek.forEach(item => {
+                                        if (typeof item === 'string') {
+                                            if (!tags.includes(item)) tags.push(item);
+                                        } else if (typeof item === 'object') {
+                                            if (item.details && Array.isArray(item.details)) {
+                                                if (!renderedDetails) {
+                                                    item.details.forEach(d => {
+                                                        let str = `${d.fertilizer_name || 'Pupuk'} ${d.dose_amount ? d.dose_amount : ''} ${d.unit ? d.unit : ''}`.trim();
+                                                        if (!tags.includes(str)) tags.push(str);
+                                                    });
+                                                    renderedDetails = true;
+                                                }
+                                            } else {
+                                                let text = item.nama_pupuk || item.nama || item.name || item.fertilizer_name || JSON.stringify(item);
+                                                if (!tags.includes(text)) tags.push(text);
+                                            }
+                                        }
+                                    });
+                                    return tags.map(t => `<span style="background:#fff;border:1px solid #86efac;color:#15803d;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;box-shadow:0 2px 4px rgba(0,0,0,.04);">${sigpalaEscapeHtml(t)}</span>`).join('');
+                                })()}
+                            </div>
+                        </div>
+                        `;
+                    }
+                    return '';
+                })()}
             </div>
 
             <div style="padding:20px 16px 30px;display:flex;flex-direction:column;gap:20px;">
-                ${sigpalaDetailSection('Nutrisi Makro (NPK)', [
-                    ['Nitrogen (N)', n],
-                    ['Fosfor (P)', p],
-                    ['Kalium (K)', k]
+                ${sigpalaDetailSection('Informasi Lokasi & Status', [
+                    ['Kecamatan', sigpalaDisplay(props.district_name)],
+                    ['Alamat Detail', sigpalaDisplay(props.alamat_detail)],
+                    ['Luas Lahan', props.luas_lahan_hektar ? sigpalaNumber(props.luas_lahan_hektar) + ' Ha' : '-'],
+                    ['Status Pemetaan', (() => {
+                        if (props.status_spasial === 'SUDAH_DIPETAKAN') return '<span style="color:#16a34a;font-weight:bold;">SUDAH DIPETAKAN</span>';
+                        if (props.status_spasial === 'BELUM_DIPETAKAN') return '<span style="color:#d97706;font-weight:bold;">BELUM DIPETAKAN</span>';
+                        return sigpalaDisplay(props.status_spasial);
+                    })()],
+                    ['Status Validasi', sigpalaDisplay(props.status_verifikasi)],
+                    ['ID Eksternal', sigpalaDisplay(props.external_id)]
                 ])}
                 
-                ${sigpalaDetailSection('Informasi Sensor', [
+                ${sigpalaDetailSection('Informasi Sensor & Sistem', [
+                    ['Device ID', perangkatId],
+                    ['Jenis Tanah', sigpalaDisplay(props.jenis_tanah)],
+                    ['Tinggi Muka Air', props.water_level && props.water_level !== '-' ? props.water_level + ' cm' : '-'],
                     ['Status Alat', statusAlat],
-                    ['Waktu Pembaruan Terakhir', waktuRekam]
+                    ['Status Berbagi', props.is_shared ? 'Dibagikan (Shared)' : 'Pribadi (Private)'],
+                    ['Waktu Pembaruan', waktuRekam]
                 ])}
-                
-                ${props.rekomendasi_pupuk && Array.isArray(props.rekomendasi_pupuk) && props.rekomendasi_pupuk.length > 0 ? `
-                <div>
-                    <p style="margin:0 0 10px;font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:1.2px;display:flex;align-items:center;gap:6px;">
-                        <span style="display:inline-block;width:20px;height:2px;background:#bae6fd;border-radius:2px;"></span>
-                        Rekomendasi Pupuk
-                        <span style="display:inline-block;flex:1;height:2px;background:#f1f5f9;border-radius:2px;"></span>
-                    </p>
-                    <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                        ${props.rekomendasi_pupuk.map(pupuk => `<span style="padding:4px 12px;background:#e0f2fe;color:#0369a1;border-radius:6px;font-size:12px;font-weight:600;">${sigpalaEscapeHtml(pupuk)}</span>`).join('')}
-                    </div>
-                </div>
-                ` : ''}
             </div>
         </div>
     `;

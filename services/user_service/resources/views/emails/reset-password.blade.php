@@ -117,11 +117,11 @@
     <div class="wrapper">
         <div class="container">
             <div class="header">
-                <h1>SiTani</h1>
+                <h1>SiPetani</h1>
             </div>
             <div class="content">
-                <p class="greeting">Halo, {{ $nama }}!</p>
-                <p class="text">Kami menerima permintaan untuk mereset password akun Anda pada SiTani, Sistem Informasi Dinas Pertanian.</p>
+                <p class="text">Hai {{ $user->nama_lengkap }},</p>
+                <p class="text">Kami menerima permintaan untuk mereset password akun Anda pada SiPetani, Sistem Informasi Pemetaan Tanaman Padi.</p>
                 
                 <div class="btn-container">
                     <a href="{{ $url }}" class="btn">Reset Password Sekarang</a>
@@ -134,7 +134,7 @@
                 <div class="divider"></div>
 
                 <div class="footer">
-                    <p>Hormat kami,<br><strong>Sistem Informasi Dinas Pertanian</strong></p>
+                    <p>Hormat kami,<br><strong>Sistem Informasi Pemetaan Tanaman Padi</strong></p>
                     <p style="margin-top: 20px;">Jika tombol di atas tidak berfungsi, salin dan tempel URL berikut ke browser Anda:</p>
                     <p class="fallback-link"><a href="{{ $url }}">{{ $url }}</a></p>
                 </div>

@@ -329,7 +329,7 @@ class LahanSawahController extends Controller
 
     private function baseLahanQuery()
     {
-        $sitani = DB::table('lahan_sawah')
+        $sipetani = DB::table('lahan_sawah')
             ->leftJoin('users as pemilik', 'lahan_sawah.pemilik_id', '=', 'pemilik.id')
             ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
             ->leftJoin('kelurahan', 'lahan_sawah.kelurahan_id', '=', 'kelurahan.id')
@@ -341,7 +341,7 @@ class LahanSawahController extends Controller
             ->leftJoin('kecamatan', 'lahan_huma.kecamatan_id', '=', 'kecamatan.id')
             ->select($this->selectLahanWithGeo('lahan_huma'));
 
-        return $sitani->union($huma);
+        return $sipetani->union($huma);
     }
 
     private function selectLahanWithGeo(string $table = 'lahan_sawah'): array
@@ -355,7 +355,7 @@ class LahanSawahController extends Controller
             $table === 'lahan_sawah' ? "$table.kelurahan_id" : DB::raw("NULL as kelurahan_id"),
             $table === 'lahan_sawah' ? "$table.tipe_lahan_id" : DB::raw("NULL as tipe_lahan_id"),
             "$table.nama_lahan",
-            $table === 'lahan_huma' ? DB::raw("COALESCE(JSON_UNQUOTE(JSON_EXTRACT($table.catatan_verifikasi, '$.\"huma_owner_name\"')), pemilik.nama_lengkap) as pemilik_lahan") : 'pemilik.nama_lengkap as pemilik_lahan',
+            $table === 'lahan_huma' ? "$table.nama_pemilik as pemilik_lahan" : 'pemilik.nama_lengkap as pemilik_lahan',
             "$table.luas_lahan_hektar",
             $table === 'lahan_sawah' ? "$table.hasil_panen_ton" : DB::raw("NULL as hasil_panen_ton"),
             $table === 'lahan_sawah' ? "$table.produktivitas_ton_ha" : DB::raw("NULL as produktivitas_ton_ha"),
@@ -365,11 +365,13 @@ class LahanSawahController extends Controller
             "$table.longitude",
             $table === 'lahan_sawah' ? "$table.foto_lahan" : DB::raw("NULL as foto_lahan"),
             "$table.status_verifikasi",
-            $table === 'lahan_huma' ? DB::raw("COALESCE(JSON_UNQUOTE(JSON_EXTRACT($table.catatan_verifikasi, '$.\"huma_owner_name\"')), pemilik.nama_lengkap) as nama_petani") : 'pemilik.nama_lengkap as nama_petani',
+            $table === 'lahan_huma' ? "$table.nama_pemilik as nama_petani" : 'pemilik.nama_lengkap as nama_petani',
             'pemilik.email as email_petani',
             'kecamatan.nama_kecamatan',
             $table === 'lahan_sawah' ? 'kelurahan.nama_kelurahan' : DB::raw("NULL as nama_kelurahan"),
             $table === 'lahan_sawah' ? 'tipe_lahan.nama_tipe' : DB::raw("NULL as nama_tipe"),
+            $table === 'lahan_huma' ? "$table.district_name" : DB::raw("NULL as district_name"),
+            $table === 'lahan_huma' ? "$table.tipe_tanah" : DB::raw("NULL as tipe_tanah"),
         ];
 
         if (Schema::hasColumn($table, 'tahun_lbs')) {

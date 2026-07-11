@@ -10,7 +10,7 @@
 @section('content')
 <div class="mx-auto max-w-3xl space-y-5 px-4 py-6 sm:px-6">
     <header>
-        <p class="text-[11px] font-bold uppercase text-[#3E7D00]">Kelompok Tani</p>
+        <p class="text-[11px] font-bold uppercase text-[#047857]">Kelompok Tani</p>
         <h1 class="mt-1 text-xl font-bold text-[#14280b]">{{ $isEdit ? 'Perbaiki laporan hasil panen' : 'Laporan hasil panen' }}</h1>
         <p class="mt-1 text-xs text-slate-500">Hasil panen akan masuk ke riwayat dan statistik setelah disetujui petugas.</p>
     </header>
@@ -88,7 +88,7 @@
             @if(!$isEdit)
                 <div>
                     <label class="mb-1.5 block text-xs font-bold text-slate-700">Proses tanam siap panen</label>
-                    <select name="siklus_tanam_id" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#5EA500] focus:border-[#5EA500] focus:outline-none focus:ring-2 focus:ring-[#5EA500]/20">
+                    <select name="siklus_tanam_id" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#10b981] focus:border-[#10b981] focus:outline-none focus:ring-2 focus:ring-[#10b981]/20">
                         <option value="">Pilih proses tanam</option>
                         @foreach($siapPanen as $item)
                             <option value="{{ $item['id'] }}" @selected((string) old('siklus_tanam_id') === (string) $item['id'])>
@@ -112,13 +112,13 @@
                     <label class="mb-1.5 block text-xs font-bold text-slate-700">Tanggal panen</label>
                     <input type="date" name="tanggal_panen" max="{{ date('Y-m-d') }}" required
                            value="{{ old('tanggal_panen', $editPanen['tanggal_panen'] ?? date('Y-m-d')) }}"
-                           class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#5EA500] focus:border-[#5EA500] focus:outline-none focus:ring-2 focus:ring-[#5EA500]/20">
+                           class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#10b981] focus:border-[#10b981] focus:outline-none focus:ring-2 focus:ring-[#10b981]/20">
                 </div>
                 <div>
                     <label class="mb-1.5 block text-xs font-bold text-slate-700">Hasil panen (ton)</label>
                     <input type="number" name="hasil_panen" min="0.01" step="0.01" required
                            value="{{ old('hasil_panen', $editPanen['hasil_panen'] ?? '') }}" placeholder="Contoh: 4.50"
-                           class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#5EA500] focus:border-[#5EA500] focus:outline-none focus:ring-2 focus:ring-[#5EA500]/20">
+                           class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#10b981] focus:border-[#10b981] focus:outline-none focus:ring-2 focus:ring-[#10b981]/20">
                 </div>
             </div>
 
@@ -128,7 +128,7 @@
 
             <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <a href="{{ url('/dashboard-petani') }}" class="rounded-lg border border-slate-300 px-4 py-2 text-center text-xs font-bold text-slate-600">Batal</a>
-                <button type="submit" @disabled(!$isEdit && $siapPanen->isEmpty()) class="rounded-lg bg-[#3E7D00] px-5 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-300">
+                <button type="submit" @disabled(!$isEdit && $siapPanen->isEmpty()) class="rounded-lg bg-[#047857] px-5 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-300">
                     {{ $isEdit ? 'Ajukan Ulang' : 'Kirim untuk Verifikasi' }}
                 </button>
             </div>

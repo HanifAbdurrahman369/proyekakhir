@@ -1,8 +1,8 @@
 @echo off
-title SITANI - STOP ALL SERVICES
+title SIPETANI - STOP ALL SERVICES
 
 echo ==========================================
-echo MENGHENTIKAN SEMUA SERVICE SITANI
+echo MENGHENTIKAN SEMUA SERVICE SIPETANI
 echo ==========================================
 echo.
 

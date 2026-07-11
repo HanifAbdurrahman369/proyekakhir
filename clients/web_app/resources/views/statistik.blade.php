@@ -67,7 +67,7 @@
                     <p class="text-emerald-600 text-xs font-bold uppercase tracking-[0.24em]">Data Lahan Sawah Terdaftar</p>
                     <h3 class="text-slate-900 font-extrabold text-2xl md:text-3xl tracking-tight">Rekapitulasi Lahan Sawah yang Sudah Terverifikasi</h3>
                     <p class="text-slate-500 text-sm md:text-base font-medium leading-relaxed">
-                        Tabel ini berisi rekap lahan sawah yang sudah terdaftar dan diterima dalam sistem SiTani. Data diringkas menurut kecamatan, tahun basis LBS, jumlah lahan, total luas, luas tanam, tipe lahan, hasil panen, dan produktivitas dari lahan yang tercatat di basis data aplikasi.
+                        Tabel ini berisi rekap lahan sawah yang sudah terdaftar dan diterima dalam sistem SiPetani. Data diringkas menurut kecamatan, tahun basis LBS, jumlah lahan, total luas, luas tanam, tipe lahan, hasil panen, dan produktivitas dari lahan yang tercatat di basis data aplikasi.
                     </p>
                 </div>
                 

@@ -241,7 +241,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                'Sistem Informasi Dinas Pertanian',
+                                'Sistem Informasi Pemetaan Padi Dinas Pertanian Batola',
                                 textAlign: TextAlign.center,
                                 style: GoogleFonts.poppins(
                                   fontSize: 13,
@@ -378,7 +378,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           // Footer
                           Center(
                             child: Text(
-                              '2026 - SiTani',
+                              '2026 - SiPetani',
                               style: GoogleFonts.inter(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,

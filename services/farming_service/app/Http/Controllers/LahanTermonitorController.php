@@ -61,20 +61,9 @@ class LahanTermonitorController extends Controller
     {
         $sensors = $this->humaService->getMonitoringTermonitor();
         
-        // Format response if needed
+        // Return raw sensor data so web app can process it
         $formatted = $sensors->map(function ($sensor) {
-            $catatan = json_decode($sensor->catatan_petugas, true);
-            return [
-                'id' => $sensor->id,
-                'nama_lahan' => $sensor->lahan->nama_lahan ?? '-',
-                'device_id' => $catatan['huma_device_id'] ?? '-',
-                'ph_tanah' => $catatan['ph_tanah'] ?? $sensor->ph_air,
-                'n' => $catatan['n_level'] ?? '-',
-                'p' => $catatan['p_level'] ?? '-',
-                'k' => $catatan['k_level'] ?? '-',
-                'waktu_rekam' => $sensor->tanggal_cek,
-                'status_sinkron' => 'Tersinkronisasi'
-            ];
+            return $sensor->toArray();
         });
 
         return response()->json([

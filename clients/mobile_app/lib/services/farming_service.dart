@@ -705,7 +705,7 @@ class FarmingService {
     }
   }
 
-  /// Petugas: Mengambil lahan Huma yang sudah tersimpan di SiTani.
+  /// Petugas: Mengambil lahan Huma yang sudah tersimpan di SiPetani.
   Future<List<dynamic>> getLahanTermonitor() async {
     try {
       final response = await _apiClient.dio.get('/lahan-termonitor');

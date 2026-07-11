@@ -15,87 +15,217 @@
         </div>
 
         <h1 class="text-5xl sm:text-7xl md:text-9xl font-black tracking-tight mb-4 flex justify-center items-baseline">
-            <span class="text-white drop-shadow-lg"><span class="text-[1.2em]">S</span>i</span><span class="text-emerald-400 drop-shadow-[0_0_20px_rgba(52,211,153,0.4)]"><span class="text-[1.2em]">T</span>ani</span>
+            <span class="text-white drop-shadow-lg"><span class="text-[1.2em]">S</span>i</span><span class="text-emerald-400 drop-shadow-[0_0_20px_rgba(52,211,153,0.4)]"><span class="text-[1.2em]">P</span>etani</span>
         </h1>
         
         <div class="w-24 h-1.5 bg-emerald-500 rounded-full mb-8 shadow-[0_0_15px_rgba(16,185,129,0.5)]"></div>
 
         <p class="text-emerald-50 text-sm sm:text-lg md:text-xl max-w-2xl font-medium tracking-wide leading-relaxed drop-shadow-md">
-            SiTani ( Sistem informasi dinas pertanian )
+            Sistem Informasi Pemetaan Padi Dinas Pertanian Batola
         </p>
     </div>
 
 </div>
 
-<div class="w-full py-24 px-6 md:px-12 lg:px-20 bg-white flex justify-center font-['Poppins']">
-    <div class="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+<style>
+.sipetani-feature-section {
+    position: relative;
+    width: 100%;
+    padding: 6rem 1.5rem;
+    background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #1b4317 100%);
+    display: flex;
+    justify-content: center;
+    font-family: 'Poppins', sans-serif;
+    overflow: hidden;
+}
+
+@media (min-width: 768px) {
+    .sipetani-feature-section { padding: 6rem 3rem; }
+}
+
+@media (min-width: 1024px) {
+    .sipetani-feature-section { padding: 6rem 5rem; }
+}
+
+.sipetani-feature-blob-1 {
+    position: absolute;
+    top: -10%;
+    left: -10%;
+    width: 50%;
+    height: 60%;
+    border-radius: 50%;
+    background-color: rgba(16, 185, 129, 0.2);
+    filter: blur(120px);
+    pointer-events: none;
+}
+
+.sipetani-feature-blob-2 {
+    position: absolute;
+    bottom: 0%;
+    right: 0%;
+    width: 40%;
+    height: 50%;
+    border-radius: 50%;
+    background-color: rgba(163, 230, 53, 0.1);
+    filter: blur(100px);
+    pointer-events: none;
+}
+
+.sipetani-feature-pattern {
+    position: absolute;
+    inset: 0;
+    opacity: 0.03;
+    background-image: radial-gradient(#fff 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+}
+
+.sipetani-feature-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    border-radius: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.sipetani-feature-card:hover {
+    transform: translateY(-0.375rem);
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.sipetani-feature-icon {
+    width: 3.5rem;
+    height: 3.5rem;
+    flex-shrink: 0;
+    background-color: #a3e635;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #064e3b;
+    box-shadow: 0 0 20px rgba(163, 230, 53, 0.4);
+}
+
+.sipetani-btn-download {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    background-color: white;
+    color: #064e3b;
+    padding: 1rem 1.5rem;
+    border-radius: 1rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    border: 1px solid white;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.sipetani-btn-download:hover {
+    transform: translateY(-0.25rem);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    background-color: #ecfdf5;
+}
+
+.sipetani-btn-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.75rem;
+    background-color: #d1fae5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
+}
+
+.sipetani-btn-download:hover .sipetani-btn-icon {
+    transform: scale(1.1);
+}
+</style>
+
+<div class="sipetani-feature-section">
+    <div class="sipetani-feature-blob-1"></div>
+    <div class="sipetani-feature-blob-2"></div>
+    <div class="sipetani-feature-pattern"></div>
+
+    <div class="relative z-10 max-w-7xl w-full grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
         
-        <div class="space-y-8">
+        <div class="space-y-8" style="color: white;">
             <div class="space-y-4">
                 <div class="flex items-center gap-3">
-                    <div class="w-1 h-6 bg-emerald-500 rounded-full"></div>
-                    <p class="text-emerald-600 text-xs font-bold tracking-[0.2em] uppercase">Layanan Informasi Publik</p>
+                    <div style="width: 4px; height: 24px; background-color: #a3e635; border-radius: 9999px; box-shadow: 0 0 10px rgba(163, 230, 53, 0.6);"></div>
+                    <p style="color: #bef264; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; margin: 0;">Layanan Informasi Publik</p>
                 </div>
-                <h2 class="text-slate-900 text-3xl sm:text-4xl md:text-5xl font-extrabold leading-[1.15] tracking-tight">
+                <h2 style="font-size: clamp(1.875rem, 5vw, 3rem); font-weight: 800; line-height: 1.15; letter-spacing: -0.025em; text-shadow: 0 1px 2px rgba(0,0,0,0.1); margin: 0;">
                     Transparansi Data & <br>
-                    <span class="text-emerald-600">Visualisasi Lahan Rawa</span>
+                    <span style="color: #a3e635; text-shadow: 0 0 15px rgba(163, 230, 53, 0.2);">Visualisasi Lahan Rawa</span>
                 </h2>
             </div>
             
-            <p class="text-slate-500 text-base sm:text-lg leading-relaxed font-medium">
-                SiTani adalah sistem informasi dinas pertanian yang dirancang khusus untuk memetakan ketersediaan lahan pertanian rawa di Kabupaten Barito Kuala secara akurat, modern, dan transparan bagi publik.
-            </p>
+            <div style="color: #ecfdf5; font-size: clamp(1rem, 2vw, 1.125rem); line-height: 1.75; font-weight: 500; display: flex; flex-direction: column; gap: 1.25rem;">
+                <p style="margin: 0;">
+                    SiPetani adalah Sistem Informasi Pemetaan Padi Dinas Pertanian Batola yang dirancang khusus untuk memetakan ketersediaan lahan pertanian rawa secara akurat, modern, dan transparan, yang ditujukan untuk Dinas Pertanian, Tanaman Pangan dan Holtikultura.
+                </p>
+                <p style="margin: 0;">
+                    Platform geospasial ini mengintegrasikan pemetaan digital interaktif dengan data statistik luasan panen secara real-time. Dengan memanfaatkan SiPetani, pemerintah daerah dan para stakeholder dapat merumuskan kebijakan berbasis data demi menjaga ketahanan pangan dan memaksimalkan potensi produktivitas lahan rawa di Kabupaten Barito Kuala.
+                </p>
+            </div>
 
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 pt-6 border-t border-slate-100">
-                <div>
-                    <p class="text-2xl sm:text-3xl font-black text-emerald-600 mb-1">17+</p>
-                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-snug">Kecamatan<br>Terpetakan</p>
+            <div style="padding-top: 1.5rem; border-top: 1px solid rgba(4, 120, 87, 0.5);">
+                <div style="margin-bottom: 1rem;">
+                    <p style="font-size: 0.75rem; color: #bef264; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin: 0;">Akses Khusus Mitra Lapangan:</p>
                 </div>
-                <div>
-                    <p class="text-2xl sm:text-3xl font-black text-emerald-600 mb-1">Real<span class="text-emerald-400">-time</span></p>
-                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-snug">Pembaruan<br>Data API</p>
-                </div>
-                <div class="col-span-2 sm:col-span-1">
-                    <p class="text-2xl sm:text-3xl font-black text-emerald-600 mb-1">Open</p>
-                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-snug">Akses Data<br>Publik</p>
-                </div>
+                <a href="#download-app" class="sipetani-btn-download">
+                    <div class="sipetani-btn-icon">
+                        <svg style="width: 1.5rem; height: 1.5rem; color: #059669;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    </div>
+                    <div style="text-align: left;">
+                        <div style="font-size: 0.6875rem; font-weight: 700; color: rgba(5, 150, 105, 0.8); text-transform: uppercase; letter-spacing: 0.025em; line-height: 1;">Unduh Aplikasi Mobile</div>
+                        <div style="font-size: 0.9375rem; font-weight: 900; letter-spacing: -0.025em; margin-top: 0.125rem; line-height: 1;">Khusus Poktan, Brigade & BPP</div>
+                    </div>
+                </a>
             </div>
         </div>
         
-        <div class="flex flex-col gap-5">
-            <div class="flex items-start gap-6 p-6 bg-white rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-slate-100 hover:-translate-y-1.5 hover:shadow-[0_15px_40px_rgba(16,185,129,0.1)] transition-all duration-300">
-                <div class="w-14 h-14 shrink-0 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            <div class="sipetani-feature-card">
+                <div class="sipetani-feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" style="height: 1.75rem; width: 1.75rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A2 2 0 013 15.382V7.618a2 2 0 011.096-1.789L9 3m0 17l6-3m-6 3V3m6 14l5.447 2.724A2 2 0 0021 17.618V9.882a2 2 0 00-1.096-1.789L15 3m0 14V3" />
                     </svg>
                 </div>
                 <div>
-                    <h4 class="font-bold text-slate-800 text-lg mb-1.5">Peta Interaktif</h4>
-                    <p class="text-sm text-slate-500 font-medium leading-relaxed">Eksplorasi batas wilayah hingga detail blok lahan rawa secara visual dan real-time.</p>
+                    <h4 style="font-weight: 700; color: white; font-size: 1.25rem; margin-bottom: 0.375rem; text-shadow: 0 1px 2px rgba(0,0,0,0.1); letter-spacing: -0.025em; margin-top: 0;">Peta Interaktif</h4>
+                    <p style="font-size: 0.875rem; color: #d1fae5; font-weight: 500; line-height: 1.625; margin: 0;">Eksplorasi batas wilayah hingga detail blok lahan rawa secara visual dan real-time.</p>
                 </div>
             </div>
             
-            <div class="flex items-start gap-6 p-6 bg-white rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-slate-100 hover:-translate-y-1.5 hover:shadow-[0_15px_40px_rgba(16,185,129,0.1)] transition-all duration-300">
-                <div class="w-14 h-14 shrink-0 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div class="sipetani-feature-card">
+                <div class="sipetani-feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" style="height: 1.75rem; width: 1.75rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 00-2-2H5a2 2 0 00-2 2v10m0 0h10m-10 0V5a2 2 0 012-2h2a2 2 0 012 2v14m0 0h10m-10 0V7a2 2 0 012-2h2a2 2 0 012 2v14m0 0h10" />
                     </svg>
                 </div>
                 <div>
-                    <h4 class="font-bold text-slate-800 text-lg mb-1.5">Analisis Statistik</h4>
-                    <p class="text-sm text-slate-500 font-medium leading-relaxed">Data akumulasi luasan lahan sawah yang disajikan secara transparan dengan grafik visual.</p>
+                    <h4 style="font-weight: 700; color: white; font-size: 1.25rem; margin-bottom: 0.375rem; text-shadow: 0 1px 2px rgba(0,0,0,0.1); letter-spacing: -0.025em; margin-top: 0;">Analisis Statistik</h4>
+                    <p style="font-size: 0.875rem; color: #d1fae5; font-weight: 500; line-height: 1.625; margin: 0;">Data akumulasi luasan lahan sawah yang disajikan secara transparan dengan grafik visual.</p>
                 </div>
             </div>
 
-            <div class="flex items-start gap-6 p-6 bg-white rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-slate-100 hover:-translate-y-1.5 hover:shadow-[0_15px_40px_rgba(16,185,129,0.1)] transition-all duration-300">
-                <div class="w-14 h-14 shrink-0 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div class="sipetani-feature-card">
+                <div class="sipetani-feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" style="height: 1.75rem; width: 1.75rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
                 </div>
                 <div>
-                    <h4 class="font-bold text-slate-800 text-lg mb-1.5">Informasi Produktivitas</h4>
-                    <p class="text-sm text-slate-500 font-medium leading-relaxed">Lacak potensi dan realisasi produktivitas lahan rawa berdasarkan data akurat (Ton/Ha).</p>
+                    <h4 style="font-weight: 700; color: white; font-size: 1.25rem; margin-bottom: 0.375rem; text-shadow: 0 1px 2px rgba(0,0,0,0.1); letter-spacing: -0.025em; margin-top: 0;">Informasi Produktivitas</h4>
+                    <p style="font-size: 0.875rem; color: #d1fae5; font-weight: 500; line-height: 1.625; margin: 0;">Lacak potensi dan realisasi produktivitas lahan rawa berdasarkan data akurat (Ton/Ha).</p>
                 </div>
             </div>
         </div>
@@ -175,23 +305,23 @@
         </div>
     </div>
 
-    <div class="relative w-full max-w-7xl overflow-hidden rounded-[2.5rem] border border-[#ebe2d4] bg-[#f8f3ea] shadow-[0_22px_70px_rgba(45,43,35,0.12)]">
+    <div class="relative w-full max-w-7xl overflow-hidden rounded-[2.5rem] border border-slate-100 bg-white shadow-md">
         <div class="public-priority-map-grid">
             <div class="public-priority-map-left p-5 sm:p-7 lg:p-8">
                 <div class="mb-6 flex items-center justify-between gap-4 text-[10px] font-bold uppercase tracking-[0.32em] text-slate-600">
                     <span class="inline-flex items-center gap-3">
-                        <span class="h-2 w-2 rounded-full bg-[#d4a43d]"></span>
+                        <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
                         Live Preview
                     </span>
                     <span>17 Kecamatan</span>
                 </div>
 
-                <div class="public-priority-map-canvas relative overflow-hidden rounded-2xl border border-[#d8d0c2] bg-white">
+                <div class="public-priority-map-canvas relative overflow-hidden rounded-2xl border border-slate-100 bg-white">
                     <div id="map" class="h-full w-full z-0"></div>
                 </div>
             </div>
 
-            <div class="public-priority-map-panel bg-[#fbf7ef] p-5 sm:p-7 lg:p-8">
+            <div class="public-priority-map-panel bg-white p-5 sm:p-7 lg:p-8">
                 <aside id="map-insight-panel" data-map-priority-panel="embedded" class="h-full"></aside>
             </div>
         </div>

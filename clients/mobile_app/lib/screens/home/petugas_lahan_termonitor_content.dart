@@ -188,7 +188,7 @@ class PetugasLahanTermonitorContent extends StatelessWidget {
     List<Map<String, dynamic>> sensors,
   ) {
     return _sectionCard(
-      title: 'Data Tersimpan (SiTani)',
+      title: 'Data Tersimpan (SiPetani)',
       badge: 'Tersinkron',
       badgeColor: const Color(0xFF3E7D00),
       child: lands.isEmpty

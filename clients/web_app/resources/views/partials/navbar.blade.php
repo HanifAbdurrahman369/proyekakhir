@@ -23,7 +23,7 @@
 @endphp
 
 <nav class="sticky top-0 z-50 h-16 lg:h-[72px] border-b border-white/20"
-     style="background:linear-gradient(135deg,#244b10 0%,#3E7D00 50%,#5EA500 100%); box-shadow:0 18px 50px rgba(32,60,16,.18);">
+     style="background:linear-gradient(135deg,#064e3b 0%,#047857 50%,#10b981 100%); box-shadow:0 18px 50px rgba(32,60,16,.18);">
 
     <div class="h-full px-4 sm:px-5 lg:px-8 flex items-center justify-between gap-4">
 
@@ -50,7 +50,7 @@
                         Sistem Informasi
                     </p>
                     <p class="text-sm sm:text-base font-bold leading-snug text-white truncate">
-                        Dinas Pertanian
+                        Pemetaan Tanaman Padi
                     </p>
                 </div>
             </a>
@@ -198,7 +198,7 @@
                  style="background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.20);">
 
                 <div class="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-extrabold"
-                     style="background:#B7F43B; color:#244b10;">
+                     style="background:#a3e635; color:#064e3b;">
                     {{ $roleInitial }}
                 </div>
 
@@ -216,7 +216,7 @@
             {{-- Role Label Mobile --}}
             <div class="sm:hidden w-10 h-10 rounded-2xl flex items-center justify-center text-xs font-extrabold"
                  title="{{ $roleLabel }}"
-                 style="background:#B7F43B; color:#244b10;">
+                 style="background:#a3e635; color:#064e3b;">
                 {{ $roleInitial }}
             </div>
 

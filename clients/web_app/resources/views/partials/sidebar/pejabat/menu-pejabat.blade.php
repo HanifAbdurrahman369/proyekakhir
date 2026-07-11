@@ -3,8 +3,8 @@
     $menuActive = 'bg-[#edf8dc] text-[#203c10] shadow-sm ring-1 ring-[#dfeccc]';
     $menuIdle = 'text-slate-600 hover:bg-[#f7fced] hover:text-[#2f5c12]';
     $iconBase = 'w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition';
-    $iconActive = 'bg-[#3E7D00] text-white';
-    $iconIdle = 'bg-slate-100 text-slate-500 group-hover:bg-[#edf8dc] group-hover:text-[#3E7D00]';
+    $iconActive = 'bg-[#047857] text-white';
+    $iconIdle = 'bg-slate-100 text-slate-500 group-hover:bg-[#edf8dc] group-hover:text-[#047857]';
 @endphp
 
 <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-[.18em] px-3 py-2 mt-1">Laporan Eksekutif</p>
