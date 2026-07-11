@@ -646,11 +646,6 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                                     return null;
                                   },
                                 ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
                     ],
                   ),
                 ),
@@ -726,7 +721,7 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                               children: [
                                 _buildLabel('Tanggal Pemupukan'),
                                 InkWell(
-                                  onTap: () => _selectDate(context, false),
+                                  onTap: () => _selectDate(context, 1),
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 16,

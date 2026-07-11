@@ -627,28 +627,23 @@ class _EditLaporTanamScreenState extends State<EditLaporTanamScreen> {
                       ),
                       const SizedBox(height: 16),
                       _buildLabel('Estimasi (Hari)'),
-                                TextFormField(
-                                  controller: _estimasiHariController,
-                                  style: GoogleFonts.inter(fontSize: 14),
-                                  keyboardType: TextInputType.number,
-                                  decoration: _buildInputDecoration(
-                                    'Contoh: 120',
-                                  ),
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'Wajib diisi';
-                                    }
-                                    final val = int.tryParse(value);
-                                    if (val == null || val <= 0) {
-                                      return 'Harus positif';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                      TextFormField(
+                        controller: _estimasiHariController,
+                        style: GoogleFonts.inter(fontSize: 14),
+                        keyboardType: TextInputType.number,
+                        decoration: _buildInputDecoration(
+                          'Contoh: 120',
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Wajib diisi';
+                          }
+                          final val = int.tryParse(value);
+                          if (val == null || val <= 0) {
+                            return 'Harus positif';
+                          }
+                          return null;
+                        },
                       ),
                     ],
                   ),
@@ -725,7 +720,7 @@ class _EditLaporTanamScreenState extends State<EditLaporTanamScreen> {
                               children: [
                                 _buildLabel('Tanggal Pemupukan'),
                                 InkWell(
-                                  onTap: () => _selectDate(context, false),
+                                  onTap: () => _selectDate(context, 1),
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 16,

@@ -14,7 +14,6 @@ class SiklusTanam extends Model
         'lahan_id',
         'luas_tanam_hektar',
         'bibit_id',
-        'pemilik_id',
         'pupuk_id',
         'tanggal_tanam',
         'tanggal_pemupukan',

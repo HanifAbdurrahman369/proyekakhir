@@ -911,29 +911,24 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          ElevatedButton.icon(
+          ElevatedButton(
             onPressed: currentPage > 1
                 ? () => onPageChanged(currentPage - 1)
                 : null,
-            icon: const Icon(Icons.chevron_left_rounded, size: 18),
-            label: Text(
-              'Sebelumnya',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
             style: ElevatedButton.styleFrom(
               elevation: 0,
               backgroundColor: const Color(0xFFE2E8F0),
               foregroundColor: const Color(0xFF334155),
               disabledBackgroundColor: Colors.grey[100],
               disabledForegroundColor: Colors.grey[400],
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
+            child: const Icon(Icons.chevron_left_rounded, size: 20),
           ),
           Text(
             'Halaman $currentPage dari $lastPage',
@@ -943,29 +938,24 @@ class _RiwayatAktivitasScreenState extends State<RiwayatAktivitasScreen> {
               color: Colors.grey[600],
             ),
           ),
-          ElevatedButton.icon(
+          ElevatedButton(
             onPressed: currentPage < lastPage
                 ? () => onPageChanged(currentPage + 1)
                 : null,
-            icon: const Icon(Icons.chevron_right_rounded, size: 18),
-            label: Text(
-              'Selanjutnya',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
             style: ElevatedButton.styleFrom(
               elevation: 0,
               backgroundColor: const Color(0xFF3E7D00),
               foregroundColor: Colors.white,
               disabledBackgroundColor: Colors.grey[100],
               disabledForegroundColor: Colors.grey[400],
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
+            child: const Icon(Icons.chevron_right_rounded, size: 20),
           ),
         ],
       ),

@@ -75,6 +75,13 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
     final roleId = user?.roleId ?? 1;
     final roleName = roleId == 5 ? 'Brigade Pangan' : 'Kelompok Tani';
 
+    final currentMonth = DateTime.now().month;
+    final isKelompokTaniAllowed = (currentMonth >= 1 && currentMonth <= 9);
+    final isBrigadePanganAllowed = [10, 11, 12, 1].contains(currentMonth);
+    final isAllowedToPlant =
+        (roleId == 1 && isKelompokTaniAllowed) ||
+        (roleId == 5 && isBrigadePanganAllowed);
+
     final lahanList = farmingProvider.lahanData['data'] as List<dynamic>? ?? [];
 
     if (farmingProvider.isLoading &&
@@ -248,20 +255,22 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                   const SizedBox(width: 8),
                 Expanded(
                   child: _buildActionButton(
-                    label: 'Lapor Tanam',
-                    icon: Icons.grass_rounded,
-                    onPressed: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const LaporTanamScreen(),
-                        ),
-                      );
-                      if (!context.mounted) return;
-                      context.read<FarmingProvider>().fetchDashboardData(
-                        lahanPage: _currentLahanPage,
-                      );
-                    },
+                    label: isAllowedToPlant ? 'Lapor Tanam' : 'Lapor Tanam (Kunci)',
+                    icon: isAllowedToPlant ? Icons.grass_rounded : Icons.lock_outline_rounded,
+                    onPressed: isAllowedToPlant
+                        ? () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LaporTanamScreen(),
+                              ),
+                            );
+                            if (!context.mounted) return;
+                            context.read<FarmingProvider>().fetchDashboardData(
+                              lahanPage: _currentLahanPage,
+                            );
+                          }
+                        : null,
                     textColor: Colors.white,
                     bgColor: const Color(0xFF3E7D00),
                   ),
@@ -336,16 +345,19 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
     Color? borderColor,
     IconData? icon,
   }) {
+    final isDisabled = onPressed == null;
     return OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
         foregroundColor: textColor,
         backgroundColor: bgColor,
+        disabledForegroundColor: Colors.grey[500],
+        disabledBackgroundColor: Colors.grey[200],
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        side: borderColor != null ? BorderSide(color: borderColor, width: 1.5) : BorderSide.none,
+        side: borderColor != null && !isDisabled ? BorderSide(color: borderColor, width: 1.5) : BorderSide.none,
         elevation: 0,
       ),
       child: Row(
@@ -353,7 +365,7 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 13, color: textColor),
+            Icon(icon, size: 13, color: isDisabled ? Colors.grey[500] : textColor),
             const SizedBox(width: 4),
           ],
           Flexible(

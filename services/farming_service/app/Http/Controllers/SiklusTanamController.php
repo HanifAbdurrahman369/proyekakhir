@@ -111,7 +111,6 @@ class SiklusTanamController extends Controller
                 'luas_tanam_hektar' => $luasTanam,
                 'bibit_id' => $bibit->id,
                 'pupuk_id' => $pupuk->id,
-                'pemilik_id' => $userId,
                 'tanggal_tanam' => $tanggalTanam->toDateString(),
                 'tanggal_pemupukan' => $tanggalPemupukan->toDateString(),
                 'takaran_pupuk_kg' => $request->takaran,
@@ -178,7 +177,7 @@ class SiklusTanamController extends Controller
             'tanam_padi_id' => $tanam->id,
             'lahan_id' => $tanam->lahan_id,
             'bibit_id' => $tanam->bibit_id,
-            'pemilik_id' => $tanam->pemilik_id,
+            'pemilik_id' => $tanam->lahan->pemilik_id,
             'diverifikasi_oleh' => null,
             'nama_lahan' => $tanam->lahan->nama_lahan,
             'nama_bibit' => $tanam->bibit->nama_bibit,
@@ -771,7 +770,7 @@ class SiklusTanamController extends Controller
         if ($roleId === self::ROLE_KELOMPOK_TANI) {
             $query->whereHas('lahan', fn ($q) => $q->where('pemilik_id', $userId));
         } elseif ($roleId === self::ROLE_BRIGADE_PANGAN) {
-            $query->where('pemilik_id', $userId);
+            $query->where('pemupukan_dicatat_oleh', $userId);
         } else {
             $query->whereRaw('1 = 0');
         }
@@ -855,7 +854,7 @@ class SiklusTanamController extends Controller
             'hasil_panen' => $item->panen?->hasil_panen_ton,
             'status_verifikasi' => $item->status_verifikasi,
             'peran_pelapor' => $roleId === self::ROLE_BRIGADE_PANGAN ? 'brigade_pangan' : 'kelompok_tani',
-            'created_by' => (int) $item->pemilik_id,
+            'created_by' => (int) $item->pemupukan_dicatat_oleh,
             'nama_lahan' => $item->lahan?->nama_lahan ?? '-',
             'pemilik_lahan' => $pemilik,
             'luas_lahan_hektar' => (float) ($item->lahan?->luas_lahan_hektar ?? 0),
