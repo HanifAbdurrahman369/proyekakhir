@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SiTani | Sistem Informasi Dinas Pertanian</title>
+    <title>SiPetani | Sistem Informasi Pemetaan Padi Dinas Pertanian Batola</title>
 
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,26 +19,28 @@
 
     <nav class="flex items-center justify-between px-8 md:px-16 py-4 border-b border-slate-100 shadow-sm fixed top-0 w-full bg-white/90 backdrop-blur-md transition-all" style="z-index: 9997;">
         <div class="flex items-center gap-4">
-            <img src="{{ asset('storage/logo.png') }}" alt="Logo SiTani" class="w-12 h-12 object-contain">
-            <p class="text-slate-900 font-extrabold text-2xl tracking-wide"><span class="text-[1.25em]">S</span>i<span class="text-emerald-500"><span class="text-[1.25em]">T</span>ani</span></p>
+            <img src="{{ asset('storage/logo.png') }}" alt="Logo SiPetani" class="w-12 h-12 object-contain">
+            <p class="text-slate-900 font-extrabold text-2xl tracking-wide"><span class="text-[1.25em]">S</span>i<span class="text-emerald-500"><span class="text-[1.25em]">P</span>etani</span></p>
         </div>
 
-        <div class="hidden md:flex justify-end items-center gap-10 font-semibold text-sm">
-            <a href="{{ url('/') }}" class="text-slate-500 hover:text-emerald-600 transition-colors">BERANDA</a>
-            <a href="{{ route('statistik.publik') }}" class="text-slate-500 hover:text-emerald-600 transition-colors">DATA STATISTIK</a>
-            <a href="{{ route('map.full') }}" class="text-slate-500 hover:text-emerald-600 transition-colors">MAP EKSPLORASI</a>
-            
-            <a href="/login" class="bg-emerald-600 hover:bg-emerald-700 text-white px-7 py-2.5 rounded-xl shadow-[0_8px_20px_rgba(16,185,129,0.3)] hover:shadow-[0_10px_25px_rgba(16,185,129,0.4)] transition-all hover:-translate-y-0.5">
-                Login
-            </a>
-        </div>
+        <div class="flex items-center gap-6">
+            <div class="hidden md:flex justify-end items-center gap-10 font-semibold text-sm">
+                <a href="{{ url('/') }}" class="text-slate-500 hover:text-emerald-600 transition-colors">BERANDA</a>
+                <a href="{{ route('statistik.publik') }}" class="text-slate-500 hover:text-emerald-600 transition-colors">DATA STATISTIK</a>
+                <a href="{{ route('map.full') }}" class="text-slate-500 hover:text-emerald-600 transition-colors">MAP EKSPLORASI</a>
+                
+                <a href="/login" class="bg-emerald-600 hover:bg-emerald-700 text-white px-7 py-2.5 rounded-xl shadow-[0_8px_20px_rgba(16,185,129,0.3)] hover:shadow-[0_10px_25px_rgba(16,185,129,0.4)] transition-all hover:-translate-y-0.5">
+                    Login
+                </a>
+            </div>
 
-        <!-- Mobile Menu Button -->
-        <button id="mobile-menu-btn" onclick="toggleMenu()" class="md:hidden flex items-center justify-center p-2 text-slate-600 hover:text-emerald-600 focus:outline-none transition-transform active:scale-95">
-            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path>
-            </svg>
-        </button>
+            <!-- Mobile Menu Button -->
+            <button id="mobile-menu-btn" onclick="toggleMenu()" class="md:hidden flex items-center justify-center p-2 text-slate-600 hover:text-emerald-600 focus:outline-none transition-transform active:scale-95">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+        </div>
     </nav>
 
     <!-- Mobile Menu Overlay -->
@@ -48,8 +50,8 @@
     <div id="mobile-menu" class="fixed top-0 right-0 w-[280px] sm:w-[320px] h-full bg-white shadow-2xl transition-transform duration-300 ease-out md:hidden flex flex-col" style="z-index: 9999; transform: translateX(100%);">
         <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100">
             <div class="flex items-center gap-3">
-                <img src="{{ asset('storage/logo.png') }}" alt="Logo SiTani" class="w-9 h-9 object-contain">
-                <span class="text-slate-900 font-extrabold text-xl tracking-wide"><span class="text-[1.2em]">S</span>i<span class="text-emerald-500"><span class="text-[1.2em]">T</span>ani</span></span>
+                <img src="{{ asset('storage/logo.png') }}" alt="Logo SiPetani" class="w-9 h-9 object-contain">
+                <span class="text-slate-900 font-extrabold text-xl tracking-wide"><span class="text-[1.2em]">S</span>i<span class="text-emerald-500"><span class="text-[1.2em]">P</span>etani</span></span>
             </div>
             <button id="close-menu-btn" onclick="toggleMenu()" class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors focus:outline-none">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -92,9 +94,9 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 mb-16">
                 
                 <div class="space-y-6">
-                    <p class="text-white font-extrabold text-3xl tracking-wide"><span class="text-[1.25em]">S</span>i<span class="text-emerald-500"><span class="text-[1.25em]">T</span>ani</span></p>
+                    <p class="text-white font-extrabold text-3xl tracking-wide"><span class="text-[1.25em]">S</span>i<span class="text-emerald-500"><span class="text-[1.25em]">P</span>etani</span></p>
                     <p class="text-slate-400 font-medium text-base leading-relaxed">
-                        SiTani ( Sistem informasi dinas pertanian ). Transparansi data untuk kemajuan pertanian.
+                        SiPetani — Sistem Informasi Pemetaan Padi Dinas Pertanian Batola. Dipersembahkan oleh Dinas Pertanian, Tanaman Pangan dan Holtikultura.
                     </p>
                 </div>
                 

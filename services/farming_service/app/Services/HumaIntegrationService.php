@@ -182,6 +182,12 @@ class HumaIntegrationService
             $lahan->latitude = $land['latitude'];
             $lahan->longitude = $land['longitude'];
             
+            $lahan->device_id = $land['land_id'];
+            $lahan->external_id = $land['external_id'] ?? null;
+            $lahan->nama_pemilik = $ownerName;
+            $lahan->district_name = $land['district_name'] ?? null;
+            $lahan->tipe_tanah = $land['soil_type'] ?? null;
+            
             if ($land['latitude'] && $land['longitude']) {
                 $lahan->koordinat_tengah = $land['latitude'] . ',' . $land['longitude'];
             }
@@ -232,6 +238,10 @@ class HumaIntegrationService
                         'tanggal_cek' => $sensor['recorded_at'],
                         'ph_air' => $sensor['ph_level'],
                         'tinggi_muka_air' => $sensor['water_level'],
+                        'n_level' => $sensor['n_level'] ?? null,
+                        'p_level' => $sensor['p_level'] ?? null,
+                        'k_level' => $sensor['k_level'] ?? null,
+                        'is_shared' => $sensor['is_shared'] ?? false,
                         'status_air' => 'Normal',
                         'latitude' => $land['latitude'],
                         'longitude' => $land['longitude'],
@@ -239,6 +249,56 @@ class HumaIntegrationService
                         'created_by' => 1,
                     ]);
                     $syncedSensors++;
+
+                    // Insert Rekomendasi
+                    $rekomendasiList = $land['latest_recommendations'] ?? [];
+                    foreach ($rekomendasiList as $rek) {
+                        $details = $rek['details'] ?? [];
+                        
+                        // Jika tidak ada detail pupuk, simpan 1 row saja
+                        if (empty($details)) {
+                            \Illuminate\Support\Facades\DB::table('rekomendasi_huma')->insert([
+                                'monitoring_kondisi_id' => $sensorLog->id,
+                                'rekomendasi_id_huma' => $rek['id'],
+                                'tanggal_rekomendasi' => $rek['date'],
+                                'current_ph' => $rek['current_ph'] ?? null,
+                                'current_water' => $rek['current_water'] ?? null,
+                                'current_n' => $rek['current_n'] ?? null,
+                                'current_p' => $rek['current_p'] ?? null,
+                                'current_k' => $rek['current_k'] ?? null,
+                                'water_status' => $rek['water_status'] ?? null,
+                                'status_tindakan' => $rek['status'] ?? null,
+                                'nama_pupuk' => null,
+                                'dosis' => null,
+                                'satuan' => null,
+                                'catatan' => null,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        } else {
+                            // Insert satu row per pupuk
+                            foreach ($details as $det) {
+                                \Illuminate\Support\Facades\DB::table('rekomendasi_huma')->insert([
+                                    'monitoring_kondisi_id' => $sensorLog->id,
+                                    'rekomendasi_id_huma' => $rek['id'],
+                                    'tanggal_rekomendasi' => $rek['date'],
+                                    'current_ph' => $rek['current_ph'] ?? null,
+                                    'current_water' => $rek['current_water'] ?? null,
+                                    'current_n' => $rek['current_n'] ?? null,
+                                    'current_p' => $rek['current_p'] ?? null,
+                                    'current_k' => $rek['current_k'] ?? null,
+                                    'water_status' => $rek['water_status'] ?? null,
+                                    'status_tindakan' => $rek['status'] ?? null,
+                                    'nama_pupuk' => $det['fertilizer_name'],
+                                    'dosis' => $det['dose_amount'],
+                                    'satuan' => $det['unit'],
+                                    'catatan' => $det['notes'] ?? null,
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
+                            }
+                        }
+                    }
 
                     // Analisis Anomali dan Kirim Notifikasi
                     $anomali = [];

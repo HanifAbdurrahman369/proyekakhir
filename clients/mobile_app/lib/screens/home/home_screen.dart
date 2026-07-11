@@ -237,20 +237,19 @@ class HomeScreen extends StatelessWidget {
 
                     // Category: Aktivitas
                     _buildCategoryHeader('AKTIVITAS'),
-                    if (roleId == 1)
-                      _buildDrawerItem(
-                        icon: Icons.add_location_alt_rounded,
-                        label: 'Daftar Lahan Sawah',
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const TambahLahanScreen(),
-                            ),
-                          );
-                        },
-                      ),
+                    _buildDrawerItem(
+                      icon: Icons.add_location_alt_rounded,
+                      label: 'Daftar Lahan Sawah',
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const TambahLahanScreen(),
+                          ),
+                        );
+                      },
+                    ),
                     _buildDrawerItem(
                       icon: isAllowedToPlant
                           ? Icons.grass_rounded
@@ -272,20 +271,19 @@ class HomeScreen extends StatelessWidget {
                             }
                           : null,
                     ),
-                    if (roleId == 1)
-                      _buildDrawerItem(
-                        icon: Icons.scale_rounded,
-                        label: 'Lapor Panen',
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const LaporPanenScreen(),
-                            ),
-                          );
-                        },
-                      ),
+                    _buildDrawerItem(
+                      icon: Icons.scale_rounded,
+                      label: 'Lapor Panen',
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LaporPanenScreen(),
+                          ),
+                        );
+                      },
+                    ),
                     _buildDrawerItem(
                       icon: Icons.history_edu_rounded,
                       label: 'Riwayat Aktivitas',
@@ -454,7 +452,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Dinas Pertanian',
+                  'Pemetaan Tanaman Padi',
                   style: GoogleFonts.outfit(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
@@ -563,7 +561,7 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
         content: Text(
-          'Grafik tren produksi bulanan sudah tersedia di dashboard Statistik Utama. Untuk laporan analisis produksi daerah interaktif yang lebih lengkap (termasuk filter tipe lahan dan grafik produktivitas), silakan buka aplikasi SiTani versi Web.',
+          'Grafik tren produksi bulanan sudah tersedia di dashboard Statistik Utama. Untuk laporan analisis produksi daerah interaktif yang lebih lengkap (termasuk filter tipe lahan dan grafik produktivitas), silakan buka aplikasi SiPetani versi Web.',
           style: GoogleFonts.inter(
             fontSize: 14,
             height: 1.5,

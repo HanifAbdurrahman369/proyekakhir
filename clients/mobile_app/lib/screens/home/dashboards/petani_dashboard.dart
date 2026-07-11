@@ -224,7 +224,6 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
             // 4. Action Buttons Row (Sejajar di bawah 2 card statistik utama)
             Row(
               children: [
-                if (roleId == 1) ...[
                   Expanded(
                     child: _buildActionButton(
                       label: 'Tambah Lahan',
@@ -247,7 +246,6 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                ],
                 Expanded(
                   child: _buildActionButton(
                     label: 'Lapor Tanam',
@@ -268,7 +266,6 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                     bgColor: const Color(0xFF3E7D00),
                   ),
                 ),
-                if (roleId == 1) ...[
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildActionButton(
@@ -290,7 +287,6 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                       bgColor: const Color(0xFF203C10),
                     ),
                   ),
-                ],
               ],
             ),
             const SizedBox(height: 16),

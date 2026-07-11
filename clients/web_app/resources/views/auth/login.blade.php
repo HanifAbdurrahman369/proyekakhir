@@ -6,7 +6,7 @@
 
 <div class="flex items-center justify-between mb-6">
     <a href="/"
-       class="inline-flex items-center gap-2 text-sm font-semibold text-[#3E7D00] hover:text-[#2f5c12] transition">
+       class="inline-flex items-center gap-2 text-sm font-semibold text-[#047857] hover:text-[#2f5c12] transition">
 
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
             <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
@@ -17,8 +17,8 @@
 </div>
 
 @if (session('success'))
-<div class="flex items-start gap-3 bg-green-50 border border-green-200 text-green-700 px-4 py-3 mb-5 rounded-2xl text-sm">
-    <svg class="w-5 h-5 mt-0.5 shrink-0 text-green-600" viewBox="0 0 24 24" fill="currentColor">
+<div class="flex items-start gap-3 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 mb-5 rounded-2xl text-sm">
+    <svg class="w-5 h-5 mt-0.5 shrink-0 text-emerald-600" viewBox="0 0 24 24" fill="currentColor">
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
     </svg>
     <span>{{ session('success') }}</span>
@@ -121,7 +121,7 @@
             <div class="flex flex-col sm:flex-row sm:items-center gap-3">
                 <div class="flex items-center gap-3 flex-1">
                     <div class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
-                         style="background:linear-gradient(135deg,#5EA500,#3E7D00); color:white;">
+                         style="background:linear-gradient(135deg,#10b981,#047857); color:white;">
                         <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-8 14H9v-4H5v-2h4V7h2v4h4v2h-4v4zm8-2h-3v-2h3v2zm0-4h-3V9h3v2z"/>
                         </svg>
@@ -154,7 +154,7 @@
     {{-- Submit --}}
     <button type="submit"
             class="w-full text-white font-bold py-3.5 rounded-2xl transition text-sm"
-            style="background: linear-gradient(135deg, #5EA500, #3E7D00); box-shadow: 0 14px 30px rgba(94,165,0,.25);">
+            style="background: linear-gradient(135deg, #10b981, #047857); box-shadow: 0 14px 30px rgba(94,165,0,.25);">
         Masuk
     </button>
 </form>

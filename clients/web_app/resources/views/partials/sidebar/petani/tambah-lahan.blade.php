@@ -80,7 +80,7 @@
 
         <div class="p-5 sm:p-6">
             @if(session('success'))
-                <div class="mb-5 p-4 rounded-xl bg-green-100 border border-green-300 text-green-700">
+                <div class="mb-5 p-4 rounded-xl bg-emerald-100 border border-emerald-300 text-emerald-700">
                     {{ session('success') }}
                 </div>
             @endif

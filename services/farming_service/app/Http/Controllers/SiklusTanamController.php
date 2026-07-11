@@ -315,9 +315,12 @@ class SiklusTanamController extends Controller
             return $this->forbidden('Anda tidak memiliki akses untuk mengubah laporan tanam.');
         }
 
-        $data = SiklusTanam::where('id', $id)->where('pemilik_id', $userId)->first();
+        $query = SiklusTanam::where('id', $id);
+        $this->batasiTanamUntukPetani($query, $userId, $roleId);
+        $data = $query->first();
+        
         if (!$data) {
-            return response()->json(['success' => false, 'message' => 'Data tanam tidak ditemukan.'], 404);
+            return response()->json(['success' => false, 'message' => 'Data tanam tidak ditemukan atau Anda tidak memiliki akses.'], 404);
         }
         if ($data->status_aktif === 'NONAKTIF') {
             return response()->json(['success' => false, 'message' => 'Data tanam yang sudah tidak aktif (NONAKTIF) tidak boleh diubah.'], 400);
@@ -390,9 +393,12 @@ class SiklusTanamController extends Controller
             return $this->forbidden('Anda tidak memiliki akses untuk menghapus laporan tanam.');
         }
 
-        $data = SiklusTanam::where('id', $id)->where('pemilik_id', $userId)->first();
+        $query = SiklusTanam::where('id', $id);
+        $this->batasiTanamUntukPetani($query, $userId, $roleId);
+        $data = $query->first();
+        
         if (!$data) {
-            return response()->json(['success' => false, 'message' => 'Data tanam tidak ditemukan.'], 404);
+            return response()->json(['success' => false, 'message' => 'Data tanam tidak ditemukan atau Anda tidak memiliki akses.'], 404);
         }
         if ($data->status_aktif === 'NONAKTIF' || LaporPanen::where('tanam_padi_id', $id)->exists()) {
             return response()->json(['success' => false, 'message' => 'Data tanam yang memiliki laporan panen tidak boleh dihapus.'], 400);
@@ -864,8 +870,8 @@ class SiklusTanamController extends Controller
             'pupuk_id' => $pemupukanAwal['pupuk_id'],
             'tanggal_pemupukan' => $pemupukanAwal['tanggal_pemupukan'],
             'takaran' => $pemupukanAwal['takaran'],
-            'can_edit' => (int) $item->pemilik_id === $userId && $item->status_aktif === 'AKTIF',
-            'can_delete' => (int) $item->pemilik_id === $userId && $item->status_aktif === 'AKTIF' && !$item->panen,
+            'can_edit' => $item->status_aktif === 'AKTIF',
+            'can_delete' => $item->status_aktif === 'AKTIF' && !$item->panen,
             'can_report_harvest' => $roleId === self::ROLE_KELOMPOK_TANI
                 && (int) ($item->lahan?->pemilik_id ?? 0) === $userId
                 && $item->status_aktif === 'AKTIF'

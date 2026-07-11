@@ -9,7 +9,7 @@
             text-align: center;
         }
         .th-style {
-            background-color: #3e7d00;
+            background-color: #047857;
             color: #ffffff;
             font-weight: bold;
             text-align: center;

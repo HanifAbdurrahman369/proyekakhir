@@ -188,7 +188,7 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'SiTani BATOLA',
+                  'SiPetani BATOLA',
                   style: GoogleFonts.inter(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,

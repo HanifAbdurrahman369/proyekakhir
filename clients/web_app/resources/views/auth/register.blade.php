@@ -6,7 +6,7 @@
 
 <div class="flex items-center justify-between mb-6">
     <a href="/"
-       class="inline-flex items-center gap-2 text-sm font-semibold text-[#3E7D00] hover:text-[#2f5c12] transition">
+       class="inline-flex items-center gap-2 text-sm font-semibold text-[#047857] hover:text-[#2f5c12] transition">
 
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
             <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
@@ -114,7 +114,7 @@
 
     <button type="submit"
             class="w-full text-white font-bold py-3.5 rounded-2xl transition text-sm mt-2"
-            style="background: linear-gradient(135deg, #5EA500, #3E7D00); box-shadow: 0 14px 30px rgba(94,165,0,.25);">
+            style="background: linear-gradient(135deg, #10b981, #047857); box-shadow: 0 14px 30px rgba(94,165,0,.25);">
         Daftar Sekarang
     </button>
 </form>

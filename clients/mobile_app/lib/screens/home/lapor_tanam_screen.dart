@@ -22,6 +22,7 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
 
   DateTime _tanggalTanam = DateTime.now();
   DateTime _tanggalPemupukan = DateTime.now();
+  DateTime? _tanggalPanenEstimasi;
 
   @override
   void initState() {
@@ -73,12 +74,30 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
     });
   }
 
-  Future<void> _selectDate(BuildContext context, bool isTanam) async {
+  Future<void> _selectDate(BuildContext context, int type) async {
+    final DateTime initialDate;
+    final DateTime firstDate;
+    final DateTime lastDate;
+    
+    if (type == 0) {
+      initialDate = _tanggalTanam;
+      firstDate = DateTime(2020);
+      lastDate = DateTime.now();
+    } else if (type == 1) {
+      initialDate = _tanggalPemupukan;
+      firstDate = DateTime(2020);
+      lastDate = DateTime.now();
+    } else {
+      initialDate = _tanggalPanenEstimasi ?? _tanggalTanam.add(const Duration(days: 100));
+      firstDate = _tanggalTanam;
+      lastDate = DateTime.now().add(const Duration(days: 730));
+    }
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: isTanam ? _tanggalTanam : _tanggalPemupukan,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -95,15 +114,17 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
 
     if (picked != null) {
       setState(() {
-        if (isTanam) {
+        if (type == 0) {
           _tanggalTanam = picked;
-          // Set pemupukan date to match tanam if it becomes earlier
           if (_tanggalPemupukan.isBefore(_tanggalTanam)) {
             _tanggalPemupukan = _tanggalTanam;
           }
-        } else {
+        } else if (type == 1) {
           _tanggalPemupukan = picked;
+        } else {
+          _tanggalPanenEstimasi = picked;
         }
+        _calculateEstimasiHari();
       });
     }
   }
@@ -150,6 +171,26 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
     }
   }
 
+
+  void _calculateEstimasiHari() {
+    if (_tanggalPanenEstimasi != null) {
+      final diff = _tanggalPanenEstimasi!.difference(_tanggalTanam).inDays;
+      if (diff > 0) {
+        _estimasiHariController.text = diff.toString();
+        return;
+      }
+    }
+    if (_selectedBibitId != null) {
+      final farmingProvider = context.read<FarmingProvider>();
+      final bibit = farmingProvider.bibitList.firstWhere(
+        (item) => item['id'].toString() == _selectedBibitId,
+        orElse: () => null,
+      );
+      if (bibit != null && bibit['masa_tanam_hari'] != null) {
+        _estimasiHariController.text = bibit['masa_tanam_hari'].toString();
+      }
+    }
+  }
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -498,7 +539,7 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                               children: [
                                 _buildLabel('Tanggal Tanam'),
                                 InkWell(
-                                  onTap: () => _selectDate(context, true),
+                                  onTap: () => _selectDate(context, 0),
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 16,
@@ -542,7 +583,51 @@ class _LaporTanamScreenState extends State<LaporTanamScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildLabel('Estimasi (Hari)'),
+                                _buildLabel('Tgl Panen (Opsional)'),
+                                InkWell(
+                                  onTap: () => _selectDate(context, 2),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 14,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      border: Border.all(
+                                        color: const Color(0xFFCBD5E1),
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            _tanggalPanenEstimasi != null ? _formatDate(_tanggalPanenEstimasi!) : 'Pilih',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 14,
+                                              color: Colors.black,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        Icon(
+                                          Icons.calendar_today_rounded,
+                                          size: 18,
+                                          color: Colors.green[800],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      _buildLabel('Estimasi (Hari)'),
                                 TextFormField(
                                   controller: _estimasiHariController,
                                   style: GoogleFonts.inter(fontSize: 14),

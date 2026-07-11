@@ -13,7 +13,7 @@
             line-height: 1.5;
         }
         .header-banner {
-            border-bottom: 2px solid #3e7d00;
+            border-bottom: 2px solid #047857;
             padding-bottom: 18px;
             margin-bottom: 24px;
             color: #1a1a1a;
@@ -95,7 +95,7 @@
             font-weight: bold;
         }
         .text-emerald {
-            color: #3e7d00;
+            color: #047857;
         }
         .footer {
             position: fixed;
@@ -118,12 +118,12 @@
                     @if(file_exists(public_path('storage/logo.png')))
                         <img src="{{ public_path('storage/logo.png') }}" alt="Logo">
                     @else
-                        <div style="font-weight: bold; color: #3e7d00; font-size: 24px;">ST</div>
+                        <div style="font-weight: bold; color: #047857; font-size: 24px;">ST</div>
                     @endif
                 </td>
                 <td class="title-container">
                     <div class="system-subtitle">Sistem Informasi</div>
-                    <div class="system-title">Dinas Pertanian</div>
+                    <div class="system-title">Pemetaan Tanaman Padi</div>
                 </td>
                 <td class="info-container">
                     <div style="font-weight: bold; font-size: 11px; color: #14280b; margin-bottom: 2px;">Rekap Produksi Desa/Kelurahan</div>
@@ -201,7 +201,7 @@
     </table>
 
     <div class="footer">
-        Dokumen ini dibuat otomatis oleh Sistem SiTani - Laporan Produksi Wilayah Administratif.
+        Dokumen ini dibuat otomatis oleh Sistem SiPetani - Laporan Produksi Wilayah Administratif.
     </div>
 
 </body>

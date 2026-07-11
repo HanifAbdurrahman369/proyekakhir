@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Dinas Pertanian') — SiTani</title>
+    <title>@yield('title', 'Dinas Pertanian, Tanaman Pangan dan Holtikultura') — SiPetani</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -48,7 +48,7 @@
                 </div>
 
                 <p class="text-sm font-semibold tracking-wide" style="color:#497D00;">
-                    Sistem Informasi Dinas Pertanian
+                    Sistem Informasi Pemetaan Padi Dinas Pertanian Batola
                 </p>
                 <h1 class="text-2xl font-bold text-slate-900 mt-1">
                     @yield('page-heading', 'Selamat Datang')
@@ -63,7 +63,7 @@
             </div>
 
             <p class="text-center text-xs mt-6 font-medium" style="color:#497D00;">
-                {{ date('Y') }} - SiTani
+                {{ date('Y') }} - SiPetani
             </p>
         </section>
     </main>

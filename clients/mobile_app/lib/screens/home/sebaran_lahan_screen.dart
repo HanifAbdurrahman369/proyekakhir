@@ -429,7 +429,7 @@ class _SebaranLahanScreenState extends State<SebaranLahanScreen> {
       for (var feat in filteredFeatures) {
         final props = feat['properties'] as Map<String, dynamic>? ?? {};
 
-        // Parse Poligon Lahan Sawah (Hijau SiTani)
+        // Parse Poligon Lahan Sawah (Hijau SiPetani)
         final parsedLahanPolys = GeoJsonParser.parsePolygons(
           feat,
           defaultBorderColor: const Color(0xFF3E7D00),

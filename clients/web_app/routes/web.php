@@ -16,7 +16,7 @@ use App\Http\Controllers\ProduksiDaerahController;
 |--------------------------------------------------------------------------
 | Web Routes - Frontend web_app (Port 8080)
 |--------------------------------------------------------------------------
-| Ini adalah pusat kendali antarmuka (UI) dari sistem SiTani.
+| Ini adalah pusat kendali antarmuka (UI) dari sistem SiPetani.
 | Semua rute di bawah ini bertugas merender Blade HTML dan meneruskan
 | operasi logika ke backend via API Gateway (Port 8003).
 |--------------------------------------------------------------------------

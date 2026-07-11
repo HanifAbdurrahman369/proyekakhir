@@ -15,7 +15,7 @@
 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-7 admin-section">
     <div>
         <h1 class="text-2xl sm:text-3xl font-extrabold text-[#14280b] tracking-tight">Dashboard Administrator</h1>
-        <p class="text-sm text-slate-500 mt-1 leading-relaxed">Ringkasan aktivitas dan metrik utama dari seluruh sistem SiTani.</p>
+        <p class="text-sm text-slate-500 mt-1 leading-relaxed">Ringkasan aktivitas dan metrik utama dari seluruh sistem SiPetani.</p>
     </div>
     <div class="flex flex-col sm:flex-row gap-2">
         <a href="/admin/users" class="flex items-center gap-2 bg-[#2f5c12] hover:bg-[#24480e] text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition shadow-[0_14px_38px_rgba(32,60,16,.06)] shadow-primary-200">
@@ -28,13 +28,13 @@
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8 admin-section" style="animation-delay: 0.1s;">
     <!-- Card 1 -->
     <div class="bg-white rounded-[24px] p-6 border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden flex flex-col justify-between">
-        <div class="absolute -right-4 -top-4 w-24 h-24 bg-green-500/10 rounded-full blur-2xl"></div>
+        <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl"></div>
         <div>
             <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Pengguna</p>
             <h3 class="text-3xl font-extrabold text-[#14280b] mt-2">{{ number_format($stats['total_users']) }}</h3>
         </div>
         <div class="mt-4 flex items-center justify-between">
-            <span class="text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded-lg">{{ $stats['total_petani'] }} Petani</span>
+            <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">{{ $stats['total_petani'] }} Petani</span>
             <div class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
             </div>

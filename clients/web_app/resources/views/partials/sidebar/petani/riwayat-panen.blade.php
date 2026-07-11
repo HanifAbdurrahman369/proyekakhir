@@ -17,7 +17,7 @@
         {{-- ALERT SUCCESS --}}
         @if(session('success'))
 
-            <div class="mb-4 p-3.5 rounded-2xl bg-green-100 text-green-700 border border-green-200 text-xs font-semibold">
+            <div class="mb-4 p-3.5 rounded-2xl bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-semibold">
 
                 {{ session('success') }}
 
@@ -41,7 +41,7 @@
         <div class="overflow-x-auto">
             <table class="w-full border-collapse">
                 <thead>
-                    <tr class="bg-green-50 text-left text-xs uppercase tracking-wider text-gray-600">
+                    <tr class="bg-emerald-50 text-left text-xs uppercase tracking-wider text-gray-600">
                         <th class="p-3 border-b">No</th>
                         <th class="p-3 border-b">Nama Lahan</th>
                         <th class="p-3 border-b">Alamat Detail</th>
@@ -92,7 +92,7 @@
                 @endif
                 <span class="text-xs text-gray-500">Halaman {{ $riwayatLahan['current_page'] }} dari {{ $riwayatLahan['last_page'] }}</span>
                 @if($riwayatLahan['current_page'] < $riwayatLahan['last_page'])
-                    <a href="{{ route('riwayat.panen', ['lahan_page' => $riwayatLahan['current_page'] + 1, 'pupuk_page' => request('pupuk_page', 1), 'page' => request('page', 1)]) }}" class="px-3.5 py-1.5 rounded-xl bg-green-600 text-white hover:bg-green-700 text-xs font-semibold">Selanjutnya →</a>
+                    <a href="{{ route('riwayat.panen', ['lahan_page' => $riwayatLahan['current_page'] + 1, 'pupuk_page' => request('pupuk_page', 1), 'page' => request('page', 1)]) }}" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-semibold">Selanjutnya →</a>
                 @else
                     <div></div>
                 @endif
@@ -112,7 +112,7 @@
 
                 <thead>
 
-                    <tr class="bg-green-50 text-left text-xs uppercase tracking-wider text-gray-600">
+                    <tr class="bg-emerald-50 text-left text-xs uppercase tracking-wider text-gray-600">
 
                         <th class="p-3 border-b">
                             No
@@ -185,7 +185,7 @@
                             </td>
 
                             <td class="p-3 border-b">
-                                <span class="text-xs font-bold text-green-700">
+                                <span class="text-xs font-bold text-emerald-700">
                                     {{ $item['hasil_panen'] ?? 0 }} Ton
                                 </span>
                             </td>
@@ -195,7 +195,7 @@
                                 @if(($item['status_verifikasi'] ?? '') === 'DITERIMA')
 
                                     <div class="flex flex-col gap-1">
-                                        <span class="w-fit px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700">
+                                        <span class="w-fit px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
                                             DITERIMA
                                         </span>
                                         <span class="text-[10px] text-gray-500 max-w-[200px] break-words mt-1">
@@ -293,7 +293,7 @@
                         'pupuk_page' => request('pupuk_page', 1),
                         'lahan_page' => request('lahan_page', 1)
                     ]) }}"
-                       class="px-3.5 py-1.5 rounded-xl bg-green-600 text-white hover:bg-green-700 text-xs font-semibold">
+                       class="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-semibold">
 
                         Selanjutnya →
 
@@ -330,7 +330,7 @@
 
                 <thead>
 
-                    <tr class="bg-green-50 text-left text-xs uppercase tracking-wider text-gray-600">
+                    <tr class="bg-emerald-50 text-left text-xs uppercase tracking-wider text-gray-600">
 
                         <th class="p-3 border-b">
                             No
@@ -448,7 +448,7 @@
                         'page' => request('page', 1),
                         'lahan_page' => request('lahan_page', 1)
                     ]) }}"
-                       class="px-3.5 py-1.5 rounded-xl bg-green-600 text-white hover:bg-green-700 text-xs font-semibold">
+                       class="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-semibold">
 
                         Selanjutnya →
 

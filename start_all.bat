@@ -1,5 +1,5 @@
 @echo off
-title SiTani - START ALL SERVICES
+title SiPetani - START ALL SERVICES
 
 echo ==================================================
 echo MENJALANKAN SEMUA SERVICE PROYEK AKHIR

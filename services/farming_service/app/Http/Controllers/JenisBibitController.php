@@ -14,14 +14,7 @@ class JenisBibitController extends Controller
     public function index(Request $request)
     {
         $auth = $request->attributes->get('auth');
-        $roleId = (int) ($auth->role_id ?? 0);
         $query = JenisBibit::query()->orderBy('nama_bibit');
-
-        if ($roleId === 1) {
-            $query->whereRaw('LOWER(varietas) = ?', ['lokal']);
-        } elseif ($roleId === 5) {
-            $query->whereRaw('LOWER(varietas) = ?', ['unggul']);
-        }
 
         $data = $query->get();
 

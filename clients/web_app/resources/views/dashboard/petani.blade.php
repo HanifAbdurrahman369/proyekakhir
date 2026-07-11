@@ -21,13 +21,13 @@
 
     <header class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-            <span class="inline-flex rounded-full border border-[#dfeccc] bg-[#edf8dc] px-3 py-1 text-[11px] font-bold text-[#3E7D00]">{{ $roleName }}</span>
+            <span class="inline-flex rounded-full border border-[#dfeccc] bg-[#edf8dc] px-3 py-1 text-[11px] font-bold text-[#047857]">{{ $roleName }}</span>
             <h1 class="mt-2 text-2xl sm:text-3xl font-extrabold text-[#14280b] tracking-tight">Dashboard aktivitas pertanian</h1>
             <p class="mt-1 text-sm text-slate-500 leading-relaxed">Pantau proses tanam, pemupukan, dan riwayat panen yang terhubung dengan akun Anda.</p>
         </div>
         <div class="flex flex-wrap gap-2">
             @if(in_array($roleId, [1, 5], true))
-                <a href="{{ route('tambah.lahan') }}" class="inline-flex items-center gap-2 rounded-[26px] border border-[#3E7D00] bg-white px-5 py-2.5 text-xs font-semibold text-[#3E7D00] hover:bg-[#edf8dc] transition shadow-[0_14px_38px_rgba(32,60,16,.06)]">
+                <a href="{{ route('tambah.lahan') }}" class="inline-flex items-center gap-2 rounded-[26px] border border-[#047857] bg-white px-5 py-2.5 text-xs font-semibold text-[#047857] hover:bg-[#edf8dc] transition shadow-[0_14px_38px_rgba(32,60,16,.06)]">
                     <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -37,7 +37,7 @@
             @endif
             
             @if($isAllowedToPlant)
-                <a href="{{ route('lapor.tanam') }}" class="inline-flex items-center gap-2 rounded-[26px] bg-[#3E7D00] px-5 py-2.5 text-xs font-semibold text-white hover:bg-[#2f5c12] transition shadow-[0_14px_38px_rgba(32,60,16,.06)]">
+                <a href="{{ route('lapor.tanam') }}" class="inline-flex items-center gap-2 rounded-[26px] bg-[#047857] px-5 py-2.5 text-xs font-semibold text-white hover:bg-[#2f5c12] transition shadow-[0_14px_38px_rgba(32,60,16,.06)]">
                     <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 0 0 8 20C19 20 22 3 22 3c-1 2-8 2-8 2s4-4-3 1C7 9 7 15 7 15s0-3 3-5.31C13.77 7.73 17 8 17 8Z"/>
                     </svg>
@@ -97,7 +97,7 @@
             <p class="mt-1 text-xs text-white/70">Hanya hasil panen yang telah disetujui petugas</p>
         </div>
         <div class="rounded-2xl border border-slate-200 bg-[#f7fced] p-5 shadow-sm transition-all hover:shadow-md">
-            <p class="text-xs font-bold uppercase text-[#3E7D00]">Aturan Masa Tanam</p>
+            <p class="text-xs font-bold uppercase text-[#047857]">Aturan Masa Tanam</p>
             <p class="mt-2 text-lg font-bold text-[#14280b]">{{ $roleId === 5 ? 'Oktober - Januari' : 'Januari - September' }}</p>
             <p class="mt-1 text-xs text-slate-600">{{ $roleId === 5 ? 'Bibit unggul untuk lahan Kelompok Tani induk' : 'Bibit lokal sebagai pemilik lahan' }}</p>
         </div>
@@ -109,7 +109,7 @@
                 <h2 class="text-sm font-bold text-[#14280b]">Padi dalam masa tanam</h2>
                 <p class="mt-1 text-[11px] text-slate-500">Progres dihitung otomatis sampai estimasi masa panen.</p>
             </div>
-            <span class="text-xs font-bold text-[#3E7D00]">{{ $prosesAktif->count() }} aktif</span>
+            <span class="text-xs font-bold text-[#047857]">{{ $prosesAktif->count() }} aktif</span>
         </div>
         <div class="divide-y divide-[#edf4df]">
             @forelse($prosesAktif as $siklus)
@@ -119,17 +119,17 @@
                             <h3 class="text-sm font-bold text-[#14280b]">{{ $siklus['nama_lahan'] }}</h3>
                             <p class="mt-1 text-[11px] text-slate-500">{{ $siklus['nama_bibit'] }} · Dikelola Sendiri</p>
                         </div>
-                        <span class="w-fit rounded-full bg-[#edf8dc] px-2.5 py-1 text-[10px] font-bold text-[#3E7D00]">Panen {{ \Carbon\Carbon::parse($siklus['estimasi_tanggal_panen'])->format('d M Y') }}</span>
+                        <span class="w-fit rounded-full bg-[#edf8dc] px-2.5 py-1 text-[10px] font-bold text-[#047857]">Panen {{ \Carbon\Carbon::parse($siklus['estimasi_tanggal_panen'])->format('d M Y') }}</span>
                     </div>
                     <div class="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
-                        <div class="h-full rounded-full bg-[#5EA500]" style="width: {{ $siklus['progress_persen'] }}%"></div>
+                        <div class="h-full rounded-full bg-[#10b981]" style="width: {{ $siklus['progress_persen'] }}%"></div>
                     </div>
                     <div class="mt-2 flex justify-between text-[10px] font-semibold text-slate-500">
                         <span>{{ $siklus['progress_persen'] }}% masa tanam</span>
                         <span>{{ $siklus['hari_tersisa'] }} hari tersisa</span>
                     </div>
                     @if(in_array($roleId, [1, 5], true) && $siklus['can_report_harvest'])
-                        <div class="mt-3"><a href="{{ route('lapor.panen') }}" class="text-xs font-bold text-[#3E7D00] hover:underline">Input hasil panen</a></div>
+                        <div class="mt-3"><a href="{{ route('lapor.panen') }}" class="text-xs font-bold text-[#047857] hover:underline">Input hasil panen</a></div>
                     @endif
                 </article>
             @empty
@@ -174,8 +174,8 @@
                 <div class="flex items-center justify-between border-t border-[#e7efd8] px-5 py-3 text-xs">
                     <span>Halaman {{ $lahan['current_page'] }} dari {{ $lahan['last_page'] }}</span>
                     <div class="flex gap-2">
-                        @if(!empty($lahan['prev_page_url']))<a class="font-bold text-[#3E7D00]" href="?page={{ $lahan['current_page'] - 1 }}">Sebelumnya</a>@endif
-                        @if(!empty($lahan['next_page_url']))<a class="font-bold text-[#3E7D00]" href="?page={{ $lahan['current_page'] + 1 }}">Selanjutnya</a>@endif
+                        @if(!empty($lahan['prev_page_url']))<a class="font-bold text-[#047857]" href="?page={{ $lahan['current_page'] - 1 }}">Sebelumnya</a>@endif
+                        @if(!empty($lahan['next_page_url']))<a class="font-bold text-[#047857]" href="?page={{ $lahan['current_page'] + 1 }}">Selanjutnya</a>@endif
                     </div>
                 </div>
             @endif

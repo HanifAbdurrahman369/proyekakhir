@@ -29,7 +29,7 @@
     };
     $angka = fn($v, $d = 2) => number_format((float)($v ?: 0), $d, ',', '.');
     $isActive = fn($target) => $page === $target
-        ? 'bg-primary-600 text-white shadow-lg shadow-green-100 border-primary-100'
+        ? 'bg-primary-600 text-white shadow-lg shadow-emerald-100 border-primary-100'
         : 'bg-white text-slate-600 border border-primary-100 hover:text-primary-700 hover:border-primary-100';
 
     $pendingLahanCount = data_get($stats, 'pending_lahan', is_countable($pendingLahan) ? count($pendingLahan) : 0);
@@ -103,7 +103,7 @@
             <div class="glass-card rounded-2xl p-5 md:p-6">
                 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
                     <div>
-                        <p class="text-primary-700 text-xs font-bold uppercase tracking-[0.22em] mb-2">SiTani BATOLA</p>
+                        <p class="text-primary-700 text-xs font-bold uppercase tracking-[0.22em] mb-2">SiPetani BATOLA</p>
                         <h1 class="text-2xl md:text-3xl font-extrabold text-primary-900">Dashboard Petugas</h1>
                         <p class="text-sm text-slate-500 mt-2 max-w-3xl">
                             Verifikasi pengajuan petani, kelola data spasial lahan, dan input parameter lingkungan lapangan.
@@ -120,7 +120,7 @@
         @endif
 
         @if(session('success'))
-            <div class="rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-green-800 text-sm font-semibold">{{ session('success') }}</div>
+            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-800 text-sm font-semibold">{{ session('success') }}</div>
         @endif
         @if(session('error'))
             <div class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-red-700 text-sm font-semibold">{{ session('error') }}</div>
@@ -194,7 +194,7 @@
                                 <tr class="hover:bg-slate-50">
                                     <td class="px-6 py-4">
                                         <p class="font-bold text-primary-900">{{ $item['nama_komunitas'] ?? '-' }}</p>
-                                        <span class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold {{ $item['status_keanggotaan'] === 'AKTIF' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                        <span class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold {{ $item['status_keanggotaan'] === 'AKTIF' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">
                                             {{ $item['status_keanggotaan'] }}
                                         </span>
                                     </td>
@@ -489,7 +489,7 @@
                                                 </button>
                                                 <form method="POST" action="{{ url('/petugas/verifikasi-lahan/' . $lahanId . '/diterima') }}" onsubmit="return confirm('Setujui pengajuan lahan ini? Pastikan detail pengajuan sudah benar.');">
                                                     @csrf
-                                                    <button class="px-4 py-2 rounded-xl bg-green-50 text-green-700 border border-green-200 font-bold hover:bg-green-600 hover:text-white transition">Setujui</button>
+                                                    <button class="px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold hover:bg-emerald-600 hover:text-white transition">Setujui</button>
                                                 </form>
                                                 <button type="button"
                                                         class="btnTolakLahan px-4 py-2 rounded-xl bg-red-50 text-red-600 border border-red-200 font-bold hover:bg-red-600 hover:text-white transition"
@@ -575,7 +575,7 @@
                                             <div class="flex justify-end gap-2">
                                                 <form method="POST" action="{{ url('/petugas/verifikasi-panen/' . $ambil($panen, ['id']) . '/diterima') }}" onsubmit="return confirm('Setujui laporan panen ini?');">
                                                     @csrf
-                                                    <button class="px-4 py-2 rounded-xl bg-green-50 text-green-700 border border-green-200 font-bold hover:bg-green-600 hover:text-white transition">Setujui</button>
+                                                    <button class="px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold hover:bg-emerald-600 hover:text-white transition">Setujui</button>
                                                 </form>
                                                 <button type="button"
                                                         class="btnTolakPanen px-4 py-2 rounded-xl bg-red-50 text-red-600 border border-red-200 font-bold hover:bg-red-600 hover:text-white transition"
@@ -635,7 +635,7 @@
                                 <button type="button" id="detailRejectButton" class="px-5 py-3 rounded-2xl bg-red-50 text-red-600 border border-red-200 font-bold hover:bg-red-600 hover:text-white transition">Tolak</button>
                                 <form method="POST" action="#" id="detailApproveForm" class="flex-1 sm:flex-none flex flex-col sm:flex-row gap-3 items-center" onsubmit="return confirm('Setujui pengajuan lahan ini? Pastikan seluruh detail pengajuan sudah sesuai.');">
                                     @csrf
-                                    <button class="w-full sm:w-auto px-5 py-3 rounded-2xl bg-green-50 text-green-700 border border-green-200 font-bold hover:bg-green-600 hover:text-white transition whitespace-nowrap">Setujui Pengajuan</button>
+                                    <button class="w-full sm:w-auto px-5 py-3 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold hover:bg-emerald-600 hover:text-white transition whitespace-nowrap">Setujui Pengajuan</button>
                                 </form>
                             </div>
                         </div>
@@ -680,7 +680,7 @@
                     </div>
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 min-w-0">
                         <div class="rounded-2xl border border-primary-100 bg-white/80 px-4 py-3">
-                            <p class="text-[10px] text-slate-400 font-bold uppercase">Total (SiTani)</p>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">Total (SiPetani)</p>
                             <p class="text-lg font-extrabold text-primary-900">{{ $totalSpasial }}</p>
                         </div>
                         <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
@@ -750,7 +750,7 @@
                                                     <span class="block font-extrabold text-primary-900">{{ $ambil($item, ['nama_lahan']) }}</span>
                                                     <span class="block text-xs text-slate-500 mt-1">{{ $ambil($item, ['nama_kecamatan']) }} / {{ $ambil($item, ['nama_kelurahan']) }}</span>
                                                 </span>
-                                                <span class="px-2 py-1 rounded-full bg-green-50 text-green-700 border border-green-200 text-[10px] font-bold">SUDAH DIPETAKAN</span>
+                                                <span class="px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">SUDAH DIPETAKAN</span>
                                             </span>
                                             <span class="block text-xs text-slate-500 mt-3">{{ $angka($ambil($item, ['luas_lahan_hektar'], 0)) }} Ha - {{ $ambil($item, ['pemilik_lahan','nama_petani']) }} - polygon tersedia</span>
                                         </button>
@@ -1003,7 +1003,9 @@
                                             <td class="px-4 py-3 text-xs text-slate-600">{{ $land['latitude'] ?? '-' }}, {{ $land['longitude'] ?? '-' }}</td>
                                             <td class="px-4 py-3 text-slate-700 font-bold">{{ $sensor['ph_tanah'] ?? '-' }}</td>
                                             <td class="px-4 py-3 text-slate-600 text-xs">
-                                                N: {{ $sensor['n'] ?? '-' }}, P: {{ $sensor['p'] ?? '-' }}, K: {{ $sensor['k'] ?? '-' }}
+                                                N: {{ isset($sensor['n']) && is_numeric($sensor['n']) ? number_format((float)$sensor['n'], 2, '.', '') : ($sensor['n'] ?? '-') }}, 
+                                                P: {{ isset($sensor['p']) && is_numeric($sensor['p']) ? number_format((float)$sensor['p'], 2, '.', '') : ($sensor['p'] ?? '-') }}, 
+                                                K: {{ isset($sensor['k']) && is_numeric($sensor['k']) ? number_format((float)$sensor['k'], 2, '.', '') : ($sensor['k'] ?? '-') }}
                                             </td>
                                             <td class="px-4 py-3 text-slate-600 text-xs">{{ $sensor['water_level'] ?? '-' }}</td>
                                             <td class="px-4 py-3 text-slate-600 text-xs">-</td>
@@ -1017,11 +1019,11 @@
                         </div>
                     </div>
 
-                    <!-- Tabel Data Tersimpan (SiTani) -->
+                    <!-- Tabel Data Tersimpan (SiPetani) -->
                     <div class="soft-card bg-white rounded-2xl border border-primary-100 p-5">
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-extrabold text-primary-900">Data Termonitor (SiTani)</h3>
-                            <span class="px-3 py-1 bg-green-50 text-green-700 border border-green-200 text-xs font-bold rounded-full">Tersimpan</span>
+                            <h3 class="text-lg font-extrabold text-primary-900">Data Termonitor (SiPetani)</h3>
+                            <span class="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold rounded-full">Tersimpan</span>
                         </div>
                         <div class="overflow-x-auto max-h-[500px] overflow-y-auto">
                             <table class="w-full text-left text-sm whitespace-nowrap">
@@ -1045,7 +1047,7 @@
                                             $deviceId = $catatanVerifikasi['huma_device_id'] ?? '-';
                                             
                                             // Cari log terbaru untuk lahan ini
-                                            $latestLog = collect($monitoringHuma)->where('lahan_id', $lahan['id'])->first();
+                                            $latestLog = collect($monitoringHuma)->where('lahan_huma_id', $lahan['id'])->first();
                                             $catatanPetugas = $latestLog ? json_decode($latestLog['catatan_petugas'] ?? '{}', true) : null;
                                         @endphp
                                         <tr class="hover:bg-slate-50 transition">
@@ -1055,15 +1057,37 @@
                                             <td class="px-4 py-3 text-xs text-slate-600">{{ $lahan['latitude'] ?? '-' }}, {{ $lahan['longitude'] ?? '-' }}</td>
                                             <td class="px-4 py-3 text-slate-700 font-bold">{{ $catatanPetugas['ph_tanah'] ?? '-' }}</td>
                                             <td class="px-4 py-3 text-slate-600 text-xs">
-                                                N: {{ $catatanPetugas['n_level'] ?? '-' }}, P: {{ $catatanPetugas['p_level'] ?? '-' }}, K: {{ $catatanPetugas['k_level'] ?? '-' }}
+                                                N: {{ isset($catatanPetugas['n_level']) && is_numeric($catatanPetugas['n_level']) ? number_format((float)$catatanPetugas['n_level'], 2, '.', '') : ($catatanPetugas['n_level'] ?? '-') }}, 
+                                                P: {{ isset($catatanPetugas['p_level']) && is_numeric($catatanPetugas['p_level']) ? number_format((float)$catatanPetugas['p_level'], 2, '.', '') : ($catatanPetugas['p_level'] ?? '-') }}, 
+                                                K: {{ isset($catatanPetugas['k_level']) && is_numeric($catatanPetugas['k_level']) ? number_format((float)$catatanPetugas['k_level'], 2, '.', '') : ($catatanPetugas['k_level'] ?? '-') }}
                                             </td>
                                             <td class="px-4 py-3 text-slate-600 text-xs">{{ $catatanPetugas['water_level'] ?? '-' }}</td>
                                             <td class="px-4 py-3 text-slate-600 text-xs">
-                                                @if(isset($catatanPetugas['rekomendasi_pupuk']) && is_array($catatanPetugas['rekomendasi_pupuk']))
-                                                    {{ implode(', ', $catatanPetugas['rekomendasi_pupuk']) }}
-                                                @else
-                                                    -
-                                                @endif
+                                                @php
+                                                    $rekData = $catatanPetugas['rekomendasi_pupuk'] ?? [];
+                                                    if (is_string($rekData)) {
+                                                        $rekData = json_decode($rekData, true) ?? [$rekData];
+                                                    }
+                                                    
+                                                    $pupukNames = [];
+                                                    if (is_array($rekData)) {
+                                                        foreach ($rekData as $item) {
+                                                            if (is_array($item) && isset($item['details']) && is_array($item['details'])) {
+                                                                foreach ($item['details'] as $detail) {
+                                                                    $name = $detail['fertilizer_name'] ?? 'Pupuk';
+                                                                    if (!in_array($name, $pupukNames)) $pupukNames[] = $name;
+                                                                }
+                                                                break; // Hanya ambil riwayat terbaru
+                                                            } elseif (is_array($item) && (isset($item['nama_pupuk']) || isset($item['fertilizer_name']))) {
+                                                                $name = $item['nama_pupuk'] ?? $item['fertilizer_name'];
+                                                                if (!in_array($name, $pupukNames)) $pupukNames[] = $name;
+                                                            } elseif (is_string($item)) {
+                                                                if (!in_array($item, $pupukNames)) $pupukNames[] = $item;
+                                                            }
+                                                        }
+                                                    }
+                                                @endphp
+                                                {{ !empty($pupukNames) ? implode(', ', $pupukNames) : '-' }}
                                             </td>
                                             <td class="px-4 py-3 text-slate-500 text-[10px]">{{ $latestLog['tanggal_cek'] ?? '-' }}</td>
                                         </tr>
@@ -1704,9 +1728,9 @@
                         const layers = [];
 
                         if (polygonPoints.length >= 3) {
-                            layers.push(L.polygon(polygonPoints, { color: '#3e7d00', weight: 3, fillOpacity: 0.18 }));
+                            layers.push(L.polygon(polygonPoints, { color: '#047857', weight: 3, fillOpacity: 0.18 }));
                         } else if (polygonPoints.length >= 2) {
-                            layers.push(L.polyline(polygonPoints, { color: '#3e7d00', weight: 3, dashArray: '6 6' }));
+                            layers.push(L.polyline(polygonPoints, { color: '#047857', weight: 3, dashArray: '6 6' }));
                         }
 
                         polygonPoints.forEach((point, index) => {
@@ -1759,7 +1783,7 @@
                     if (!geometry) return;
 
                     polygonLayer = L.geoJSON(geometry, {
-                        style: { color: '#3e7d00', weight: 3, fillOpacity: 0.22 }
+                        style: { color: '#047857', weight: 3, fillOpacity: 0.22 }
                     }).addTo(map);
 
                     const firstRing = geometry.type === 'Polygon'

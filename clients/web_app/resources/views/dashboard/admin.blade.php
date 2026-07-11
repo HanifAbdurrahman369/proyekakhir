@@ -72,7 +72,7 @@
         <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
             @if(!$tableName)
                 {{-- JIKA DI HALAMAN UTAMA (ALL TABLES): Sediakan tombol export masal seluruh database --}}
-                <a href="/admin/master/export/excel" class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition shadow-[0_14px_38px_rgba(32,60,16,.06)] flex items-center gap-1.5">
+                <a href="/admin/master/export/excel" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition shadow-[0_14px_38px_rgba(32,60,16,.06)] flex items-center gap-1.5">
                     💾 Export Semua Tabel (Excel)
                 </a>
                 <a href="/admin/master/export/sql" class="bg-[#2f5c12] hover:bg-[#24480e] text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition shadow-[0_14px_38px_rgba(32,60,16,.06)] flex items-center gap-1.5">
@@ -140,7 +140,7 @@
                     <svg class="w-4 h-4 text-[#65bd00]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
                     Filter & Pencarian
                 </h3>
-                <span class="text-[11px] bg-[#f7fced] text-[#3E7D00] px-3 py-1 rounded-[20px] font-bold tracking-wide"><span id="user-filter-count">{{ count($users) }}</span> akun ditampilkan</span>
+                <span class="text-[11px] bg-[#f7fced] text-[#047857] px-3 py-1 rounded-[20px] font-bold tracking-wide"><span id="user-filter-count">{{ count($users) }}</span> akun ditampilkan</span>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 items-end">
                 <div class="xl:col-span-2">
@@ -422,7 +422,7 @@
                     <!-- Kolom Kiri: Informasi Dasar & Kontak -->
                     <div class="space-y-6">
                         <div class="flex items-center gap-3 mb-2">
-                            <div class="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-green-600 shadow-sm border border-green-100">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-100">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                             </div>
                             <h4 class="text-base font-bold text-[#14280b]">Informasi Personal</h4>
@@ -570,7 +570,7 @@
                     <!-- Kolom Kiri: Informasi Dasar & Kontak -->
                     <div class="space-y-6">
                         <div class="flex items-center gap-3 mb-2">
-                            <div class="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-green-600 shadow-sm border border-green-100">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-100">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                             </div>
                             <h4 class="text-base font-bold text-[#14280b]">Informasi Personal</h4>
@@ -707,7 +707,7 @@
 
         @if($tableName)
         <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-            <a href="/admin/master/export/excel/{{ $tableName }}" class="px-3 py-1.5 bg-green-100 text-green-700 rounded-[26px] text-xs font-semibold hover:bg-green-200 transition">💾 Export Excel</a>
+            <a href="/admin/master/export/excel/{{ $tableName }}" class="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-[26px] text-xs font-semibold hover:bg-emerald-200 transition">💾 Export Excel</a>
             <a href="/admin/master/export/sql/{{ $tableName }}" class="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-[26px] text-xs font-semibold hover:bg-gray-200 transition">📄 Export SQL Tabel</a>
             {{-- REVISI: Tombol Tambah Baris Data Telah Dihapus --}}
         </div>
@@ -759,7 +759,7 @@
                     <div class="bg-white rounded-[22px] border border-[#e7efd8] p-5 shadow-[0_14px_38px_rgba(32,60,16,.06)] hover:shadow-md transition flex flex-col justify-between">
                         <div>
                             <div class="flex items-center gap-2 mb-3">
-                                <span class="p-2 bg-[#f7fced] text-[#3E7D00] rounded-[26px]">
+                                <span class="p-2 bg-[#f7fced] text-[#047857] rounded-[26px]">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
                                 </span>
                                 <h3 class="font-bold text-slate-800 text-sm tracking-wide uppercase">{{ $tName }}</h3>
@@ -774,7 +774,7 @@
                         <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
                             <a href="/admin/master?table={{ $tName }}" class="text-xs font-semibold text-[#4f9a00] hover:underline">Lihat Data &rarr;</a>
                             <div class="flex gap-1">
-                                <a href="/admin/master/export/excel/{{ $tName }}" class="p-1.5 bg-green-50 text-green-600 border border-green-200 rounded-md hover:bg-green-100 transition text-[11px] font-medium" title="Export Excel">Excel</a>
+                                <a href="/admin/master/export/excel/{{ $tName }}" class="p-1.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-md hover:bg-emerald-100 transition text-[11px] font-medium" title="Export Excel">Excel</a>
                                 <a href="/admin/master/export/sql/{{ $tName }}" class="p-1.5 bg-slate-50 text-slate-600 border border-slate-200 rounded-md hover:bg-slate-100 transition text-[11px] font-medium" title="Export SQL">SQL</a>
                             </div>
                         </div>

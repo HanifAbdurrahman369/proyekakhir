@@ -15,7 +15,7 @@
 
     {{-- ALERT SUCCESS --}}
     @if(session('success'))
-        <div class="mb-5 p-3.5 rounded-2xl bg-green-100 text-green-700 border border-green-200 text-xs font-semibold">
+        <div class="mb-5 p-3.5 rounded-2xl bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-semibold">
             {{ session('success') }}
         </div>
     @endif

@@ -16,7 +16,7 @@
 @section('content')
 <div class="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
     <header>
-        <p class="text-[11px] font-bold uppercase text-[#3E7D00] tracking-[0.2em]">Profil Pengguna</p>
+        <p class="text-[11px] font-bold uppercase text-[#047857] tracking-[0.2em]">Profil Pengguna</p>
         <h1 class="mt-1 text-2xl font-extrabold text-[#14280b]">Edit Profil</h1>
         <p class="mt-1 text-sm text-slate-500">Perbarui data diri akun Anda. Password tetap diubah melalui fitur lupa password.</p>
     </header>
