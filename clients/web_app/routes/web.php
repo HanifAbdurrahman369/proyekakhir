@@ -11,6 +11,7 @@ use App\Http\Controllers\LahanSawahController;
 use App\Http\Controllers\SiklusTanamController;
 use App\Http\Controllers\PejabatController;
 use App\Http\Controllers\ProduksiDaerahController;
+use App\Http\Controllers\MobileAppDownloadController;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,6 +40,7 @@ Route::get('/register', function () { return view('auth.register'); })->name('re
 Route::post('/register', [AuthController::class, 'register']);
 
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::get('/download-mobile-app', [MobileAppDownloadController::class, 'download'])->name('mobile-app.download');
 
 Route::get('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.request');
 Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');

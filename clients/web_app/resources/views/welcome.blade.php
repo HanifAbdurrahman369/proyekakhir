@@ -180,7 +180,7 @@
                 <div style="margin-bottom: 1rem;">
                     <p style="font-size: 0.75rem; color: #bef264; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin: 0;">Akses Khusus Mitra Lapangan:</p>
                 </div>
-                <a href="#download-app" class="sipetani-btn-download">
+                <a href="{{ route('mobile-app.download') }}" class="sipetani-btn-download">
                     <div class="sipetani-btn-icon">
                         <svg style="width: 1.5rem; height: 1.5rem; color: #059669;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                     </div>

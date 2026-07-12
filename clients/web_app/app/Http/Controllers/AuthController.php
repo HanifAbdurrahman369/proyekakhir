@@ -9,9 +9,36 @@ use Illuminate\Http\Client\ConnectionException;
 
 class AuthController extends Controller
 {
+    private const MOBILE_APP_DOWNLOAD_ROLES = [1, 2, 5];
+
     protected function gatewayUrl(): string
     {
         return rtrim(env('GATEWAY_URL', env('API_GATEWAY_URL', 'http://127.0.0.1:8003')), '/');
+    }
+
+    private function redirectByRole(int $roleId)
+    {
+        return match ($roleId) {
+            1, 5 => redirect('/dashboard-petani'),
+            2 => redirect('/dashboard-petugas'),
+            3 => redirect('/dashboard-pejabat'),
+            4 => redirect('/dashboard-admin'),
+            default => redirect('/'),
+        };
+    }
+
+    private function redirectAfterSuccessfulLogin(Request $request, int $roleId)
+    {
+        if ($request->session()->pull('pending_mobile_app_download', false)) {
+            if (in_array($roleId, self::MOBILE_APP_DOWNLOAD_ROLES, true)) {
+                return redirect()->route('mobile-app.download');
+            }
+
+            return $this->redirectByRole($roleId)
+                ->with('error', 'Unduhan aplikasi mobile hanya tersedia untuk Kelompok Tani, Brigade Pangan, dan Petugas.');
+        }
+
+        return $this->redirectByRole($roleId);
     }
 
     private function generateMathCaptcha(Request $request): void
@@ -143,19 +170,7 @@ class AuthController extends Controller
                 'math_captcha_answer',
             ]);
 
-            switch ((int) $data['user']['role_id']) {
-                case 1:
-                case 5:
-                    return redirect('/dashboard-petani');
-                case 2:
-                    return redirect('/dashboard-petugas');
-                case 3:
-                    return redirect('/dashboard-pejabat');
-                case 4:
-                    return redirect('/dashboard-admin');
-                default:
-                    return redirect('/');
-            }
+            return $this->redirectAfterSuccessfulLogin($request, (int) $data['user']['role_id']);
         }
 
         /*
@@ -258,7 +273,7 @@ class AuthController extends Controller
                     'role_id' => $data['user']['role_id'],
                 ]);
 
-                return redirect('/dashboard-petani')
+                return $this->redirectAfterSuccessfulLogin($request, (int) $data['user']['role_id'])
                     ->with('success', 'Registrasi berhasil. Selamat datang di dashboard ' . str_replace('_', ' ', $request->jenis_kelompok) . '.');
             }
 
