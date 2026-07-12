@@ -59,15 +59,27 @@ function proxyRequest(Request $request, string $serviceUrl, string $path)
         $client = new \GuzzleHttp\Client();
         $response = $client->request($request->method(), $url, $options);
 
+        $headers = $response->getHeaders();
+        unset($headers['Access-Control-Allow-Origin']);
+        unset($headers['Access-Control-Allow-Methods']);
+        unset($headers['Access-Control-Allow-Headers']);
+        unset($headers['Access-Control-Allow-Credentials']);
+
         return response($response->getBody()->getContents(), $response->getStatusCode())
-            ->withHeaders($response->getHeaders());
+            ->withHeaders($headers);
 
     } catch (\GuzzleHttp\Exception\RequestException $e) {
         if ($e->hasResponse()) {
             $response = $e->getResponse();
 
+            $headers = $response->getHeaders();
+            unset($headers['Access-Control-Allow-Origin']);
+            unset($headers['Access-Control-Allow-Methods']);
+            unset($headers['Access-Control-Allow-Headers']);
+            unset($headers['Access-Control-Allow-Credentials']);
+
             return response($response->getBody()->getContents(), $response->getStatusCode())
-                ->withHeaders($response->getHeaders());
+                ->withHeaders($headers);
         }
 
         return response()->json([
