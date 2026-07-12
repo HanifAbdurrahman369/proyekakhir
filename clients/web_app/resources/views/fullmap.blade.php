@@ -132,7 +132,7 @@
     </div>
 
     <script>
-        window.GATEWAY_URL = "{{ env('GATEWAY_URL', 'http://127.0.0.1:8003') }}";
+        window.GATEWAY_URL = "{{ rtrim(env('GATEWAY_URL', 'http://127.0.0.1:8003'), '/') }}";
     </script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>

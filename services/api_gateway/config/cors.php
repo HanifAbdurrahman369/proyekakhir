@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'paths' => ['api/*', 'sanctum/csrf-cookie', '*'],
+    'paths' => ['api/*', 'login', 'register', 'forgot-password', 'reset-password', 'sanctum/csrf-cookie', '*'],
     'allowed_methods' => ['*'],
     'allowed_origins' => ['https://sigpala.my.id', 'https://www.sigpala.my.id', 'https://agrilytics-batola.poliban.ac.id', 'http://127.0.0.1:8000', 'http://127.0.0.1:*', 'http://localhost:*'],
     'allowed_origins_patterns' => [],

@@ -11,7 +11,7 @@ class AuthController extends Controller
 {
     protected function gatewayUrl(): string
     {
-        return env('GATEWAY_URL', 'http://127.0.0.1:8003');
+        return rtrim(env('GATEWAY_URL', 'http://127.0.0.1:8003'), '/');
     }
 
     private function generateMathCaptcha(Request $request): void

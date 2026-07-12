@@ -14,12 +14,20 @@ use Illuminate\Support\Facades\Route;
 */
 
 $serviceMap = [
-    'auth'    => 'http://127.0.0.1:8001',
-    'user'    => 'http://127.0.0.1:8002',
-    'master'  => 'http://127.0.0.1:8004',
-    'farming' => 'http://127.0.0.1:8005',
-    'gis'     => 'http://127.0.0.1:8000',
+    'auth'    => env('AUTH_SERVICE_URL', 'http://127.0.0.1:8001'),
+    'user'    => env('USER_SERVICE_URL', 'http://127.0.0.1:8002'),
+    'master'  => env('MASTER_SERVICE_URL', 'http://127.0.0.1:8004'),
+    'farming' => env('FARMING_SERVICE_URL', 'http://127.0.0.1:8005'),
+    'gis'     => env('GIS_SERVICE_URL', 'http://127.0.0.1:8000'),
 ];
+
+Route::get('/health', function () {
+    return response()->json([
+        'service' => 'api_gateway',
+        'status' => 'ok',
+        'timestamp' => now()->toIso8601String(),
+    ]);
+});
 
 function proxyRequest(Request $request, string $serviceUrl, string $path)
 {
