@@ -12,10 +12,10 @@
 <style>
     .sigpala-kecamatan-label {
         background: rgba(255,255,255,.88);
-        border: 1px solid rgba(32,60,16,.12);
+        border: 1px solid rgba(4,120,87,.12);
         border-radius: 999px;
         box-shadow: 0 8px 20px rgba(15,23,42,.14);
-        color: #203c10;
+        color: #065f46;
         font-family: 'Poppins', sans-serif;
         font-size: 10px;
         font-weight: 800;

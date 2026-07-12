@@ -47,6 +47,7 @@ function proxyRequest(Request $request, string $serviceUrl, string $path)
         'headers' => array_merge($headers, ['Connection' => 'close']),
         'http_errors' => false,
         'query'   => $request->query(),
+        'connect_timeout' => 5,
         'timeout' => 60,
     ];
 

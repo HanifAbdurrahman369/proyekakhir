@@ -139,7 +139,7 @@ class _InputPemupukanSheetState extends State<InputPemupukanSheet> {
 
               // Dropdown Siklus Tanam
               DropdownButtonFormField<int>(
-                value: _selectedSiklusId,
+                initialValue: _selectedSiklusId,
                 decoration: _inputDecoration(
                   'Pilih Siklus Tanam / Lahan',
                   Icons.grass_rounded,
@@ -163,7 +163,7 @@ class _InputPemupukanSheetState extends State<InputPemupukanSheet> {
 
               // Dropdown Jenis Pupuk
               DropdownButtonFormField<int>(
-                value: _selectedPupukId,
+                initialValue: _selectedPupukId,
                 decoration: _inputDecoration(
                   'Pilih Jenis Pupuk',
                   Icons.science_rounded,

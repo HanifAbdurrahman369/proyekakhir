@@ -11,7 +11,7 @@
 <div class="mx-auto max-w-3xl space-y-5 px-4 py-6 sm:px-6">
     <header>
         <p class="text-[11px] font-bold uppercase text-[#047857]">Kelompok Tani</p>
-        <h1 class="mt-1 text-xl font-bold text-[#14280b]">{{ $isEdit ? 'Perbaiki laporan hasil panen' : 'Laporan hasil panen' }}</h1>
+        <h1 class="mt-1 text-xl font-bold text-[#022c22]">{{ $isEdit ? 'Perbaiki laporan hasil panen' : 'Laporan hasil panen' }}</h1>
         <p class="mt-1 text-xs text-slate-500">Hasil panen akan masuk ke riwayat dan statistik setelah disetujui petugas.</p>
     </header>
 
@@ -35,7 +35,7 @@
         <div class="relative flex flex-col md:flex-row justify-between items-center md:items-start gap-6 md:gap-4">
             <!-- Line connector for desktop -->
             <div class="hidden md:block absolute top-6 left-[15%] right-[15%] h-1 bg-slate-200 -z-10 rounded-full overflow-hidden">
-                <div class="h-full bg-emerald-500 w-full animate-[shimmer_3s_infinite] origin-left" style="background: linear-gradient(90deg, transparent, rgba(16,185,129,0.5), transparent); background-size: 200% 100%;"></div>
+                <div class="h-full bg-emerald-500 w-full animate-[shimmer_3s_infinite] origin-left" style="background: linear-gradient(90deg, transparent, rgba(4,120,87,0.5), transparent); background-size: 200% 100%;"></div>
             </div>
 
             <!-- Step 1 -->
@@ -77,8 +77,8 @@
     </style>
 
     <section class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden mt-6">
-        <div class="border-b border-[#e7efd8] px-5 py-4">
-            <h2 class="text-sm font-bold text-[#14280b]">Data panen aktual</h2>
+        <div class="border-b border-[#d1fae5] px-5 py-4">
+            <h2 class="text-sm font-bold text-[#022c22]">Data panen aktual</h2>
             <p class="mt-1 text-[11px] text-slate-500">Pastikan hasil ditulis dalam satuan ton.</p>
         </div>
         <form action="{{ $isEdit ? route('panen.update', $editPanen['id']) : route('lapor.panen.store') }}" method="POST" class="space-y-4 p-5">
@@ -88,7 +88,7 @@
             @if(!$isEdit)
                 <div>
                     <label class="mb-1.5 block text-xs font-bold text-slate-700">Proses tanam siap panen</label>
-                    <select name="siklus_tanam_id" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#10b981] focus:border-[#10b981] focus:outline-none focus:ring-2 focus:ring-[#10b981]/20">
+                    <select name="siklus_tanam_id" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#047857] focus:border-[#047857] focus:outline-none focus:ring-2 focus:ring-[#047857]/20">
                         <option value="">Pilih proses tanam</option>
                         @foreach($siapPanen as $item)
                             <option value="{{ $item['id'] }}" @selected((string) old('siklus_tanam_id') === (string) $item['id'])>
@@ -101,7 +101,7 @@
                     @endif
                 </div>
             @else
-                <div class="rounded-lg border border-[#e7efd8] bg-[#f7fced] p-3 text-xs text-slate-700">
+                <div class="rounded-lg border border-[#d1fae5] bg-[#ecfdf5] p-3 text-xs text-slate-700">
                     <p class="font-bold">{{ $editPanen['nama_lahan'] ?? '-' }}</p>
                     <p class="mt-1">{{ $editPanen['nama_bibit'] ?? '-' }} · tanggal tanam {{ !empty($editPanen['tanggal_tanam']) ? \Carbon\Carbon::parse($editPanen['tanggal_tanam'])->format('d M Y') : '-' }}</p>
                 </div>
@@ -112,13 +112,13 @@
                     <label class="mb-1.5 block text-xs font-bold text-slate-700">Tanggal panen</label>
                     <input type="date" name="tanggal_panen" max="{{ date('Y-m-d') }}" required
                            value="{{ old('tanggal_panen', $editPanen['tanggal_panen'] ?? date('Y-m-d')) }}"
-                           class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#10b981] focus:border-[#10b981] focus:outline-none focus:ring-2 focus:ring-[#10b981]/20">
+                           class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#047857] focus:border-[#047857] focus:outline-none focus:ring-2 focus:ring-[#047857]/20">
                 </div>
                 <div>
                     <label class="mb-1.5 block text-xs font-bold text-slate-700">Hasil panen (ton)</label>
                     <input type="number" name="hasil_panen" min="0.01" step="0.01" required
                            value="{{ old('hasil_panen', $editPanen['hasil_panen'] ?? '') }}" placeholder="Contoh: 4.50"
-                           class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#10b981] focus:border-[#10b981] focus:outline-none focus:ring-2 focus:ring-[#10b981]/20">
+                           class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#047857] focus:border-[#047857] focus:outline-none focus:ring-2 focus:ring-[#047857]/20">
                 </div>
             </div>
 

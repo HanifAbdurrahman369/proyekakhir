@@ -23,7 +23,7 @@
 @endphp
 
 <nav class="sticky top-0 z-50 h-16 lg:h-[72px] border-b border-white/20"
-     style="background:linear-gradient(135deg,#064e3b 0%,#047857 50%,#10b981 100%); box-shadow:0 18px 50px rgba(32,60,16,.18);">
+     style="background:linear-gradient(135deg,#064e3b 0%,#047857 55%,#065f46 100%); box-shadow:0 18px 50px rgba(4,120,87,.18);">
 
     <div class="h-full px-4 sm:px-5 lg:px-8 flex items-center justify-between gap-4">
 
@@ -82,10 +82,10 @@
                     </button>
 
                     <div id="notif-dropdown"
-                         class="hidden absolute right-0 top-12 mt-2 w-[320px] max-w-[calc(100vw-32px)] bg-white rounded-3xl shadow-2xl border border-[#e7efd8] overflow-hidden">
+                         class="hidden absolute right-0 top-12 mt-2 w-[320px] max-w-[calc(100vw-32px)] bg-white rounded-3xl shadow-2xl border border-[#d1fae5] overflow-hidden">
 
-                        <div class="px-5 py-3 bg-[#f7fced] border-b border-[#e7efd8]">
-                            <p class="font-bold text-xs text-[#203c10]">
+                        <div class="px-5 py-3 bg-[#ecfdf5] border-b border-[#d1fae5]">
+                            <p class="font-bold text-xs text-[#065f46]">
                                 Notifikasi Masuk
                             </p>
                             <p class="text-[10px] text-slate-400 mt-0.5">
@@ -144,7 +144,7 @@
                                     const pendingCount = Number(json.pending_count || json.pending_counts?.total_pending || 0);
 
                                     if (notifications.length === 0 && pendingCount > 0) {
-                                        list.innerHTML = `<li class="p-4 border-b border-[#edf4df] hover:bg-[#f7fced] cursor-pointer bg-[#f7fced]" onclick="window.location.href='/verifikasi-data-petani'"><p class="font-bold text-xs text-[#203c10]">Pekerjaan verifikasi menunggu</p><p class="text-[11px] text-slate-500 mt-1 leading-relaxed">Ada data petani yang perlu diverifikasi.</p></li>`;
+                                        list.innerHTML = `<li class="p-4 border-b border-[#d1fae5] hover:bg-[#ecfdf5] cursor-pointer bg-[#ecfdf5]" onclick="window.location.href='/verifikasi-data-petani'"><p class="font-bold text-xs text-[#065f46]">Pekerjaan verifikasi menunggu</p><p class="text-[11px] text-slate-500 mt-1 leading-relaxed">Ada data petani yang perlu diverifikasi.</p></li>`;
                                     } else {
                                         list.innerHTML = notifications.length === 0
                                             ? '<li class="p-5 text-center text-xs text-slate-400">Belum ada notifikasi</li>'
@@ -154,11 +154,11 @@
                                     notifications.forEach(item => {
                                         const targetUrl = item.target_url || '/verifikasi-data-petani';
                                         const encodedTargetUrl = encodeURIComponent(targetUrl);
-                                        const unreadClass = Number(item.is_read) === 0 ? 'bg-[#f7fced]' : 'bg-white';
+                                        const unreadClass = Number(item.is_read) === 0 ? 'bg-[#ecfdf5]' : 'bg-white';
                                         list.innerHTML += `
-                                            <li class="p-4 border-b border-[#edf4df] hover:bg-[#f7fced] cursor-pointer ${unreadClass}"
+                                            <li class="p-4 border-b border-[#d1fae5] hover:bg-[#ecfdf5] cursor-pointer ${unreadClass}"
                                                 onclick="bacaNotif(${item.id}, decodeURIComponent('${encodedTargetUrl}'))">
-                                                <p class="font-bold text-xs text-[#203c10]">${escapeHtml(item.judul)}</p>
+                                                <p class="font-bold text-xs text-[#065f46]">${escapeHtml(item.judul)}</p>
                                                 <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">${escapeHtml(item.pesan)}</p>
                                             </li>
                                         `;

@@ -13,7 +13,7 @@ class PejabatController extends Controller
 
     public function __construct()
     {
-        $this->gatewayUrl = env('GATEWAY_URL');
+        $this->gatewayUrl = rtrim(env('GATEWAY_URL', env('API_GATEWAY_URL', 'http://127.0.0.1:8003')), '/');
     }
 
     public function index(Request $request)

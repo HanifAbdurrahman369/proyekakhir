@@ -19,12 +19,12 @@
             <p class="text-5xl font-black text-emerald-500" id="stat-total-lahan">...</p>
         </div>
         <div class="bg-emerald-500 p-8 rounded-[2rem] shadow-lg shadow-emerald-200/50 hover:shadow-emerald-400 transition-all duration-500 text-center flex flex-col justify-center group">
-            <p class="text-emerald-50 text-sm font-bold uppercase tracking-widest mb-4">Total Luas Lahan</p>
-            <p class="text-5xl font-black text-white" id="stat-total-luas">...</p>
+            <p class="text-emerald-50 text-sm font-bold uppercase tracking-widest mb-4">Total Hasil Panen</p>
+            <p class="text-5xl font-black text-white" id="stat-total-produksi">...</p>
         </div>
         <div class="bg-blue-500 p-8 rounded-[2rem] shadow-lg shadow-blue-200/50 hover:shadow-blue-400 transition-all duration-500 text-center flex flex-col justify-center group">
-            <p class="text-blue-50 text-sm font-bold uppercase tracking-widest mb-4">Total Luas Tanam</p>
-            <p class="text-5xl font-black text-white" id="stat-total-luas-tanam">...</p>
+            <p class="text-blue-50 text-sm font-bold uppercase tracking-widest mb-4">Total Lahan Termonitor</p>
+            <p class="text-5xl font-black text-white" id="stat-total-lahan-termonitor">...</p>
         </div>
     </div>
 
@@ -221,27 +221,40 @@
     document.addEventListener("DOMContentLoaded", function () {
         const gatewayBase = window.GATEWAY_URL || "{{ env('GATEWAY_URL', 'http://127.0.0.1:8003') }}";
 
-        fetch(`${gatewayBase}/api/statistik`)
-            .then(res => res.json())
-            .then(res => {
-                if (res.status === 'success') {
-                    const data = res.data;
-                    document.getElementById('stat-kecamatan').innerText = data.summary.total_kecamatan;
-                    document.getElementById('stat-kelurahan').innerText = data.summary.total_kelurahan;
-                    document.getElementById('stat-total-lahan').innerText = data.summary.total_lahan_sawah;
-                    document.getElementById('stat-total-luas').innerText = data.summary.total_luas_ha + " Ha";
-                    document.getElementById('stat-total-luas-tanam').innerText = (data.summary.total_luas_tanam_ha || data.summary.total_luas_ha) + " Ha";
-
-                    renderCharts(data);
-                    globalData = data.tabel_rekap;
-                    rekapPadiKecamatan = data.rekap_padi_kecamatan || [];
-                    populateTipeLahanFilter(data.tipe_lahan_options || []);
-                    renderRekapPadiKecamatan();
-                    
-                    if(document.getElementById('filterTahun')) {
-                        applyFilters();
-                    }
+        fetch(`${gatewayBase}/api/statistik`, {
+            headers: { Accept: 'application/json' },
+            cache: 'no-store'
+        })
+            .then(async res => {
+                const payload = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    throw new Error(payload.message || `HTTP ${res.status}`);
                 }
+                return payload;
+            })
+            .then(res => {
+                const data = normalizeStatistikPayload(res.data || {});
+                document.getElementById('stat-kecamatan').innerText = data.summary.total_kecamatan;
+                document.getElementById('stat-kelurahan').innerText = data.summary.total_kelurahan;
+                document.getElementById('stat-total-lahan').innerText = data.summary.total_lahan_sawah;
+                document.getElementById('stat-total-produksi').innerText = formatStatNumber(data.summary.total_panen_ton) + " Ton";
+                document.getElementById('stat-total-lahan-termonitor').innerText = data.summary.total_lahan_termonitor;
+
+                renderCharts(data);
+                globalData = Array.isArray(data.tabel_rekap) ? data.tabel_rekap : [];
+                rekapPadiKecamatan = Array.isArray(data.rekap_padi_kecamatan) ? data.rekap_padi_kecamatan : [];
+                populateTipeLahanFilter(data.tipe_lahan_options || []);
+                renderRekapPadiKecamatan();
+
+                if(document.getElementById('filterTahun')) {
+                    applyFilters();
+                }
+            })
+            .catch(error => {
+                console.error('Gagal memuat statistik publik', error);
+                globalData = [];
+                rekapPadiKecamatan = [];
+                renderStatistikLoadError();
             });
 
         const filters = ['tableSearch', 'filterTahun', 'filterTipe', 'filterProduktivitas', 'sortData'];
@@ -250,6 +263,44 @@
             if(el) el.addEventListener(id === 'tableSearch' ? 'input' : 'change', applyFilters);
         });
     });
+
+    function normalizeStatistikPayload(data) {
+        return {
+            summary: {
+                total_kecamatan: Number(data?.summary?.total_kecamatan || 0),
+                total_kelurahan: Number(data?.summary?.total_kelurahan || 0),
+                total_lahan_sawah: Number(data?.summary?.total_lahan_sawah || 0),
+                total_luas_ha: Number(data?.summary?.total_luas_ha || 0),
+                total_luas_tanam_ha: Number(data?.summary?.total_luas_tanam_ha || data?.summary?.total_luas_ha || 0),
+                total_panen_ton: Number(data?.summary?.total_panen_ton || 0),
+                total_lahan_termonitor: Number(data?.summary?.total_lahan_termonitor || 0)
+            },
+            chart_panen_kecamatan: Array.isArray(data?.chart_panen_kecamatan) ? data.chart_panen_kecamatan : [],
+            chart_luas_tipe_lahan: Array.isArray(data?.chart_luas_tipe_lahan) ? data.chart_luas_tipe_lahan : [],
+            chart_produktivitas_lahan: Array.isArray(data?.chart_produktivitas_lahan) ? data.chart_produktivitas_lahan : [],
+            chart_luas_kecamatan: Array.isArray(data?.chart_luas_kecamatan) ? data.chart_luas_kecamatan : [],
+            tipe_lahan_options: Array.isArray(data?.tipe_lahan_options) ? data.tipe_lahan_options : [],
+            tabel_rekap: Array.isArray(data?.tabel_rekap) ? data.tabel_rekap : [],
+            rekap_padi_kecamatan: Array.isArray(data?.rekap_padi_kecamatan) ? data.rekap_padi_kecamatan : []
+        };
+    }
+
+    function renderStatistikLoadError() {
+        ['stat-kecamatan', 'stat-kelurahan', 'stat-total-lahan'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) element.innerText = '0';
+        });
+
+        const produksi = document.getElementById('stat-total-produksi');
+        const lahanTermonitor = document.getElementById('stat-total-lahan-termonitor');
+        if (produksi) produksi.innerText = '0 Ton';
+        if (lahanTermonitor) lahanTermonitor.innerText = '0';
+
+        const rekapBody = document.getElementById('tabel-rekap-body');
+        const padiBody = document.getElementById('rekap-padi-body');
+        if (rekapBody) rekapBody.innerHTML = '<tr><td colspan="8" class="py-20 text-center text-slate-400 font-medium text-base">Data statistik belum dapat dimuat dari backend.</td></tr>';
+        if (padiBody) padiBody.innerHTML = '<tr><td colspan="7" class="py-20 text-center text-slate-400 font-medium text-base">Data rekap statistik padi belum dapat dimuat.</td></tr>';
+    }
 
     function populateTipeLahanFilter(options) {
         const select = document.getElementById('filterTipe');
@@ -269,7 +320,12 @@
     }
 
     function applyFilters() {
-        if(!globalData || globalData.length === 0) return;
+        if(!globalData || globalData.length === 0) {
+            filteredData = [];
+            renderTable();
+            renderPagination();
+            return;
+        }
         
         const search = document.getElementById('tableSearch').value.toLowerCase();
         const tahun = document.getElementById('filterTahun').value;
@@ -405,6 +461,10 @@
         const ctrl = document.getElementById('pagination-controls');
         if(!ctrl) return;
         const total = Math.ceil(filteredData.length / rowsPerPage);
+        if (total === 0) {
+            ctrl.innerHTML = '<p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Tidak ada data</p>';
+            return;
+        }
         ctrl.innerHTML = `<p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Halaman ${currentPage} dari ${total}</p>`;
         const btnContainer = document.createElement('div');
         btnContainer.className = 'flex gap-2';

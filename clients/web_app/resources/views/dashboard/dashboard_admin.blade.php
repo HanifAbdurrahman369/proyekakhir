@@ -14,11 +14,11 @@
 
 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-7 admin-section">
     <div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold text-[#14280b] tracking-tight">Dashboard Administrator</h1>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-[#022c22] tracking-tight">Dashboard Administrator</h1>
         <p class="text-sm text-slate-500 mt-1 leading-relaxed">Ringkasan aktivitas dan metrik utama dari seluruh sistem SiPetani.</p>
     </div>
     <div class="flex flex-col sm:flex-row gap-2">
-        <a href="/admin/users" class="flex items-center gap-2 bg-[#2f5c12] hover:bg-[#24480e] text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition shadow-[0_14px_38px_rgba(32,60,16,.06)] shadow-primary-200">
+        <a href="/admin/users" class="flex items-center gap-2 bg-[#047857] hover:bg-[#065f46] text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition shadow-[0_14px_38px_rgba(4,120,87,.16)] shadow-primary-200">
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
             Kelola Pengguna
         </a>
@@ -31,7 +31,7 @@
         <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl"></div>
         <div>
             <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Pengguna</p>
-            <h3 class="text-3xl font-extrabold text-[#14280b] mt-2">{{ number_format($stats['total_users']) }}</h3>
+            <h3 class="text-3xl font-extrabold text-[#022c22] mt-2">{{ number_format($stats['total_users']) }}</h3>
         </div>
         <div class="mt-4 flex items-center justify-between">
             <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">{{ $stats['total_petani'] }} Petani</span>
@@ -45,7 +45,7 @@
         <div class="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl"></div>
         <div>
             <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Komunitas</p>
-            <h3 class="text-3xl font-extrabold text-[#14280b] mt-2">{{ number_format($stats['total_komunitas']) }}</h3>
+            <h3 class="text-3xl font-extrabold text-[#022c22] mt-2">{{ number_format($stats['total_komunitas']) }}</h3>
         </div>
         <div class="mt-4 flex items-center justify-between">
             <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">BPP & Gapoktan</span>
@@ -59,7 +59,7 @@
         <div class="absolute -right-4 -top-4 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl"></div>
         <div>
             <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Lahan</p>
-            <h3 class="text-3xl font-extrabold text-[#14280b] mt-2">{{ number_format($stats['total_lahan']) }}</h3>
+            <h3 class="text-3xl font-extrabold text-[#022c22] mt-2">{{ number_format($stats['total_lahan']) }}</h3>
         </div>
         <div class="mt-4 flex items-center justify-between">
             <span class="text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-1 rounded-lg">Bidang Sawah</span>
@@ -73,7 +73,7 @@
         <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl"></div>
         <div>
             <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Siklus Panen</p>
-            <h3 class="text-3xl font-extrabold text-[#14280b] mt-2">{{ number_format($stats['total_panen']) }}</h3>
+            <h3 class="text-3xl font-extrabold text-[#022c22] mt-2">{{ number_format($stats['total_panen']) }}</h3>
         </div>
         <div class="mt-4 flex items-center justify-between">
             <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">Laporan Tanam</span>
@@ -86,13 +86,13 @@
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8 admin-section" style="animation-delay: 0.2s;">
     <div class="bg-white rounded-[24px] p-6 border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-        <h3 class="text-sm font-bold text-[#14280b] mb-4">Distribusi Pengguna Berdasarkan Peran (Role)</h3>
+        <h3 class="text-sm font-bold text-[#022c22] mb-4">Distribusi Pengguna Berdasarkan Peran (Role)</h3>
         <div class="h-64 relative w-full flex items-center justify-center">
             <canvas id="roleChart"></canvas>
         </div>
     </div>
     <div class="bg-white rounded-[24px] p-6 border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-        <h3 class="text-sm font-bold text-[#14280b] mb-4">Komposisi Jenis Komunitas</h3>
+        <h3 class="text-sm font-bold text-[#022c22] mb-4">Komposisi Jenis Komunitas</h3>
         <div class="h-64 relative w-full flex items-center justify-center">
             <canvas id="komunitasChart"></canvas>
         </div>
@@ -107,7 +107,7 @@
             labels: ['Petani/Brigade', 'Petugas BPP', 'Pejabat/Admin'],
             datasets: [{
                 data: [{{ $stats['total_petani'] }}, {{ $stats['total_petugas'] }}, {{ $stats['total_pejabat_admin'] }}],
-                backgroundColor: ['#65bd00', '#3b82f6', '#f59e0b'],
+                backgroundColor: ['#047857', '#3b82f6', '#f59e0b'],
                 borderWidth: 0,
                 hoverOffset: 4
             }]
@@ -140,7 +140,7 @@
             labels: ['Komunitas Tani', 'Brigade Pangan'],
             datasets: [{
                 data: [{{ $kt }}, {{ $bp }}],
-                backgroundColor: ['#10b981', '#f97316'],
+                backgroundColor: ['#047857', '#f97316'],
                 borderWidth: 0,
                 hoverOffset: 4
             }]

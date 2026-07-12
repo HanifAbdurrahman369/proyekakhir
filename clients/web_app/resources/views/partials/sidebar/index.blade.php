@@ -1,6 +1,6 @@
 <aside id="appSidebar"
        class="sipetani-sidebar fixed lg:sticky top-0 lg:top-[72px] left-0 z-50 lg:z-30 w-[250px] lg:w-60 h-screen lg:h-[calc(100vh-72px)] flex-shrink-0 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-out overflow-y-auto border-r"
-       style="background:rgba(255,255,255,.88); border-color:#e7efd8; box-shadow:16px 0 50px rgba(32,60,16,.06); backdrop-filter:blur(16px);">
+       style="background:rgba(255,255,255,.88); border-color:#d1fae5; box-shadow:16px 0 50px rgba(4,120,87,.06); backdrop-filter:blur(16px);">
     <div class="p-3.5 lg:p-4">
         <div class="lg:hidden flex items-center justify-between mb-5">
             <div>
@@ -13,9 +13,9 @@
         </div>
 
         <div class="rounded-[20px] p-3.5 mb-4"
-             style="background:linear-gradient(135deg,#f7fced,#edf8dc); border:1px solid #e7efd8;">
+             style="background:linear-gradient(135deg,#ecfdf5,#f0fdf4); border:1px solid #d1fae5;">
             <p class="text-[11px] font-semibold text-slate-500">Role Dashboard</p>
-            <p class="text-sm font-extrabold mt-1" style="color:#203c10;">
+            <p class="text-sm font-extrabold mt-1" style="color:#065f46;">
                 @switch(session('role_id'))
                     @case(4) Administrator @break
                     @case(3) Pejabat @break

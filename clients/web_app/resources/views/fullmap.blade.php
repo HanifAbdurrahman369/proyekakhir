@@ -50,8 +50,8 @@
             white-space: nowrap;
         }
         .fullmap-back:hover {
-            background: #16a34a;
-            border-color: #16a34a;
+            background: #047857;
+            border-color: #047857;
             color: #fff;
         }
         @media (max-width: 768px) {

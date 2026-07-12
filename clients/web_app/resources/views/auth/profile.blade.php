@@ -17,7 +17,7 @@
 <div class="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
     <header>
         <p class="text-[11px] font-bold uppercase text-[#047857] tracking-[0.2em]">Profil Pengguna</p>
-        <h1 class="mt-1 text-2xl font-extrabold text-[#14280b]">Edit Profil</h1>
+        <h1 class="mt-1 text-2xl font-extrabold text-[#022c22]">Edit Profil</h1>
         <p class="mt-1 text-sm text-slate-500">Perbarui data diri akun Anda. Password tetap diubah melalui fitur lupa password.</p>
     </header>
 
@@ -33,7 +33,7 @@
         </div>
     @endif
 
-    <section class="rounded-[22px] border border-[#e7efd8] bg-white p-5 sm:p-6 shadow-[0_14px_38px_rgba(32,60,16,.06)]">
+    <section class="rounded-[22px] border border-[#d1fae5] bg-white p-5 sm:p-6 shadow-[0_14px_38px_rgba(4,120,87,.06)]">
         <form method="POST" action="{{ route('profile.update') }}" class="space-y-5">
             @csrf
             @method('PUT')
@@ -43,24 +43,24 @@
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">Nama Lengkap</label>
                     <input type="text" name="nama_lengkap" required
                            value="{{ old('nama_lengkap', $user['nama_lengkap'] ?? '') }}"
-                           class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#65bd00] focus:ring-[#65bd00]">
+                           class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#047857] focus:ring-[#047857]">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">Email</label>
                     <input type="email" name="email" required
                            value="{{ old('email', $user['email'] ?? '') }}"
-                           class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#65bd00] focus:ring-[#65bd00]">
+                           class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#047857] focus:ring-[#047857]">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">Nomor HP</label>
                     <input type="text" name="no_hp"
                            value="{{ old('no_hp', $user['no_hp'] ?? '') }}"
-                           class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#65bd00] focus:ring-[#65bd00]">
+                           class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#047857] focus:ring-[#047857]">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">Alamat</label>
                     <textarea name="alamat" rows="3"
-                              class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#65bd00] focus:ring-[#65bd00]">{{ old('alamat', $user['alamat'] ?? '') }}</textarea>
+                              class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#047857] focus:ring-[#047857]">{{ old('alamat', $user['alamat'] ?? '') }}</textarea>
                 </div>
                 
                 @if($roleId === 2)
@@ -71,7 +71,7 @@
                     <div class="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-5 pt-4 border-t border-slate-100">
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5">Kecamatan Wilayah Kerja</label>
-                            <select name="wilayah_kecamatan_id" id="kecamatan_id" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#65bd00] focus:ring-[#65bd00]">
+                            <select name="wilayah_kecamatan_id" id="kecamatan_id" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#047857] focus:ring-[#047857]">
                                 <option value="">Pilih Kecamatan</option>
                                 @foreach($kecamatan ?? [] as $item)
                                     @php
@@ -86,7 +86,7 @@
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5">Kelurahan Wilayah Kerja</label>
-                            <select name="wilayah_kelurahan_id" id="kelurahan_id" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#65bd00] focus:ring-[#65bd00]">
+                            <select name="wilayah_kelurahan_id" id="kelurahan_id" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-[#047857] focus:ring-[#047857]">
                                 <option value="">Pilih Kelurahan</option>
                                 @foreach($kelurahan ?? [] as $item)
                                     @php
@@ -109,7 +109,7 @@
 
             <div class="flex justify-end gap-2 border-t border-slate-100 pt-5">
                 <a href="{{ $roleId === 2 ? '/dashboard-petugas' : '/' }}" class="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">Kembali</a>
-                <button type="submit" class="rounded-xl bg-[#2f5c12] px-5 py-2 text-xs font-bold text-white hover:bg-[#24480e]">Simpan Profil</button>
+                <button type="submit" class="rounded-xl bg-[#047857] px-5 py-2 text-xs font-bold text-white hover:bg-[#065f46]">Simpan Profil</button>
             </div>
         </form>
     </section>

@@ -48,7 +48,7 @@
     @if($isEdit)
         {{-- EDIT MODE: CENTERED SINGLE COLUMN --}}
         <div class="max-w-2xl mx-auto">
-            <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-[#e7efd8]">
+            <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-[#d1fae5]">
                 {{-- HEADER --}}
                 <div class="bg-primary-700 text-white px-5 py-4">
                     <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-primary-100 mb-1">
@@ -197,7 +197,7 @@
 
             {{-- LEFT COLUMN: FORM INPUT AKTIVITAS TANAM --}}
             <div class="lg:col-span-7">
-                <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-[#e7efd8]">
+                <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-[#d1fae5]">
                     {{-- HEADER --}}
                     <div class="bg-primary-700 text-white px-5 py-4">
                         <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-primary-100 mb-1">
@@ -342,7 +342,7 @@
 
             {{-- RIGHT COLUMN: CATATAN PEMUPUKAN --}}
             <div class="lg:col-span-5">
-                <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-[#e7efd8]">
+                <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-[#d1fae5]">
                     {{-- HEADER --}}
                     <div class="bg-primary-700 text-white px-5 py-4">
                         <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-primary-100 mb-1">

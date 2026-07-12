@@ -12,16 +12,20 @@ class KomunitasAdminController extends Controller
 {
     protected function gatewayUrl(): string
     {
-        return env('GATEWAY_URL', 'http://127.0.0.1:8003');
+        return rtrim(env('GATEWAY_URL', env('API_GATEWAY_URL', 'http://127.0.0.1:8003')), '/');
     }
 
     private function api()
     {
-        return Http::withHeaders(['Connection' => 'close'])->withToken(session('token'))->acceptJson()->withoutVerifying()->timeout(15);
+        return Http::withHeaders(['Connection' => 'close'])->withToken(session('token'))->acceptJson()->withoutVerifying()->timeout(15)->connectTimeout(5);
     }
 
     private function errorMessage($response, string $fallback): string
     {
+        if (!$response) {
+            return 'Backend komunitas belum dapat dihubungi.';
+        }
+
         $errors = $response->json('errors');
 
         if (is_array($errors)) {
@@ -38,11 +42,21 @@ class KomunitasAdminController extends Controller
         return $response->json('message') ?? $response->json('error') ?? $fallback;
     }
 
+    private function send(string $method, string $endpoint, array $payload = [])
+    {
+        try {
+            return $this->api()->{$method}($this->gatewayUrl() . '/api/' . ltrim($endpoint, '/'), $payload);
+        } catch (\Throwable $e) {
+            report($e);
+            return null;
+        }
+    }
+
     public function store(Request $request)
     {
-        $response = $this->api()->post($this->gatewayUrl() . '/api/komunitas', $request->all());
+        $response = $this->send('post', '/komunitas', $request->all());
 
-        if ($response->successful()) {
+        if ($response?->successful()) {
             return redirect('/dashboard-admin')->with('success', 'Komunitas berhasil ditambahkan.');
         }
 
@@ -52,9 +66,9 @@ class KomunitasAdminController extends Controller
 
     public function update(Request $request, $id)
     {
-        $response = $this->api()->put($this->gatewayUrl() . '/api/komunitas/' . $id, $request->all());
+        $response = $this->send('put', '/komunitas/' . $id, $request->all());
 
-        if ($response->successful()) {
+        if ($response?->successful()) {
             return redirect('/dashboard-admin')->with('success', 'Data komunitas berhasil diperbarui.');
         }
         
@@ -64,9 +78,9 @@ class KomunitasAdminController extends Controller
 
     public function destroy($id)
     {
-        $response = $this->api()->delete($this->gatewayUrl() . '/api/komunitas/' . $id);
+        $response = $this->send('delete', '/komunitas/' . $id);
         
-        if ($response->successful()) {
+        if ($response?->successful()) {
             return redirect('/dashboard-admin')->with('success', 'Komunitas berhasil dihapus.');
         }
         
@@ -96,8 +110,8 @@ class KomunitasAdminController extends Controller
 
     public function export()
     {
-        $response = $this->api()->get($this->gatewayUrl() . '/api/komunitas');
-        $komunitas = $response->successful() ? ($response->json('data') ?? []) : [];
+        $response = $this->send('get', '/komunitas');
+        $komunitas = $response?->successful() ? ($response->json('data') ?? []) : [];
         
         return Excel::download(new KomunitasExport($komunitas), 'Data_Komunitas_'.date('Ymd_His').'.xlsx');
     }

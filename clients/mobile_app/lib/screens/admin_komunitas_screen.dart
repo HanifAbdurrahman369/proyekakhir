@@ -64,11 +64,9 @@ class _AdminKomunitasScreenState extends State<AdminKomunitasScreen> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: Colors.teal),
-      );
+      return const Center(child: CircularProgressIndicator(color: Colors.teal));
     }
-    
+
     if (_errorMessage != null) {
       return Center(
         child: Padding(
@@ -76,7 +74,11 @@ class _AdminKomunitasScreenState extends State<AdminKomunitasScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline_rounded, size: 48, color: Colors.red),
+              const Icon(
+                Icons.error_outline_rounded,
+                size: 48,
+                color: Colors.red,
+              ),
               const SizedBox(height: 16),
               Text(
                 'Gagal memuat data komunitas\n$_errorMessage',
@@ -120,7 +122,9 @@ class _AdminKomunitasScreenState extends State<AdminKomunitasScreen> {
           final k = _komunitasList[index];
           return Card(
             margin: const EdgeInsets.only(bottom: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             elevation: 2,
             shadowColor: Colors.black12,
             child: Padding(
@@ -142,9 +146,16 @@ class _AdminKomunitasScreenState extends State<AdminKomunitasScreen> {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: (k['tipe'] == 'Kelompok Tani' ? Colors.green : Colors.blue).withOpacity(0.1),
+                          color:
+                              (k['tipe'] == 'Kelompok Tani'
+                                      ? Colors.green
+                                      : Colors.blue)
+                                  .withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -152,18 +163,29 @@ class _AdminKomunitasScreenState extends State<AdminKomunitasScreen> {
                           style: GoogleFonts.inter(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: k['tipe'] == 'Kelompok Tani' ? Colors.green[700] : Colors.blue[700],
+                            color: k['tipe'] == 'Kelompok Tani'
+                                ? Colors.green[700]
+                                : Colors.blue[700],
                           ),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  _buildInfoRow(Icons.person_rounded, 'Ketua: ${k['nama_ketua'] ?? '-'}'),
+                  _buildInfoRow(
+                    Icons.person_rounded,
+                    'Ketua: ${k['nama_ketua'] ?? '-'}',
+                  ),
                   const SizedBox(height: 4),
-                  _buildInfoRow(Icons.location_on_rounded, 'Kecamatan: ${k['kecamatan']?['nama'] ?? k['kecamatan_id'] ?? '-'}'),
+                  _buildInfoRow(
+                    Icons.location_on_rounded,
+                    'Kecamatan: ${k['kecamatan']?['nama'] ?? k['kecamatan_id'] ?? '-'}',
+                  ),
                   const SizedBox(height: 4),
-                  _buildInfoRow(Icons.pin_drop_rounded, 'Kelurahan: ${k['kelurahan']?['nama'] ?? k['kelurahan_id'] ?? '-'}'),
+                  _buildInfoRow(
+                    Icons.pin_drop_rounded,
+                    'Kelurahan: ${k['kelurahan']?['nama'] ?? k['kelurahan_id'] ?? '-'}',
+                  ),
                 ],
               ),
             ),

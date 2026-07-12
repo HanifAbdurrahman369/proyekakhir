@@ -12,72 +12,58 @@ class PublicApiController extends Controller
 {
     public function getStatistik()
     {
-        $totalKecamatan = DB::table('kecamatan')->count();
-        $totalKelurahan = DB::table('kelurahan')->count();
-        $totalLahanSawah = $this->lahanDiterimaQuery()->count();
-        $totalLuasHektar = $this->lahanDiterimaQuery()->sum('luas_lahan_hektar');
-        $totalLuasTanamHektar = $this->lahanDiterimaQuery()
-            ->sum(DB::raw('COALESCE(luas_tanam_hektar, luas_lahan_hektar)'));
-        $totalPanen = $this->totalPanenDiterimaPublik();
-        $rekapRows = $this->buildTabelRekap();
-        $rekapPadiKecamatan = $this->buildRekapPadiKecamatan();
+        try {
+            $totalKecamatan = Schema::hasTable('kecamatan') ? DB::table('kecamatan')->count() : 0;
+            $totalKelurahan = Schema::hasTable('kelurahan') ? DB::table('kelurahan')->count() : 0;
+            $totalLahanSawah = $this->lahanDiterimaQuery()->count();
+            $totalLuasHektar = $this->lahanDiterimaQuery()
+                ->sum(DB::raw($this->sqlColumn('lahan_sawah', 'luas_lahan_hektar', null, '0')));
+            $totalLuasTanamHektar = $this->lahanDiterimaQuery()
+                ->sum(DB::raw('COALESCE(' . $this->sqlColumn('lahan_sawah', 'luas_tanam_hektar') . ', ' . $this->sqlColumn('lahan_sawah', 'luas_lahan_hektar', null, '0') . ')'));
+            $totalPanen = $this->totalPanenDiterimaPublik();
+            $totalLahanTermonitor = $this->totalLahanTermonitor();
+            $rekapRows = $this->buildTabelRekap();
+            $rekapPadiKecamatan = $this->buildRekapPadiKecamatan();
 
-        return response()->json([
-            'success' => true,
-            'status' => 'success',
-            'data' => [
-                'summary' => [
-                    'total_kecamatan' => $totalKecamatan,
-                    'total_kelurahan' => $totalKelurahan,
-                    'total_lahan_sawah' => $totalLahanSawah,
-                    'total_luas_ha' => round((float) $totalLuasHektar, 2),
-                    'total_luas_tanam_ha' => round((float) $totalLuasTanamHektar, 2),
-                    'total_panen_ton' => round((float) $totalPanen, 2),
+            return $this->noStore(response()->json([
+                'success' => true,
+                'status' => 'success',
+                'data' => [
+                    'summary' => [
+                        'total_kecamatan' => $totalKecamatan,
+                        'total_kelurahan' => $totalKelurahan,
+                        'total_lahan_sawah' => $totalLahanSawah,
+                        'total_luas_ha' => round((float) $totalLuasHektar, 2),
+                        'total_luas_tanam_ha' => round((float) $totalLuasTanamHektar, 2),
+                        'total_panen_ton' => round((float) $totalPanen, 2),
+                        'total_lahan_termonitor' => $totalLahanTermonitor,
+                    ],
+                    'kecamatan_all' => Schema::hasTable('kecamatan')
+                        ? DB::table('kecamatan')->select('nama_kecamatan')->orderBy('nama_kecamatan')->get()
+                        : collect(),
+                    'kelurahan_all' => $this->kelurahanPublikRows(),
+                    'lahan_all' => $this->lahanPublikRows(),
+                    'chart_panen_kecamatan' => $this->chartPanenKecamatan(),
+                    'chart_luas_tipe_lahan' => $this->chartLuasTipeLahan(),
+                    'chart_produktivitas_lahan' => $this->chartProduktivitasLahan(),
+                    'chart_luas_kecamatan' => $this->chartLuasKecamatan(),
+                    'tipe_lahan_options' => $this->tipeLahanOptions($rekapRows),
+                    'tabel_rekap' => $rekapRows,
+                    'rekap_padi_kecamatan' => $rekapPadiKecamatan,
+                    'tahun_padi_options' => $this->tahunStatistikPadiOptions(),
                 ],
-                'kecamatan_all' => DB::table('kecamatan')
-                    ->select('nama_kecamatan')
-                    ->orderBy('nama_kecamatan')
-                    ->get(),
-                'kelurahan_all' => DB::table('kelurahan')
-                    ->leftJoin('kecamatan', 'kelurahan.kecamatan_id', '=', 'kecamatan.id')
-                    ->select('kelurahan.nama_kelurahan', 'kecamatan.nama_kecamatan')
-                    ->orderBy('kelurahan.nama_kelurahan')
-                    ->get(),
-                'lahan_all' => $this->lahanDiterimaQuery()
-                    ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
-                    ->leftJoin('kelurahan', 'lahan_sawah.kelurahan_id', '=', 'kelurahan.id')
-                    ->leftJoin('tipe_lahan', 'lahan_sawah.tipe_lahan_id', '=', 'tipe_lahan.id')
-                    ->leftJoin('users as pemilik', 'lahan_sawah.pemilik_id', '=', 'pemilik.id')
-                    ->select(
-                        'lahan_sawah.id',
-                        'lahan_sawah.nama_lahan',
-                        'lahan_sawah.luas_lahan_hektar as luas',
-                        DB::raw('COALESCE(lahan_sawah.luas_tanam_hektar, lahan_sawah.luas_lahan_hektar) as luas_tanam'),
-                        'kecamatan.nama_kecamatan',
-                        'kelurahan.nama_kelurahan',
-                        'pemilik.nama_lengkap as pemilik_nama',
-                        DB::raw("COALESCE(tipe_lahan.nama_tipe, 'Belum Ditentukan') as tipe_lahan")
-                    )
-                    ->orderBy('kecamatan.nama_kecamatan')
-                    ->orderBy('kelurahan.nama_kelurahan')
-                    ->orderBy('lahan_sawah.nama_lahan')
-                    ->get(),
+                'message' => 'Data statistik berhasil diambil'
+            ]));
+        } catch (\Throwable $e) {
+            report($e);
 
-                'chart_panen_kecamatan' => $this->chartPanenKecamatan(),
-
-                'chart_luas_tipe_lahan' => $this->chartLuasTipeLahan(),
-
-                'chart_produktivitas_lahan' => $this->chartProduktivitasLahan(),
-
-                'chart_luas_kecamatan' => $this->chartLuasKecamatan(),
-
-                'tipe_lahan_options' => $this->tipeLahanOptions($rekapRows),
-                'tabel_rekap' => $rekapRows,
-                'rekap_padi_kecamatan' => $rekapPadiKecamatan,
-                'tahun_padi_options' => $this->tahunStatistikPadiOptions(),
-            ],
-            'message' => 'Data statistik berhasil diambil'
-        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+            return $this->noStore(response()->json([
+                'success' => false,
+                'status' => 'degraded',
+                'data' => $this->emptyStatistikData(),
+                'message' => 'Data statistik belum dapat dimuat lengkap, struktur respons tetap tersedia.',
+            ]));
+        }
     }
 
     public function getDetailStatistikKecamatan(Request $request, string $kecamatan)
@@ -143,38 +129,63 @@ class PublicApiController extends Controller
 
     public function getMapData()
     {
-        $rows = $this->lahanPublikQuery()
-            ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
-            ->leftJoin('kelurahan', 'lahan_sawah.kelurahan_id', '=', 'kelurahan.id')
-            ->leftJoin('tipe_lahan', 'lahan_sawah.tipe_lahan_id', '=', 'tipe_lahan.id')
-            ->leftJoin('users as pemilik', 'lahan_sawah.pemilik_id', '=', 'pemilik.id')
-            ->leftJoinSub($this->panenDiterimaPerLahanQuery(), 'panen_lahan', function ($join) {
+        if (!Schema::hasTable('lahan_sawah')) {
+            return $this->featureCollectionResponse([], ['message' => 'Tabel lahan_sawah belum tersedia']);
+        }
+
+        try {
+            $query = $this->lahanPublikQuery();
+
+            if (Schema::hasTable('kecamatan') && Schema::hasColumn('lahan_sawah', 'kecamatan_id')) {
+                $query->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id');
+            }
+
+            if (Schema::hasTable('kelurahan') && Schema::hasColumn('lahan_sawah', 'kelurahan_id')) {
+                $query->leftJoin('kelurahan', 'lahan_sawah.kelurahan_id', '=', 'kelurahan.id');
+            }
+
+            if (Schema::hasTable('tipe_lahan') && Schema::hasColumn('lahan_sawah', 'tipe_lahan_id')) {
+                $query->leftJoin('tipe_lahan', 'lahan_sawah.tipe_lahan_id', '=', 'tipe_lahan.id');
+            }
+
+            if (Schema::hasTable('users') && Schema::hasColumn('lahan_sawah', 'pemilik_id')) {
+                $query->leftJoin('users as pemilik', 'lahan_sawah.pemilik_id', '=', 'pemilik.id');
+            }
+
+            $query->leftJoinSub($this->panenDiterimaPerLahanQuery(), 'panen_lahan', function ($join) {
                 $join->on('panen_lahan.lahan_id', '=', 'lahan_sawah.id');
-            })
-            ->select(
-                'lahan_sawah.id',
-                'lahan_sawah.pemilik_id',
-                'lahan_sawah.assigned_petugas_id',
-                'lahan_sawah.kecamatan_id',
-                'lahan_sawah.kelurahan_id',
-                'lahan_sawah.tipe_lahan_id',
-                'lahan_sawah.nama_lahan',
-                'pemilik.nama_lengkap as pemilik_lahan',
-                'lahan_sawah.tahun_lbs',
-                'lahan_sawah.luas_lahan_hektar',
-                DB::raw('COALESCE(lahan_sawah.luas_tanam_hektar, lahan_sawah.luas_lahan_hektar) as luas_tanam_hektar'),
-                'lahan_sawah.hasil_panen_ton',
-                'lahan_sawah.produktivitas_ton_ha',
-                'lahan_sawah.alamat_detail',
-                'lahan_sawah.latitude',
-                'lahan_sawah.longitude',
-                'kecamatan.nama_kecamatan',
-                'kelurahan.nama_kelurahan',
-                'tipe_lahan.nama_tipe',
-                DB::raw('COALESCE(panen_lahan.total_panen,0) as total_panen_diterima'),
-                DB::raw('ST_AsGeoJSON(lahan_sawah.polygon_area) as geojson')
-            )
-            ->get();
+            });
+
+            $rows = $query
+                ->select(
+                    $this->selectColumn('lahan_sawah', 'id'),
+                    $this->selectColumn('lahan_sawah', 'pemilik_id'),
+                    $this->selectColumn('lahan_sawah', 'assigned_petugas_id'),
+                    $this->selectColumn('lahan_sawah', 'kecamatan_id'),
+                    $this->selectColumn('lahan_sawah', 'kelurahan_id'),
+                    $this->selectColumn('lahan_sawah', 'tipe_lahan_id'),
+                    $this->selectColumn('lahan_sawah', 'nama_lahan'),
+                    $this->selectColumn('users', 'nama_lengkap', 'pemilik', 'pemilik_lahan'),
+                    $this->selectColumn('lahan_sawah', 'tahun_lbs'),
+                    $this->selectColumn('lahan_sawah', 'luas_lahan_hektar', null, null, '0'),
+                    DB::raw('COALESCE(' . $this->sqlColumn('lahan_sawah', 'luas_tanam_hektar') . ', ' . $this->sqlColumn('lahan_sawah', 'luas_lahan_hektar', null, '0') . ') as luas_tanam_hektar'),
+                    $this->selectColumn('lahan_sawah', 'hasil_panen_ton', null, null, '0'),
+                    $this->selectColumn('lahan_sawah', 'produktivitas_ton_ha', null, null, '0'),
+                    $this->selectColumn('lahan_sawah', 'alamat_detail'),
+                    $this->selectColumn('lahan_sawah', 'latitude'),
+                    $this->selectColumn('lahan_sawah', 'longitude'),
+                    $this->selectColumn('kecamatan', 'nama_kecamatan'),
+                    $this->selectColumn('kelurahan', 'nama_kelurahan'),
+                    $this->selectColumn('tipe_lahan', 'nama_tipe'),
+                    DB::raw('COALESCE(panen_lahan.total_panen,0) as total_panen_diterima'),
+                    $this->geoJsonSelect('lahan_sawah', 'polygon_area', 'geojson')
+                )
+                ->get();
+        } catch (\Throwable $e) {
+            report($e);
+
+            return $this->featureCollectionResponse([], ['message' => 'Data lahan sawah belum dapat dimuat']);
+        }
 
         $features = [];
 
@@ -237,52 +248,64 @@ class PublicApiController extends Controller
             ];
         }
 
-        return response()->json([
-            'success' => true,
-            'type' => 'FeatureCollection',
-            'features' => $features,
-            'data' => [
-                'type' => 'FeatureCollection',
-                'features' => $features,
-            ],
-        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        return $this->featureCollectionResponse($features);
     }
 
     public function getMapLahanTermonitor()
     {
-        $rows = DB::table('lahan_huma')
-            ->leftJoin('monitoring_kondisi', 'lahan_huma.id', '=', 'monitoring_kondisi.lahan_huma_id')
-            ->select(
-                'lahan_huma.id',
-                'lahan_huma.nama_lahan',
-                'lahan_huma.luas_lahan_hektar',
-                'lahan_huma.luas_lahan_hektar as luas_tanam_hektar',
-                'lahan_huma.latitude',
-                'lahan_huma.longitude',
-                DB::raw('ST_AsGeoJSON(lahan_huma.polygon_area) as geojson'),
-                'lahan_huma.device_id',
-                'lahan_huma.external_id',
-                'lahan_huma.nama_pemilik',
-                'lahan_huma.district_name',
-                'lahan_huma.tipe_tanah',
-                'lahan_huma.status_verifikasi',
-                'monitoring_kondisi.id as monitoring_kondisi_id',
-                'monitoring_kondisi.ph_air',
-                'monitoring_kondisi.tinggi_muka_air',
-                'monitoring_kondisi.n_level',
-                'monitoring_kondisi.p_level',
-                'monitoring_kondisi.k_level',
-                'monitoring_kondisi.is_shared',
-                'monitoring_kondisi.tanggal_cek'
-            )
-            // Lakukan pengelompokan jika ada multiple monitoring
-            ->orderBy('monitoring_kondisi.tanggal_cek', 'desc')
-            ->get()
-            ->unique('id'); // Ambil latest sensor per lahan
+        if (!Schema::hasTable('lahan_huma')) {
+            return $this->featureCollectionResponse([], ['message' => 'Tabel lahan_huma belum tersedia']);
+        }
+
+        try {
+            $query = DB::table('lahan_huma');
+
+            if (Schema::hasTable('monitoring_kondisi') && Schema::hasColumn('monitoring_kondisi', 'lahan_huma_id')) {
+                $query->leftJoin('monitoring_kondisi', 'lahan_huma.id', '=', 'monitoring_kondisi.lahan_huma_id');
+            }
+
+            $rows = $query
+                ->select(
+                    $this->selectColumn('lahan_huma', 'id'),
+                    $this->selectColumn('lahan_huma', 'nama_lahan'),
+                    $this->selectColumn('lahan_huma', 'luas_lahan_hektar', null, null, '0'),
+                    $this->selectColumn('lahan_huma', 'luas_lahan_hektar', null, 'luas_tanam_hektar', '0'),
+                    $this->selectColumn('lahan_huma', 'latitude'),
+                    $this->selectColumn('lahan_huma', 'longitude'),
+                    $this->geoJsonSelect('lahan_huma', 'polygon_area', 'geojson'),
+                    $this->selectColumn('lahan_huma', 'device_id'),
+                    $this->selectColumn('lahan_huma', 'external_id'),
+                    $this->selectColumn('lahan_huma', 'nama_pemilik'),
+                    $this->selectColumn('lahan_huma', 'district_name'),
+                    $this->selectColumn('lahan_huma', 'tipe_tanah'),
+                    $this->selectColumn('lahan_huma', 'status_verifikasi'),
+                    $this->selectColumn('monitoring_kondisi', 'id', null, 'monitoring_kondisi_id'),
+                    $this->selectColumn('monitoring_kondisi', 'ph_air'),
+                    $this->selectColumn('monitoring_kondisi', 'tinggi_muka_air'),
+                    $this->selectColumn('monitoring_kondisi', 'n_level'),
+                    $this->selectColumn('monitoring_kondisi', 'p_level'),
+                    $this->selectColumn('monitoring_kondisi', 'k_level'),
+                    $this->selectColumn('monitoring_kondisi', 'is_shared', null, null, '0'),
+                    $this->selectColumn('monitoring_kondisi', 'tanggal_cek')
+                )
+                ->when(
+                    Schema::hasTable('monitoring_kondisi')
+                    && Schema::hasColumn('monitoring_kondisi', 'lahan_huma_id')
+                    && Schema::hasColumn('monitoring_kondisi', 'tanggal_cek'),
+                    function ($query) {
+                    $query->orderBy('monitoring_kondisi.tanggal_cek', 'desc');
+                })
+                ->get()
+                ->unique('id');
+        } catch (\Throwable $e) {
+            report($e);
+
+            return $this->featureCollectionResponse([], ['message' => 'Data lahan termonitor belum dapat dimuat']);
+        }
 
         $monitoringIds = $rows->pluck('monitoring_kondisi_id')->filter()->toArray();
         $rekomendasiList = [];
-        if (!empty($monitoringIds)) {
+        if (!empty($monitoringIds) && Schema::hasTable('rekomendasi_huma')) {
             $reks = DB::table('rekomendasi_huma')
                 ->whereIn('monitoring_kondisi_id', $monitoringIds)
                 ->orderBy('tanggal_rekomendasi', 'desc')
@@ -364,36 +387,303 @@ class PublicApiController extends Controller
             ];
         }
 
-        return response()->json([
-            'success' => true,
-            'type' => 'FeatureCollection',
-            'features' => $features,
-        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        return $this->featureCollectionResponse($features);
     }
 
     private function lahanPublikQuery()
     {
-        return DB::table('lahan_sawah')
-            ->where('lahan_sawah.status_verifikasi', 'DITERIMA');
+        return $this->lahanDiterimaQuery();
     }
 
     private function lahanDiterimaQuery()
     {
-        return DB::table('lahan_sawah')
-            ->where('lahan_sawah.status_verifikasi', 'DITERIMA');
+        if (!Schema::hasTable('lahan_sawah')) {
+            return $this->emptyLahanSawahQuery();
+        }
+
+        $query = DB::table('lahan_sawah');
+
+        if (Schema::hasColumn('lahan_sawah', 'status_verifikasi')) {
+            $query->where('lahan_sawah.status_verifikasi', 'DITERIMA');
+        }
+
+        return $query;
+    }
+
+    private function totalLahanTermonitor(): int
+    {
+        if (!Schema::hasTable('lahan_huma')) {
+            return 0;
+        }
+
+        return DB::table('lahan_huma')->count();
+    }
+
+    private function emptyLahanSawahQuery()
+    {
+        return DB::query()->fromSub(function ($query) {
+            $query->selectRaw(
+                'NULL as id,
+                NULL as pemilik_id,
+                NULL as assigned_petugas_id,
+                NULL as kecamatan_id,
+                NULL as kelurahan_id,
+                NULL as tipe_lahan_id,
+                NULL as nama_lahan,
+                NULL as tahun_lbs,
+                0 as luas_lahan_hektar,
+                0 as luas_tanam_hektar,
+                0 as hasil_panen_ton,
+                0 as produktivitas_ton_ha,
+                NULL as alamat_detail,
+                NULL as latitude,
+                NULL as longitude,
+                NULL as status_verifikasi,
+                NULL as polygon_area'
+            )->whereRaw('1 = 0');
+        }, 'lahan_sawah');
+    }
+
+    private function noStore($response)
+    {
+        return $response->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    }
+
+    private function featureCollectionResponse(array $features = [], array $meta = [])
+    {
+        $collection = [
+            'type' => 'FeatureCollection',
+            'features' => array_values($features),
+        ];
+
+        if (!empty($meta)) {
+            $collection['meta'] = $meta;
+        }
+
+        return $this->noStore(response()->json([
+            'success' => true,
+            'type' => 'FeatureCollection',
+            'features' => $collection['features'],
+            'meta' => $collection['meta'] ?? null,
+            'data' => $collection,
+        ]));
+    }
+
+    private function emptyStatistikData(): array
+    {
+        return [
+            'summary' => [
+                'total_kecamatan' => 0,
+                'total_kelurahan' => 0,
+                'total_lahan_sawah' => 0,
+                'total_luas_ha' => 0,
+                'total_luas_tanam_ha' => 0,
+                'total_panen_ton' => 0,
+                'total_lahan_termonitor' => 0,
+            ],
+            'kecamatan_all' => [],
+            'kelurahan_all' => [],
+            'lahan_all' => [],
+            'chart_panen_kecamatan' => [],
+            'chart_luas_tipe_lahan' => [],
+            'chart_produktivitas_lahan' => [],
+            'chart_luas_kecamatan' => [],
+            'tipe_lahan_options' => [],
+            'tabel_rekap' => [],
+            'rekap_padi_kecamatan' => [],
+            'tahun_padi_options' => [],
+        ];
+    }
+
+    private function quoteIdentifier(string $identifier): string
+    {
+        return '`' . str_replace('`', '``', $identifier) . '`';
+    }
+
+    private function sqlColumn(string $schemaTable, string $column, ?string $queryRef = null, string $default = 'NULL'): string
+    {
+        if (!Schema::hasTable($schemaTable) || !Schema::hasColumn($schemaTable, $column)) {
+            return $default;
+        }
+
+        return $this->quoteIdentifier($queryRef ?: $schemaTable) . '.' . $this->quoteIdentifier($column);
+    }
+
+    private function selectColumn(
+        string $schemaTable,
+        string $column,
+        ?string $queryRef = null,
+        ?string $alias = null,
+        string $default = 'NULL'
+    ) {
+        $alias ??= $column;
+
+        if (!Schema::hasTable($schemaTable) || !Schema::hasColumn($schemaTable, $column)) {
+            return DB::raw($default . ' as ' . $this->quoteIdentifier($alias));
+        }
+
+        $sql = $this->sqlColumn($schemaTable, $column, $queryRef);
+
+        if ($alias !== $column || $queryRef) {
+            $sql .= ' as ' . $this->quoteIdentifier($alias);
+        }
+
+        return DB::raw($sql);
+    }
+
+    private function geoJsonSelect(string $table, string $column, string $alias)
+    {
+        if (!Schema::hasTable($table) || !Schema::hasColumn($table, $column)) {
+            return DB::raw('NULL as ' . $this->quoteIdentifier($alias));
+        }
+
+        return DB::raw('ST_AsGeoJSON(' . $this->sqlColumn($table, $column) . ') as ' . $this->quoteIdentifier($alias));
+    }
+
+    private function canJoinPanenToLahan(): bool
+    {
+        if (!Schema::hasTable('panen_padi') || !Schema::hasTable('lahan_sawah')) {
+            return false;
+        }
+
+        if (Schema::hasColumn('panen_padi', 'lahan_id')) {
+            return true;
+        }
+
+        return Schema::hasColumn('panen_padi', 'tanam_padi_id')
+            && Schema::hasTable('tanam_padi')
+            && Schema::hasColumn('tanam_padi', 'id')
+            && Schema::hasColumn('tanam_padi', 'lahan_id');
+    }
+
+    private function panenUsesTanamJoin(): bool
+    {
+        return !Schema::hasColumn('panen_padi', 'lahan_id')
+            && Schema::hasColumn('panen_padi', 'tanam_padi_id')
+            && Schema::hasTable('tanam_padi');
+    }
+
+    private function joinPanenToLahan($query): void
+    {
+        if (Schema::hasColumn('panen_padi', 'lahan_id')) {
+            $query->join('lahan_sawah as ls', 'ls.id', '=', 'rp.lahan_id');
+            return;
+        }
+
+        $query
+            ->join('tanam_padi as tp', 'tp.id', '=', 'rp.tanam_padi_id')
+            ->join('lahan_sawah as ls', 'ls.id', '=', 'tp.lahan_id');
+    }
+
+    private function panenLahanIdSql(): string
+    {
+        return Schema::hasColumn('panen_padi', 'lahan_id')
+            ? $this->sqlColumn('panen_padi', 'lahan_id', 'rp')
+            : $this->sqlColumn('tanam_padi', 'lahan_id', 'tp');
+    }
+
+    private function panenLuasTanamSql(): string
+    {
+        $columns = [
+            $this->sqlColumn('panen_padi', 'luas_tanam_hektar', 'rp'),
+            $this->sqlColumn('panen_padi', 'luas_lahan_ha', 'rp'),
+        ];
+
+        if ($this->panenUsesTanamJoin()) {
+            $columns[] = $this->sqlColumn('tanam_padi', 'luas_tanam_hektar', 'tp');
+        }
+
+        $columns[] = $this->sqlColumn('lahan_sawah', 'luas_tanam_hektar', 'ls');
+        $columns[] = $this->sqlColumn('lahan_sawah', 'luas_lahan_hektar', 'ls', '0');
+
+        return 'COALESCE(' . implode(', ', $columns) . ')';
+    }
+
+    private function kelurahanPublikRows()
+    {
+        if (!Schema::hasTable('kelurahan')) {
+            return collect();
+        }
+
+        $query = DB::table('kelurahan');
+
+        if (Schema::hasTable('kecamatan') && Schema::hasColumn('kelurahan', 'kecamatan_id')) {
+            $query->leftJoin('kecamatan', 'kelurahan.kecamatan_id', '=', 'kecamatan.id');
+        }
+
+        return $query
+            ->select(
+                $this->selectColumn('kelurahan', 'nama_kelurahan'),
+                $this->selectColumn('kecamatan', 'nama_kecamatan')
+            )
+            ->orderBy('kelurahan.nama_kelurahan')
+            ->get();
+    }
+
+    private function lahanPublikRows()
+    {
+        if (!Schema::hasTable('lahan_sawah')) {
+            return collect();
+        }
+
+        $query = $this->lahanDiterimaQuery();
+
+        if (Schema::hasTable('kecamatan') && Schema::hasColumn('lahan_sawah', 'kecamatan_id')) {
+            $query->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id');
+        }
+
+        if (Schema::hasTable('kelurahan') && Schema::hasColumn('lahan_sawah', 'kelurahan_id')) {
+            $query->leftJoin('kelurahan', 'lahan_sawah.kelurahan_id', '=', 'kelurahan.id');
+        }
+
+        if (Schema::hasTable('tipe_lahan') && Schema::hasColumn('lahan_sawah', 'tipe_lahan_id')) {
+            $query->leftJoin('tipe_lahan', 'lahan_sawah.tipe_lahan_id', '=', 'tipe_lahan.id');
+        }
+
+        if (Schema::hasTable('users') && Schema::hasColumn('lahan_sawah', 'pemilik_id')) {
+            $query->leftJoin('users as pemilik', 'lahan_sawah.pemilik_id', '=', 'pemilik.id');
+        }
+
+        return $query
+            ->select(
+                $this->selectColumn('lahan_sawah', 'id'),
+                $this->selectColumn('lahan_sawah', 'nama_lahan'),
+                $this->selectColumn('lahan_sawah', 'luas_lahan_hektar', null, 'luas', '0'),
+                DB::raw('COALESCE(' . $this->sqlColumn('lahan_sawah', 'luas_tanam_hektar') . ', ' . $this->sqlColumn('lahan_sawah', 'luas_lahan_hektar', null, '0') . ') as luas_tanam'),
+                $this->selectColumn('kecamatan', 'nama_kecamatan'),
+                $this->selectColumn('kelurahan', 'nama_kelurahan'),
+                $this->selectColumn('users', 'nama_lengkap', 'pemilik', 'pemilik_nama'),
+                DB::raw('COALESCE(' . $this->sqlColumn('tipe_lahan', 'nama_tipe') . ", 'Belum Ditentukan') as tipe_lahan")
+            )
+            ->when(Schema::hasTable('kecamatan') && Schema::hasColumn('lahan_sawah', 'kecamatan_id'), fn ($query) => $query->orderBy('kecamatan.nama_kecamatan'))
+            ->when(Schema::hasTable('kelurahan') && Schema::hasColumn('lahan_sawah', 'kelurahan_id'), fn ($query) => $query->orderBy('kelurahan.nama_kelurahan'))
+            ->when(Schema::hasColumn('lahan_sawah', 'nama_lahan'), fn ($query) => $query->orderBy('lahan_sawah.nama_lahan'))
+            ->get();
     }
 
     private function panenDiterimaPerLahanQuery()
     {
-        if (Schema::hasTable('panen_padi')) {
-            return DB::table('panen_padi')
-                ->select('lahan_id', DB::raw('COALESCE(SUM(hasil_panen_ton),0) as total_panen'))
-                ->where('status_verifikasi', 'DITERIMA')
-                ->whereDate('tanggal_panen', '<=', now()->toDateString())
-                ->groupBy('lahan_id');
+        if ($this->canJoinPanenToLahan()) {
+            $query = DB::table('panen_padi as rp');
+            $this->joinPanenToLahan($query);
+
+            $query->select(
+                DB::raw($this->panenLahanIdSql() . ' as lahan_id'),
+                DB::raw('COALESCE(SUM(' . $this->sqlColumn('panen_padi', 'hasil_panen_ton', 'rp', '0') . '),0) as total_panen')
+            );
+
+            if (Schema::hasColumn('panen_padi', 'status_verifikasi')) {
+                $query->where('rp.status_verifikasi', 'DITERIMA');
+            }
+
+            if (Schema::hasColumn('panen_padi', 'tanggal_panen')) {
+                $query->whereDate('rp.tanggal_panen', '<=', now()->toDateString());
+            }
+
+            return $query->groupByRaw($this->panenLahanIdSql());
         }
 
-        return DB::table('lahan_sawah')
+        return $this->emptyLahanSawahQuery()
             ->select('id as lahan_id', DB::raw('0 as total_panen'))
             ->whereRaw('1 = 0');
     }
@@ -422,15 +712,29 @@ class PublicApiController extends Controller
                 ->values();
         }
 
-        return $this->lahanDiterimaQuery()
-            ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
+        $query = $this->lahanDiterimaQuery();
+        $hasKecamatanJoin = Schema::hasTable('kecamatan') && Schema::hasColumn('lahan_sawah', 'kecamatan_id');
+
+        if ($hasKecamatanJoin) {
+            $query->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id');
+        }
+
+        $query
             ->leftJoinSub($this->panenDiterimaPerLahanQuery(), 'panen_lahan', function ($join) {
                 $join->on('panen_lahan.lahan_id', '=', 'lahan_sawah.id');
             })
-            ->select('kecamatan.nama_kecamatan', DB::raw('ROUND(COALESCE(SUM(panen_lahan.total_panen),0), 2) as total_panen'))
-            ->groupBy('kecamatan.nama_kecamatan')
-            ->orderBy('kecamatan.nama_kecamatan')
-            ->get();
+            ->select(
+                $hasKecamatanJoin
+                    ? DB::raw("COALESCE(kecamatan.nama_kecamatan, 'Belum Ditentukan') as nama_kecamatan")
+                    : DB::raw("'Belum Ditentukan' as nama_kecamatan"),
+                DB::raw('ROUND(COALESCE(SUM(panen_lahan.total_panen),0), 2) as total_panen')
+            );
+
+        if ($hasKecamatanJoin) {
+            $query->groupBy('kecamatan.nama_kecamatan')->orderBy('kecamatan.nama_kecamatan');
+        }
+
+        return $query->get();
     }
 
     private function chartLuasKecamatan()
@@ -449,32 +753,55 @@ class PublicApiController extends Controller
                 ->values();
         }
 
-        return $this->lahanDiterimaQuery()
-            ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
-            ->select(
-                'kecamatan.nama_kecamatan',
-                DB::raw('ROUND(COALESCE(SUM(lahan_sawah.luas_lahan_hektar),0), 2) as total_luas'),
-                DB::raw('ROUND(COALESCE(SUM(COALESCE(lahan_sawah.luas_tanam_hektar, lahan_sawah.luas_lahan_hektar)),0), 2) as luas_tanam_ha')
-            )
-            ->groupBy('kecamatan.nama_kecamatan')
-            ->orderBy('kecamatan.nama_kecamatan')
-            ->get();
+        $query = $this->lahanDiterimaQuery();
+        $hasKecamatanJoin = Schema::hasTable('kecamatan') && Schema::hasColumn('lahan_sawah', 'kecamatan_id');
+
+        if ($hasKecamatanJoin) {
+            $query->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id');
+        }
+
+        $query->select(
+            $hasKecamatanJoin
+                ? DB::raw("COALESCE(kecamatan.nama_kecamatan, 'Belum Ditentukan') as nama_kecamatan")
+                : DB::raw("'Belum Ditentukan' as nama_kecamatan"),
+            DB::raw('ROUND(COALESCE(SUM(' . $this->sqlColumn('lahan_sawah', 'luas_lahan_hektar', null, '0') . '),0), 2) as total_luas'),
+            DB::raw('ROUND(COALESCE(SUM(COALESCE(' . $this->sqlColumn('lahan_sawah', 'luas_tanam_hektar') . ', ' . $this->sqlColumn('lahan_sawah', 'luas_lahan_hektar', null, '0') . ')),0), 2) as luas_tanam_ha')
+        );
+
+        if ($hasKecamatanJoin) {
+            $query->groupBy('kecamatan.nama_kecamatan')->orderBy('kecamatan.nama_kecamatan');
+        }
+
+        return $query->get();
     }
 
     private function chartLuasTipeLahan()
     {
-        return $this->lahanDiterimaQuery()
-            ->leftJoin('tipe_lahan', 'lahan_sawah.tipe_lahan_id', '=', 'tipe_lahan.id')
-            ->select(
-                'lahan_sawah.tipe_lahan_id',
-                DB::raw("COALESCE(tipe_lahan.nama_tipe, 'Belum Ditentukan') as nama_tipe"),
-                DB::raw("COALESCE(tipe_lahan.nama_tipe, 'Belum Ditentukan') as tipe_lahan"),
-                DB::raw('ROUND(COALESCE(SUM(lahan_sawah.luas_lahan_hektar),0), 2) as total_luas'),
-                DB::raw('ROUND(COALESCE(SUM(COALESCE(lahan_sawah.luas_tanam_hektar, lahan_sawah.luas_lahan_hektar)),0), 2) as total_luas_tanam')
-            )
-            ->groupBy('lahan_sawah.tipe_lahan_id', 'tipe_lahan.nama_tipe')
-            ->orderBy('tipe_lahan.nama_tipe')
-            ->get();
+        $query = $this->lahanDiterimaQuery();
+        $hasTipeId = Schema::hasColumn('lahan_sawah', 'tipe_lahan_id');
+        $hasTipeJoin = Schema::hasTable('tipe_lahan') && $hasTipeId;
+
+        if ($hasTipeJoin) {
+            $query->leftJoin('tipe_lahan', 'lahan_sawah.tipe_lahan_id', '=', 'tipe_lahan.id');
+        }
+
+        $namaTipeSql = $hasTipeJoin ? "COALESCE(tipe_lahan.nama_tipe, 'Belum Ditentukan')" : "'Belum Ditentukan'";
+
+        $query->select(
+            DB::raw($this->sqlColumn('lahan_sawah', 'tipe_lahan_id') . ' as tipe_lahan_id'),
+            DB::raw($namaTipeSql . ' as nama_tipe'),
+            DB::raw($namaTipeSql . ' as tipe_lahan'),
+            DB::raw('ROUND(COALESCE(SUM(' . $this->sqlColumn('lahan_sawah', 'luas_lahan_hektar', null, '0') . '),0), 2) as total_luas'),
+            DB::raw('ROUND(COALESCE(SUM(COALESCE(' . $this->sqlColumn('lahan_sawah', 'luas_tanam_hektar') . ', ' . $this->sqlColumn('lahan_sawah', 'luas_lahan_hektar', null, '0') . ')),0), 2) as total_luas_tanam')
+        );
+
+        if ($hasTipeJoin) {
+            $query->groupBy('lahan_sawah.tipe_lahan_id', 'tipe_lahan.nama_tipe')->orderBy('tipe_lahan.nama_tipe');
+        } elseif ($hasTipeId) {
+            $query->groupBy('lahan_sawah.tipe_lahan_id')->orderBy('lahan_sawah.tipe_lahan_id');
+        }
+
+        return $query->get();
     }
 
     private function chartProduktivitasLahan()
@@ -495,21 +822,45 @@ class PublicApiController extends Controller
                 ->values();
         }
 
-        if (Schema::hasTable('panen_padi')) {
-            return DB::table('panen_padi as rp')
-                ->join('lahan_sawah as ls', 'ls.id', '=', 'rp.lahan_id')
-                ->leftJoin('kecamatan', 'ls.kecamatan_id', '=', 'kecamatan.id')
-                ->where('rp.status_verifikasi', 'DITERIMA')
-                ->whereDate('rp.tanggal_panen', '<=', now()->toDateString())
-                ->where('ls.status_verifikasi', 'DITERIMA')
-                ->select(
-                    'kecamatan.nama_kecamatan as nama_lahan',
-                    DB::raw('ROUND(SUM(rp.hasil_panen_ton), 2) as total_panen'),
-                    DB::raw('ROUND(SUM(COALESCE(rp.luas_tanam_hektar, rp.luas_lahan_ha)), 2) as total_luas_panen'),
-                    DB::raw('CASE WHEN SUM(COALESCE(rp.luas_tanam_hektar, rp.luas_lahan_ha)) > 0 THEN ROUND(SUM(rp.hasil_panen_ton) / SUM(COALESCE(rp.luas_tanam_hektar, rp.luas_lahan_ha)), 2) ELSE 0 END as produktivitas_ton_ha')
-                )
-                ->groupBy('kecamatan.nama_kecamatan')
-                ->orderBy('kecamatan.nama_kecamatan')
+        if ($this->canJoinPanenToLahan()) {
+            $query = DB::table('panen_padi as rp');
+            $this->joinPanenToLahan($query);
+
+            $hasKecamatanJoin = Schema::hasTable('kecamatan') && Schema::hasColumn('lahan_sawah', 'kecamatan_id');
+
+            if ($hasKecamatanJoin) {
+                $query->leftJoin('kecamatan', 'ls.kecamatan_id', '=', 'kecamatan.id');
+            }
+
+            if (Schema::hasColumn('panen_padi', 'status_verifikasi')) {
+                $query->where('rp.status_verifikasi', 'DITERIMA');
+            }
+
+            if (Schema::hasColumn('panen_padi', 'tanggal_panen')) {
+                $query->whereDate('rp.tanggal_panen', '<=', now()->toDateString());
+            }
+
+            if (Schema::hasColumn('lahan_sawah', 'status_verifikasi')) {
+                $query->where('ls.status_verifikasi', 'DITERIMA');
+            }
+
+            $hasilPanenSql = $this->sqlColumn('panen_padi', 'hasil_panen_ton', 'rp', '0');
+            $luasPanenSql = $this->panenLuasTanamSql();
+
+            $query->select(
+                $hasKecamatanJoin
+                    ? DB::raw("COALESCE(kecamatan.nama_kecamatan, 'Belum Ditentukan') as nama_lahan")
+                    : DB::raw("'Belum Ditentukan' as nama_lahan"),
+                DB::raw('ROUND(COALESCE(SUM(' . $hasilPanenSql . '),0), 2) as total_panen'),
+                DB::raw('ROUND(COALESCE(SUM(' . $luasPanenSql . '),0), 2) as total_luas_panen'),
+                DB::raw('CASE WHEN SUM(' . $luasPanenSql . ') > 0 THEN ROUND(SUM(' . $hasilPanenSql . ') / SUM(' . $luasPanenSql . '), 2) ELSE 0 END as produktivitas_ton_ha')
+            );
+
+            if ($hasKecamatanJoin) {
+                $query->groupBy('kecamatan.nama_kecamatan')->orderBy('kecamatan.nama_kecamatan');
+            }
+
+            return $query
                 ->get()
                 ->map(function ($row) {
                     $row->periode_label = $row->nama_lahan ?: 'Belum Ditentukan';
@@ -518,44 +869,85 @@ class PublicApiController extends Controller
                 });
         }
 
-        return $this->lahanDiterimaQuery()
-            ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
+        $query = $this->lahanDiterimaQuery();
+        $hasKecamatanJoin = Schema::hasTable('kecamatan') && Schema::hasColumn('lahan_sawah', 'kecamatan_id');
+        $luasTanamSql = 'COALESCE(' . $this->sqlColumn('lahan_sawah', 'luas_tanam_hektar') . ', ' . $this->sqlColumn('lahan_sawah', 'luas_lahan_hektar', null, '0') . ')';
+
+        if ($hasKecamatanJoin) {
+            $query->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id');
+        }
+
+        $query
             ->leftJoinSub($this->panenDiterimaPerLahanQuery(), 'panen_lahan', function ($join) {
                 $join->on('panen_lahan.lahan_id', '=', 'lahan_sawah.id');
             })
             ->select(
-                'kecamatan.nama_kecamatan as nama_lahan',
-                DB::raw('SUM(COALESCE(panen_lahan.total_panen,0)) as total_panen'),
-                DB::raw('CASE WHEN SUM(COALESCE(lahan_sawah.luas_tanam_hektar, lahan_sawah.luas_lahan_hektar)) > 0 THEN ROUND(SUM(COALESCE(panen_lahan.total_panen,0)) / SUM(COALESCE(lahan_sawah.luas_tanam_hektar, lahan_sawah.luas_lahan_hektar)), 2) ELSE 0 END as produktivitas_ton_ha')
-            )
-            ->groupBy('kecamatan.nama_kecamatan')
-            ->orderBy('kecamatan.nama_kecamatan')
-            ->get();
+                $hasKecamatanJoin
+                    ? DB::raw("COALESCE(kecamatan.nama_kecamatan, 'Belum Ditentukan') as nama_lahan")
+                    : DB::raw("'Belum Ditentukan' as nama_lahan"),
+                DB::raw('ROUND(COALESCE(SUM(panen_lahan.total_panen),0), 2) as total_panen'),
+                DB::raw('ROUND(COALESCE(SUM(' . $luasTanamSql . '),0), 2) as total_luas_panen'),
+                DB::raw('CASE WHEN SUM(' . $luasTanamSql . ') > 0 THEN ROUND(SUM(COALESCE(panen_lahan.total_panen,0)) / SUM(' . $luasTanamSql . '), 2) ELSE 0 END as produktivitas_ton_ha')
+            );
+
+        if ($hasKecamatanJoin) {
+            $query->groupBy('kecamatan.nama_kecamatan')->orderBy('kecamatan.nama_kecamatan');
+        }
+
+        return $query->get();
     }
 
     private function buildTabelRekap()
     {
-        $rows = $this->lahanDiterimaQuery()
-            ->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id')
-            ->leftJoin('kelurahan', 'lahan_sawah.kelurahan_id', '=', 'kelurahan.id')
-            ->leftJoin('tipe_lahan', 'lahan_sawah.tipe_lahan_id', '=', 'tipe_lahan.id')
+        $query = $this->lahanDiterimaQuery();
+        $hasKecamatanJoin = Schema::hasTable('kecamatan') && Schema::hasColumn('lahan_sawah', 'kecamatan_id');
+        $hasKelurahanJoin = Schema::hasTable('kelurahan') && Schema::hasColumn('lahan_sawah', 'kelurahan_id');
+        $hasTipeJoin = Schema::hasTable('tipe_lahan') && Schema::hasColumn('lahan_sawah', 'tipe_lahan_id');
+        $luasTanamSql = 'COALESCE(' . $this->sqlColumn('lahan_sawah', 'luas_tanam_hektar') . ', ' . $this->sqlColumn('lahan_sawah', 'luas_lahan_hektar', null, '0') . ')';
+
+        if ($hasKecamatanJoin) {
+            $query->leftJoin('kecamatan', 'lahan_sawah.kecamatan_id', '=', 'kecamatan.id');
+        }
+
+        if ($hasKelurahanJoin) {
+            $query->leftJoin('kelurahan', 'lahan_sawah.kelurahan_id', '=', 'kelurahan.id');
+        }
+
+        if ($hasTipeJoin) {
+            $query->leftJoin('tipe_lahan', 'lahan_sawah.tipe_lahan_id', '=', 'tipe_lahan.id');
+        }
+
+        $rows = $query
             ->leftJoinSub($this->panenDiterimaPerLahanQuery(), 'panen_lahan', function ($join) {
                 $join->on('panen_lahan.lahan_id', '=', 'lahan_sawah.id');
             })
             ->select(
-                'lahan_sawah.id',
-                'lahan_sawah.tahun_lbs',
-                'lahan_sawah.tipe_lahan_id',
-                'lahan_sawah.luas_lahan_hektar',
-                DB::raw('COALESCE(lahan_sawah.luas_tanam_hektar, lahan_sawah.luas_lahan_hektar) as luas_tanam_hektar'),
-                'kecamatan.nama_kecamatan',
-                'kelurahan.nama_kelurahan',
-                DB::raw("COALESCE(tipe_lahan.nama_tipe, 'Belum Ditentukan') as nama_tipe"),
+                $this->selectColumn('lahan_sawah', 'id'),
+                $this->selectColumn('lahan_sawah', 'tahun_lbs'),
+                $this->selectColumn('lahan_sawah', 'tipe_lahan_id'),
+                $this->selectColumn('lahan_sawah', 'luas_lahan_hektar', null, null, '0'),
+                DB::raw($luasTanamSql . ' as luas_tanam_hektar'),
+                $hasKecamatanJoin
+                    ? DB::raw("COALESCE(kecamatan.nama_kecamatan, '-') as nama_kecamatan")
+                    : DB::raw("'-' as nama_kecamatan"),
+                $hasKelurahanJoin
+                    ? DB::raw("COALESCE(kelurahan.nama_kelurahan, '-') as nama_kelurahan")
+                    : DB::raw("'-' as nama_kelurahan"),
+                $hasTipeJoin
+                    ? DB::raw("COALESCE(tipe_lahan.nama_tipe, 'Belum Ditentukan') as nama_tipe")
+                    : DB::raw("'Belum Ditentukan' as nama_tipe"),
                 DB::raw('COALESCE(panen_lahan.total_panen,0) as total_panen_lahan')
-            )
-            ->orderBy('kecamatan.nama_kecamatan')
-            ->orderBy('kelurahan.nama_kelurahan')
-            ->get();
+            );
+
+        if ($hasKecamatanJoin) {
+            $rows->orderBy('kecamatan.nama_kecamatan');
+        }
+
+        if ($hasKelurahanJoin) {
+            $rows->orderBy('kelurahan.nama_kelurahan');
+        }
+
+        $rows = $rows->get();
 
         return $rows
             ->groupBy(fn ($row) => implode('|', [
@@ -930,16 +1322,21 @@ class PublicApiController extends Controller
 
     public function getBatasWilayah()
     {
+        if (!Schema::hasTable('kabupaten') || !Schema::hasColumn('kabupaten', 'polygon_baritokuala')) {
+            return $this->featureCollectionResponse([], [
+                'message' => 'Tabel atau kolom polygon kabupaten belum tersedia',
+            ]);
+        }
+
         $kabupaten = DB::table('kabupaten')
             ->where('nama_kabupaten', 'LIKE', '%Barito Kuala%')
             ->select('polygon_baritokuala')
             ->first();
 
         if (!$kabupaten || !$kabupaten->polygon_baritokuala) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data polygon Barito Kuala tidak ditemukan'
-            ], 404);
+            return $this->featureCollectionResponse([], [
+                'message' => 'Data polygon Barito Kuala belum tersedia',
+            ]);
         }
 
         $rawJson = trim($kabupaten->polygon_baritokuala);
@@ -980,13 +1377,19 @@ class PublicApiController extends Controller
             $rawJson = json_encode($geojson, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
 
-        return response($rawJson, 200)
-            ->header('Content-Type', 'application/json')
-            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        return $this->noStore(response($rawJson, 200)->header('Content-Type', 'application/json'));
     }
 
     public function getBatasKecamatan()
     {
+        if (!Schema::hasTable('kecamatan') || !Schema::hasColumn('kecamatan', 'polygon_geojson')) {
+            return $this->featureCollectionResponse([], [
+                'jumlah_kecamatan' => 0,
+                'jumlah_feature' => 0,
+                'message' => 'Tabel atau kolom polygon kecamatan belum tersedia',
+            ]);
+        }
+
         $rows = DB::table('kecamatan')
             ->whereNotNull('polygon_geojson')
             ->where('polygon_geojson', '!=', '')
@@ -1061,7 +1464,7 @@ class PublicApiController extends Controller
             'distribusi_produktivitas' => $distribusiProduktivitas,
         ];
 
-        return response()->json([
+        return $this->noStore(response()->json([
             'success' => true,
             'type' => 'FeatureCollection',
             'features' => $features,
@@ -1071,44 +1474,66 @@ class PublicApiController extends Controller
                 'features' => $features,
                 'meta' => $meta,
             ],
-        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        ]));
     }
 
     private function agregatProduktivitasKecamatan(): array
     {
+        if (!Schema::hasTable('kecamatan')) {
+            return [];
+        }
+
         $kecamatanRows = DB::table('kecamatan')->get()->keyBy('id');
         $statistikRows = $this->latestStatistikPadiRows()->keyBy('kecamatan_id');
 
-        $lahanRows = DB::table('lahan_sawah')
-            ->select(
-                'lahan_sawah.kecamatan_id',
-                DB::raw('COUNT(DISTINCT lahan_sawah.id) as jumlah_lahan'),
-                DB::raw('ROUND(COALESCE(SUM(lahan_sawah.luas_lahan_hektar),0), 2) as total_luas_ha'),
-                DB::raw('ROUND(COALESCE(SUM(COALESCE(lahan_sawah.luas_tanam_hektar, lahan_sawah.luas_lahan_hektar)),0), 2) as luas_tanam_ha'),
-                DB::raw('ROUND(COALESCE(SUM(lahan_sawah.hasil_panen_ton),0), 2) as total_panen_lahan'),
-                DB::raw('CASE WHEN SUM(COALESCE(lahan_sawah.hasil_panen_ton,0)) > 0 AND SUM(COALESCE(lahan_sawah.luas_tanam_hektar, lahan_sawah.luas_lahan_hektar)) > 0 THEN ROUND(SUM(COALESCE(lahan_sawah.hasil_panen_ton,0)) / SUM(COALESCE(lahan_sawah.luas_tanam_hektar, lahan_sawah.luas_lahan_hektar)), 2) WHEN AVG(NULLIF(lahan_sawah.produktivitas_ton_ha,0)) IS NOT NULL THEN ROUND(AVG(NULLIF(lahan_sawah.produktivitas_ton_ha,0)), 2) ELSE 0 END as produktivitas_lahan')
-            )
-            ->where('lahan_sawah.status_verifikasi', 'DITERIMA')
-            ->whereNotNull('lahan_sawah.kecamatan_id')
-            ->groupBy('lahan_sawah.kecamatan_id')
-            ->get()
-            ->keyBy('kecamatan_id');
+        $lahanRows = collect();
+
+        if (Schema::hasTable('lahan_sawah') && Schema::hasColumn('lahan_sawah', 'kecamatan_id')) {
+            $lahanRows = $this->lahanDiterimaQuery()
+                ->select(
+                    'lahan_sawah.kecamatan_id',
+                    DB::raw('COUNT(DISTINCT lahan_sawah.id) as jumlah_lahan'),
+                    DB::raw('ROUND(COALESCE(SUM(' . $this->sqlColumn('lahan_sawah', 'luas_lahan_hektar', null, '0') . '),0), 2) as total_luas_ha'),
+                    DB::raw('ROUND(COALESCE(SUM(COALESCE(' . $this->sqlColumn('lahan_sawah', 'luas_tanam_hektar') . ', ' . $this->sqlColumn('lahan_sawah', 'luas_lahan_hektar', null, '0') . ')),0), 2) as luas_tanam_ha'),
+                    DB::raw('ROUND(COALESCE(SUM(' . $this->sqlColumn('lahan_sawah', 'hasil_panen_ton', null, '0') . '),0), 2) as total_panen_lahan'),
+                    DB::raw('CASE WHEN SUM(COALESCE(' . $this->sqlColumn('lahan_sawah', 'hasil_panen_ton', null, '0') . ',0)) > 0 AND SUM(COALESCE(' . $this->sqlColumn('lahan_sawah', 'luas_tanam_hektar') . ', ' . $this->sqlColumn('lahan_sawah', 'luas_lahan_hektar', null, '0') . ')) > 0 THEN ROUND(SUM(COALESCE(' . $this->sqlColumn('lahan_sawah', 'hasil_panen_ton', null, '0') . ',0)) / SUM(COALESCE(' . $this->sqlColumn('lahan_sawah', 'luas_tanam_hektar') . ', ' . $this->sqlColumn('lahan_sawah', 'luas_lahan_hektar', null, '0') . ')), 2) WHEN AVG(NULLIF(' . $this->sqlColumn('lahan_sawah', 'produktivitas_ton_ha', null, '0') . ',0)) IS NOT NULL THEN ROUND(AVG(NULLIF(' . $this->sqlColumn('lahan_sawah', 'produktivitas_ton_ha', null, '0') . ',0)), 2) ELSE 0 END as produktivitas_lahan')
+                )
+                ->whereNotNull('lahan_sawah.kecamatan_id')
+                ->groupBy('lahan_sawah.kecamatan_id')
+                ->get()
+                ->keyBy('kecamatan_id');
+        }
 
         $panenRows = collect();
 
-        if (Schema::hasTable('panen_padi')) {
-            $panenRows = DB::table('panen_padi as rp')
-                ->join('lahan_sawah as ls', 'ls.id', '=', 'rp.lahan_id')
-                ->where('rp.status_verifikasi', 'DITERIMA')
-                ->whereDate('rp.tanggal_panen', '<=', now()->toDateString())
-                ->where('ls.status_verifikasi', 'DITERIMA')
+        if ($this->canJoinPanenToLahan() && Schema::hasColumn('lahan_sawah', 'kecamatan_id')) {
+            $query = DB::table('panen_padi as rp');
+            $this->joinPanenToLahan($query);
+
+            if (Schema::hasColumn('panen_padi', 'status_verifikasi')) {
+                $query->where('rp.status_verifikasi', 'DITERIMA');
+            }
+
+            if (Schema::hasColumn('panen_padi', 'tanggal_panen')) {
+                $query->whereDate('rp.tanggal_panen', '<=', now()->toDateString());
+            }
+
+            if (Schema::hasColumn('lahan_sawah', 'status_verifikasi')) {
+                $query->where('ls.status_verifikasi', 'DITERIMA');
+            }
+
+            $hasilPanenSql = $this->sqlColumn('panen_padi', 'hasil_panen_ton', 'rp', '0');
+            $luasPanenSql = $this->panenLuasTanamSql();
+            $produktivitasPanenSql = $this->sqlColumn('panen_padi', 'produktivitas_ton_ha', 'rp');
+
+            $panenRows = $query
                 ->whereNotNull('ls.kecamatan_id')
                 ->select(
                     'ls.kecamatan_id',
                     DB::raw('COUNT(DISTINCT ls.id) as jumlah_lahan_panen'),
-                    DB::raw('ROUND(COALESCE(SUM(rp.hasil_panen_ton),0), 2) as total_panen_ton'),
-                    DB::raw('ROUND(COALESCE(SUM(COALESCE(rp.luas_tanam_hektar, rp.luas_lahan_ha)),0), 2) as total_luas_panen_ha'),
-                    DB::raw('CASE WHEN SUM(COALESCE(rp.hasil_panen_ton,0)) > 0 AND SUM(COALESCE(rp.luas_tanam_hektar, rp.luas_lahan_ha)) > 0 THEN ROUND(SUM(rp.hasil_panen_ton) / SUM(COALESCE(rp.luas_tanam_hektar, rp.luas_lahan_ha)), 2) WHEN AVG(NULLIF(rp.produktivitas_ton_ha,0)) IS NOT NULL THEN ROUND(AVG(NULLIF(rp.produktivitas_ton_ha,0)), 2) ELSE 0 END as produktivitas_ton_ha')
+                    DB::raw('ROUND(COALESCE(SUM(' . $hasilPanenSql . '),0), 2) as total_panen_ton'),
+                    DB::raw('ROUND(COALESCE(SUM(' . $luasPanenSql . '),0), 2) as total_luas_panen_ha'),
+                    DB::raw('CASE WHEN SUM(COALESCE(' . $hasilPanenSql . ',0)) > 0 AND SUM(' . $luasPanenSql . ') > 0 THEN ROUND(SUM(' . $hasilPanenSql . ') / SUM(' . $luasPanenSql . '), 2) WHEN AVG(NULLIF(' . $produktivitasPanenSql . ',0)) IS NOT NULL THEN ROUND(AVG(NULLIF(' . $produktivitasPanenSql . ',0)), 2) ELSE 0 END as produktivitas_ton_ha')
                 )
                 ->groupBy('ls.kecamatan_id')
                 ->get()

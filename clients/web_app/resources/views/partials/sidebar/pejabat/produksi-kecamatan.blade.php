@@ -13,7 +13,7 @@
 
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
     <div>
-        <h1 class="text-2xl font-extrabold text-[#14280b]">
+        <h1 class="text-2xl font-extrabold text-[#022c22]">
             Historis Produksi Kecamatan
         </h1>
         <p class="text-sm text-slate-500 mt-1">
@@ -24,8 +24,8 @@
     <div class="flex items-center gap-3">
         <a href="{{ route('dashboard.pejabat') }}"
            class="inline-flex items-center gap-2 px-5 py-3 rounded-2xl
-                  bg-white border border-[#dfeccc] text-[#047857] font-bold text-sm
-                  shadow-md hover:bg-[#f7fced] hover:scale-105 transition-all duration-300">
+                  bg-white border border-[#d1fae5] text-[#047857] font-bold text-sm
+                  shadow-md hover:bg-[#ecfdf5] hover:scale-105 transition-all duration-300">
             ← Kembali
         </a>
     </div>
@@ -35,7 +35,7 @@
     <div class="flex flex-col md:flex-row md:items-end gap-5">
         <div class="w-full md:w-1/3">
             <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Pilih Kecamatan</label>
-            <select id="kecamatan-select" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-[#65bd00] focus:border-[#65bd00] transition">
+            <select id="kecamatan-select" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-[#047857] focus:border-[#047857] transition">
                 <option value="">-- Pilih Kecamatan --</option>
                 @foreach($kecamatans as $kecamatan)
                     <option value="{{ $kecamatan['id'] }}">{{ $kecamatan['nama_kecamatan'] }}</option>
@@ -44,7 +44,7 @@
         </div>
         <div class="w-full md:w-1/4">
             <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Pilih Tahun</label>
-            <select id="tahun-select" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-[#65bd00] focus:border-[#65bd00] transition" disabled>
+            <select id="tahun-select" class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-[#047857] focus:border-[#047857] transition" disabled>
                 <option value="all">Semua Tahun</option>
             </select>
         </div>
@@ -60,7 +60,7 @@
             </a>
             <a href="#" id="export-excel-btn" target="_blank"
                class="hidden items-center gap-2 px-5 py-3 rounded-2xl
-                      bg-gradient-to-r from-[#047857] to-[#65bd00] text-white font-bold text-sm
+                      bg-gradient-to-r from-[#047857] to-[#065f46] text-white font-bold text-sm
                       shadow-md hover:scale-105 transition-all duration-300">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />

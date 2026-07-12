@@ -13,7 +13,43 @@ class SiklusTanamController extends Controller
 {
     protected function gatewayUrl(): string
     {
-        return env('GATEWAY_URL', 'http://127.0.0.1:8003');
+        return rtrim(env('GATEWAY_URL', env('API_GATEWAY_URL', 'http://127.0.0.1:8003')), '/');
+    }
+
+    private function api(?string $token = null)
+    {
+        $http = Http::acceptJson()
+            ->withoutVerifying()
+            ->timeout(15)
+            ->connectTimeout(5);
+
+        return $token ? $http->withToken($token) : $http;
+    }
+
+    private function getData(string $endpoint, array $query = [], array $default = []): array
+    {
+        try {
+            $response = $this->api(session('token'))->get($this->gatewayUrl() . '/api/' . ltrim($endpoint, '/'), $query);
+
+            if (!$response->successful()) {
+                return $default;
+            }
+
+            return $response->json('data') ?? $default;
+        } catch (\Throwable $e) {
+            report($e);
+            return $default;
+        }
+    }
+
+    private function sendToApi(string $method, string $endpoint, array $payload = [])
+    {
+        try {
+            return $this->api(session('token'))->{$method}($this->gatewayUrl() . '/api/' . ltrim($endpoint, '/'), $payload);
+        } catch (\Throwable $e) {
+            report($e);
+            return null;
+        }
     }
 
     /**
@@ -28,44 +64,10 @@ class SiklusTanamController extends Controller
                 ->with('error', 'Session login habis, silakan login kembali.');
         }
 
-        $roleId = (int) session('role_id');
-
-        $lahanResponse = Http::withToken($token)
-            ->acceptJson()
-            ->get($this->gatewayUrl() . '/api/lahan/dropdown');
-
-        $bibitResponse = Http::withToken($token)
-            ->acceptJson()
-            ->get($this->gatewayUrl() . '/api/bibit');
-
-        $pupukResponse = Http::withToken($token)
-            ->acceptJson()
-            ->get($this->gatewayUrl() . '/api/jenis-pupuk');
-
-        $siklusResponse = Http::withToken($token)
-            ->acceptJson()
-            ->get($this->gatewayUrl() . '/api/my-siklus-tanam');
-
-        $lahan = [];
-        $bibit = [];
-        $pupuk = [];
-        $siklusTanam = [];
-
-        if ($lahanResponse->successful()) {
-            $lahan = $lahanResponse->json()['data'] ?? [];
-        }
-
-        if ($bibitResponse->successful()) {
-            $bibit = $bibitResponse->json()['data'] ?? [];
-        }
-
-        if ($pupukResponse->successful()) {
-            $pupuk = $pupukResponse->json()['data'] ?? [];
-        }
-
-        if ($siklusResponse->successful()) {
-            $siklusTanam = $siklusResponse->json()['data'] ?? [];
-        }
+        $lahan = $this->getData('/lahan/dropdown');
+        $bibit = $this->getData('/bibit');
+        $pupuk = $this->getData('/jenis-pupuk');
+        $siklusTanam = $this->getData('/my-siklus-tanam');
 
         return view('partials.sidebar.petani.lapor-tanam', compact(
             'lahan',
@@ -101,22 +103,23 @@ class SiklusTanamController extends Controller
                 ->with('error', 'Token tidak ditemukan. Silakan login ulang.');
         }
 
-        $roleId = (int) session('role_id');
+        $response = $this->sendToApi('post', '/activities', [
+            'lahan_id' => $request->lahan_id,
+            'luas_tanam_hektar' => $request->luas_tanam_hektar,
+            'bibit_id' => $request->bibit_id,
+            'tanggal_tanam' => $request->tanggal_tanam,
+            'estimasi_hari_tanam' => $request->estimasi_hari_tanam,
+            'pupuk_id' => $request->pupuk_id,
+            'tanggal_pemupukan' => $request->tanggal_pemupukan,
+            'takaran' => $request->takaran,
+        ]);
 
-        /**
-         * KIRIM KE MICROSERVICE DENGAN BEARER TOKEN
-         */
-        $response = Http::withToken($token)
-            ->post($this->gatewayUrl() . '/api/activities', [
-                'lahan_id' => $request->lahan_id,
-                'luas_tanam_hektar' => $request->luas_tanam_hektar,
-                'bibit_id' => $request->bibit_id,
-                'tanggal_tanam' => $request->tanggal_tanam,
-                'estimasi_hari_tanam' => $request->estimasi_hari_tanam,
-                'pupuk_id' => $request->pupuk_id,
-                'tanggal_pemupukan' => $request->tanggal_pemupukan,
-                'takaran' => $request->takaran,
-            ]);
+        if (!$response) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Backend laporan tanam belum dapat dihubungi. Silakan coba lagi.');
+        }
 
         if ($response->successful()) {
             return redirect()
@@ -138,31 +141,22 @@ class SiklusTanamController extends Controller
                 ->with('error', 'Session login habis, silakan login kembali.');
         }
 
-        $roleId = (int) session('role_id');
-
-        $detail = Http::withToken($token)->acceptJson()->get($this->gatewayUrl() . '/api/activities/' . $id);
-        if (!$detail->successful()) {
-            return redirect()->route('lapor.tanam')->with('error', $detail->json('message') ?? 'Laporan tanam tidak ditemukan.');
+        $detail = $this->sendToApi('get', '/activities/' . $id);
+        if (!$detail || !$detail->successful()) {
+            return redirect()->route('lapor.tanam')->with('error', $detail?->json('message') ?? 'Laporan tanam tidak ditemukan atau backend belum dapat dihubungi.');
         }
-
-        $lahanResponse = Http::withToken($token)->acceptJson()->get($this->gatewayUrl() . '/api/lahan/dropdown');
-        $bibitResponse = Http::withToken($token)->acceptJson()->get($this->gatewayUrl() . '/api/bibit');
-        $pupukResponse = Http::withToken($token)->acceptJson()->get($this->gatewayUrl() . '/api/jenis-pupuk');
-        $siklusResponse = Http::withToken($token)->acceptJson()->get($this->gatewayUrl() . '/api/my-siklus-tanam');
 
         return view('partials.sidebar.petani.lapor-tanam', [
             'editTanam' => $detail->json('data'),
-            'lahan' => $lahanResponse->successful() ? ($lahanResponse->json('data') ?? []) : [],
-            'bibit' => $bibitResponse->successful() ? ($bibitResponse->json('data') ?? []) : [],
-            'pupuk' => $pupukResponse->successful() ? ($pupukResponse->json('data') ?? []) : [],
-            'siklusTanam' => $siklusResponse->successful() ? ($siklusResponse->json('data') ?? []) : [],
+            'lahan' => $this->getData('/lahan/dropdown'),
+            'bibit' => $this->getData('/bibit'),
+            'pupuk' => $this->getData('/jenis-pupuk'),
+            'siklusTanam' => $this->getData('/my-siklus-tanam'),
         ]);
     }
 
     public function updateTanam(Request $request, $id)
     {
-        $roleId = (int) session('role_id');
-
         $validated = $request->validate([
             'lahan_id' => 'required|integer',
             'luas_tanam_hektar' => 'required|numeric|min:0.01',
@@ -174,9 +168,11 @@ class SiklusTanamController extends Controller
             'takaran' => 'required|numeric|min:0.01',
         ]);
 
-        $response = Http::withToken(session('token'))
-            ->acceptJson()
-            ->put($this->gatewayUrl() . '/api/activities/' . $id, $validated);
+        $response = $this->sendToApi('put', '/activities/' . $id, $validated);
+
+        if (!$response) {
+            return back()->withInput()->with('error', 'Backend laporan tanam belum dapat dihubungi. Silakan coba lagi.');
+        }
 
         if ($response->successful()) {
             return redirect()->route('lapor.tanam')->with('success', $response->json('message'));
@@ -187,11 +183,11 @@ class SiklusTanamController extends Controller
 
     public function destroyTanam($id)
     {
-        $roleId = (int) session('role_id');
+        $response = $this->sendToApi('delete', '/activities/' . $id);
 
-        $response = Http::withToken(session('token'))
-            ->acceptJson()
-            ->delete($this->gatewayUrl() . '/api/activities/' . $id);
+        if (!$response) {
+            return redirect()->route('lapor.tanam')->with('error', 'Backend laporan tanam belum dapat dihubungi.');
+        }
 
         return redirect()->route('lapor.tanam')->with(
             $response->successful() ? 'success' : 'error',
@@ -210,44 +206,20 @@ class SiklusTanamController extends Controller
             );
         }
 
-        $response = Http::withToken($token)
-            ->acceptJson()
-            ->get($this->gatewayUrl() . '/api/riwayat-panen', [
-                'per_page' => 3,
-                'riwayat_page' => $request->query('page', 1)
-            ]);
+        $riwayat = $this->getData('/riwayat-panen', [
+            'per_page' => 3,
+            'riwayat_page' => $request->query('page', 1),
+        ]);
 
-        $riwayat = [];
-        if ($response->successful()) {
-            $riwayat = $response->json()['data'] ?? [];
-        } else {
-            session()->flash('error', 'Gagal mengambil data riwayat panen.');
-        }
+        $riwayatPupuk = $this->getData('/siklus-pupuk', [
+            'per_page' => 10,
+            'pupuk_page' => $request->query('pupuk_page', 1),
+        ]);
 
-        $pupukResponse = Http::withToken($token)
-            ->acceptJson()
-            ->get($this->gatewayUrl() . '/api/siklus-pupuk', [
-                'per_page' => 10,
-                'pupuk_page' => $request->query('pupuk_page', 1)
-            ]);
-
-        $riwayatPupuk = [];
-        if ($pupukResponse->successful()) {
-            $riwayatPupuk = $pupukResponse->json()['data'] ?? [];
-        }
-
-        // Fetch Riwayat Lahan Baru
-        $lahanResponse = Http::withToken($token)
-            ->acceptJson()
-            ->get($this->gatewayUrl() . '/api/lahan', [
-                'per_page' => 10,
-                'page' => $request->query('lahan_page', 1)
-            ]);
-
-        $riwayatLahan = [];
-        if ($lahanResponse->successful()) {
-            $riwayatLahan = $lahanResponse->json()['data'] ?? [];
-        }
+        $riwayatLahan = $this->getData('/lahan', [
+            'per_page' => 10,
+            'page' => $request->query('lahan_page', 1),
+        ]);
 
         return view('partials.sidebar.petani.riwayat-panen', compact('riwayat', 'riwayatPupuk', 'riwayatLahan'));
     }
@@ -261,21 +233,11 @@ class SiklusTanamController extends Controller
                 ->with('error', 'Session login habis, silakan login kembali.');
         }
 
-        $lahanResponse = Http::withToken($token)
-            ->acceptJson()
-            ->get($this->gatewayUrl() . '/api/lahan/dropdown');
+        $detailResponse = $this->sendToApi('get', '/lapor-panen/' . $id);
 
-        $bibitResponse = Http::withToken($token)
-            ->acceptJson()
-            ->get($this->gatewayUrl() . '/api/bibit');
-
-        $detailResponse = Http::withToken($token)
-            ->acceptJson()
-            ->get($this->gatewayUrl() . '/api/lapor-panen/' . $id);
-
-        if (!$detailResponse->successful()) {
+        if (!$detailResponse || !$detailResponse->successful()) {
             return redirect()->route('riwayat.panen')
-                ->with('error', 'Data laporan panen tidak ditemukan.');
+                ->with('error', 'Data laporan panen tidak ditemukan atau backend belum dapat dihubungi.');
         }
 
         $editPanen = $detailResponse->json()['data'] ?? [];
@@ -285,16 +247,8 @@ class SiklusTanamController extends Controller
                 ->with('error', 'Hanya data pengajuan yang ditolak yang dapat diperbaiki.');
         }
 
-        $lahan = [];
-        $bibit = [];
-
-        if ($lahanResponse->successful()) {
-            $lahan = $lahanResponse->json()['data'] ?? [];
-        }
-
-        if ($bibitResponse->successful()) {
-            $bibit = $bibitResponse->json()['data'] ?? [];
-        }
+        $lahan = $this->getData('/lahan/dropdown');
+        $bibit = $this->getData('/bibit');
 
         // Format dates to Y-m-d for date picker compatibility
         if (!empty($editPanen['tanggal_tanam'])) {
@@ -322,11 +276,17 @@ class SiklusTanamController extends Controller
                 ->with('error', 'Token tidak ditemukan. Silakan login ulang.');
         }
 
-        $response = Http::withToken($token)
-            ->put($this->gatewayUrl() . '/api/lapor-panen/' . $id, [
-                'tanggal_panen' => $request->tanggal_panen,
-                'hasil_panen' => $request->hasil_panen,
-            ]);
+        $response = $this->sendToApi('put', '/lapor-panen/' . $id, [
+            'tanggal_panen' => $request->tanggal_panen,
+            'hasil_panen' => $request->hasil_panen,
+        ]);
+
+        if (!$response) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Backend laporan panen belum dapat dihubungi. Silakan coba lagi.');
+        }
 
         if ($response->successful()) {
             return redirect()
@@ -357,13 +317,19 @@ class SiklusTanamController extends Controller
                 ->with('error', 'Token tidak ditemukan. Silakan login ulang.');
         }
 
-        $response = Http::withToken($token)
-            ->post($this->gatewayUrl() . '/api/siklus-pupuk', [
-                'siklus_tanam_id' => $request->siklus_tanam_id,
-                'pupuk_id' => $request->pupuk_id,
-                'tanggal_pemupukan' => $request->tanggal_pemupukan,
-                'takaran' => $request->takaran,
-            ]);
+        $response = $this->sendToApi('post', '/siklus-pupuk', [
+            'siklus_tanam_id' => $request->siklus_tanam_id,
+            'pupuk_id' => $request->pupuk_id,
+            'tanggal_pemupukan' => $request->tanggal_pemupukan,
+            'takaran' => $request->takaran,
+        ]);
+
+        if (!$response) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Backend pemupukan belum dapat dihubungi. Silakan coba lagi.');
+        }
 
         if ($response->successful()) {
             return redirect()
@@ -386,33 +352,9 @@ class SiklusTanamController extends Controller
                 ->with('error', 'Session login habis, silakan login kembali.');
         }
 
-        $lahanResponse = Http::withToken($token)
-            ->acceptJson()
-            ->get($this->gatewayUrl() . '/api/lahan/dropdown');
-
-        $bibitResponse = Http::withToken($token)
-            ->acceptJson()
-            ->get($this->gatewayUrl() . '/api/bibit');
-
-        $siklusResponse = Http::withToken($token)
-            ->acceptJson()
-            ->get($this->gatewayUrl() . '/api/my-siklus-tanam');
-
-        $lahan = [];
-        $bibit = [];
-        $siklusTanam = [];
-
-        if ($lahanResponse->successful()) {
-            $lahan = $lahanResponse->json()['data'] ?? [];
-        }
-
-        if ($bibitResponse->successful()) {
-            $bibit = $bibitResponse->json()['data'] ?? [];
-        }
-
-        if ($siklusResponse->successful()) {
-            $siklusTanam = $siklusResponse->json()['data'] ?? [];
-        }
+        $lahan = $this->getData('/lahan/dropdown');
+        $bibit = $this->getData('/bibit');
+        $siklusTanam = $this->getData('/my-siklus-tanam');
 
         return view('partials.sidebar.petani.lapor-panen', compact(
             'lahan',
@@ -438,13 +380,19 @@ class SiklusTanamController extends Controller
                 ->with('error', 'Token tidak ditemukan. Silakan login ulang.');
         }
 
-        $response = Http::withToken($token)
-            ->post($this->gatewayUrl() . '/api/lapor-panen', [
-                'siklus_tanam_id' => $request->siklus_tanam_id,
-                'tanggal_panen' => $request->tanggal_panen,
-                'hasil_panen' => $request->hasil_panen,
-                'estimasi_panen' => $request->estimasi_panen,
-            ]);
+        $response = $this->sendToApi('post', '/lapor-panen', [
+            'siklus_tanam_id' => $request->siklus_tanam_id,
+            'tanggal_panen' => $request->tanggal_panen,
+            'hasil_panen' => $request->hasil_panen,
+            'estimasi_panen' => $request->estimasi_panen,
+        ]);
+
+        if (!$response) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Backend laporan panen belum dapat dihubungi. Silakan coba lagi.');
+        }
 
         if ($response->successful()) {
             return redirect()

@@ -13,28 +13,40 @@ class LahanSawahController extends Controller
 {
     protected function gatewayUrl(): string
     {
-        return env('GATEWAY_URL', 'http://127.0.0.1:8003');
+        return rtrim(env('GATEWAY_URL', env('API_GATEWAY_URL', 'http://127.0.0.1:8003')), '/');
+    }
+
+    private function api(?string $token = null)
+    {
+        $http = Http::acceptJson()
+            ->withoutVerifying()
+            ->timeout(15)
+            ->connectTimeout(5);
+
+        return $token ? $http->withToken($token) : $http;
+    }
+
+    private function getData(string $endpoint, array $query = [], array $default = []): array
+    {
+        try {
+            $response = $this->api(session('token'))->get($this->gatewayUrl() . '/api/' . ltrim($endpoint, '/'), $query);
+
+            if (!$response->successful()) {
+                return $default;
+            }
+
+            return $response->json('data') ?? $default;
+        } catch (\Throwable $e) {
+            report($e);
+            return $default;
+        }
     }
 
     private function referensi(): array
     {
-        $kecamatan = Http::get(
-            $this->gatewayUrl() . '/api/kecamatan'
-        )->json()['data'] ?? [];
-
-        $kelurahan = Http::get(
-            $this->gatewayUrl() . '/api/kelurahan'
-        )->json()['data'] ?? [];
-
-        $tipeLahan = Http::get(
-            $this->gatewayUrl() . '/api/tipe-lahan'
-        )->json()['data'] ?? [];
-
-        $spasialReferensi = Http::get(
-            $this->gatewayUrl() . '/api/spasial-lahan/referensi'
-        )->json()['data'] ?? [];
-
-
+        $kecamatan = $this->getData('/kecamatan');
+        $kelurahan = $this->getData('/kelurahan');
+        $tipeLahan = $this->getData('/tipe-lahan');
 
         return compact('kecamatan', 'kelurahan', 'tipeLahan');
     }
@@ -59,9 +71,12 @@ class LahanSawahController extends Controller
 
         ['kecamatan' => $kecamatan, 'kelurahan' => $kelurahan, 'tipeLahan' => $tipeLahan] = $this->referensi();
 
-        $response = Http::withToken($token)
-            ->acceptJson()
-            ->get($this->gatewayUrl() . '/api/lahan/' . $id);
+        try {
+            $response = $this->api($token)->get($this->gatewayUrl() . '/api/lahan/' . $id);
+        } catch (\Throwable $e) {
+            report($e);
+            return redirect('/dashboard-petani')->with('error', 'Backend lahan belum dapat dihubungi.');
+        }
 
         if (!$response->successful()) {
             return redirect('/dashboard-petani')->with('error', $response->json('message') ?? 'Data lahan tidak ditemukan');
@@ -90,9 +105,8 @@ class LahanSawahController extends Controller
             return redirect('/login')->with('error', 'Login dulu');
         }
 
-        $response = Http::withToken($token)
-            ->acceptJson()
-            ->post($this->gatewayUrl() . '/api/lahan', [
+        try {
+            $response = $this->api($token)->post($this->gatewayUrl() . '/api/lahan', [
                 'nama_lahan' => $request->nama_lahan,
                 'kecamatan_id' => $request->kecamatan_id,
                 'kelurahan_id' => $request->kelurahan_id,
@@ -101,6 +115,10 @@ class LahanSawahController extends Controller
                 'luas_lahan_hektar' => $request->luas_lahan_hektar,
 
             ]);
+        } catch (\Throwable $e) {
+            report($e);
+            return back()->withInput()->with('error', 'Backend lahan belum dapat dihubungi. Silakan coba lagi.');
+        }
 
         if ($response->successful()) {
             session()->forget('total_lahan');
@@ -118,9 +136,8 @@ class LahanSawahController extends Controller
             return redirect('/login')->with('error', 'Login dulu');
         }
 
-        $response = Http::withToken($token)
-            ->acceptJson()
-            ->put($this->gatewayUrl() . '/api/lahan/' . $id . '/resubmit', [
+        try {
+            $response = $this->api($token)->put($this->gatewayUrl() . '/api/lahan/' . $id . '/resubmit', [
                 'nama_lahan' => $request->nama_lahan,
                 'kecamatan_id' => $request->kecamatan_id,
                 'kelurahan_id' => $request->kelurahan_id,
@@ -129,6 +146,10 @@ class LahanSawahController extends Controller
                 'luas_lahan_hektar' => $request->luas_lahan_hektar,
 
             ]);
+        } catch (\Throwable $e) {
+            report($e);
+            return back()->withInput()->with('error', 'Backend lahan belum dapat dihubungi. Silakan coba lagi.');
+        }
 
         if ($response->successful()) {
             session()->forget('total_lahan');
@@ -142,9 +163,12 @@ class LahanSawahController extends Controller
 
     public function destroyLahan($id)
     {
-        $response = Http::withToken(session('token'))
-            ->acceptJson()
-            ->delete($this->gatewayUrl() . '/api/lahan/' . $id);
+        try {
+            $response = $this->api(session('token'))->delete($this->gatewayUrl() . '/api/lahan/' . $id);
+        } catch (\Throwable $e) {
+            report($e);
+            return redirect('/dashboard-petani')->with('error', 'Backend lahan belum dapat dihubungi.');
+        }
 
         if ($response->successful()) {
             session()->forget('total_lahan');

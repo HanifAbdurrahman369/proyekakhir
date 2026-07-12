@@ -48,8 +48,17 @@ class KomunitasImport implements ToCollection, WithHeadingRow
                 continue;
             }
 
-            $response = Http::withToken($this->token)->acceptJson()
-                            ->post($this->gatewayUrl . '/api/komunitas', $data);
+            try {
+                $response = Http::withToken($this->token)
+                    ->acceptJson()
+                    ->withoutVerifying()
+                    ->timeout(15)
+                    ->connectTimeout(5)
+                    ->post($this->gatewayUrl . '/api/komunitas', $data);
+            } catch (\Throwable $e) {
+                $this->failureCount++;
+                continue;
+            }
 
             if ($response->successful()) {
                 $this->successCount++;

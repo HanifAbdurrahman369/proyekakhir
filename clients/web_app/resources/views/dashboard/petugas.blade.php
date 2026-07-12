@@ -60,31 +60,31 @@
         <style>
             #petugasSpasialMap { height: 560px; min-height: 560px; overflow: hidden; z-index: 1; }
             .leaflet-container { font-family: 'Poppins', sans-serif; }
-            .spatial-panel { background: rgba(255,255,255,.94); border: 1px solid rgba(231,239,216,.95); box-shadow: 0 16px 42px rgba(32,60,16,.065); }
-            .spatial-map-shell { position: relative; border: 1px solid #dfeccc; border-radius: 20px; overflow: hidden; background: #eef5e4; }
+            .spatial-panel { background: rgba(255,255,255,.94); border: 1px solid rgba(209,250,229,.95); box-shadow: 0 16px 42px rgba(4,120,87,.065); }
+            .spatial-map-shell { position: relative; border: 1px solid #d1fae5; border-radius: 24px; overflow: hidden; background: #ecfdf5; }
             .spatial-map-tools { position: absolute; left: 16px; right: 16px; bottom: 16px; z-index: 650; display: flex; flex-wrap: wrap; gap: 8px; pointer-events: none; }
-            .spatial-map-tools .map-tool { pointer-events: auto; background: rgba(255,255,255,.96); color: #334155; border: 1px solid rgba(226,232,240,.95); box-shadow: 0 12px 32px rgba(32,60,16,.12); backdrop-filter: blur(10px); }
-            .spatial-map-tools .map-tool.is-primary { background: #65bd00; color: #fff; border-color: #65bd00; }
+            .spatial-map-tools .map-tool { pointer-events: auto; background: rgba(255,255,255,.96); color: #334155; border: 1px solid rgba(226,232,240,.95); box-shadow: 0 12px 32px rgba(4,120,87,.12); backdrop-filter: blur(10px); }
+            .spatial-map-tools .map-tool.is-primary { background: #047857; color: #fff; border-color: #047857; }
             .spatial-map-tools .map-tool.is-danger { background: #fff7f7; color: #dc2626; border-color: #fecaca; }
-            .spatial-map-tools .map-tool.is-active { background: #203c10; color: #fff; border-color: #203c10; }
-            .spatial-map-shell .leaflet-control-layers { border: 0; border-radius: 16px; box-shadow: 0 14px 34px rgba(32,60,16,.16); overflow: hidden; }
-            .spatial-map-shell .leaflet-control-layers-expanded { padding: 12px 14px; color: #203c10; font-weight: 700; }
-            .spatial-map-shell .leaflet-control-layers-selector { accent-color: #65bd00; }
-            .spatial-map-shell .sigpala-kecamatan-label { background: rgba(255,255,255,.88); border: 1px solid rgba(32,60,16,.12); border-radius: 999px; box-shadow: 0 8px 20px rgba(15,23,42,.14); color: #203c10; font-size: 10px; font-weight: 800; letter-spacing: .03em; padding: 4px 8px; text-transform: uppercase; }
+            .spatial-map-tools .map-tool.is-active { background: #065f46; color: #fff; border-color: #065f46; }
+            .spatial-map-shell .leaflet-control-layers { border: 0; border-radius: 16px; box-shadow: 0 14px 34px rgba(4,120,87,.16); overflow: hidden; }
+            .spatial-map-shell .leaflet-control-layers-expanded { padding: 12px 14px; color: #065f46; font-weight: 700; }
+            .spatial-map-shell .leaflet-control-layers-selector { accent-color: #047857; }
+            .spatial-map-shell .sigpala-kecamatan-label { background: rgba(255,255,255,.88); border: 1px solid rgba(4,120,87,.12); border-radius: 999px; box-shadow: 0 8px 20px rgba(15,23,42,.14); color: #065f46; font-size: 10px; font-weight: 800; letter-spacing: .03em; padding: 4px 8px; text-transform: uppercase; }
             .spatial-map-shell .sigpala-kecamatan-label::before { display: none; }
-            .spatial-map-shell .sigpala-wilayah-label { background: rgba(32,60,16,.92); border: 0; border-radius: 999px; box-shadow: 0 10px 24px rgba(15,23,42,.18); color: #fff; font-size: 11px; font-weight: 800; letter-spacing: .04em; padding: 5px 10px; text-transform: uppercase; }
+            .spatial-map-shell .sigpala-wilayah-label { background: rgba(6,95,70,.92); border: 0; border-radius: 999px; box-shadow: 0 10px 24px rgba(15,23,42,.18); color: #fff; font-size: 11px; font-weight: 800; letter-spacing: .04em; padding: 5px 10px; text-transform: uppercase; }
             .spatial-map-shell .sigpala-wilayah-label::before { display: none; }
-            .spatial-choice { border: 1px solid #e7efd8; background: #fff; color: #475569; }
-            .spatial-choice.is-active { border-color: #65bd00; background: #edf8dc; color: #203c10; box-shadow: inset 0 0 0 1px rgba(101,189,0,.18); }
-            .spatial-row { border: 1px solid #edf4df; background: #fff; }
-            .spatial-row.is-active { border-color: #65bd00; background: #f7fced; }
+            .spatial-choice { border: 1px solid #d1fae5; background: #fff; color: #475569; }
+            .spatial-choice.is-active { border-color: #047857; background: #ecfdf5; color: #065f46; box-shadow: inset 0 0 0 1px rgba(4,120,87,.18); }
+            .spatial-row { border: 1px solid #d1fae5; background: #fff; }
+            .spatial-row.is-active { border-color: #047857; background: #ecfdf5; }
             .spatial-workspace.is-locked .spatial-form-body { display: none; }
             .spatial-workspace:not(.is-locked) .spatial-empty-state { display: none; }
             .spatial-list { max-height: 360px; overflow-y: auto; }
             .map-tool:disabled { opacity: .45; cursor: not-allowed; }
             .spatial-section-title { letter-spacing: .18em; }
-            .spatial-field { border: 1px solid #e7efd8; border-radius: 16px; padding: 14px 16px; background: #fff; min-height: 86px; transition: border-color .18s ease, box-shadow .18s ease; }
-            .spatial-field:focus-within { border-color: #65bd00; box-shadow: 0 0 0 3px rgba(101,189,0,.10); }
+            .spatial-field { border: 1px solid #d1fae5; border-radius: 18px; padding: 14px 16px; background: #fff; min-height: 86px; transition: border-color .18s ease, box-shadow .18s ease; }
+            .spatial-field:focus-within { border-color: #047857; box-shadow: 0 0 0 3px rgba(4,120,87,.10); }
             .spatial-field label { margin-bottom: 10px; }
             .spatial-field input,
             .spatial-field select,
@@ -92,7 +92,7 @@
             .spatial-field input:focus,
             .spatial-field select:focus,
             .spatial-field textarea:focus { outline: none !important; box-shadow: none !important; }
-            .spatial-form-section { border-top: 1px solid #e7efd8; padding-top: 18px; }
+            .spatial-form-section { border-top: 1px solid #d1fae5; padding-top: 18px; }
         </style>
     @endpush
 @endif
@@ -596,7 +596,7 @@
 
                 <div id="lahanDetailModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/45 px-4 py-6">
                     <div class="w-full max-w-4xl rounded-3xl bg-white shadow-2xl border border-primary-100 overflow-hidden">
-                        <div class="px-6 py-5 border-b border-primary-100 bg-[#f7fced] flex items-start justify-between gap-4">
+                        <div class="px-6 py-5 border-b border-primary-100 bg-[#ecfdf5] flex items-start justify-between gap-4">
                             <div>
                                 <p class="text-xs font-bold uppercase tracking-[0.18em] text-primary-700">Detail Pengajuan Lahan</p>
                                 <h3 id="detailNamaLahan" class="text-2xl font-extrabold text-primary-900 mt-1">-</h3>
@@ -700,7 +700,7 @@
 
                 <div class="space-y-5">
                     <section class="spatial-panel rounded-2xl overflow-hidden">
-                        <div class="px-5 py-4 border-b border-primary-100 bg-[#f7fced]">
+                        <div class="px-5 py-4 border-b border-primary-100 bg-[#ecfdf5]">
                             <p class="spatial-section-title text-xs text-primary-700 font-bold uppercase">Pilih Lahan</p>
                             <h2 class="text-lg font-extrabold text-primary-900 mt-1">Sumber Data Pemetaan</h2>
                         </div>
@@ -1551,7 +1551,7 @@
                     const props = feature?.properties || {};
 
                     return {
-                        color: props.warna_peta || '#203c10',
+                        color: props.warna_peta || '#065f46',
                         weight: 2.4,
                         opacity: 0.9,
                         fillOpacity: Number(props.fill_opacity ?? 0),
@@ -1632,7 +1632,7 @@
                 }
 
                 function getLahanColor(status) {
-                    if (status === 'Selesai') return '#65bd00';
+                    if (status === 'Selesai') return '#047857';
                     if (status === 'Sedang') return '#eab308';
                     return '#ef4444'; // Belum
                 }
@@ -1736,9 +1736,9 @@
                         polygonPoints.forEach((point, index) => {
                             layers.push(L.circleMarker(point, {
                                 radius: 5,
-                                color: '#203c10',
+                                color: '#065f46',
                                 weight: 2,
-                                fillColor: '#65bd00',
+                                fillColor: '#047857',
                                 fillOpacity: 0.9
                             }).bindTooltip(String(index + 1), { permanent: false }));
                         });
@@ -1921,7 +1921,7 @@
                     const div = L.DomUtil.create('div', 'bg-white p-3 rounded-xl shadow-lg text-xs font-sans border border-slate-200');
                     div.innerHTML = `
                         <h4 class="font-bold text-slate-700 mb-2">Status Verifikasi Lahan</h4>
-                        <div class="flex items-center mb-1"><span class="w-3 h-3 rounded-full mr-2" style="background-color: #65bd00; opacity: 0.7"></span> Selesai</div>
+                        <div class="flex items-center mb-1"><span class="w-3 h-3 rounded-full mr-2" style="background-color: #047857; opacity: 0.7"></span> Selesai</div>
                         <div class="flex items-center mb-1"><span class="w-3 h-3 rounded-full mr-2" style="background-color: #eab308; opacity: 0.7"></span> Sedang</div>
                         <div class="flex items-center"><span class="w-3 h-3 rounded-full mr-2" style="background-color: #ef4444; opacity: 0.7"></span> Belum</div>
                     `;

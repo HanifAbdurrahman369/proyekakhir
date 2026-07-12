@@ -14,10 +14,10 @@
     <header class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
             <p class="text-[11px] font-bold uppercase text-[#047857]">{{ $roleName }}</p>
-            <h1 class="mt-1 text-xl font-bold text-[#14280b]">{{ $isEdit ? 'Perbarui laporan tanam' : 'Laporan tanam dan pemupukan' }}</h1>
+            <h1 class="mt-1 text-xl font-bold text-[#022c22]">{{ $isEdit ? 'Perbarui laporan tanam' : 'Laporan tanam dan pemupukan' }}</h1>
             <p class="mt-1 text-xs text-slate-500">Estimasi panen dihitung otomatis berdasarkan masa varietas bibit.</p>
         </div>
-        <span class="inline-flex w-fit rounded-full border border-[#dfeccc] bg-[#edf8dc] px-3 py-1 text-[11px] font-bold text-[#047857]">
+        <span class="inline-flex w-fit rounded-full border border-[#d1fae5] bg-[#ecfdf5] px-3 py-1 text-[11px] font-bold text-[#047857]">
             {{ $roleId === 5 ? 'Bibit unggul: Oktober - Januari' : 'Bibit lokal: Januari - September' }}
         </span>
     </header>
@@ -41,7 +41,7 @@
         <div class="relative flex flex-col md:flex-row justify-between items-center md:items-start gap-6 md:gap-4">
             <!-- Line connector for desktop -->
             <div class="hidden md:block absolute top-6 left-[15%] right-[15%] h-1 bg-slate-200 -z-10 rounded-full overflow-hidden">
-                <div class="h-full bg-emerald-500 w-full animate-[shimmer_3s_infinite] origin-left" style="background: linear-gradient(90deg, transparent, rgba(16,185,129,0.5), transparent); background-size: 200% 100%;"></div>
+                <div class="h-full bg-emerald-500 w-full animate-[shimmer_3s_infinite] origin-left" style="background: linear-gradient(90deg, transparent, rgba(4,120,87,0.5), transparent); background-size: 200% 100%;"></div>
             </div>
 
             <!-- Step 1 -->
@@ -84,8 +84,8 @@
 
     <section class="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden lg:col-span-12">
-            <div class="border-b border-[#e7efd8] px-5 py-4">
-                <h2 class="text-sm font-bold text-[#14280b]">{{ $isEdit ? 'Informasi tanam yang diperbarui' : 'Informasi Tanam & Pemupukan Baru' }}</h2>
+            <div class="border-b border-[#d1fae5] px-5 py-4">
+                <h2 class="text-sm font-bold text-[#022c22]">{{ $isEdit ? 'Informasi tanam yang diperbarui' : 'Informasi Tanam & Pemupukan Baru' }}</h2>
                 <p class="mt-1 text-[11px] text-slate-500">Pilih lahan, bibit, estimasi panen, serta informasi awal pemupukan sebelum tanam dimulai.</p>
             </div>
             <form method="POST" action="{{ $isEdit ? route('lapor.tanam.update', $editTanam['id']) : route('lapor.tanam.store') }}" class="p-5">
@@ -99,7 +99,7 @@
                         
                         <div>
                             <label class="mb-1.5 block text-xs font-bold text-slate-700">Lahan sawah</label>
-                            <select name="lahan_id" id="lahan-select" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#10b981] focus:border-[#10b981] focus:outline-none focus:ring-2 focus:ring-[#10b981]/20">
+                            <select name="lahan_id" id="lahan-select" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#047857] focus:border-[#047857] focus:outline-none focus:ring-2 focus:ring-[#047857]/20">
                                 <option value="">Pilih lahan terverifikasi</option>
                                 @foreach($lahan ?? [] as $item)
                                     <option value="{{ $item['id'] }}"
@@ -119,12 +119,12 @@
                             <input type="number" name="luas_tanam_hektar" id="luas-tanam-input" min="0.01" step="0.01" required
                                    value="{{ old('luas_tanam_hektar', $editTanam['luas_tanam_hektar'] ?? '') }}"
                                    placeholder="Cth: 1.25"
-                                   class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#10b981] focus:border-[#10b981] focus:outline-none focus:ring-2 focus:ring-[#10b981]/20">
+                                   class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#047857] focus:border-[#047857] focus:outline-none focus:ring-2 focus:ring-[#047857]/20">
                             <p id="luas-tanam-hint" class="mt-1 text-[10px] text-slate-500">Masukkan luas lahan yang benar-benar ditanami padi.</p>
                         </div>
                         <div>
                             <label class="mb-1.5 block text-xs font-bold text-slate-700">Jenis bibit</label>
-                            <select name="bibit_id" required id="bibit-select" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#10b981] focus:border-[#10b981] focus:outline-none focus:ring-2 focus:ring-[#10b981]/20">
+                            <select name="bibit_id" required id="bibit-select" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#047857] focus:border-[#047857] focus:outline-none focus:ring-2 focus:ring-[#047857]/20">
                                 <option value="">Pilih bibit</option>
                                 @foreach($bibit ?? [] as $item)
                                     <option value="{{ $item['id'] }}" data-hari="{{ $item['masa_tanam_hari'] }}" @selected((string) old('bibit_id', $editTanam['bibit_id'] ?? '') === (string) $item['id'])>
@@ -138,13 +138,13 @@
                                 <label class="mb-1.5 block text-xs font-bold text-slate-700">Tanggal tanam</label>
                                 <input type="date" name="tanggal_tanam" id="tanggal-tanam" max="{{ date('Y-m-d') }}" required
                                        value="{{ old('tanggal_tanam', $editTanam['tanggal_tanam'] ?? date('Y-m-d')) }}"
-                                       class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#10b981] focus:border-[#10b981] focus:outline-none focus:ring-2 focus:ring-[#10b981]/20">
+                                       class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#047857] focus:border-[#047857] focus:outline-none focus:ring-2 focus:ring-[#047857]/20">
                             </div>
                             <div>
                                 <label class="mb-1.5 block text-xs font-bold text-slate-700">Tanggal Panen (Opsional)</label>
                                 <input type="date" name="tanggal_panen_estimasi" id="tanggal-panen-estimasi"
                                        value="{{ old('tanggal_panen_estimasi', $editTanam['estimasi_tanggal_panen'] ?? '') }}"
-                                       class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#10b981] focus:border-[#10b981] focus:outline-none focus:ring-2 focus:ring-[#10b981]/20">
+                                       class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#047857] focus:border-[#047857] focus:outline-none focus:ring-2 focus:ring-[#047857]/20">
                                 <p class="mt-1 text-[10px] text-slate-500">Jika diisi, estimasi hari akan dihitung otomatis.</p>
                             </div>
                             <div class="md:col-span-2">
@@ -152,7 +152,7 @@
                                 <input type="number" name="estimasi_hari_tanam" id="estimasi-hari" min="1" required
                                        value="{{ old('estimasi_hari_tanam', $editTanam['estimasi_panen'] ?? '') }}"
                                        placeholder="Cth: 120"
-                                       class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#10b981] focus:border-[#10b981] focus:outline-none focus:ring-2 focus:ring-[#10b981]/20">
+                                       class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#047857] focus:border-[#047857] focus:outline-none focus:ring-2 focus:ring-[#047857]/20">
                                 <p class="mt-1 text-[10px] text-slate-500">Otomatis terisi berdasarkan bibit atau pilihan tanggal panen di atas.</p>
                             </div>
                         </div>
@@ -164,7 +164,7 @@
                         
                         <div>
                             <label class="mb-1.5 block text-xs font-bold text-slate-700">Jenis pupuk awal</label>
-                            <select name="pupuk_id" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#10b981] focus:border-[#10b981] focus:outline-none focus:ring-2 focus:ring-[#10b981]/20">
+                            <select name="pupuk_id" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#047857] focus:border-[#047857] focus:outline-none focus:ring-2 focus:ring-[#047857]/20">
                                 <option value="">Pilih pupuk</option>
                                 @foreach($pupuk ?? [] as $item)
                                     <option value="{{ $item['id'] }}" @selected((string) old('pupuk_id', $editTanam['pemupukan_awal']['pupuk_id'] ?? '') === (string) $item['id'])>
@@ -177,14 +177,14 @@
                             <label class="mb-1.5 block text-xs font-bold text-slate-700">Tanggal pemupukan awal</label>
                             <input type="date" name="tanggal_pemupukan" max="{{ date('Y-m-d') }}" required
                                    value="{{ old('tanggal_pemupukan', $editTanam['pemupukan_awal']['tanggal_pemupukan'] ?? date('Y-m-d')) }}"
-                                   class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#10b981] focus:border-[#10b981] focus:outline-none focus:ring-2 focus:ring-[#10b981]/20">
+                                   class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#047857] focus:border-[#047857] focus:outline-none focus:ring-2 focus:ring-[#047857]/20">
                             <p class="mt-1 text-[10px] text-slate-500">Tanggal tidak boleh lebih awal dari tanggal tanam.</p>
                         </div>
                         <div>
                             <label class="mb-1.5 block text-xs font-bold text-slate-700">Takaran (kg)</label>
                             <input type="number" name="takaran" min="0.01" step="0.01" required placeholder="Cth: 20"
                                    value="{{ old('takaran', $editTanam['pemupukan_awal']['takaran'] ?? '') }}"
-                                   class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#10b981] focus:border-[#10b981] focus:outline-none focus:ring-2 focus:ring-[#10b981]/20">
+                                   class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#047857] focus:border-[#047857] focus:outline-none focus:ring-2 focus:ring-[#047857]/20">
                             <p class="mt-1 text-[10px] text-slate-500">Jumlah pupuk untuk awal tanam</p>
                         </div>
                     </div>
@@ -194,7 +194,7 @@
                     @if($isEdit)
                         <a href="{{ route('lapor.tanam') }}" class="rounded-lg border border-slate-300 px-4 py-2 text-center text-xs font-bold text-slate-600">Batal</a>
                     @endif
-                    <button type="submit" class="rounded-lg bg-[#047857] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#2f5c12] shadow-md transition-all hover:-translate-y-0.5">
+                    <button type="submit" class="rounded-lg bg-[#047857] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#065f46] shadow-md transition-all hover:-translate-y-0.5">
                         {{ $isEdit ? 'Simpan Perubahan' : 'Mulai Proses Tanam & Pemupukan' }}
                     </button>
                 </div>
@@ -304,18 +304,18 @@
     </script>
 
     <section class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden mt-6">
-        <div class="border-b border-[#e7efd8] px-5 py-4">
-            <h2 class="text-sm font-bold text-[#14280b]">Proses tanam berjalan</h2>
+        <div class="border-b border-[#d1fae5] px-5 py-4">
+            <h2 class="text-sm font-bold text-[#022c22]">Proses tanam berjalan</h2>
             <p class="mt-1 text-[11px] text-slate-500">Perkembangan dihitung dari tanggal tanam sampai estimasi panen.</p>
         </div>
-        <div class="divide-y divide-[#edf4df]">
+        <div class="divide-y divide-[#d1fae5]">
             @forelse($aktif as $siklus)
                 <article class="p-5">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
                             <div class="flex flex-wrap items-center gap-2">
-                                <h3 class="text-sm font-bold text-[#14280b]">{{ $siklus['nama_lahan'] }}</h3>
-                                <span class="rounded-full bg-[#edf8dc] px-2 py-0.5 text-[10px] font-bold text-[#047857]">{{ $siklus['nama_bibit'] }}</span>
+                                <h3 class="text-sm font-bold text-[#022c22]">{{ $siklus['nama_lahan'] }}</h3>
+                                <span class="rounded-full bg-[#ecfdf5] px-2 py-0.5 text-[10px] font-bold text-[#047857]">{{ $siklus['nama_bibit'] }}</span>
                             </div>
                             <p class="mt-1 text-[11px] text-slate-500">Tanam {{ \Carbon\Carbon::parse($siklus['tanggal_tanam'])->format('d M Y') }} · Estimasi {{ \Carbon\Carbon::parse($siklus['estimasi_tanggal_panen'])->format('d M Y') }}{{ !empty($siklus['estimasi_tanggal_panen_akhir']) ? ' - ' . \Carbon\Carbon::parse($siklus['estimasi_tanggal_panen_akhir'])->format('d M Y') : '' }}</p>
                             <p class="mt-1 text-[11px] text-slate-500">Luas tanam: {{ number_format((float) ($siklus['luas_tanam_hektar'] ?? 0), 2, ',', '.') }} ha</p>
@@ -336,7 +336,7 @@
                         @endif
                     </div>
                     <div class="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
-                        <div class="h-full rounded-full bg-[#10b981]" style="width: {{ $siklus['progress_persen'] }}%"></div>
+                        <div class="h-full rounded-full bg-[#047857]" style="width: {{ $siklus['progress_persen'] }}%"></div>
                     </div>
                     <div class="mt-2 flex justify-between text-[10px] font-semibold text-slate-500">
                         <span>{{ $siklus['progress_persen'] }}% masa tanam</span>

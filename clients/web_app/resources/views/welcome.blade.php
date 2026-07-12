@@ -271,7 +271,7 @@
     </style>
     
     <div class="max-w-7xl w-full flex flex-col md:flex-row justify-between items-end gap-6 mb-8">
-        <div class="space-y-3 max-w-2xl">
+        <div class="space-y-3 max-w-3xl">
             <div class="flex items-center gap-3">
                 <div class="w-1 h-5 bg-emerald-500 rounded-full"></div>
                 <p class="text-emerald-600 text-[11px] font-bold tracking-[0.2em] uppercase">Peta Geospasial</p>
@@ -279,29 +279,29 @@
             <h2 class="text-slate-900 text-4xl sm:text-5xl font-extrabold tracking-tight">
                 Map <span class="text-emerald-600">Interaktif</span>
             </h2>
-            <p class="text-slate-500 text-sm sm:text-base font-medium leading-relaxed">
-                Peta ini membantu masyarakat melihat sebaran lahan sawah, batas kecamatan, dan gambaran produktivitas wilayah Barito Kuala secara mudah. Warna kecamatan mengikuti tingkat produktivitas dari data yang tersedia, sedangkan titik hijau menandai lokasi lahan sawah yang dapat dibuka untuk melihat detailnya.
+            <p class="text-slate-500 text-[15px] sm:text-base font-medium leading-relaxed">
+                Pantau sebaran lahan sawah, batas kecamatan, dan produktivitas wilayah Barito Kuala dalam satu peta yang mudah dibaca.
             </p>
         </div>
         <div class="md:text-right max-w-sm">
-            <p class="text-slate-500 text-sm font-medium leading-relaxed">
-                Klik area kecamatan untuk rekap produktivitas, atau klik titik lahan untuk melihat informasi lahan sawah.
+            <p class="text-slate-500 text-[15px] font-medium leading-relaxed">
+                Klik wilayah untuk rekap produktivitas, atau pilih titik lahan untuk melihat detail sawah.
             </p>
         </div>
     </div>
 
     <div class="max-w-7xl w-full grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <div class="rounded-2xl border border-emerald-100 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
-            <p class="text-[10px] font-extrabold tracking-[0.22em] uppercase text-emerald-600 mb-2">Warna Wilayah</p>
-            <p class="text-sm font-medium leading-relaxed text-slate-500">Area kecamatan diberi warna berdasarkan produktivitas agregat yang dihitung dari data backend GIS.</p>
+            <p class="text-[11px] font-extrabold tracking-[0.22em] uppercase text-emerald-600 mb-2">Warna Wilayah</p>
+            <p class="text-[15px] font-medium leading-relaxed text-slate-500">Warna kecamatan menunjukkan kategori produktivitas dari data GIS.</p>
         </div>
         <div class="rounded-2xl border border-emerald-100 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
-            <p class="text-[10px] font-extrabold tracking-[0.22em] uppercase text-emerald-600 mb-2">Titik Lahan</p>
-            <p class="text-sm font-medium leading-relaxed text-slate-500">Titik hijau menunjukkan koordinat lahan sawah sehingga lokasi tetap terlihat walau peta sedang diperbesar jauh.</p>
+            <p class="text-[11px] font-extrabold tracking-[0.22em] uppercase text-emerald-600 mb-2">Titik Lahan</p>
+            <p class="text-[15px] font-medium leading-relaxed text-slate-500">Titik hijau menandai lokasi lahan sawah yang dapat dibuka detailnya.</p>
         </div>
         <div class="rounded-2xl border border-emerald-100 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
-            <p class="text-[10px] font-extrabold tracking-[0.22em] uppercase text-emerald-600 mb-2">Detail Informasi</p>
-            <p class="text-sm font-medium leading-relaxed text-slate-500">Panel detail menampilkan data kecamatan atau lahan secara bergantian agar informasi tetap jelas.</p>
+            <p class="text-[11px] font-extrabold tracking-[0.22em] uppercase text-emerald-600 mb-2">Detail Informasi</p>
+            <p class="text-[15px] font-medium leading-relaxed text-slate-500">Panel detail menjaga informasi kecamatan dan lahan tetap rapi.</p>
         </div>
     </div>
 

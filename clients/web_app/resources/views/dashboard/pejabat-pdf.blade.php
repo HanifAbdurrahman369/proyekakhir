@@ -51,7 +51,7 @@
         .header-banner .system-title {
             font-size: 20px;
             font-weight: bold;
-            color: #14280b;
+            color: #022c22;
             line-height: 1.2;
             margin-top: 2px;
         }
@@ -73,7 +73,7 @@
         /* Summary Cards */
         .summary-card {
             background-color: #fcfdfe;
-            border: 1px solid #e7efd8;
+            border: 1px solid #d1fae5;
             border-radius: 12px;
             padding: 15px;
             vertical-align: top;
@@ -88,7 +88,7 @@
         .card-value {
             font-size: 24px;
             font-weight: bold;
-            color: #14280b;
+            color: #022c22;
             margin-top: 10px;
         }
         .card-unit {
@@ -101,10 +101,10 @@
         .section-title {
             font-size: 14px;
             font-weight: bold;
-            color: #14280b;
+            color: #022c22;
             margin-top: 25px;
             margin-bottom: 10px;
-            border-bottom: 1px solid #dfeccc;
+            border-bottom: 1px solid #d1fae5;
             padding-bottom: 5px;
         }
         
@@ -117,23 +117,23 @@
             border-collapse: collapse;
         }
         .table-data th {
-            background-color: #f4fbe9;
-            color: #203c10;
+            background-color: #ecfdf5;
+            color: #065f46;
             font-weight: bold;
             text-transform: uppercase;
             font-size: 9px;
             letter-spacing: 0.5px;
-            border-bottom: 2px solid #dfeccc;
+            border-bottom: 2px solid #d1fae5;
             padding: 8px;
             text-align: left;
         }
         .table-data td {
             padding: 8px;
-            border-bottom: 1px solid #e7efd8;
+            border-bottom: 1px solid #d1fae5;
             font-size: 11px;
         }
         .table-data tr:nth-child(even) {
-            background-color: #fbfdf9;
+            background-color: #f8fdf9;
         }
         .text-right {
             text-align: right;
@@ -158,7 +158,7 @@
             text-align: center;
             font-size: 10px;
             color: #999999;
-            border-top: 1px solid #e7efd8;
+            border-top: 1px solid #d1fae5;
             padding-top: 10px;
         }
     </style>

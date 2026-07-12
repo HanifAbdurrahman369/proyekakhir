@@ -1,10 +1,10 @@
 @php
     $menuBase = 'group flex items-center gap-2.5 px-3 py-2.5 rounded-2xl text-[13px] font-semibold transition-all duration-200';
-    $menuActive = 'bg-[#edf8dc] text-[#203c10] shadow-sm ring-1 ring-[#dfeccc]';
-    $menuIdle = 'text-slate-600 hover:bg-[#f7fced] hover:text-[#2f5c12]';
+    $menuActive = 'bg-[#ecfdf5] text-[#065f46] shadow-sm ring-1 ring-[#d1fae5]';
+    $menuIdle = 'text-slate-600 hover:bg-[#ecfdf5] hover:text-[#047857]';
     $iconBase = 'w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition';
     $iconActive = 'bg-[#047857] text-white';
-    $iconIdle = 'bg-slate-100 text-slate-500 group-hover:bg-[#edf8dc] group-hover:text-[#047857]';
+    $iconIdle = 'bg-slate-100 text-slate-500 group-hover:bg-[#ecfdf5] group-hover:text-[#047857]';
 
     $roleId = (int) session('role_id');
     $totalLahan = session('total_lahan');
@@ -14,7 +14,10 @@
             try {
                 $response = \Illuminate\Support\Facades\Http::withToken($token)
                     ->acceptJson()
-                    ->get('http://127.0.0.1:8003/api/lahan', ['page' => 1]);
+                    ->withoutVerifying()
+                    ->timeout(10)
+                    ->connectTimeout(5)
+                    ->get(rtrim(env('GATEWAY_URL', env('API_GATEWAY_URL', 'http://127.0.0.1:8003')), '/') . '/api/lahan', ['page' => 1]);
                 if ($response->successful()) {
                     $totalLahan = $response->json()['data']['total'] ?? count($response->json()['data']['data'] ?? []);
                     session(['total_lahan' => $totalLahan]);

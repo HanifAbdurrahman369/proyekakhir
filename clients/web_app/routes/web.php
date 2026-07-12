@@ -97,6 +97,7 @@ Route::middleware(['role:3'])->group(function () {
     Route::get('/pejabat/produksi-kecamatan', [PejabatController::class, 'produksiKecamatan'])->name('produksi.kecamatan');
     Route::get('/pejabat/lahan-kecamatan', [PejabatController::class, 'lahanKecamatan'])->name('lahan.kecamatan');
     Route::get('/laporan-produksi', [ProduksiDaerahController::class, 'index'])->name('laporan.produksi');
+    Route::get('/api/produksi-daerah', [ProduksiDaerahController::class, 'data'])->name('laporan.produksi.data');
 });
 
 

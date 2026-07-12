@@ -23,6 +23,8 @@ class AppServiceProvider extends ServiceProvider
             'headers' => [
                 'Connection' => 'close',
             ],
+            'connect_timeout' => 5,
+            'timeout' => 15,
         ]);
     }
 }

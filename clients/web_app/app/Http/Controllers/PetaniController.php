@@ -8,64 +8,74 @@ use Illuminate\Support\Facades\Http;
 
 class PetaniController extends Controller
 {
-    private $gatewayUrl = 'http://127.0.0.1:8003';
+    private function gatewayUrl(): string
+    {
+        return rtrim(env('GATEWAY_URL', env('API_GATEWAY_URL', 'http://127.0.0.1:8003')), '/');
+    }
 
     private function getBearerToken()
     {
         return session('token') ?? session('jwt_token') ?? '';
     }
 
-    public function index(Request $request)
+    private function api()
     {
-        $token = session('token');
-        $roleId = (int) session('role_id');
+        return Http::withToken($this->getBearerToken())
+            ->acceptJson()
+            ->withoutVerifying()
+            ->timeout(15)
+            ->connectTimeout(5);
+    }
 
-        $response = null;
-        if (in_array($roleId, [1, 5], true)) {
-            $response = Http::withToken($token)
-                ->acceptJson()
-                ->get($this->gatewayUrl . '/api/lahan', [
-                    'page' => $request->page ?? 1,
-                ]);
+    private function getJson(string $endpoint, array $query = []): array
+    {
+        if (!$this->getBearerToken()) {
+            return [];
         }
 
-        $produksiResponse = Http::withToken($token)
-            ->acceptJson()
-            ->get($this->gatewayUrl . '/api/total-produksi');
+        try {
+            $response = $this->api()->get($this->gatewayUrl() . '/api/' . ltrim($endpoint, '/'), $query);
 
-        $riwayatResponse = Http::withToken($token)
-            ->acceptJson()
-            ->get($this->gatewayUrl . '/api/riwayat-panen', [
-                'riwayat_page' => $request->riwayat_page ?? 1,
-                'per_page' => 3,
-            ]);
+            if (!$response->successful()) {
+                return [];
+            }
 
-        $siklusResponse = Http::withToken($token)
-            ->acceptJson()
-            ->get($this->gatewayUrl . '/api/my-siklus-tanam');
+            return $response->json() ?? [];
+        } catch (\Throwable $e) {
+            report($e);
+            return [];
+        }
+    }
+
+    public function index(Request $request)
+    {
+        $roleId = (int) session('role_id');
 
         $lahan = ['data' => [], 'total' => 0, 'current_page' => 1, 'last_page' => 1];
         $totalProduksi = 0;
         $riwayat = [];
         $siklusTanam = [];
 
-        if ($response && $response->successful()) {
-            $lahan = $response->json()['data'];
+        if (in_array($roleId, [1, 5], true)) {
+            $lahanPayload = $this->getJson('/lahan', [
+                'page' => $request->page ?? 1,
+            ]);
+            $lahan = $lahanPayload['data'] ?? $lahan;
             $totalLahan = $lahan['total'] ?? count($lahan['data'] ?? []);
             session(['total_lahan' => $totalLahan]);
         }
 
-        if ($produksiResponse->successful()) {
-            $totalProduksi = $produksiResponse->json()['data']['total_produksi'] ?? 0;
-        }
+        $produksiPayload = $this->getJson('/total-produksi');
+        $totalProduksi = $produksiPayload['data']['total_produksi'] ?? 0;
 
-        if ($riwayatResponse->successful()) {
-            $riwayat = $riwayatResponse->json()['data'] ?? [];
-        }
+        $riwayatPayload = $this->getJson('/riwayat-panen', [
+            'riwayat_page' => $request->riwayat_page ?? 1,
+            'per_page' => 3,
+        ]);
+        $riwayat = $riwayatPayload['data'] ?? [];
 
-        if ($siklusResponse->successful()) {
-            $siklusTanam = $siklusResponse->json()['data'] ?? [];
-        }
+        $siklusPayload = $this->getJson('/my-siklus-tanam');
+        $siklusTanam = $siklusPayload['data'] ?? [];
 
         $roleName = $roleId === 5 ? 'Brigade Pangan' : 'Kelompok Tani';
 

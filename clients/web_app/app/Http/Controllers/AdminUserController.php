@@ -9,13 +9,13 @@ class AdminUserController extends Controller
 {
     protected function gatewayUrl(): string
     {
-        return env('GATEWAY_URL', 'http://127.0.0.1:8003');
+        return rtrim(env('GATEWAY_URL', env('API_GATEWAY_URL', 'http://127.0.0.1:8003')), '/');
     }
 
     private function api()
     {
         // acceptJson() memaksa backend merespon JSON, bukan redirect HTML
-        return Http::withHeaders(['Connection' => 'close'])->withToken(session('token'))->acceptJson()->withoutVerifying()->timeout(10);
+        return Http::withHeaders(['Connection' => 'close'])->withToken(session('token'))->acceptJson()->withoutVerifying()->timeout(15)->connectTimeout(5);
     }
 
     private function responseRows($response): array
@@ -31,6 +31,10 @@ class AdminUserController extends Controller
 
     private function errorMessage($response, string $fallback): string
     {
+        if (!$response) {
+            return 'Backend belum dapat dihubungi.';
+        }
+
         $errors = $response->json('errors');
 
         if (is_array($errors)) {
@@ -50,34 +54,43 @@ class AdminUserController extends Controller
         return $response->json('message') ?? $response->json('error') ?? $fallback;
     }
 
+    private function getRows(string $endpoint): array
+    {
+        try {
+            $response = $this->api()->get($this->gatewayUrl() . '/api/' . ltrim($endpoint, '/'));
+            return $response->successful() ? $this->responseRows($response) : [];
+        } catch (\Throwable $e) {
+            report($e);
+            return [];
+        }
+    }
+
+    private function send(string $method, string $endpoint, array $payload = [])
+    {
+        try {
+            return $this->api()->{$method}($this->gatewayUrl() . '/api/' . ltrim($endpoint, '/'), $payload);
+        } catch (\Throwable $e) {
+            report($e);
+            return null;
+        }
+    }
+
     public function index()
     {
-        $response = $this->api()->get($this->gatewayUrl() . '/api/users');
-        $kecamatanResponse = $this->api()->get($this->gatewayUrl() . '/api/kecamatan');
-        $kelurahanResponse = $this->api()->get($this->gatewayUrl() . '/api/kelurahan');
-        $komunitasResponse = $this->api()->get($this->gatewayUrl() . '/api/master/tables/komunitas');
-        
-        // Membaca format data secara fleksibel, baik itu di dalam ['data'] atau array langsung
-        $users = $response->successful() ? $this->responseRows($response) : [];
-        $kecamatan = $kecamatanResponse->successful() ? $this->responseRows($kecamatanResponse) : [];
-        $kelurahan = $kelurahanResponse->successful() ? $this->responseRows($kelurahanResponse) : [];
-        $komunitas = $komunitasResponse->successful() ? $this->responseRows($komunitasResponse) : [];
+        $users = $this->getRows('/users');
+        $kecamatan = $this->getRows('/kecamatan');
+        $kelurahan = $this->getRows('/kelurahan');
+        $komunitas = $this->getRows('/master/tables/komunitas');
         
         return view('dashboard.admin', compact('users', 'kecamatan', 'kelurahan', 'komunitas'));
     }
 
     public function dashboard()
     {
-        // Panggil endpoint dari API Gateway untuk mendapatkan rekapitulasi data
-        $usersResponse = $this->api()->get($this->gatewayUrl() . '/api/users');
-        $komunitasResponse = $this->api()->get($this->gatewayUrl() . '/api/master/tables/komunitas');
-        $lahanResponse = $this->api()->get($this->gatewayUrl() . '/api/lahan');
-        $panenResponse = $this->api()->get($this->gatewayUrl() . '/api/activities');
-
-        $users = $usersResponse->successful() ? $this->responseRows($usersResponse) : [];
-        $komunitas = $komunitasResponse->successful() ? $this->responseRows($komunitasResponse) : [];
-        $lahan = $lahanResponse->successful() ? $this->responseRows($lahanResponse) : [];
-        $panen = $panenResponse->successful() ? $this->responseRows($panenResponse) : [];
+        $users = $this->getRows('/users');
+        $komunitas = $this->getRows('/master/tables/komunitas');
+        $lahan = $this->getRows('/lahan');
+        $panen = $this->getRows('/activities');
 
         // Hitung statistik user
         $roleCounts = collect($users)->countBy('role_id');
@@ -96,9 +109,9 @@ class AdminUserController extends Controller
 
     public function store(Request $request)
     {
-        $response = $this->api()->post($this->gatewayUrl() . '/api/users', $request->all());
+        $response = $this->send('post', '/users', $request->all());
 
-        if ($response->successful()) {
+        if ($response?->successful()) {
             return redirect('/admin/users')->with('success', 'Pengguna berhasil ditambahkan.');
         }
 
@@ -108,9 +121,9 @@ class AdminUserController extends Controller
 
     public function update(Request $request, $id)
     {
-        $response = $this->api()->put($this->gatewayUrl() . '/api/users/' . $id, $request->all());
+        $response = $this->send('put', '/users/' . $id, $request->all());
 
-        if ($response->successful()) {
+        if ($response?->successful()) {
             return redirect('/admin/users')->with('success', 'Data pengguna berhasil diperbarui.');
         }
         
@@ -120,7 +133,12 @@ class AdminUserController extends Controller
 
     public function destroy($id)
     {
-        $response = $this->api()->delete($this->gatewayUrl() . '/api/users/' . $id);
-        return redirect('/admin/users')->with('success', 'Pengguna berhasil dihapus.');
+        $response = $this->send('delete', '/users/' . $id);
+
+        if ($response?->successful()) {
+            return redirect('/admin/users')->with('success', 'Pengguna berhasil dihapus.');
+        }
+
+        return redirect('/admin/users')->with('error', $this->errorMessage($response, 'Pengguna gagal dihapus.'));
     }
 }

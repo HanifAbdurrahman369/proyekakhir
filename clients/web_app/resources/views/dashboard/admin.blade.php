@@ -52,7 +52,7 @@
 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-7">
     @if(!$isMasterMode)
         <div>
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-[#14280b] tracking-tight" id="main-page-title">Manajemen Pengguna</h1>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-[#022c22] tracking-tight" id="main-page-title">Manajemen Pengguna</h1>
             <p class="text-sm text-slate-500 mt-1 leading-relaxed" id="main-page-desc">Kelola akses akun dan pantau aktivitas pengguna sistem</p>
         </div>
         <div class="flex flex-col sm:flex-row gap-2">
@@ -64,7 +64,7 @@
         </div>
     @else
         <div>
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-[#14280b] tracking-tight">Manajemen Data Master (DBA)</h1>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-[#022c22] tracking-tight">Manajemen Data Master (DBA)</h1>
             <p class="text-sm text-slate-500 mt-1 leading-relaxed">Kendali penuh struktur tabel, kolom, dan isi basis data secara real-time</p>
         </div>
         
@@ -72,21 +72,21 @@
         <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
             @if(!$tableName)
                 {{-- JIKA DI HALAMAN UTAMA (ALL TABLES): Sediakan tombol export masal seluruh database --}}
-                <a href="/admin/master/export/excel" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition shadow-[0_14px_38px_rgba(32,60,16,.06)] flex items-center gap-1.5">
+                <a href="/admin/master/export/excel" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition shadow-[0_14px_38px_rgba(4,120,87,.06)] flex items-center gap-1.5">
                     💾 Export Semua Tabel (Excel)
                 </a>
-                <a href="/admin/master/export/sql" class="bg-[#2f5c12] hover:bg-[#24480e] text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition shadow-[0_14px_38px_rgba(32,60,16,.06)] flex items-center gap-1.5">
+                <a href="/admin/master/export/sql" class="bg-[#047857] hover:bg-[#065f46] text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition shadow-[0_14px_38px_rgba(4,120,87,.06)] flex items-center gap-1.5">
                     📄 Export Semua Tabel (SQL)
                 </a>
-                <button onclick="switchSection('sql-section')" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition shadow-[0_14px_38px_rgba(32,60,16,.06)]">
+                <button onclick="switchSection('sql-section')" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition shadow-[0_14px_38px_rgba(4,120,87,.06)]">
                     &#9881; Eksekusi SQL / Import
                 </button>
             @else
                 {{-- JIKA SEDANG MASUK DI SALAH SATU TABEL: Tampilkan tombol aksi normal bawaan tabel tersebut --}}
-                <button onclick="switchSection('sql-section')" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition shadow-[0_14px_38px_rgba(32,60,16,.06)]">
+                <button onclick="switchSection('sql-section')" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition shadow-[0_14px_38px_rgba(4,120,87,.06)]">
                     &#9881; Eksekusi SQL / Import
                 </button>
-                <a href="/admin/master/export/sql" class="bg-[#2f5c12] hover:bg-[#24480e] text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition shadow-[0_14px_38px_rgba(32,60,16,.06)]">
+                <a href="/admin/master/export/sql" class="bg-[#047857] hover:bg-[#065f46] text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition shadow-[0_14px_38px_rgba(4,120,87,.06)]">
                     &#8681; Export Full Database (SQL)
                 </a>
             @endif
@@ -104,22 +104,22 @@
 
 @if(!$isMasterMode)
     <div id="statistics-cards" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-        <div class="bg-white border border-[#e7efd8] rounded-[22px] p-5 shadow-[0_14px_38px_rgba(32,60,16,.06)]">
+        <div class="bg-white border border-[#d1fae5] rounded-[22px] p-5 shadow-[0_14px_38px_rgba(4,120,87,.06)]">
             <p class="text-[11px] uppercase tracking-wide font-bold text-slate-400">Total Pengguna</p>
-            <p class="text-3xl font-extrabold text-[#14280b] mt-2">{{ count($users) }}</p>
+            <p class="text-3xl font-extrabold text-[#022c22] mt-2">{{ count($users) }}</p>
             <p class="text-xs text-slate-500 mt-1">Akun terdaftar di sistem</p>
         </div>
-        <div class="bg-white border border-[#e7efd8] rounded-[22px] p-5 shadow-[0_14px_38px_rgba(32,60,16,.06)]">
+        <div class="bg-white border border-[#d1fae5] rounded-[22px] p-5 shadow-[0_14px_38px_rgba(4,120,87,.06)]">
             <p class="text-[11px] uppercase tracking-wide font-bold text-slate-400">Petugas Lapangan</p>
             <p class="text-3xl font-extrabold text-amber-700 mt-2">{{ $petugasCount }}</p>
             <p class="text-xs text-slate-500 mt-1">Memegang wilayah desa</p>
         </div>
-        <div class="bg-white border border-[#e7efd8] rounded-[22px] p-5 shadow-[0_14px_38px_rgba(32,60,16,.06)]">
+        <div class="bg-white border border-[#d1fae5] rounded-[22px] p-5 shadow-[0_14px_38px_rgba(4,120,87,.06)]">
             <p class="text-[11px] uppercase tracking-wide font-bold text-slate-400">Petani & Brigade</p>
             <p class="text-3xl font-extrabold text-emerald-700 mt-2">{{ $petaniCount }}</p>
             <p class="text-xs text-slate-500 mt-1">Akses pelaporan lahan</p>
         </div>
-        <div class="bg-white border border-[#e7efd8] rounded-[22px] p-5 shadow-[0_14px_38px_rgba(32,60,16,.06)]">
+        <div class="bg-white border border-[#d1fae5] rounded-[22px] p-5 shadow-[0_14px_38px_rgba(4,120,87,.06)]">
             <p class="text-[11px] uppercase tracking-wide font-bold text-slate-400">Pejabat & Admin</p>
             <p class="text-3xl font-extrabold text-blue-700 mt-2">{{ $pejabatCount + $adminCount }}</p>
             <p class="text-xs text-slate-500 mt-1">Akses supervisi dan kelola</p>
@@ -134,22 +134,22 @@
 @if(!$isMasterMode)
     {{-- A1: TABEL DATA UTAMA PENGGUNA --}}
     <div id="index-section" class="admin-section block">
-        <div class="bg-white rounded-[22px] border border-[#e7efd8] p-5 mb-5 shadow-[0_4px_20px_rgba(32,60,16,.03)] transition-all">
+        <div class="bg-white rounded-[22px] border border-[#d1fae5] p-5 mb-5 shadow-[0_4px_20px_rgba(4,120,87,.03)] transition-all">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="font-bold text-[#14280b] text-sm flex items-center gap-2">
-                    <svg class="w-4 h-4 text-[#65bd00]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                <h3 class="font-bold text-[#022c22] text-sm flex items-center gap-2">
+                    <svg class="w-4 h-4 text-[#047857]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
                     Filter & Pencarian
                 </h3>
-                <span class="text-[11px] bg-[#f7fced] text-[#047857] px-3 py-1 rounded-[20px] font-bold tracking-wide"><span id="user-filter-count">{{ count($users) }}</span> akun ditampilkan</span>
+                <span class="text-[11px] bg-[#ecfdf5] text-[#047857] px-3 py-1 rounded-[20px] font-bold tracking-wide"><span id="user-filter-count">{{ count($users) }}</span> akun ditampilkan</span>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 items-end">
                 <div class="xl:col-span-2">
                     <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Pencarian Akun</label>
-                    <input id="user-search" type="search" placeholder="Nama, email, no HP..." class="w-full px-4 py-2 border-slate-200 bg-slate-50 rounded-[20px] text-sm focus:bg-white focus:ring-[#65bd00] focus:border-[#65bd00] transition-colors">
+                    <input id="user-search" type="search" placeholder="Nama, email, no HP..." class="w-full px-4 py-2 border-slate-200 bg-slate-50 rounded-[20px] text-sm focus:bg-white focus:ring-[#047857] focus:border-[#047857] transition-colors">
                 </div>
                 <div>
                     <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Hak Akses</label>
-                    <select id="role-filter" class="w-full py-2 px-4 border-slate-200 bg-slate-50 rounded-[20px] text-sm focus:bg-white focus:ring-[#65bd00] focus:border-[#65bd00] transition-colors">
+                    <select id="role-filter" class="w-full py-2 px-4 border-slate-200 bg-slate-50 rounded-[20px] text-sm focus:bg-white focus:ring-[#047857] focus:border-[#047857] transition-colors">
                         <option value="">Semua Role</option>
                         @foreach($roleLabels as $roleId => $roleName)
                             <option value="{{ $roleId }}">{{ $roleName }}</option>
@@ -158,7 +158,7 @@
                 </div>
                 <div>
                     <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Kecamatan</label>
-                    <select id="kecamatan-filter" class="w-full py-2 px-4 border-slate-200 bg-slate-50 rounded-[20px] text-sm focus:bg-white focus:ring-[#65bd00] focus:border-[#65bd00] transition-colors">
+                    <select id="kecamatan-filter" class="w-full py-2 px-4 border-slate-200 bg-slate-50 rounded-[20px] text-sm focus:bg-white focus:ring-[#047857] focus:border-[#047857] transition-colors">
                         <option value="">Semua Kecamatan</option>
                         @foreach($kecamatan as $item)
                             <option value="{{ $item['id'] }}">{{ $item['nama_kecamatan'] }}</option>
@@ -168,7 +168,7 @@
                 <div>
                     <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Asal Petugas</label>
                     <div class="flex gap-2">
-                        <select id="instansi-filter" class="w-full py-2 px-4 border-slate-200 bg-slate-50 rounded-[20px] text-sm focus:bg-white focus:ring-[#65bd00] focus:border-[#65bd00] transition-colors">
+                        <select id="instansi-filter" class="w-full py-2 px-4 border-slate-200 bg-slate-50 rounded-[20px] text-sm focus:bg-white focus:ring-[#047857] focus:border-[#047857] transition-colors">
                             <option value="">Semua Asal</option>
                             <option value="DINAS_PERTANIAN">Dinas Pertanian</option>
                             <option value="BPP">BPP</option>
@@ -180,10 +180,10 @@
                 </div>
             </div>
         </div>
-        <div class="glass-card rounded-[28px] border border-[#e7efd8] overflow-hidden">
+        <div class="glass-card rounded-[28px] border border-[#d1fae5] overflow-hidden">
             <div class="overflow-x-auto w-full">
                 <table class="w-full text-left text-sm whitespace-nowrap min-w-max">
-                <thead class="bg-[#f7fced] text-[#14280b] text-xs uppercase font-semibold">
+                <thead class="bg-[#ecfdf5] text-[#022c22] text-xs uppercase font-semibold">
                     <tr>
                         <th class="px-6 py-4">Nama Lengkap</th>
                         <th class="px-6 py-4">Email</th>
@@ -213,7 +213,7 @@
                         data-role="{{ $userRoleId }}"
                         data-kecamatan="{{ $user['wilayah_kecamatan_id'] ?? '' }}"
                         data-instansi="{{ $userInstansi }}">
-                        <td class="px-6 py-4 font-medium text-[#14280b]">{{ $user['nama_lengkap'] }}</td>
+                        <td class="px-6 py-4 font-medium text-[#022c22]">{{ $user['nama_lengkap'] }}</td>
                         <td class="px-6 py-4">{{ $user['email'] }}</td>
                         <td class="px-6 py-4">
                             @switch($userRoleId)
@@ -228,13 +228,13 @@
                         <td class="px-6 py-4">
                             @if($userRoleId === 2)
                                 <div class="text-xs leading-5 text-slate-600">
-                                    <div class="font-semibold text-[#14280b]">{{ $user['wilayah_kecamatan_nama'] ?? '-' }}</div>
+                                    <div class="font-semibold text-[#022c22]">{{ $user['wilayah_kecamatan_nama'] ?? '-' }}</div>
                                     <div>{{ implode(', ', $user['wilayah_kelurahan_nama'] ?? []) ?: '-' }}</div>
                                     <div class="text-slate-400">{{ ($user['instansi_asal'] ?? '') === 'BPP' ? ($user['nama_bpp'] ?? '-') : 'Dinas Pertanian' }}</div>
                                 </div>
                             @elseif(in_array($userRoleId, [1, 5], true))
                                 <div class="text-xs leading-5 text-slate-600">
-                                    <div class="font-semibold text-[#14280b]">{{ $user['komunitas_nama'] ?? '-' }}</div>
+                                    <div class="font-semibold text-[#022c22]">{{ $user['komunitas_nama'] ?? '-' }}</div>
                                     <div class="text-slate-400">ID Komunitas: {{ $user['komunitas_id'] ?? '-' }}</div>
                                 </div>
                             @else
@@ -267,10 +267,10 @@
     
     {{-- A1-B: TABEL DATA KOMUNITAS --}}
     <div id="komunitas-section" class="admin-section hidden">
-        <div class="bg-white rounded-[22px] border border-[#e7efd8] p-5 mb-5 shadow-[0_4px_20px_rgba(32,60,16,.03)] transition-all">
+        <div class="bg-white rounded-[22px] border border-[#d1fae5] p-5 mb-5 shadow-[0_4px_20px_rgba(4,120,87,.03)] transition-all">
             <div class="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
-                <h3 class="font-bold text-[#14280b] text-sm flex items-center gap-2">
-                    <svg class="w-4 h-4 text-[#65bd00]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                <h3 class="font-bold text-[#022c22] text-sm flex items-center gap-2">
+                    <svg class="w-4 h-4 text-[#047857]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
                     Data Komunitas
                 </h3>
                 <div class="flex gap-2 flex-wrap">
@@ -282,7 +282,7 @@
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                         Export XLSX
                     </a>
-                    <button onclick="openCreateKomunitasModal()" class="bg-[#2f5c12] hover:bg-[#24480e] text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition shadow-sm flex items-center gap-2">
+                    <button onclick="openCreateKomunitasModal()" class="bg-[#047857] hover:bg-[#065f46] text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition shadow-sm flex items-center gap-2">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                         Tambah Komunitas
                     </button>
@@ -292,11 +292,11 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                 <div class="lg:col-span-2">
                     <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Pencarian Komunitas</label>
-                    <input id="komunitas-search" type="search" placeholder="Nama komunitas, BPP, dsb..." class="w-full px-4 py-2 border-slate-200 bg-slate-50 rounded-[20px] text-sm focus:bg-white focus:ring-[#65bd00] focus:border-[#65bd00] transition-colors">
+                    <input id="komunitas-search" type="search" placeholder="Nama komunitas, BPP, dsb..." class="w-full px-4 py-2 border-slate-200 bg-slate-50 rounded-[20px] text-sm focus:bg-white focus:ring-[#047857] focus:border-[#047857] transition-colors">
                 </div>
                 <div>
                     <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Jenis Komunitas</label>
-                    <select id="komunitas-jenis-filter" class="w-full py-2 px-4 border-slate-200 bg-slate-50 rounded-[20px] text-sm focus:bg-white focus:ring-[#65bd00] focus:border-[#65bd00] transition-colors">
+                    <select id="komunitas-jenis-filter" class="w-full py-2 px-4 border-slate-200 bg-slate-50 rounded-[20px] text-sm focus:bg-white focus:ring-[#047857] focus:border-[#047857] transition-colors">
                         <option value="">Semua Jenis</option>
                         <option value="komunitas_tani">Komunitas Tani</option>
                         <option value="brigade_pangan">Brigade Pangan</option>
@@ -304,7 +304,7 @@
                 </div>
                 <div>
                     <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Kecamatan</label>
-                    <select id="komunitas-kecamatan-filter" class="w-full py-2 px-4 border-slate-200 bg-slate-50 rounded-[20px] text-sm focus:bg-white focus:ring-[#65bd00] focus:border-[#65bd00] transition-colors">
+                    <select id="komunitas-kecamatan-filter" class="w-full py-2 px-4 border-slate-200 bg-slate-50 rounded-[20px] text-sm focus:bg-white focus:ring-[#047857] focus:border-[#047857] transition-colors">
                         <option value="">Semua Kecamatan</option>
                         @foreach($kecamatan as $item)
                             <option value="{{ $item['id'] }}">{{ $item['nama_kecamatan'] }}</option>
@@ -314,10 +314,10 @@
             </div>
         </div>
 
-        <div class="glass-card rounded-[28px] border border-[#e7efd8] overflow-hidden">
+        <div class="glass-card rounded-[28px] border border-[#d1fae5] overflow-hidden">
             <div class="overflow-x-auto w-full">
                 <table class="w-full text-left text-sm whitespace-nowrap min-w-max">
-                <thead class="bg-[#f7fced] text-[#14280b] text-xs uppercase font-semibold">
+                <thead class="bg-[#ecfdf5] text-[#022c22] text-xs uppercase font-semibold">
                     <tr>
                         <th class="px-6 py-4">Nama / Jenis</th>
                         <th class="px-6 py-4">Ketua / PIC</th>
@@ -362,7 +362,7 @@
                         data-jenis="{{ $jenis }}"
                         data-kecamatan="{{ $kecId }}">
                         <td class="px-6 py-4">
-                            <div class="font-bold text-[#14280b]">{{ $kom['nama_komunitas'] ?? '-' }}</div>
+                            <div class="font-bold text-[#022c22]">{{ $kom['nama_komunitas'] ?? '-' }}</div>
                             <div class="text-[10px] uppercase font-semibold tracking-wider text-slate-400 mt-0.5">{{ str_replace('_', ' ', $jenis) }}</div>
                         </td>
                         <td class="px-6 py-4">{{ $kom['nama'] ?? '-' }}</td>
@@ -402,11 +402,11 @@
     <div id="create-section" class="admin-section hidden">
         <div class="bg-white rounded-[28px] border border-slate-100/60 p-8 sm:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.02)] max-w-5xl mx-auto relative overflow-hidden">
             <!-- Dekoratif latar belakang -->
-            <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-[#65bd00] opacity-[0.03] rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-[#047857] opacity-[0.03] rounded-full blur-3xl pointer-events-none"></div>
             
             <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-10 pb-6 border-b border-slate-100 relative z-10">
                 <div>
-                    <h3 class="text-xl sm:text-2xl font-extrabold text-[#14280b] tracking-tight">Pendaftaran Pengguna Baru</h3>
+                    <h3 class="text-xl sm:text-2xl font-extrabold text-[#022c22] tracking-tight">Pendaftaran Pengguna Baru</h3>
                     <p class="text-xs sm:text-sm text-slate-500 mt-2">Lengkapi informasi di bawah ini untuk memberikan akses sistem kepada pengguna baru.</p>
                 </div>
                 <button onclick="switchSection('index-section')" class="mt-4 sm:mt-0 flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-800 bg-slate-50 hover:bg-slate-100 rounded-full transition-all">
@@ -425,29 +425,29 @@
                             <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-100">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                             </div>
-                            <h4 class="text-base font-bold text-[#14280b]">Informasi Personal</h4>
+                            <h4 class="text-base font-bold text-[#022c22]">Informasi Personal</h4>
                         </div>
                         
                         <div class="bg-slate-50/50 p-6 rounded-[20px] border border-slate-100 space-y-5">
                             <div>
                                 <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Lengkap <span class="text-red-500">*</span></label>
-                                <input type="text" name="nama_lengkap" required class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#65bd00]/30 focus:border-[#65bd00] transition-all outline-none shadow-sm">
+                                <input type="text" name="nama_lengkap" required class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all outline-none shadow-sm">
                             </div>
                             <div>
                                 <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">NIK / ID Pegawai</label>
-                                <input type="text" name="nik" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#65bd00]/30 focus:border-[#65bd00] transition-all outline-none shadow-sm">
+                                <input type="text" name="nik" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all outline-none shadow-sm">
                             </div>
                             <div>
                                 <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Alamat Email Aktif <span class="text-red-500">*</span></label>
-                                <input type="email" name="email" required class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#65bd00]/30 focus:border-[#65bd00] transition-all outline-none shadow-sm">
+                                <input type="email" name="email" required class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all outline-none shadow-sm">
                             </div>
                             <div>
                                 <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nomor Handphone</label>
-                                <input type="text" name="no_hp" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#65bd00]/30 focus:border-[#65bd00] transition-all outline-none shadow-sm">
+                                <input type="text" name="no_hp" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all outline-none shadow-sm">
                             </div>
                             <div>
                                 <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Alamat Rumah</label>
-                                <textarea name="alamat" rows="3" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#65bd00]/30 focus:border-[#65bd00] transition-all outline-none resize-none shadow-sm"></textarea>
+                                <textarea name="alamat" rows="3" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all outline-none resize-none shadow-sm"></textarea>
                             </div>
                         </div>
                     </div>
@@ -458,13 +458,13 @@
                             <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
                             </div>
-                            <h4 class="text-base font-bold text-[#14280b]">Akses & Kredensial</h4>
+                            <h4 class="text-base font-bold text-[#022c22]">Akses & Kredensial</h4>
                         </div>
                         
                         <div class="bg-blue-50/20 p-6 rounded-[20px] border border-blue-100/50 space-y-5">
                             <div>
                                 <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Hak Akses Sistem <span class="text-red-500">*</span></label>
-                                <select name="role_id" required data-petugas-role="create" class="js-role-select w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#65bd00]/30 focus:border-[#65bd00] transition-all outline-none cursor-pointer shadow-sm">
+                                <select name="role_id" required data-petugas-role="create" class="js-role-select w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all outline-none cursor-pointer shadow-sm">
                                     <option value="4">Admin</option>
                                     <option value="3">Pejabat</option>
                                     <option value="2">Petugas</option>
@@ -476,11 +476,11 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Kata Sandi Baru <span class="text-red-500">*</span></label>
-                                    <input type="password" name="password" required minlength="6" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#65bd00]/30 focus:border-[#65bd00] transition-all outline-none shadow-sm">
+                                    <input type="password" name="password" required minlength="6" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all outline-none shadow-sm">
                                 </div>
                                 <div>
                                     <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Konfirmasi Sandi <span class="text-red-500">*</span></label>
-                                    <input type="password" name="password_confirmation" required minlength="6" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#65bd00]/30 focus:border-[#65bd00] transition-all outline-none shadow-sm">
+                                    <input type="password" name="password_confirmation" required minlength="6" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all outline-none shadow-sm">
                                 </div>
                             </div>
                         </div>
@@ -531,7 +531,7 @@
                 </div>
 
                 <div class="mt-10 pt-6 border-t border-slate-100 flex justify-end gap-3">
-                    <button type="submit" class="bg-[#2f5c12] hover:bg-[#1a3809] text-white font-bold px-8 py-3 rounded-full text-xs transition-all shadow-[0_8px_20px_rgba(47,92,18,.2)] hover:shadow-[0_10px_25px_rgba(47,92,18,.3)] hover:-translate-y-0.5 flex items-center gap-2">
+                    <button type="submit" class="bg-[#047857] hover:bg-[#065f46] text-white font-bold px-8 py-3 rounded-full text-xs transition-all shadow-[0_8px_20px_rgba(4,120,87,.2)] hover:shadow-[0_10px_25px_rgba(4,120,87,.3)] hover:-translate-y-0.5 flex items-center gap-2">
                         Daftarkan Akun
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                     </button>
@@ -548,7 +548,7 @@
             
             <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-10 pb-6 border-b border-slate-100 relative z-10">
                 <div>
-                    <h3 class="text-xl sm:text-2xl font-extrabold text-[#14280b] tracking-tight">Perbarui Data Pengguna</h3>
+                    <h3 class="text-xl sm:text-2xl font-extrabold text-[#022c22] tracking-tight">Perbarui Data Pengguna</h3>
                     <p class="text-xs sm:text-sm text-slate-500 mt-2">Sesuaikan kembali informasi detail, hak akses, atau mereset kata sandi akun ini.</p>
                 </div>
                 <div class="flex flex-row items-center justify-end gap-3 mt-4 sm:mt-0">
@@ -556,7 +556,7 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                         Batal
                     </button>
-                    <button type="submit" form="edit-form" class="bg-[#2f5c12] hover:bg-[#1a3809] text-white font-bold px-6 py-2.5 rounded-full text-xs transition-all shadow-[0_4px_10px_rgba(47,92,18,.2)] hover:shadow-[0_6px_15px_rgba(47,92,18,.3)] hover:-translate-y-0.5 flex items-center gap-2">
+                    <button type="submit" form="edit-form" class="bg-[#047857] hover:bg-[#065f46] text-white font-bold px-6 py-2.5 rounded-full text-xs transition-all shadow-[0_4px_10px_rgba(4,120,87,.2)] hover:shadow-[0_6px_15px_rgba(4,120,87,.3)] hover:-translate-y-0.5 flex items-center gap-2">
                         Simpan Perubahan
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                     </button>
@@ -573,29 +573,29 @@
                             <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-100">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                             </div>
-                            <h4 class="text-base font-bold text-[#14280b]">Informasi Personal</h4>
+                            <h4 class="text-base font-bold text-[#022c22]">Informasi Personal</h4>
                         </div>
                         
                         <div class="bg-slate-50/50 p-6 rounded-[20px] border border-slate-100 space-y-5">
                             <div>
                                 <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Lengkap <span class="text-red-500">*</span></label>
-                                <input type="text" id="edit-nama" name="nama_lengkap" required class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#65bd00]/30 focus:border-[#65bd00] transition-all outline-none shadow-sm">
+                                <input type="text" id="edit-nama" name="nama_lengkap" required class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all outline-none shadow-sm">
                             </div>
                             <div>
                                 <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">NIK / ID Pegawai</label>
-                                <input type="text" id="edit-nik" name="nik" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#65bd00]/30 focus:border-[#65bd00] transition-all outline-none shadow-sm">
+                                <input type="text" id="edit-nik" name="nik" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all outline-none shadow-sm">
                             </div>
                             <div>
                                 <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Alamat Email Aktif <span class="text-red-500">*</span></label>
-                                <input type="email" id="edit-email" name="email" required class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#65bd00]/30 focus:border-[#65bd00] transition-all outline-none shadow-sm">
+                                <input type="email" id="edit-email" name="email" required class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all outline-none shadow-sm">
                             </div>
                             <div>
                                 <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nomor Handphone</label>
-                                <input type="text" id="edit-hp" name="no_hp" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#65bd00]/30 focus:border-[#65bd00] transition-all outline-none shadow-sm">
+                                <input type="text" id="edit-hp" name="no_hp" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all outline-none shadow-sm">
                             </div>
                             <div>
                                 <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Alamat Rumah</label>
-                                <textarea id="edit-alamat" name="alamat" rows="3" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#65bd00]/30 focus:border-[#65bd00] transition-all outline-none resize-none shadow-sm"></textarea>
+                                <textarea id="edit-alamat" name="alamat" rows="3" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all outline-none resize-none shadow-sm"></textarea>
                             </div>
                         </div>
                     </div>
@@ -606,13 +606,13 @@
                             <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                             </div>
-                            <h4 class="text-base font-bold text-[#14280b]">Akses & Keamanan</h4>
+                            <h4 class="text-base font-bold text-[#022c22]">Akses & Keamanan</h4>
                         </div>
                         
                         <div class="bg-blue-50/20 p-6 rounded-[20px] border border-blue-100/50 space-y-5">
                             <div>
                                 <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Hak Akses Sistem <span class="text-red-500">*</span></label>
-                                <select id="edit-role" name="role_id" required data-petugas-role="edit" class="js-role-select w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#65bd00]/30 focus:border-[#65bd00] transition-all outline-none cursor-pointer shadow-sm">
+                                <select id="edit-role" name="role_id" required data-petugas-role="edit" class="js-role-select w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all outline-none cursor-pointer shadow-sm">
                                     <option value="4">Admin</option>
                                     <option value="3">Pejabat</option>
                                     <option value="2">Petugas</option>
@@ -629,11 +629,11 @@
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-[11px] font-bold text-slate-500 mb-1.5">Kata Sandi Baru</label>
-                                        <input type="password" id="edit-password" name="password" minlength="6" class="w-full bg-white border border-slate-200 rounded-[10px] text-xs px-3 py-2.5 focus:ring-2 focus:ring-[#65bd00]/30 focus:border-[#65bd00] transition-all outline-none placeholder-slate-300" placeholder="Kosongkan jika tetap">
+                                        <input type="password" id="edit-password" name="password" minlength="6" class="w-full bg-white border border-slate-200 rounded-[10px] text-xs px-3 py-2.5 focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all outline-none placeholder-slate-300" placeholder="Kosongkan jika tetap">
                                     </div>
                                     <div>
                                         <label class="block text-[11px] font-bold text-slate-500 mb-1.5">Konfirmasi Sandi Baru</label>
-                                        <input type="password" id="edit-password-confirmation" name="password_confirmation" minlength="6" class="w-full bg-white border border-slate-200 rounded-[10px] text-xs px-3 py-2.5 focus:ring-2 focus:ring-[#65bd00]/30 focus:border-[#65bd00] transition-all outline-none placeholder-slate-300" placeholder="Kosongkan jika tetap">
+                                        <input type="password" id="edit-password-confirmation" name="password_confirmation" minlength="6" class="w-full bg-white border border-slate-200 rounded-[10px] text-xs px-3 py-2.5 focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all outline-none placeholder-slate-300" placeholder="Kosongkan jika tetap">
                                     </div>
                                 </div>
                             </div>
@@ -694,10 +694,10 @@
 {{-- ====================================================================== --}}
 @if($isMasterMode)
     {{-- B1: PEMILIH TABEL BAR --}}
-    <div class="bg-white rounded-[22px] border border-[#e7efd8] p-4 mb-4 shadow-[0_14px_38px_rgba(32,60,16,.06)] flex items-center justify-between flex-wrap gap-4">
+    <div class="bg-white rounded-[22px] border border-[#d1fae5] p-4 mb-4 shadow-[0_14px_38px_rgba(4,120,87,.06)] flex items-center justify-between flex-wrap gap-4">
         <form action="/admin/master" method="GET" class="flex items-center gap-3">
             <label class="text-xs font-bold text-slate-700">Pilih Tabel Database:</label>
-            <select name="table" onchange="this.form.submit()" class="border-slate-300 rounded-[26px] text-sm px-4 py-1.5 focus:ring-[#65bd00] min-w-[220px]">
+            <select name="table" onchange="this.form.submit()" class="border-slate-300 rounded-[26px] text-sm px-4 py-1.5 focus:ring-[#047857] min-w-[220px]">
                 <option value="">-- Tampilkan Semua Tabel --</option>
                 @foreach($tableNames as $name)
                     <option value="{{ $name }}" {{ $tableName == $name ? 'selected' : '' }}>{{ $name }}</option>
@@ -717,19 +717,22 @@
     {{-- KONDISIONAL: JIKA TABEL DIPILIH --}}
     @if($tableName)
         <div id="master-index-section" class="admin-section block">
-            <div class="bg-white rounded-[22px] border border-[#e7efd8] overflow-x-auto shadow-[0_14px_38px_rgba(32,60,16,.06)]">
+            <div class="bg-white rounded-[22px] border border-[#d1fae5] overflow-x-auto shadow-[0_14px_38px_rgba(4,120,87,.06)]">
                 <table class="w-full text-left text-sm whitespace-nowrap">
-                    <thead class="bg-[#f7fced] text-[#14280b] text-xs uppercase font-semibold">
+                    <thead class="bg-[#ecfdf5] text-[#022c22] text-xs uppercase font-semibold">
                         <tr>
                             @foreach($columns as $col)
                                 <th class="px-6 py-4">{{ $col }}</th>
                             @endforeach
-                            <th class="px-6 py-4 text-center sticky right-0 bg-[#f7fced]">Aksi</th>
+                            <th class="px-6 py-4 text-center sticky right-0 bg-[#ecfdf5]">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="text-slate-600 divide-y divide-primary-50">
                         @forelse($rows as $row)
-                        @php $rowArray = (array)$row; @endphp
+                        @php
+                            $rowArray = (array)$row;
+                            $rowPrimaryValue = $rowArray[$primaryKey] ?? $rowArray['id'] ?? null;
+                        @endphp
                         <tr class="hover:bg-slate-50 transition">
                             @foreach($columns as $col)
                                 <td class="px-6 py-3 max-w-[220px] truncate" title="{{ $rowArray[$col] ?? 'NULL' }}">
@@ -738,9 +741,9 @@
                             @endforeach
                             <td class="px-6 py-3 text-center flex justify-center gap-2 sticky right-0 bg-white shadow-[-5px_0_10px_rgba(0,0,0,0.02)]">
                                 <button onclick="openMasterEditSection({{ json_encode($rowArray) }})" class="text-blue-600 hover:bg-blue-50 px-3 py-1 rounded-md text-xs font-semibold border border-blue-200">Edit</button>
-                                <form action="/admin/master/{{ $tableName }}/{{ $rowArray['id'] ?? '' }}" method="POST" onsubmit="return confirm('Apakah anda yakin ingin menghapus data master ini?');">
+                                <form action="/admin/master/{{ $tableName }}/{{ $rowPrimaryValue ?? '' }}" method="POST" onsubmit="return confirm('Apakah anda yakin ingin menghapus data master ini?');">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:bg-red-50 px-3 py-1 rounded-md text-xs font-semibold border border-red-200" {{ !isset($rowArray['id']) ? 'disabled' : '' }}>Hapus</button>
+                                    <button type="submit" class="text-red-600 hover:bg-red-50 px-3 py-1 rounded-md text-xs font-semibold border border-red-200" {{ $rowPrimaryValue === null ? 'disabled' : '' }}>Hapus</button>
                                 </form>
                             </td>
                         </tr>
@@ -755,11 +758,11 @@
         {{-- TAMPILAN DEFAULT - GRID ALL TABLES --}}
         <div id="master-all-tables-section" class="admin-section block">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                @foreach($allTablesWithColumns as $tName => $tCols)
-                    <div class="bg-white rounded-[22px] border border-[#e7efd8] p-5 shadow-[0_14px_38px_rgba(32,60,16,.06)] hover:shadow-md transition flex flex-col justify-between">
+                @forelse($allTablesWithColumns as $tName => $tCols)
+                    <div class="bg-white rounded-[22px] border border-[#d1fae5] p-5 shadow-[0_14px_38px_rgba(4,120,87,.06)] hover:shadow-md transition flex flex-col justify-between">
                         <div>
                             <div class="flex items-center gap-2 mb-3">
-                                <span class="p-2 bg-[#f7fced] text-[#047857] rounded-[26px]">
+                                <span class="p-2 bg-[#ecfdf5] text-[#047857] rounded-[26px]">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
                                 </span>
                                 <h3 class="font-bold text-slate-800 text-sm tracking-wide uppercase">{{ $tName }}</h3>
@@ -772,14 +775,18 @@
                             </div>
                         </div>
                         <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                            <a href="/admin/master?table={{ $tName }}" class="text-xs font-semibold text-[#4f9a00] hover:underline">Lihat Data &rarr;</a>
+                            <a href="/admin/master?table={{ $tName }}" class="text-xs font-semibold text-[#047857] hover:underline">Lihat Data &rarr;</a>
                             <div class="flex gap-1">
                                 <a href="/admin/master/export/excel/{{ $tName }}" class="p-1.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-md hover:bg-emerald-100 transition text-[11px] font-medium" title="Export Excel">Excel</a>
                                 <a href="/admin/master/export/sql/{{ $tName }}" class="p-1.5 bg-slate-50 text-slate-600 border border-slate-200 rounded-md hover:bg-slate-100 transition text-[11px] font-medium" title="Export SQL">SQL</a>
                             </div>
                         </div>
                     </div>
-                @endforeach
+                @empty
+                    <div class="md:col-span-2 lg:col-span-3 rounded-[22px] border border-amber-200 bg-amber-50 p-6 text-sm font-semibold text-amber-800">
+                        Daftar tabel database belum diterima dari master_service. Periksa koneksi service atau konfigurasi database.
+                    </div>
+                @endforelse
             </div>
         </div>
     @endif
@@ -789,8 +796,8 @@
     {{-- B2: FORM EDIT DATA MASTER (DINAMIS) --}}
     @if($tableName)
     <div id="master-edit-section" class="admin-section hidden">
-        <div class="bg-white rounded-[22px] border border-[#e7efd8] p-6 shadow-[0_14px_38px_rgba(32,60,16,.06)] max-w-3xl">
-            <h3 class="font-bold text-[#14280b] text-sm mb-4 border-b pb-2">Modifikasi Data Tabel: <span class="text-blue-600">{{ $tableName }}</span></h3>
+        <div class="bg-white rounded-[22px] border border-[#d1fae5] p-6 shadow-[0_14px_38px_rgba(4,120,87,.06)] max-w-3xl">
+            <h3 class="font-bold text-[#022c22] text-sm mb-4 border-b pb-2">Modifikasi Data Tabel: <span class="text-blue-600">{{ $tableName }}</span></h3>
             <form id="master-edit-form" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @csrf @method('PUT')
                 @foreach($columns as $col)
@@ -803,7 +810,7 @@
                 @endforeach
                 <div class="col-span-1 md:col-span-2 pt-4 flex justify-end gap-2 border-t mt-2">
                     <button type="button" onclick="window.location.href='/admin/master?table={{$tableName}}'" class="px-4 py-2 border rounded-[26px] text-xs font-semibold text-slate-600 hover:bg-slate-50">Batal</button>
-                    <button type="submit" class="bg-[#2f5c12] hover:bg-primary-700 text-white font-semibold px-6 py-2 rounded-[26px] text-xs">Simpan Perubahan</button>
+                    <button type="submit" class="bg-[#047857] hover:bg-primary-700 text-white font-semibold px-6 py-2 rounded-[26px] text-xs">Simpan Perubahan</button>
                 </div>
             </form>
         </div>
@@ -812,9 +819,9 @@
 
     {{-- B3: EKSEKUSI RAW SQL COMMAND TERMINAL --}}
     <div id="sql-section" class="admin-section hidden">
-        <div class="glass-card rounded-[28px] border border-[#e7efd8] p-5 sm:p-6">
+        <div class="glass-card rounded-[28px] border border-[#d1fae5] p-5 sm:p-6">
             <div class="flex items-center justify-between mb-4 border-b pb-2">
-                <h3 class="font-bold text-[#14280b] text-sm">Konsol Eksekusi SQL Mentah (Manipulasi Kolom & Tabel)</h3>
+                <h3 class="font-bold text-[#022c22] text-sm">Konsol Eksekusi SQL Mentah (Manipulasi Kolom & Tabel)</h3>
                 <button onclick="window.location.href='/admin/master'" class="text-xs text-slate-400 hover:text-slate-600">&times; Tutup</button>
             </div>
             <form action="/admin/master/execute-sql" method="POST">
@@ -824,7 +831,7 @@
                     <textarea name="sql" rows="8" required class="w-full border-slate-300 rounded-[26px] text-sm p-3 font-mono text-slate-800 bg-slate-50 focus:ring-amber-500" placeholder="ALTER TABLE nama_tabel ADD nama_kolom VARCHAR(255) NULL;"></textarea>
                 </div>
                 <div class="flex justify-end">
-                    <button type="submit" onclick="return confirm('Peringatan Keamanan Ekstrim: Perintah SQL mentah ini akan merubah struktur database fisik secara langsung di PA2. Lanjutkan?')" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-6 py-2 rounded-[26px] text-xs transition shadow-[0_14px_38px_rgba(32,60,16,.06)]">⚡ Eksekusi Query SQL</button>
+                    <button type="submit" onclick="return confirm('Peringatan Keamanan Ekstrim: Perintah SQL mentah ini akan merubah struktur database fisik secara langsung di PA2. Lanjutkan?')" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-6 py-2 rounded-[26px] text-xs transition shadow-[0_14px_38px_rgba(4,120,87,.06)]">⚡ Eksekusi Query SQL</button>
                 </div>
             </form>
         </div>
@@ -838,7 +845,7 @@
             <button onclick="document.getElementById('import-komunitas-modal').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
-            <h3 class="text-lg font-bold text-[#14280b] mb-2">Import Data Komunitas</h3>
+            <h3 class="text-lg font-bold text-[#022c22] mb-2">Import Data Komunitas</h3>
             <p class="text-xs text-slate-500 mb-6">Unggah file Excel (.xlsx) sesuai dengan format template yang disediakan.</p>
             
             <form action="/admin/komunitas/import" method="POST" enctype="multipart/form-data">
@@ -861,7 +868,7 @@
             <button onclick="closeKomunitasModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
-            <h3 id="komunitas-modal-title" class="text-xl font-bold text-[#14280b] mb-1">Tambah Komunitas Baru</h3>
+            <h3 id="komunitas-modal-title" class="text-xl font-bold text-[#022c22] mb-1">Tambah Komunitas Baru</h3>
             <p class="text-xs text-slate-500 mb-6 border-b pb-4">Isi detail data komunitas. (Misal: Kelompok Tani, BPP, dsb)</p>
             
             <form id="komunitas-form" action="/admin/komunitas" method="POST">
@@ -872,7 +879,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
                         <label class="block text-xs font-bold text-slate-600 mb-1">Jenis Komunitas <span class="text-red-500">*</span></label>
-                        <select id="kom_jenis" name="jenis_komunitas" required onchange="toggleBppFields()" class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#65bd00]/30 outline-none">
+                        <select id="kom_jenis" name="jenis_komunitas" required onchange="toggleBppFields()" class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#047857]/30 outline-none">
                             <option value="">-- Pilih Jenis --</option>
                             <option value="komunitas_tani">Komunitas Tani</option>
                             <option value="brigade_pangan">Brigade Pangan</option>
@@ -880,19 +887,19 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-600 mb-1">Nama Komunitas <span class="text-red-500">*</span></label>
-                        <input type="text" id="kom_nama_komunitas" name="nama_komunitas" required placeholder="Contoh: Makmur Jaya" class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#65bd00]/30 outline-none">
+                        <input type="text" id="kom_nama_komunitas" name="nama_komunitas" required placeholder="Contoh: Makmur Jaya" class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#047857]/30 outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-600 mb-1">Nama Ketua / PIC <span class="text-red-500">*</span></label>
-                        <input type="text" id="kom_nama" name="nama" required placeholder="Nama penanggung jawab" class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#65bd00]/30 outline-none">
+                        <input type="text" id="kom_nama" name="nama" required placeholder="Nama penanggung jawab" class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#047857]/30 outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-600 mb-1">Nomor Handphone</label>
-                        <input type="text" id="kom_hp" name="nomor_hp" class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#65bd00]/30 outline-none">
+                        <input type="text" id="kom_hp" name="nomor_hp" class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#047857]/30 outline-none">
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-xs font-bold text-slate-600 mb-1">Kecamatan <span class="text-red-500">*</span></label>
-                        <select id="kom_kecamatan" name="wilayah_kecamatan_id" required onchange="updateKomKelurahanOptions()" class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#65bd00]/30 outline-none">
+                        <select id="kom_kecamatan" name="wilayah_kecamatan_id" required onchange="updateKomKelurahanOptions()" class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#047857]/30 outline-none">
                             <option value="">-- Pilih Kecamatan --</option>
                             @foreach($kecamatan as $kec)
                                 <option value="{{ $kec['id'] }}">{{ $kec['nama_kecamatan'] }}</option>
@@ -901,7 +908,7 @@
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-xs font-bold text-slate-600 mb-1">Kelurahan / Desa (Bisa multi)</label>
-                        <select id="kom_kelurahan" name="wilayah_kelurahan_ids[]" multiple class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#65bd00]/30 outline-none min-h-[80px]">
+                        <select id="kom_kelurahan" name="wilayah_kelurahan_ids[]" multiple class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#047857]/30 outline-none min-h-[80px]">
                         </select>
                         <p class="text-[10px] text-slate-400 mt-1">Tahan Ctrl/Cmd untuk memilih lebih dari satu.</p>
                     </div>
@@ -924,13 +931,13 @@
                     
                     <div class="md:col-span-2">
                         <label class="block text-xs font-bold text-slate-600 mb-1">Alamat Lengkap</label>
-                        <textarea id="kom_alamat" name="alamat" rows="2" class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#65bd00]/30 outline-none"></textarea>
+                        <textarea id="kom_alamat" name="alamat" rows="2" class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#047857]/30 outline-none"></textarea>
                     </div>
                 </div>
                 
                 <div class="flex justify-end gap-3 mt-8 border-t border-slate-100 pt-5">
                     <button type="button" onclick="closeKomunitasModal()" class="px-5 py-2.5 border border-slate-200 bg-white rounded-full text-xs font-bold text-slate-600 hover:bg-slate-50 transition">Batal</button>
-                    <button type="submit" class="bg-[#2f5c12] hover:bg-[#1a3809] text-white font-bold px-6 py-2.5 rounded-full text-xs transition-all shadow-[0_8px_20px_rgba(47,92,18,.2)]">Simpan Komunitas</button>
+                    <button type="submit" class="bg-[#047857] hover:bg-[#065f46] text-white font-bold px-6 py-2.5 rounded-full text-xs transition-all shadow-[0_8px_20px_rgba(4,120,87,.2)]">Simpan Komunitas</button>
                 </div>
             </form>
         </div>
@@ -944,6 +951,8 @@
     const kecamatanOptions = @json($kecamatan);
     const kelurahanOptions = @json($kelurahan);
     const komunitasOptions = @json($komunitas);
+    const isMasterMode = @json($isMasterMode);
+    const masterPrimaryKey = @json($primaryKey ?? 'id');
 
     function byScope(attribute, scope) {
         return document.querySelector(`[${attribute}="${scope}"]`);
@@ -1135,14 +1144,15 @@
      */
     function openMasterEditSection(rowData) {
         const tableName = '{{ $tableName ?? "" }}';
-        if (!tableName || !rowData.id) {
-            alert('Kesalahan Sistem: Baris data master wajib memiliki primary key [id] untuk dapat diubah.');
+        const primaryValue = rowData?.[masterPrimaryKey] ?? rowData?.id;
+        if (!tableName || primaryValue === undefined || primaryValue === null || primaryValue === '') {
+            alert(`Kesalahan Sistem: Baris data master wajib memiliki primary key [${masterPrimaryKey}] untuk dapat diubah.`);
             return;
         }
         
         const form = document.getElementById('master-edit-form');
         if (form) {
-            form.action = `/admin/master/${tableName}/${rowData.id}`;
+            form.action = `/admin/master/${tableName}/${encodeURIComponent(primaryValue)}`;
             
             // Mapping input field otomatis berdasarkan object key database kolom
             for (const key in rowData) {
@@ -1272,7 +1282,12 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const section = urlParams.get('section');
-        if (section === 'komunitas') {
+        if (isMasterMode) {
+            const defaultMasterSection = document.getElementById('master-index-section')
+                ? 'master-index-section'
+                : 'master-all-tables-section';
+            switchSection(section === 'sql' ? 'sql-section' : defaultMasterSection);
+        } else if (section === 'komunitas') {
             switchSection('komunitas-section');
         } else {
             // Default is index-section, already set by HTML structure usually, but ensure it.

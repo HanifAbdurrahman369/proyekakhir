@@ -51,7 +51,7 @@
         .header-banner .system-title {
             font-size: 20px;
             font-weight: bold;
-            color: #14280b;
+            color: #022c22;
             line-height: 1.2;
             margin-top: 2px;
         }
@@ -68,19 +68,19 @@
             margin-top: 10px;
         }
         .table-data th {
-            background-color: #f4fbe9;
-            color: #203c10;
+            background-color: #ecfdf5;
+            color: #065f46;
             font-weight: bold;
             text-transform: uppercase;
             font-size: 9px;
             letter-spacing: 0.5px;
-            border-bottom: 2px solid #dfeccc;
+            border-bottom: 2px solid #d1fae5;
             padding: 10px 8px;
             text-align: left;
         }
         .table-data td {
             padding: 10px 8px;
-            border-bottom: 1px solid #e7efd8;
+            border-bottom: 1px solid #d1fae5;
         }
         .table-data tr:nth-child(even) {
             background-color: #fcfdfe;
@@ -104,7 +104,7 @@
             text-align: center;
             font-size: 9px;
             color: #999999;
-            border-top: 1px solid #e7efd8;
+            border-top: 1px solid #d1fae5;
             padding-top: 8px;
         }
     </style>
@@ -126,7 +126,7 @@
                     <div class="system-title">Pemetaan Tanaman Padi</div>
                 </td>
                 <td class="info-container">
-                    <div style="font-weight: bold; font-size: 11px; color: #14280b; margin-bottom: 2px;">Rekap Produksi Desa/Kelurahan</div>
+                    <div style="font-weight: bold; font-size: 11px; color: #022c22; margin-bottom: 2px;">Rekap Produksi Desa/Kelurahan</div>
                     @if($kecamatan)
                         <div style="font-weight: bold;">Kecamatan: {{ $kecamatan }}</div>
                     @else

@@ -9,7 +9,7 @@
     {{-- HEADER --}}
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-extrabold text-[#14280b] tracking-tight">Riwayat Aktivitas</h1>
+            <h1 class="text-2xl font-extrabold text-[#022c22] tracking-tight">Riwayat Aktivitas</h1>
             <p class="text-sm text-slate-500 mt-1">Daftar riwayat pengajuan lahan, pemupukan, hingga hasil panen Anda.</p>
         </div>
     </div>

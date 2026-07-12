@@ -69,8 +69,8 @@
 
     <!-- Form Card -->
     <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div class="border-b border-[#e7efd8] px-5 sm:px-6 py-4">
-            <h2 class="text-sm font-bold text-[#14280b]">
+        <div class="border-b border-[#d1fae5] px-5 sm:px-6 py-4">
+            <h2 class="text-sm font-bold text-[#022c22]">
                 {{ $isEdit ? 'Perbaiki Pengajuan Lahan' : 'Tambah Lahan Baru' }}
             </h2>
             <p class="mt-1 text-[11px] text-slate-500">

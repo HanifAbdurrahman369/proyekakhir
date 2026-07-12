@@ -270,10 +270,10 @@
         Chart.defaults.font.family = "'Poppins', sans-serif";
         Chart.defaults.color = '#94a3b8';
         const colors = {
-            green: { fill: 'rgba(16, 185, 129, 0.9)', border: '#059669' },
+            green: { fill: 'rgba(4, 120, 87, 0.9)', border: '#047857' },
             blue: { fill: 'rgba(59, 130, 246, 0.9)', border: '#2563eb' },
             indigo: { fill: 'rgba(99, 102, 241, 0.2)', border: '#4f46e5' },
-            palette: ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6']
+            palette: ['#047857', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6']
         };
 
         const config = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
@@ -323,7 +323,7 @@
                 type: 'polarArea',
                 data: {
                     labels: data.chart_luas_tanam_daerah.map(i => i.nama_daerah),
-                    datasets: [{ data: data.chart_luas_tanam_daerah.map(i => i.total_luas), backgroundColor: ['rgba(16, 185, 129, 0.7)', 'rgba(59, 130, 246, 0.7)', 'rgba(245, 158, 11, 0.7)', 'rgba(139, 92, 246, 0.7)'] }]
+                    datasets: [{ data: data.chart_luas_tanam_daerah.map(i => i.total_luas), backgroundColor: ['rgba(4, 120, 87, 0.7)', 'rgba(59, 130, 246, 0.7)', 'rgba(245, 158, 11, 0.7)', 'rgba(139, 92, 246, 0.7)'] }]
                 },
                 options: { ...config, plugins: { legend: { position: 'right' } }, scales: { r: { ticks: { display: false } } } }
             });
