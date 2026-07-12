@@ -3,7 +3,7 @@
 return [
     'paths' => ['api/*', 'login', 'register', 'forgot-password', 'reset-password', 'sanctum/csrf-cookie', '*'],
     'allowed_methods' => ['*'],
-    'allowed_origins' => ['https://sigpala.my.id', 'https://www.sigpala.my.id', 'https://agrilytics-batola.poliban.ac.id', 'http://127.0.0.1:8000'],
+    'allowed_origins' => ['https://sigpala.my.id', 'https://www.sigpala.my.id', 'https://agrilytics-batola.poliban.ac.id', 'http://agrilytics-batola.poliban.ac.id', 'http://127.0.0.1:8000'],
     'allowed_origins_patterns' => [
         '/^http:\/\/127\.0\.0\.1:\d+$/',
         '/^http:\/\/localhost:\d+$/',
