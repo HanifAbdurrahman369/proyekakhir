@@ -1,0 +1,19 @@
+{
+  "name": "e2e_tests",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@wdio/appium-service": "^9.29.1",
+    "@wdio/cli": "^9.29.1",
+    "appium": "^3.5.2",
+    "webdriverio": "^9.29.1"
+  }
+}
