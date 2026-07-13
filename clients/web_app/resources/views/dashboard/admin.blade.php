@@ -61,11 +61,7 @@
         </div>
         <div class="flex flex-col sm:flex-row gap-2">
             @if(request()->get('section') === 'komunitas')
-                <button onclick="openAddKomunitasModal()" 
-                        class="flex items-center gap-2 bg-[#047857] hover:bg-[#065f46] text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition shadow-[0_14px_38px_rgba(4,120,87,.15)]">
-                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-                    Tambah Komunitas
-                </button>
+                
             @else
                 <button onclick="switchSection('create-section')" 
                         class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition shadow-[0_14px_38px_rgba(37,99,235,.15)]">
@@ -294,10 +290,6 @@
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                         Export XLSX
                     </a>
-                    <button onclick="openCreateKomunitasModal()" class="bg-[#047857] hover:bg-[#065f46] text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition shadow-sm flex items-center gap-2">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                        Tambah Komunitas
-                    </button>
                 </div>
             </div>
             
@@ -874,91 +866,227 @@
         </div>
     </div>
 
-    <!-- Create/Edit Modal -->
-    <div id="komunitas-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/50 backdrop-blur-sm overflow-y-auto pt-10 pb-10">
-        <div class="bg-white rounded-[24px] shadow-xl w-full max-w-2xl p-6 md:p-8 relative my-auto">
-            <button onclick="closeKomunitasModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-            <h3 id="komunitas-modal-title" class="text-xl font-bold text-[#022c22] mb-1">Tambah Komunitas Baru</h3>
-            <p class="text-xs text-slate-500 mb-6 border-b pb-4">Isi detail data komunitas. (Misal: Kelompok Tani, BPP, dsb)</p>
+    
+    <!-- Create Komunitas Section -->
+    <div id="create-komunitas-section" class="admin-section hidden">
+        <div class="bg-white rounded-[28px] border border-slate-100/60 p-8 sm:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.02)] max-w-5xl mx-auto relative overflow-hidden">
+            <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-[#047857] opacity-[0.03] rounded-full blur-3xl pointer-events-none"></div>
             
-            <form id="komunitas-form" action="/admin/komunitas" method="POST">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-10 pb-6 border-b border-slate-100 relative z-10">
+                <div>
+                    <h3 class="text-xl sm:text-2xl font-extrabold text-[#022c22] tracking-tight">Tambah Komunitas Baru</h3>
+                    <p class="text-xs sm:text-sm text-slate-500 mt-2">Isi detail data komunitas. (Misal: Kelompok Tani, BPP, dsb)</p>
+                </div>
+                <button type="button" onclick="switchSection('komunitas-section')" class="mt-4 sm:mt-0 flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-800 bg-slate-50 hover:bg-slate-100 rounded-full transition-all border border-slate-200">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    Batal
+                </button>
+            </div>
+            
+            <form action="/admin/komunitas" method="POST" class="relative z-10">
                 @csrf
-                <input type="hidden" id="komunitas_method" name="_method" value="POST">
-                <input type="hidden" id="komunitas_id" name="id" value="">
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Jenis Komunitas <span class="text-red-500">*</span></label>
-                        <select id="kom_jenis" name="jenis_komunitas" required onchange="toggleBppFields()" class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#047857]/30 outline-none">
-                            <option value="">-- Pilih Jenis --</option>
-                            <option value="kelompok_tani">Kelompok Tani</option>
-                            <option value="brigade_pangan">Brigade Pangan</option>
-                            <option value="BPP">Petugas BPP</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Nama Komunitas <span class="text-red-500">*</span></label>
-                        <input type="text" id="kom_nama_komunitas" name="nama_komunitas" required placeholder="Contoh: Makmur Jaya" class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#047857]/30 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">NIK Ketua / PIC</label>
-                        <input type="text" id="kom_nik" name="nik" placeholder="Opsional" class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#047857]/30 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Nama Ketua / PIC <span class="text-red-500">*</span></label>
-                        <input type="text" id="kom_nama" name="nama" required placeholder="Nama penanggung jawab" class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#047857]/30 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Nomor Handphone</label>
-                        <input type="text" id="kom_hp" name="nomor_hp" class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#047857]/30 outline-none">
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Kecamatan <span class="text-red-500">*</span></label>
-                        <select id="kom_kecamatan" name="wilayah_kecamatan_id" required onchange="updateKomKelurahanOptions()" class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#047857]/30 outline-none">
-                            <option value="">-- Pilih Kecamatan --</option>
-                            @foreach($kecamatan as $kec)
-                                <option value="{{ $kec['id'] }}">{{ $kec['nama_kecamatan'] }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Kelurahan / Desa (Bisa multi)</label>
-                        <select id="kom_kelurahan" name="wilayah_kelurahan_ids[]" multiple class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#047857]/30 outline-none min-h-[80px]">
-                        </select>
-                        <p class="text-[10px] text-slate-400 mt-1">Tahan Ctrl/Cmd untuk memilih lebih dari satu.</p>
-                    </div>
-                    
-                    <div class="md:col-span-2 hidden" id="bpp-fields">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 p-4 bg-emerald-50 rounded-[16px] border border-emerald-100">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+                    <div class="space-y-6">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-100">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                            </div>
+                            <h4 class="text-base font-bold text-[#022c22]">Informasi Dasar</h4>
+                        </div>
+                        
+                        <div class="bg-slate-50/50 p-6 rounded-[20px] border border-slate-100 space-y-5">
                             <div>
-                                <label class="block text-xs font-bold text-emerald-800 mb-1">Instansi Asal</label>
-                                <select id="kom_instansi" name="instansi_asal" class="w-full bg-white border border-emerald-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-emerald-500/30 outline-none">
-                                    <option value="BPP">BPP</option>
-                                    <option value="DINAS_PERTANIAN">DINAS PERTANIAN</option>
+                                <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Jenis Komunitas <span class="text-red-500">*</span></label>
+                                <select id="kom_jenis_create" name="jenis_komunitas" required onchange="toggleBppFieldsCreate()" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-[#047857]/30 outline-none">
+                                    <option value="">-- Pilih Jenis --</option>
+                                    <option value="kelompok_tani">Kelompok Tani</option>
+                                    <option value="brigade_pangan">Brigade Pangan</option>
+                                    <option value="BPP">Petugas BPP</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-emerald-800 mb-1">Nama Instansi</label>
-                                <input type="text" id="kom_nama_bpp" name="nama_bpp" placeholder="Misal: BPP Kec. XYZ" class="w-full bg-white border border-emerald-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-emerald-500/30 outline-none">
+                                <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Komunitas <span class="text-red-500">*</span></label>
+                                <input type="text" name="nama_komunitas" required placeholder="Contoh: Makmur Jaya" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-[#047857]/30 outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">NIK Ketua / PIC</label>
+                                <input type="text" name="nik" placeholder="Opsional" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-[#047857]/30 outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Ketua / PIC <span class="text-red-500">*</span></label>
+                                <input type="text" name="nama" required placeholder="Nama penanggung jawab" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-[#047857]/30 outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nomor Handphone</label>
+                                <input type="text" name="nomor_hp" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-[#047857]/30 outline-none shadow-sm">
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="md:col-span-2">
-                        <label class="block text-xs font-bold text-slate-600 mb-1">Alamat Lengkap</label>
-                        <textarea id="kom_alamat" name="alamat" rows="2" class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#047857]/30 outline-none"></textarea>
+
+                    <div class="space-y-6">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+                            </div>
+                            <h4 class="text-base font-bold text-[#022c22]">Wilayah & Instansi</h4>
+                        </div>
+                        
+                        <div class="bg-blue-50/20 p-6 rounded-[20px] border border-blue-100/50 space-y-5">
+                            <div>
+                                <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Kecamatan <span class="text-red-500">*</span></label>
+                                <select id="kom_kecamatan_create" name="wilayah_kecamatan_id" required onchange="updateKomKelurahanOptionsCreate()" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-[#047857]/30 outline-none shadow-sm">
+                                    <option value="">-- Pilih Kecamatan --</option>
+                                    @foreach($kecamatan as $kec)
+                                        <option value="{{ $kec['id'] }}">{{ $kec['nama_kecamatan'] }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Kelurahan / Desa (Bisa multi)</label>
+                                <select id="kom_kelurahan_create" name="wilayah_kelurahan_ids[]" multiple class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-[#047857]/30 outline-none shadow-sm min-h-[80px]">
+                                </select>
+                                <p class="text-[9px] text-slate-400 mt-1">Tahan Ctrl/Cmd untuk memilih banyak</p>
+                            </div>
+                            <div class="hidden space-y-5 p-5 bg-emerald-50 rounded-[16px] border border-emerald-100" id="bpp-fields-create">
+                                <div>
+                                    <label class="block text-[12px] font-bold text-emerald-800 uppercase tracking-wider mb-2">Instansi Asal</label>
+                                    <select name="instansi_asal" class="w-full bg-white border border-emerald-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-emerald-500/30 outline-none">
+                                        <option value="BPP">BPP</option>
+                                        <option value="DINAS_PERTANIAN">DINAS PERTANIAN</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[12px] font-bold text-emerald-800 uppercase tracking-wider mb-2">Nama Instansi</label>
+                                    <input type="text" name="nama_bpp" placeholder="Misal: BPP Kec. XYZ" class="w-full bg-white border border-emerald-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-emerald-500/30 outline-none">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Alamat Lengkap</label>
+                                <textarea name="alamat" rows="2" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-[#047857]/30 outline-none resize-none shadow-sm"></textarea>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                
-                <div class="flex justify-end gap-3 mt-8 border-t border-slate-100 pt-5">
-                    <button type="button" onclick="closeKomunitasModal()" class="px-5 py-2.5 border border-slate-200 bg-white rounded-full text-xs font-bold text-slate-600 hover:bg-slate-50 transition">Batal</button>
-                    <button type="submit" class="bg-[#047857] hover:bg-[#065f46] text-white font-bold px-6 py-2.5 rounded-full text-xs transition-all shadow-[0_8px_20px_rgba(4,120,87,.2)]">Simpan Komunitas</button>
+
+                <div class="mt-10 pt-6 border-t border-slate-100 flex justify-end gap-3">
+                    <button type="submit" class="bg-[#047857] hover:bg-[#065f46] text-white font-bold px-8 py-3 rounded-full text-xs transition-all shadow-[0_8px_20px_rgba(4,120,87,.2)] hover:shadow-[0_10px_25px_rgba(4,120,87,.3)] flex items-center gap-2">
+                        Simpan Komunitas Baru
+                    </button>
                 </div>
             </form>
         </div>
     </div>
+
+    <!-- Edit Komunitas Section -->
+    <div id="edit-komunitas-section" class="admin-section hidden">
+        <div class="bg-white rounded-[28px] border border-slate-100/60 p-8 sm:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.02)] max-w-5xl mx-auto relative overflow-hidden">
+            <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-blue-500 opacity-[0.03] rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-10 pb-6 border-b border-slate-100 relative z-10">
+                <div>
+                    <h3 class="text-xl sm:text-2xl font-extrabold text-[#022c22] tracking-tight">Perbarui Data Komunitas</h3>
+                    <p class="text-xs sm:text-sm text-slate-500 mt-2">Sesuaikan kembali informasi detail komunitas.</p>
+                </div>
+                <button type="button" onclick="switchSection('komunitas-section')" class="mt-4 sm:mt-0 flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-800 bg-slate-50 hover:bg-slate-100 rounded-full transition-all border border-slate-200">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    Batal
+                </button>
+            </div>
+            
+            <form id="edit-komunitas-form" method="POST" class="relative z-10">
+                @csrf @method('PUT')
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+                    <div class="space-y-6">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-100">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                            </div>
+                            <h4 class="text-base font-bold text-[#022c22]">Informasi Dasar</h4>
+                        </div>
+                        
+                        <div class="bg-slate-50/50 p-6 rounded-[20px] border border-slate-100 space-y-5">
+                            <div>
+                                <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Jenis Komunitas <span class="text-red-500">*</span></label>
+                                <select id="kom_edit_jenis" name="jenis_komunitas" required onchange="toggleBppFieldsEdit()" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-[#047857]/30 outline-none shadow-sm">
+                                    <option value="">-- Pilih Jenis --</option>
+                                    <option value="kelompok_tani">Kelompok Tani</option>
+                                    <option value="brigade_pangan">Brigade Pangan</option>
+                                    <option value="BPP">Petugas BPP</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Komunitas <span class="text-red-500">*</span></label>
+                                <input type="text" id="kom_edit_nama_komunitas" name="nama_komunitas" required class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-[#047857]/30 outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">NIK Ketua / PIC</label>
+                                <input type="text" id="kom_edit_nik" name="nik" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-[#047857]/30 outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Ketua / PIC <span class="text-red-500">*</span></label>
+                                <input type="text" id="kom_edit_nama" name="nama" required class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-[#047857]/30 outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nomor Handphone</label>
+                                <input type="text" id="kom_edit_hp" name="nomor_hp" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-[#047857]/30 outline-none shadow-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm border border-blue-100">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+                            </div>
+                            <h4 class="text-base font-bold text-[#022c22]">Wilayah & Instansi</h4>
+                        </div>
+                        
+                        <div class="bg-blue-50/20 p-6 rounded-[20px] border border-blue-100/50 space-y-5">
+                            <div>
+                                <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Kecamatan <span class="text-red-500">*</span></label>
+                                <select id="kom_edit_kecamatan" name="wilayah_kecamatan_id" required onchange="updateKomKelurahanOptionsEdit()" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-[#047857]/30 outline-none shadow-sm">
+                                    <option value="">-- Pilih Kecamatan --</option>
+                                    @foreach($kecamatan as $kec)
+                                        <option value="{{ $kec['id'] }}">{{ $kec['nama_kecamatan'] }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Kelurahan / Desa (Bisa multi)</label>
+                                <select id="kom_edit_kelurahan" name="wilayah_kelurahan_ids[]" multiple class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-[#047857]/30 outline-none shadow-sm min-h-[80px]">
+                                </select>
+                                <p class="text-[9px] text-slate-400 mt-1">Tahan Ctrl/Cmd untuk memilih banyak</p>
+                            </div>
+                            <div class="hidden space-y-5 p-5 bg-emerald-50 rounded-[16px] border border-emerald-100" id="bpp-fields-edit">
+                                <div>
+                                    <label class="block text-[12px] font-bold text-emerald-800 uppercase tracking-wider mb-2">Instansi Asal</label>
+                                    <select id="kom_edit_instansi" name="instansi_asal" class="w-full bg-white border border-emerald-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-emerald-500/30 outline-none">
+                                        <option value="BPP">BPP</option>
+                                        <option value="DINAS_PERTANIAN">DINAS PERTANIAN</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[12px] font-bold text-emerald-800 uppercase tracking-wider mb-2">Nama Instansi</label>
+                                    <input type="text" id="kom_edit_nama_bpp" name="nama_bpp" placeholder="Misal: BPP Kec. XYZ" class="w-full bg-white border border-emerald-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-emerald-500/30 outline-none">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Alamat Lengkap</label>
+                                <textarea id="kom_edit_alamat" name="alamat" rows="2" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-[#047857]/30 outline-none resize-none shadow-sm"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-10 pt-6 border-t border-slate-100 flex justify-end gap-3">
+                    <button type="submit" class="bg-[#047857] hover:bg-[#065f46] text-white font-bold px-8 py-3 rounded-full text-xs transition-all shadow-[0_8px_20px_rgba(4,120,87,.2)] hover:shadow-[0_10px_25px_rgba(4,120,87,.3)] flex items-center gap-2">
+                        Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 
 
 {{-- ====================================================================== --}}
@@ -1183,38 +1311,23 @@
     }
 
     // --- KOMUNITAS JAVASCRIPT ---
-    function openCreateKomunitasModal() {
-        document.getElementById('komunitas-modal-title').textContent = 'Tambah Komunitas Baru';
-        document.getElementById('komunitas_method').value = 'POST';
-        document.getElementById('komunitas-form').action = '/admin/komunitas';
-        document.getElementById('komunitas-form').reset();
-        document.getElementById('komunitas_id').value = '';
-        
-        toggleBppFields();
-        updateKomKelurahanOptions();
-        
-        document.getElementById('komunitas-modal').classList.remove('hidden');
-    }
-
+    
     function openEditKomunitasModal(kom) {
-        document.getElementById('komunitas-modal-title').textContent = 'Ubah Data Komunitas';
-        document.getElementById('komunitas_method').value = 'PUT';
-        document.getElementById('komunitas-form').action = '/admin/komunitas/' + kom.id;
+        document.getElementById('edit-komunitas-form').action = '/admin/komunitas/' + kom.id;
         
-        document.getElementById('komunitas_id').value = kom.id;
-        document.getElementById('kom_nik').value = kom.nik || '';
-        document.getElementById('kom_jenis').value = kom.jenis_komunitas || '';
-        document.getElementById('kom_nama_komunitas').value = kom.nama_komunitas || '';
-        document.getElementById('kom_nama').value = kom.nama || '';
-        document.getElementById('kom_hp').value = kom.nomor_hp || '';
-        document.getElementById('kom_kecamatan').value = kom.wilayah_kecamatan_id || '';
-        document.getElementById('kom_alamat').value = kom.alamat || '';
+        document.getElementById('kom_edit_nik').value = kom.nik || '';
+        document.getElementById('kom_edit_jenis').value = kom.jenis_komunitas || '';
+        document.getElementById('kom_edit_nama_komunitas').value = kom.nama_komunitas || '';
+        document.getElementById('kom_edit_nama').value = kom.nama || '';
+        document.getElementById('kom_edit_hp').value = kom.nomor_hp || '';
+        document.getElementById('kom_edit_kecamatan').value = kom.wilayah_kecamatan_id || '';
+        document.getElementById('kom_edit_alamat').value = kom.alamat || '';
         
-        toggleBppFields();
+        toggleBppFieldsEdit();
         
         if (kom.jenis_komunitas === 'BPP') {
-            document.getElementById('kom_instansi').value = kom.instansi_asal || 'BPP';
-            document.getElementById('kom_nama_bpp').value = kom.nama_bpp || '';
+            document.getElementById('kom_edit_instansi').value = kom.instansi_asal || 'BPP';
+            document.getElementById('kom_edit_nama_bpp').value = kom.nama_bpp || '';
         }
         
         let kelIds = [];
@@ -1228,39 +1341,48 @@
             }
         }
         
-        updateKomKelurahanOptions(kelIds);
+        updateKomKelurahanOptionsEdit(kelIds);
         
-        document.getElementById('komunitas-modal').classList.remove('hidden');
+        switchSection('edit-komunitas-section');
     }
 
-    function closeKomunitasModal() {
-        document.getElementById('komunitas-modal').classList.add('hidden');
+    function toggleBppFieldsCreate() {
+        const jenis = document.getElementById('kom_jenis_create').value;
+        const bppFields = document.getElementById('bpp-fields-create');
+        if (bppFields) bppFields.classList.toggle('hidden', jenis !== 'BPP');
+    }
+    
+    function toggleBppFieldsEdit() {
+        const jenis = document.getElementById('kom_edit_jenis').value;
+        const bppFields = document.getElementById('bpp-fields-edit');
+        if (bppFields) bppFields.classList.toggle('hidden', jenis !== 'BPP');
     }
 
-    function toggleBppFields() {
-        const jenis = document.getElementById('kom_jenis').value;
-        const bppFields = document.getElementById('bpp-fields');
-        if (bppFields) {
-            bppFields.classList.toggle('hidden', jenis !== 'BPP');
-        }
-    }
-
-    function updateKomKelurahanOptions(selectedIds = []) {
-        const kecId = document.getElementById('kom_kecamatan').value;
-        const select = document.getElementById('kom_kelurahan');
+    function updateKomKelurahanOptionsCreate() {
+        const kecId = document.getElementById('kom_kecamatan_create').value;
+        const select = document.getElementById('kom_kelurahan_create');
         if (!select) return;
-        
         select.innerHTML = '';
         if (!kecId) return;
-        
         const filtered = kelurahanOptions.filter(k => k.kecamatan_id == kecId);
         filtered.forEach(kel => {
             const option = document.createElement('option');
-            option.value = kel.id;
-            option.textContent = kel.nama_kelurahan;
-            if (selectedIds.includes(kel.id) || selectedIds.includes(String(kel.id))) {
-                option.selected = true;
-            }
+            option.value = kel.id; option.textContent = kel.nama_kelurahan;
+            select.appendChild(option);
+        });
+    }
+
+    function updateKomKelurahanOptionsEdit(selectedIds = []) {
+        const kecId = document.getElementById('kom_edit_kecamatan').value;
+        const select = document.getElementById('kom_edit_kelurahan');
+        if (!select) return;
+        select.innerHTML = '';
+        if (!kecId) return;
+        const filtered = kelurahanOptions.filter(k => k.kecamatan_id == kecId);
+        filtered.forEach(kel => {
+            const option = document.createElement('option');
+            option.value = kel.id; option.textContent = kel.nama_kelurahan;
+            if (selectedIds.includes(kel.id) || selectedIds.includes(String(kel.id))) option.selected = true;
             select.appendChild(option);
         });
     }

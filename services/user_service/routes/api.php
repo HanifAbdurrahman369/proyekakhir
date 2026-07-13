@@ -53,8 +53,8 @@ API CRUD MANAJEMEN USER (UNTUK ADMIN)
 */
 
 // Bungkus semua rute CRUD dengan middleware CheckAdminToken
+Route::get('/users', [UserController::class, 'index']);
 Route::middleware([CheckAdminToken::class])->group(function () {
-    Route::get('/users', [UserController::class, 'index']);          
     Route::post('/users', [UserController::class, 'store']);         
     Route::get('/users/{id}', [UserController::class, 'show']);      
     Route::put('/users/{id}', [UserController::class, 'update']);    
