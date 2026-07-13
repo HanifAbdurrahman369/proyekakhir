@@ -64,6 +64,8 @@ function proxyRequest(Request $request, string $serviceUrl, string $path)
         unset($headers['Access-Control-Allow-Methods']);
         unset($headers['Access-Control-Allow-Headers']);
         unset($headers['Access-Control-Allow-Credentials']);
+        unset($headers['Transfer-Encoding']);
+        unset($headers['Content-Encoding']);
 
         return response($response->getBody()->getContents(), $response->getStatusCode())
             ->withHeaders($headers);
@@ -77,6 +79,8 @@ function proxyRequest(Request $request, string $serviceUrl, string $path)
             unset($headers['Access-Control-Allow-Methods']);
             unset($headers['Access-Control-Allow-Headers']);
             unset($headers['Access-Control-Allow-Credentials']);
+            unset($headers['Transfer-Encoding']);
+            unset($headers['Content-Encoding']);
 
             return response($response->getBody()->getContents(), $response->getStatusCode())
                 ->withHeaders($headers);
