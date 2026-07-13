@@ -859,7 +859,12 @@ class SiklusTanamController extends Controller
     private function buatNotifikasiPetugas(string $judul, string $pesan, ?string $refType, ?int $refId, ?string $targetUrl, ?int $userIdPenerima = null): void
     {
         try {
-            DB::table('notifikasi')->insert([
+            DB::table('notifikasi')->updateOrInsert([
+                'role_id_penerima' => self::ROLE_PETUGAS,
+                'user_id_penerima' => $userIdPenerima,
+                'ref_type' => $refType,
+                'ref_id' => $refId,
+            ], [
                 'role_id_penerima' => self::ROLE_PETUGAS,
                 'user_id_penerima' => $userIdPenerima,
                 'judul' => $judul,
@@ -881,7 +886,7 @@ class SiklusTanamController extends Controller
         DB::table('notifikasi')
             ->where('ref_type', 'panen_padi')
             ->where('ref_id', $id)
-            ->update(['is_read' => 1, 'updated_at' => now()]);
+            ->delete();
     }
 
     private function assignedPetugasLahan(int $lahanId): ?int

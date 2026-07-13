@@ -6,6 +6,23 @@ class FarmingService {
 
   FarmingService(this._apiClient);
 
+  Future<Map<String, dynamic>> getNotifikasi({int? roleId, int? userId}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (roleId != null) queryParams['role_id'] = roleId;
+      if (userId != null) queryParams['user_id'] = userId;
+
+      final response = await _apiClient.dio.get(
+        '/notifikasi',
+        queryParameters: queryParams,
+      );
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      final message = e.response?.data['message'] ?? 'Gagal memuat notifikasi.';
+      throw Exception(message);
+    }
+  }
+
   Future<Map<String, dynamic>> getLahan({int page = 1, int? perPage}) async {
     try {
       final queryParams = <String, dynamic>{'page': page};
@@ -353,17 +370,24 @@ class FarmingService {
   }
 
   /// Pejabat: Mengambil historis produksi per kecamatan
-  Future<Map<String, dynamic>> getHistorisProduksiKecamatan(int kecamatanId, {String? tahun}) async {
+  Future<Map<String, dynamic>> getHistorisProduksiKecamatan(
+    int kecamatanId, {
+    String? tahun,
+  }) async {
     try {
       final queryParams = <String, dynamic>{};
       if (tahun != null && tahun != 'all') {
         queryParams['tahun'] = tahun;
       }
-      final response = await _apiClient.dio.get('/statistik/kecamatan/$kecamatanId', queryParameters: queryParams);
+      final response = await _apiClient.dio.get(
+        '/statistik/kecamatan/$kecamatanId',
+        queryParameters: queryParams,
+      );
       return response.data['data'] as Map<String, dynamic>;
     } on DioException catch (e) {
       throw Exception(
-        e.response?.data['message'] ?? 'Gagal memuat historis produksi kecamatan.',
+        e.response?.data['message'] ??
+            'Gagal memuat historis produksi kecamatan.',
       );
     }
   }

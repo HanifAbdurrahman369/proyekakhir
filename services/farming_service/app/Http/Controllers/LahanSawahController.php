@@ -677,7 +677,16 @@ class LahanSawahController extends Controller
                 $payload['target_url'] = $targetUrl ?: '/verifikasi-data-petani';
             }
 
-            DB::table('notifikasi')->insert($payload);
+            if ($refType && $refId && Schema::hasColumn('notifikasi', 'ref_type') && Schema::hasColumn('notifikasi', 'ref_id')) {
+                DB::table('notifikasi')->updateOrInsert([
+                    'role_id_penerima' => 2,
+                    'user_id_penerima' => $userIdPenerima,
+                    'ref_type' => $refType,
+                    'ref_id' => $refId,
+                ], $payload);
+            } else {
+                DB::table('notifikasi')->insert($payload);
+            }
         } catch (\Throwable $e) {
             Log::error('Gagal membuat notifikasi petugas: ' . $e->getMessage());
         }
@@ -690,19 +699,13 @@ class LahanSawahController extends Controller
                 DB::table('notifikasi')
                     ->where('ref_type', 'lahan_sawah')
                     ->where('ref_id', $lahanId)
-                    ->update([
-                        'is_read' => 1,
-                        'updated_at' => now(),
-                    ]);
+                    ->delete();
             }
 
             if (Schema::hasColumn('notifikasi', 'target_url')) {
                 DB::table('notifikasi')
                     ->where('target_url', 'like', '%lahan_id=' . $lahanId . '%')
-                    ->update([
-                        'is_read' => 1,
-                        'updated_at' => now(),
-                    ]);
+                    ->delete();
             }
         } catch (\Throwable $e) {
             Log::warning('Gagal menandai notifikasi lahan terbaca: ' . $e->getMessage());

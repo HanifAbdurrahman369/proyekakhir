@@ -265,12 +265,21 @@
                                     <input type="text" id="nomor_hp" name="nomor_hp" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none">
                                 </div>
                                 <div>
-                                    <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">ID Kecamatan</label>
-                                    <input type="number" id="wilayah_kecamatan_id" name="wilayah_kecamatan_id" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none" placeholder="ID Kecamatan">
+                                    <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">Kecamatan</label>
+                                    <select id="wilayah_kecamatan_id" name="wilayah_kecamatan_id" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none" onchange="filterKelurahan()">
+                                        <option value="">-- Pilih Kecamatan --</option>
+                                        @foreach($referensi['kecamatan'] ?? [] as $kec)
+                                            <option value="{{ $kec['id'] }}">{{ $kec['nama_kecamatan'] }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                                 <div>
-                                    <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">Instansi Asal</label>
-                                    <input type="text" id="instansi_asal" name="instansi_asal" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none">
+                                    <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">Kelurahan</label>
+                                    <select id="wilayah_kelurahan_ids_select" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none">
+                                        <option value="">-- Pilih Kelurahan --</option>
+                                        <!-- Options populated by JS -->
+                                    </select>
+                                    <input type="hidden" id="wilayah_kelurahan_ids" name="wilayah_kelurahan_ids">
                                 </div>
                                 <div>
                                     <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">Nama BPP</label>
@@ -283,11 +292,7 @@
                                 <textarea id="alamat" name="alamat" rows="2" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none"></textarea>
                             </div>
 
-                            <div>
-                                <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">IDs Kelurahan (JSON format)</label>
-                                <input type="text" id="wilayah_kelurahan_ids" name="wilayah_kelurahan_ids" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none" placeholder='Contoh: [1,2,3]'>
-                            </div>
-                            
+
                             <div id="divStatus" class="hidden">
                                 <label class="block mb-2 text-xs font-bold text-slate-700 uppercase">Status Keanggotaan</label>
                                 <select id="status_keanggotaan" name="status_keanggotaan" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none">
@@ -306,9 +311,31 @@
             </div>
             @push('scripts')
             <script>
+                const referensiKelurahan = @json($referensi['kelurahan'] ?? []);
+
+                function filterKelurahan(selectedIds = []) {
+                    const kecId = document.getElementById('wilayah_kecamatan_id').value;
+                    const kelSelect = document.getElementById('wilayah_kelurahan_ids_select');
+                    kelSelect.innerHTML = '<option value="">-- Pilih Kelurahan --</option>';
+                    
+                    if (!kecId) return;
+                    
+                    const filtered = referensiKelurahan.filter(k => k.kecamatan_id == kecId);
+                    filtered.forEach(k => {
+                        const option = document.createElement('option');
+                        option.value = k.id;
+                        option.textContent = k.nama_kelurahan;
+                        if (selectedIds.includes(k.id) || selectedIds.includes(k.id.toString())) {
+                            option.selected = true;
+                        }
+                        kelSelect.appendChild(option);
+                    });
+                }
+
                 function bukaModalTambahKomunitas() {
                     document.getElementById('formKomunitas').reset();
                     document.getElementById('komunitas_id').value = '';
+                    document.getElementById('wilayah_kelurahan_ids_select').innerHTML = '<option value="">-- Pilih Kelurahan --</option>';
                     document.getElementById('modalKomunitasTitle').textContent = 'Tambah Komunitas';
                     document.getElementById('divStatus').classList.add('hidden');
                     document.getElementById('modalKomunitas').classList.remove('hidden');
@@ -328,8 +355,16 @@
                     document.getElementById('alamat').value = data.alamat || '';
                     
                     document.getElementById('wilayah_kecamatan_id').value = data.wilayah_kecamatan_id || '';
-                    document.getElementById('wilayah_kelurahan_ids').value = data.wilayah_kelurahan_ids ? (typeof data.wilayah_kelurahan_ids === 'object' ? JSON.stringify(data.wilayah_kelurahan_ids) : data.wilayah_kelurahan_ids) : '';
-                    document.getElementById('instansi_asal').value = data.instansi_asal || '';
+                    
+                    let selectedKelurahan = [];
+                    if (data.wilayah_kelurahan_ids) {
+                        try {
+                            selectedKelurahan = typeof data.wilayah_kelurahan_ids === 'string' ? JSON.parse(data.wilayah_kelurahan_ids) : data.wilayah_kelurahan_ids;
+                        } catch (e) {
+                            selectedKelurahan = [];
+                        }
+                    }
+                    filterKelurahan(selectedKelurahan);
                     document.getElementById('nama_bpp').value = data.nama_bpp || '';
                     
                     document.getElementById('status_keanggotaan').value = data.status_keanggotaan || 'AKTIF';
@@ -344,6 +379,12 @@
                     const id = document.getElementById('komunitas_id').value;
                     const url = id ? `/petugas/komunitas/${id}` : '/petugas/komunitas';
                     const method = id ? 'PUT' : 'POST';
+                    const kelSelect = document.getElementById('wilayah_kelurahan_ids_select');
+                    const selectedVal = kelSelect.value;
+                    
+                    const kelurahanVal = selectedVal ? JSON.stringify([parseInt(selectedVal)]) : null;
+                    document.getElementById('wilayah_kelurahan_ids').value = kelurahanVal;
+
                     const data = {
                         jenis_komunitas: document.getElementById('jenis_komunitas').value,
                         nama_komunitas: document.getElementById('nama_komunitas').value,
@@ -352,20 +393,10 @@
                         nomor_hp: document.getElementById('nomor_hp').value,
                         alamat: document.getElementById('alamat').value,
                         wilayah_kecamatan_id: document.getElementById('wilayah_kecamatan_id').value || null,
-                        instansi_asal: document.getElementById('instansi_asal').value,
                         nama_bpp: document.getElementById('nama_bpp').value,
+                        wilayah_kelurahan_ids: document.getElementById('wilayah_kelurahan_ids').value ? JSON.parse(document.getElementById('wilayah_kelurahan_ids').value) : null,
                     };
                     
-                    const kelurahanInput = document.getElementById('wilayah_kelurahan_ids').value;
-                    if (kelurahanInput) {
-                        try {
-                            data.wilayah_kelurahan_ids = JSON.parse(kelurahanInput);
-                        } catch (e) {
-                            data.wilayah_kelurahan_ids = kelurahanInput;
-                        }
-                    } else {
-                        data.wilayah_kelurahan_ids = null;
-                    }
                     if (id) {
                         data.status_keanggotaan = document.getElementById('status_keanggotaan').value;
                     }

@@ -240,10 +240,16 @@ class PetugasController extends Controller
         
         $gapoktan = array_filter($komunitas, fn($k) => $k['jenis_komunitas'] === 'gapoktan');
 
+        $referensi = $this->getData('/spasial-lahan/referensi', [
+            'kecamatan' => [],
+            'kelurahan' => [],
+        ]);
+
         return view('dashboard.petugas', [
             'page' => 'manajemen-komunitas',
             'komunitas' => $komunitas,
             'gapoktan' => $gapoktan,
+            'referensi' => $referensi,
         ]);
     }
 

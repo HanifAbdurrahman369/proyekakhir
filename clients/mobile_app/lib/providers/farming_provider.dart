@@ -14,6 +14,9 @@ class FarmingProvider extends ChangeNotifier {
   double _totalProduksi = 0.0;
   List<dynamic> _mySiklusTanam = [];
   String? _errorMessage;
+  List<dynamic> _notifikasiList = [];
+  int _notifikasiCount = 0;
+  bool _isNotifikasiLoading = false;
 
   // State untuk Riwayat Aktivitas secara independen agar tidak mengganggu dashboard
   Map<String, dynamic> _riwayatLahanData = {
@@ -150,6 +153,9 @@ class FarmingProvider extends ChangeNotifier {
   double get totalProduksi => _totalProduksi;
   List<dynamic> get mySiklusTanam => _mySiklusTanam;
   String? get errorMessage => _errorMessage;
+  List<dynamic> get notifikasiList => _notifikasiList;
+  int get notifikasiCount => _notifikasiCount;
+  bool get isNotifikasiLoading => _isNotifikasiLoading;
 
   // Getter Riwayat Aktivitas
   Map<String, dynamic> get riwayatLahanData => _riwayatLahanData;
@@ -159,6 +165,29 @@ class FarmingProvider extends ChangeNotifier {
   bool get isRiwayatLahanLoading => _isRiwayatLahanLoading;
   bool get isRiwayatPanenLoading => _isRiwayatPanenLoading;
   bool get isRiwayatPupukLoading => _isRiwayatPupukLoading;
+
+  Future<void> fetchNotifikasi({int? roleId, int? userId}) async {
+    _isNotifikasiLoading = true;
+    notifyListeners();
+
+    try {
+      final result = await _farmingService.getNotifikasi(
+        roleId: roleId,
+        userId: userId,
+      );
+      _notifikasiList = result['data'] as List<dynamic>? ?? [];
+      _notifikasiCount =
+          int.tryParse((result['unread_count'] ?? 0).toString()) ??
+          _notifikasiList.length;
+    } catch (e) {
+      _notifikasiList = [];
+      _notifikasiCount = 0;
+      debugPrint('DEBUG ERROR fetchNotifikasi: $e');
+    } finally {
+      _isNotifikasiLoading = false;
+      notifyListeners();
+    }
+  }
 
   /// Fetch all required dashboard data in one go (lahan, total produksi, active cycles)
   Future<void> fetchDashboardData({int lahanPage = 1}) async {

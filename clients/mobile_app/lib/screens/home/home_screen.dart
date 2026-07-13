@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/farming_provider.dart';
 import '../../models/user.dart';
 import 'dashboards/petani_dashboard.dart';
 import 'dashboards/petugas_dashboard.dart';
@@ -18,8 +21,252 @@ import 'petugas_spasial_screen.dart';
 import 'petugas_verifikasi_screen.dart';
 import 'edit_profile_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  Timer? _notifTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshNotifications();
+      _notifTimer = Timer.periodic(
+        const Duration(seconds: 8),
+        (_) => _refreshNotifications(),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _notifTimer?.cancel();
+    super.dispose();
+  }
+
+  bool _canShowNotifications(int? roleId) {
+    return roleId == 1 || roleId == 2 || roleId == 5;
+  }
+
+  Future<void> _refreshNotifications() async {
+    if (!mounted) return;
+    final user = context.read<AuthProvider>().currentUser;
+    if (!_canShowNotifications(user?.roleId) || user == null) return;
+
+    await context.read<FarmingProvider>().fetchNotifikasi(
+      roleId: user.roleId,
+      userId: user.id,
+    );
+  }
+
+  Widget _buildNotificationAction(User? user) {
+    if (!_canShowNotifications(user?.roleId)) {
+      return const SizedBox.shrink();
+    }
+
+    return Consumer<FarmingProvider>(
+      builder: (context, farmingProvider, _) {
+        final count = farmingProvider.notifikasiCount;
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.notifications_rounded),
+              tooltip: 'Notifikasi',
+              onPressed: () => _showNotificationSheet(context, user),
+            ),
+            if (count > 0)
+              Positioned(
+                right: 7,
+                top: 7,
+                child: Container(
+                  constraints: const BoxConstraints(minWidth: 17),
+                  height: 17,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: Colors.white, width: 1.5),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    count > 99 ? '99+' : count.toString(),
+                    style: GoogleFonts.inter(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showNotificationSheet(BuildContext context, User? user) {
+    _refreshNotifications();
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+            child: Consumer<FarmingProvider>(
+              builder: (context, farmingProvider, _) {
+                final notifications = farmingProvider.notifikasiList;
+
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Notifikasi',
+                            style: GoogleFonts.outfit(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF0F172A),
+                            ),
+                          ),
+                        ),
+                        if (farmingProvider.isNotifikasiLoading)
+                          const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    if (notifications.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 28),
+                        child: Center(
+                          child: Text(
+                            'Belum ada notifikasi yang perlu ditindaklanjuti.',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF64748B),
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: MediaQuery.of(context).size.height * 0.55,
+                        ),
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          itemCount: notifications.length,
+                          separatorBuilder: (_, index) => const Divider(
+                            height: 1,
+                            color: Color(0xFFE2E8F0),
+                          ),
+                          itemBuilder: (context, index) {
+                            final item =
+                                notifications[index] as Map<String, dynamic>;
+                            return ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: Container(
+                                width: 38,
+                                height: 38,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFECFDF5),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: const Icon(
+                                  Icons.notifications_active_rounded,
+                                  color: Color(0xFF047857),
+                                  size: 20,
+                                ),
+                              ),
+                              title: Text(
+                                (item['judul'] ?? 'Notifikasi').toString(),
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFF0F172A),
+                                ),
+                              ),
+                              subtitle: Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  (item['pesan'] ?? '').toString(),
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    height: 1.35,
+                                    color: const Color(0xFF64748B),
+                                  ),
+                                ),
+                              ),
+                              onTap: () => _openNotificationTarget(
+                                context,
+                                user,
+                                (item['target_url'] ?? '').toString(),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _openNotificationTarget(
+    BuildContext context,
+    User? user,
+    String targetUrl,
+  ) {
+    Navigator.pop(context);
+
+    if (user?.roleId == 2) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const PetugasVerifikasiScreen(),
+        ),
+      );
+      return;
+    }
+
+    if (targetUrl.contains('/panen/')) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const LaporPanenScreen()),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const TambahLahanScreen()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -452,6 +699,8 @@ class HomeScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
+          if (_canShowNotifications(user?.roleId))
+            _buildNotificationAction(user),
           IconButton(
             icon: const Icon(Icons.logout_rounded),
             tooltip: 'Logout',

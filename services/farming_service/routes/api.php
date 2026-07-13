@@ -36,7 +36,7 @@ Route::middleware(\App\Http\Middleware\JwtMiddleware::class)->group(function () 
     Route::get('/notifikasi', [NotifikasiController::class, 'index']);
     Route::get('/notifikasi/petugas', [NotifikasiController::class, 'getNotifikasiPetugas']);
     Route::get('/notifikasi/{id}', [NotifikasiController::class, 'show']);
-    Route::put('/notifikasi/{id}/read', [NotifikasiController::class, 'markAsRead']);
+    Route::delete('/notifikasi/{id}', [NotifikasiController::class, 'destroy']);
 
     /*
     |--------------------------------------------------------------------------

@@ -59,8 +59,8 @@
         {{-- RIGHT: User Area --}}
         <div class="flex items-center gap-2 sm:gap-3">
 
-            {{-- Notifikasi hanya untuk Petugas --}}
-            @if($roleId === 2)
+            {{-- Notifikasi untuk Kelompok Tani (1), Petugas (2), dan Brigade Pangan (5) --}}
+            @if(in_array($roleId, [1, 2, 5]))
                 <div class="relative flex items-center">
                     <button onclick="document.getElementById('notif-dropdown').classList.toggle('hidden')"
                             class="relative w-10 h-10 rounded-2xl text-white hover:bg-white/15 transition flex items-center justify-center"
@@ -116,7 +116,9 @@
                         }
 
                         function fetchNotif() {
-                            fetch(`${gateway}/notifikasi/petugas`, {
+                            const roleId = {{ $roleId }};
+                            const userId = {{ session('user.id') ?? 'null' }};
+                            fetch(`${gateway}/notifikasi?role_id=${roleId}&user_id=${userId}`, {
                                 headers: {
                                     'Authorization': `Bearer ${token}`,
                                     'Accept': 'application/json'
@@ -128,10 +130,7 @@
                                     const badge = document.getElementById('notif-badge');
                                     const list = document.getElementById('notif-list');
 
-                                    const liveNotifCount = Math.max(
-                                        Number(json.unread_count || 0),
-                                        Number(json.pending_count || json.pending_counts?.total_pending || 0)
-                                    );
+                                    const liveNotifCount = Number(json.unread_count || 0);
 
                                     if (liveNotifCount > 0) {
                                         badge.innerText = liveNotifCount;
@@ -141,15 +140,10 @@
                                     }
 
                                     const notifications = Array.isArray(json.data) ? json.data : [];
-                                    const pendingCount = Number(json.pending_count || json.pending_counts?.total_pending || 0);
 
-                                    if (notifications.length === 0 && pendingCount > 0) {
-                                        list.innerHTML = `<li class="p-4 border-b border-[#d1fae5] hover:bg-[#ecfdf5] cursor-pointer bg-[#ecfdf5]" onclick="window.location.href='/verifikasi-data-petani'"><p class="font-bold text-xs text-[#065f46]">Pekerjaan verifikasi menunggu</p><p class="text-[11px] text-slate-500 mt-1 leading-relaxed">Ada data petani yang perlu diverifikasi.</p></li>`;
-                                    } else {
-                                        list.innerHTML = notifications.length === 0
-                                            ? '<li class="p-5 text-center text-xs text-slate-400">Belum ada notifikasi</li>'
-                                            : '';
-                                    }
+                                    list.innerHTML = notifications.length === 0
+                                        ? '<li class="p-5 text-center text-xs text-slate-400">Belum ada notifikasi</li>'
+                                        : '';
 
                                     notifications.forEach(item => {
                                         const targetUrl = item.target_url || '/verifikasi-data-petani';
@@ -173,8 +167,8 @@
                         }
 
                         window.bacaNotif = function(id, targetUrl = '/verifikasi-data-petani') {
-                            fetch(`${gateway}/notifikasi/${id}/read`, {
-                                method: 'PUT',
+                            fetch(`${gateway}/notifikasi/${id}`, {
+                                method: 'DELETE',
                                 headers: {
                                     'Authorization': `Bearer ${token}`
                                 }
