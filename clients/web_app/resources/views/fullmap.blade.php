@@ -91,7 +91,7 @@
         <!-- Tengah: Search Bar -->
         <div class="pointer-events-auto relative w-full max-w-md hidden md:block">
             <div class="relative">
-                <input type="text" id="search-lahan" placeholder="Cari lahan, kecamatan, kelurahan..." class="w-full bg-white/95 backdrop-blur-md border border-slate-200 text-slate-700 text-sm rounded-2xl pl-12 pr-4 py-3.5 shadow-[0_8px_30px_rgba(0,0,0,0.08)] focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
+                <input type="text" id="search-lahan" placeholder="Cari lahan, kecamatan, atau pemilik..." class="w-full bg-white/95 backdrop-blur-md border border-slate-200 text-slate-700 text-sm rounded-2xl pl-12 pr-4 py-3.5 shadow-[0_8px_30px_rgba(0,0,0,0.08)] focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-4 top-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             </div>
             <!-- Hasil Pencarian -->

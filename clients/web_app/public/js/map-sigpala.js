@@ -1593,10 +1593,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
+            const queryWords = query.split(/\s+/).filter(w => w.length > 0);
+
             // 1. Search Kecamatan matches
             const kecamatanMatches = allKecamatanFeatures.filter(f => {
                 const name = (f.properties.nama_kecamatan || f.properties.kecamatan || f.properties.label || '').toLowerCase();
-                return name.includes(query);
+                return queryWords.every(w => name.includes(w));
             });
             const uniqueKecMatches = [];
             const seenKec = new Set();
@@ -1608,23 +1610,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
 
-            // 2. Search Kelurahan matches
-            const kelurahanMatches = uniqueKelurahans.filter(k => {
-                return k.nama_kelurahan.toLowerCase().includes(query);
-            });
-
-            // 3. Search Lahan matches
+            // 2. Search Lahan matches
             const lahanMatches = allLahanFeatures.filter(f => {
                 const n = (f.properties.nama_lahan || '').toLowerCase();
                 const p = (f.properties.pemilik || f.properties.pemilik_lahan || '').toLowerCase();
-                return n.includes(query) || p.includes(query);
+                return queryWords.every(w => n.includes(w) || p.includes(w));
             });
 
-            // 4. Search Huma matches
+            // 3. Search Huma matches
             const humaMatches = allHumaFeatures.filter(f => {
                 const n = (f.properties.nama_lahan || '').toLowerCase();
                 const d = (f.properties.device_id || '').toLowerCase();
-                return n.includes(query) || d.includes(query);
+                return queryWords.every(w => n.includes(w) || d.includes(w));
             });
 
             const matches = [];
@@ -1636,16 +1633,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     title: k.properties.nama_kecamatan || k.properties.kecamatan || k.properties.label,
                     subtitle: 'Kecamatan di Barito Kuala',
                     feature: k
-                });
-            });
-
-            // Add Kelurahan (Max 3)
-            kelurahanMatches.slice(0, 3).forEach(k => {
-                matches.push({
-                    type: 'kelurahan',
-                    title: k.nama_kelurahan,
-                    subtitle: `Kelurahan di Kec. ${k.nama_kecamatan}`,
-                    kelurahanData: k
                 });
             });
 
@@ -1683,14 +1670,6 @@ document.addEventListener('DOMContentLoaded', function () {
                                 </svg>
                             </div>
                         `;
-                    } else if (match.type === 'kelurahan') {
-                        iconHtml = `
-                            <div class="w-8 h-8 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center flex-shrink-0">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                                </svg>
-                            </div>
-                        `;
                     } else if (match.type === 'huma') {
                         iconHtml = `
                             <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0">
@@ -1723,12 +1702,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         
                         if (match.type === 'kecamatan') {
                             const targetLayer = L.geoJSON(match.feature);
-                            if (targetLayer.getBounds().isValid()) {
-                                map.fitBounds(targetLayer.getBounds(), { padding: [36, 36] });
-                            }
-                            closeSidePanel();
-                        } else if (match.type === 'kelurahan') {
-                            const targetLayer = L.geoJSON(match.kelurahanData.features);
                             if (targetLayer.getBounds().isValid()) {
                                 map.fitBounds(targetLayer.getBounds(), { padding: [36, 36] });
                             }
