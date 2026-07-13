@@ -176,22 +176,10 @@ class SiklusTanamController extends Controller
         $hasil = (float) $request->hasil_panen;
         $payload = [
             'tanam_padi_id' => $tanam->id,
-            'lahan_id' => $tanam->lahan_id,
-            'bibit_id' => $tanam->bibit_id,
             'pemilik_id' => $tanam->lahan->pemilik_id,
-            'diverifikasi_oleh' => null,
-            'nama_lahan' => $tanam->lahan->nama_lahan,
-            'nama_bibit' => $tanam->bibit->nama_bibit,
-            'varietas' => $tanam->bibit->varietas,
-            'tanggal_tanam' => $tanam->tanggal_tanam,
             'tanggal_panen' => $tanggalPanen->toDateString(),
             'hasil_panen_ton' => $hasil,
-            'luas_lahan_ha' => $luas,
-            'luas_tanam_hektar' => $luas,
-            'produktivitas_ton_ha' => $luas > 0 ? round($hasil / $luas, 2) : 0,
             'status_verifikasi' => 'PENDING',
-            'catatan_verifikasi' => null,
-            'diverifikasi_at' => null,
         ];
 
         $laporan = $laporan
@@ -244,11 +232,10 @@ class SiklusTanamController extends Controller
         $tanggalPanen = Carbon::parse($request->tanggal_panen);
 
         $hasil = (float) $request->hasil_panen;
-        $luas = (float) ($laporan->luas_tanam_hektar ?: $laporan->luas_lahan_ha);
+        $luas = (float) ($laporan->siklusTanam->luas_tanam_hektar ?: $laporan->siklusTanam->lahan->luas_tanam_hektar ?: $laporan->siklusTanam->lahan->luas_lahan_hektar);
         $laporan->update([
             'tanggal_panen' => $tanggalPanen->toDateString(),
             'hasil_panen_ton' => $hasil,
-            'luas_tanam_hektar' => $luas,
             'produktivitas_ton_ha' => $luas > 0 ? round($hasil / $luas, 2) : 0,
             'status_verifikasi' => 'PENDING',
             'catatan_verifikasi' => null,
@@ -661,19 +648,22 @@ class SiklusTanamController extends Controller
     {
         return DB::table('panen_padi as pp')
             ->join('tanam_padi as tp', 'tp.id', '=', 'pp.tanam_padi_id')
-            ->join('lahan_sawah as ls', 'ls.id', '=', 'pp.lahan_id')
+            ->join('lahan_sawah as ls', 'ls.id', '=', 'tp.lahan_id')
             ->leftJoin('users as pemilik', 'pemilik.id', '=', 'pp.pemilik_id')
-
-            ->leftJoin('jenis_bibit as jb', 'jb.id', '=', 'pp.bibit_id')
+            ->leftJoin('jenis_bibit as jb', 'jb.id', '=', 'tp.bibit_id')
             ->leftJoin('kecamatan as kc', 'kc.id', '=', 'ls.kecamatan_id')
             ->leftJoin('kelurahan as kl', 'kl.id', '=', 'ls.kelurahan_id')
             ->select([
                 'pp.*',
+                'tp.lahan_id',
+                'tp.bibit_id',
+                'tp.tanggal_tanam',
                 'tp.luas_tanam_hektar as tanam_luas_tanam_hektar',
                 'tp.estimasi_hari',
                 'tp.estimasi_tanggal_panen',
                 'tp.estimasi_tanggal_panen_akhir',
                 'tp.status_aktif',
+                'ls.nama_lahan',
                 'ls.luas_lahan_hektar as lahan_luas_lahan_hektar',
                 'ls.luas_tanam_hektar as lahan_luas_tanam_hektar',
                 'ls.hasil_panen_ton as lahan_hasil_panen_ton',
@@ -684,6 +674,8 @@ class SiklusTanamController extends Controller
                 'pemilik.nama_lengkap as nama_pemilik',
                 'pemilik.email as email_pemilik',
                 'pemilik.no_hp as no_hp_pemilik',
+                'jb.nama_bibit',
+                'jb.varietas',
                 'jb.masa_tanam_hari',
                 'kc.nama_kecamatan',
                 'kl.nama_kelurahan',
@@ -698,6 +690,8 @@ class SiklusTanamController extends Controller
 
     private function formatHasilPanen($row): array
     {
+        $hasilPanen = (float) $row->hasil_panen_ton;
+        $luasTanam = (float) ($row->tanam_luas_tanam_hektar ?? $row->lahan_luas_tanam_hektar ?? $row->lahan_luas_lahan_hektar ?? 0);
         return [
             'id' => (int) $row->id,
             'siklus_tanam_id' => (int) $row->tanam_padi_id,
@@ -726,9 +720,9 @@ class SiklusTanamController extends Controller
             'masa_tanam_hari' => (int) ($row->masa_tanam_hari ?? $row->estimasi_hari ?? 0),
             'nama_lahan' => $this->safeText($row->nama_lahan),
             'pemilik_lahan' => $this->safeText($row->nama_pemilik),
-            'luas_lahan_hektar' => (float) ($row->lahan_luas_lahan_hektar ?? $row->luas_lahan_ha),
-            'luas_tanam_hektar' => (float) ($row->luas_tanam_hektar ?? $row->tanam_luas_tanam_hektar ?? $row->luas_lahan_ha),
-            'produktivitas_pengajuan_ton_ha' => (float) $row->produktivitas_ton_ha,
+            'luas_lahan_hektar' => (float) ($row->lahan_luas_lahan_hektar ?? 0),
+            'luas_tanam_hektar' => $luasTanam,
+            'produktivitas_pengajuan_ton_ha' => $luasTanam > 0 ? round($hasilPanen / $luasTanam, 2) : 0,
             'lahan_hasil_panen_ton' => (float) ($row->lahan_hasil_panen_ton ?? 0),
             'lahan_produktivitas_ton_ha' => (float) ($row->lahan_produktivitas_ton_ha ?? 0),
             'alamat_detail' => $this->safeText($row->alamat_detail),
@@ -746,15 +740,18 @@ class SiklusTanamController extends Controller
                 'id' => (int) $row->lahan_id,
                 'nama_lahan' => $this->safeText($row->nama_lahan),
                 'pemilik_lahan' => $this->safeText($row->nama_pemilik),
-                'luas_lahan_hektar' => (float) ($row->lahan_luas_lahan_hektar ?? $row->luas_lahan_ha),
-                'luas_tanam_hektar' => (float) ($row->lahan_luas_tanam_hektar ?? $row->luas_tanam_hektar ?? $row->luas_lahan_ha),
+                'luas_lahan_hektar' => (float) ($row->lahan_luas_lahan_hektar ?? 0),
+                'luas_tanam_hektar' => $luasTanam,
             ],
         ];
     }
 
     private function sinkronkanInfoLahanDariPanenTerakhir(int $lahanId): void
     {
-        $panen = LaporPanen::where('lahan_id', $lahanId)
+        $panen = LaporPanen::with(['siklusTanam.lahan'])
+            ->whereHas('siklusTanam', function ($q) use ($lahanId) {
+                $q->where('lahan_id', $lahanId);
+            })
             ->where('status_verifikasi', 'DITERIMA')
             ->whereDate('tanggal_panen', '<=', now()->toDateString())
             ->orderByDesc('tanggal_panen')
@@ -764,10 +761,13 @@ class SiklusTanamController extends Controller
             return;
         }
 
+        $luas = (float) ($panen->siklusTanam->luas_tanam_hektar ?: $panen->siklusTanam->lahan->luas_tanam_hektar ?: $panen->siklusTanam->lahan->luas_lahan_hektar);
+        $produktivitas = $luas > 0 ? round($panen->hasil_panen_ton / $luas, 2) : 0;
+
         DB::table('lahan_sawah')->where('id', $lahanId)->update([
             'hasil_panen_ton' => $panen->hasil_panen_ton,
-            'luas_tanam_hektar' => $panen->luas_tanam_hektar ?: $panen->luas_lahan_ha,
-            'produktivitas_ton_ha' => $panen->produktivitas_ton_ha,
+            'luas_tanam_hektar' => $luas,
+            'produktivitas_ton_ha' => $produktivitas,
             'panen_terakhir_id' => $panen->id,
             'updated_at' => now(),
         ]);
