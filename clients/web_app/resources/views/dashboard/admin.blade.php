@@ -275,45 +275,68 @@
     
     {{-- A1-B: TABEL DATA KOMUNITAS --}}
     <div id="komunitas-section" class="admin-section hidden">
-        <div class="bg-white rounded-[22px] border border-[#d1fae5] p-5 mb-5 shadow-[0_4px_20px_rgba(4,120,87,.03)] transition-all">
-            <div class="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
-                <h3 class="font-bold text-[#022c22] text-sm flex items-center gap-2">
-                    <svg class="w-4 h-4 text-[#047857]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-                    Data Komunitas
-                </h3>
-                <div class="flex gap-2 flex-wrap">
-                    <button onclick="document.getElementById('import-komunitas-modal').classList.remove('hidden')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition border border-indigo-700 shadow-sm flex items-center gap-2">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+        <div class="bg-white rounded-[24px] border border-[#d1fae5] p-6 mb-6 shadow-[0_8px_30px_rgba(4,120,87,.04)] transition-all relative overflow-hidden">
+            <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-[#047857] opacity-[0.02] rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="flex flex-col xl:flex-row xl:items-center justify-between mb-6 gap-4 border-b border-slate-100 pb-5 relative z-10">
+                <div>
+                    <h3 class="font-extrabold text-[#022c22] text-lg flex items-center gap-2.5">
+                        <div class="p-2 bg-emerald-50 rounded-xl text-emerald-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                        </div>
+                        Direktori Komunitas
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-1.5 ml-11">Kelola dan pantau data kelompok tani serta BPP.</p>
+                </div>
+                
+                <div class="flex flex-wrap items-center gap-2.5 ml-11 xl:ml-0">
+                    <button onclick="document.getElementById('import-komunitas-modal').classList.remove('hidden')" class="bg-white hover:bg-slate-50 text-indigo-700 text-xs font-bold px-4 py-2.5 rounded-full transition border border-indigo-200 shadow-sm flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                         Import XLSX
                     </button>
-                    <a href="/admin/komunitas/export" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition border border-emerald-700 shadow-sm flex items-center gap-2">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    <a href="/admin/komunitas/export" class="bg-white hover:bg-slate-50 text-emerald-700 text-xs font-bold px-4 py-2.5 rounded-full transition border border-emerald-200 shadow-sm flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                         Export XLSX
                     </a>
+                    <button onclick="switchSection('create-komunitas-section')" class="bg-[#047857] hover:bg-[#065f46] text-white text-xs font-bold px-5 py-2.5 rounded-full transition shadow-[0_8px_20px_rgba(4,120,87,.2)] flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Tambah Komunitas
+                    </button>
                 </div>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-                <div class="lg:col-span-2">
-                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Pencarian Komunitas</label>
-                    <input id="komunitas-search" type="search" placeholder="Nama komunitas, BPP, dsb..." class="w-full px-4 py-2 border-slate-200 bg-slate-50 rounded-[20px] text-sm focus:bg-white focus:ring-[#047857] focus:border-[#047857] transition-colors">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-5 items-end relative z-10 bg-slate-50/50 p-4 rounded-[20px] border border-slate-100/50">
+                <div class="xl:col-span-2">
+                    <label class="block text-[11px] font-extrabold text-slate-500 uppercase tracking-wider mb-2">Pencarian Komunitas</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <input id="komunitas-search" type="search" placeholder="Nama komunitas, BPP, dsb..." class="w-full pl-10 pr-4 py-2.5 border-slate-200 bg-white rounded-xl text-sm focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all shadow-sm">
+                    </div>
                 </div>
                 <div>
-                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Jenis Komunitas</label>
-                    <select id="komunitas-jenis-filter" class="w-full py-2 px-4 border-slate-200 bg-slate-50 rounded-[20px] text-sm focus:bg-white focus:ring-[#047857] focus:border-[#047857] transition-colors">
+                    <label class="block text-[11px] font-extrabold text-slate-500 uppercase tracking-wider mb-2">Jenis Komunitas</label>
+                    <select id="komunitas-jenis-filter" class="w-full py-2.5 px-4 border-slate-200 bg-white rounded-xl text-sm focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all shadow-sm">
                         <option value="">Semua Jenis</option>
                         <option value="komunitas_tani">Komunitas Tani</option>
                         <option value="brigade_pangan">Brigade Pangan</option>
+                        <option value="BPP">Petugas BPP</option>
                     </select>
                 </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Kecamatan</label>
-                    <select id="komunitas-kecamatan-filter" class="w-full py-2 px-4 border-slate-200 bg-slate-50 rounded-[20px] text-sm focus:bg-white focus:ring-[#047857] focus:border-[#047857] transition-colors">
-                        <option value="">Semua Kecamatan</option>
-                        @foreach($kecamatan as $item)
-                            <option value="{{ $item['id'] }}">{{ $item['nama_kecamatan'] }}</option>
-                        @endforeach
-                    </select>
+                <div class="xl:col-span-2 flex items-end gap-3">
+                    <div class="flex-1">
+                        <label class="block text-[11px] font-extrabold text-slate-500 uppercase tracking-wider mb-2">Kecamatan</label>
+                        <select id="komunitas-kecamatan-filter" class="w-full py-2.5 px-4 border-slate-200 bg-white rounded-xl text-sm focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all shadow-sm">
+                            <option value="">Semua Kecamatan</option>
+                            @foreach($kecamatan as $item)
+                                <option value="{{ $item['id'] }}">{{ $item['nama_kecamatan'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <button id="reset-komunitas-filter" type="button" class="p-2.5 border border-slate-200 bg-white rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition shadow-sm" title="Reset Filter">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    </button>
                 </div>
             </div>
         </div>
@@ -1418,6 +1441,15 @@
                 el.addEventListener('change', applyKomunitasFilters);
             }
         });
+        const resetBtn = document.getElementById('reset-komunitas-filter');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                document.getElementById('komunitas-search').value = '';
+                document.getElementById('komunitas-jenis-filter').value = '';
+                document.getElementById('komunitas-kecamatan-filter').value = '';
+                applyKomunitasFilters();
+            });
+        }
         applyKomunitasFilters();
 
         const urlParams = new URLSearchParams(window.location.search);
