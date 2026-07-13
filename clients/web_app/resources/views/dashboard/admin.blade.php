@@ -52,15 +52,27 @@
 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-7">
     @if(!$isMasterMode)
         <div>
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-[#022c22] tracking-tight" id="main-page-title">Manajemen Pengguna</h1>
-            <p class="text-sm text-slate-500 mt-1 leading-relaxed" id="main-page-desc">Kelola akses akun dan pantau aktivitas pengguna sistem</p>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-[#022c22] tracking-tight" id="main-page-title">
+                {{ request()->get('section') === 'komunitas' ? 'Manajemen Komunitas' : 'Manajemen Pengguna' }}
+            </h1>
+            <p class="text-sm text-slate-500 mt-1 leading-relaxed" id="main-page-desc">
+                {{ request()->get('section') === 'komunitas' ? 'Kelola data kelompok tani, brigade pangan, dan petugas BPP' : 'Kelola akses akun dan pantau aktivitas pengguna sistem' }}
+            </p>
         </div>
         <div class="flex flex-col sm:flex-row gap-2">
-            <button onclick="switchSection('create-section')" 
-                    class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition shadow-[0_14px_38px_rgba(37,99,235,.15)]">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-                Tambah Pengguna
-            </button>
+            @if(request()->get('section') === 'komunitas')
+                <button onclick="openAddKomunitasModal()" 
+                        class="flex items-center gap-2 bg-[#047857] hover:bg-[#065f46] text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition shadow-[0_14px_38px_rgba(4,120,87,.15)]">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                    Tambah Komunitas
+                </button>
+            @else
+                <button onclick="switchSection('create-section')" 
+                        class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-[26px] transition shadow-[0_14px_38px_rgba(37,99,235,.15)]">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                    Tambah Pengguna
+                </button>
+            @endif
         </div>
     @else
         <div>
@@ -881,13 +893,18 @@
                         <label class="block text-xs font-bold text-slate-600 mb-1">Jenis Komunitas <span class="text-red-500">*</span></label>
                         <select id="kom_jenis" name="jenis_komunitas" required onchange="toggleBppFields()" class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#047857]/30 outline-none">
                             <option value="">-- Pilih Jenis --</option>
-                            <option value="komunitas_tani">Komunitas Tani</option>
+                            <option value="kelompok_tani">Kelompok Tani</option>
                             <option value="brigade_pangan">Brigade Pangan</option>
+                            <option value="BPP">Petugas BPP</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-600 mb-1">Nama Komunitas <span class="text-red-500">*</span></label>
                         <input type="text" id="kom_nama_komunitas" name="nama_komunitas" required placeholder="Contoh: Makmur Jaya" class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#047857]/30 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">NIK Ketua / PIC</label>
+                        <input type="text" id="kom_nik" name="nik" placeholder="Opsional" class="w-full bg-slate-50 border border-slate-200 rounded-[12px] text-sm px-3 py-2.5 focus:ring-2 focus:ring-[#047857]/30 outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-600 mb-1">Nama Ketua / PIC <span class="text-red-500">*</span></label>
@@ -1185,6 +1202,7 @@
         document.getElementById('komunitas-form').action = '/admin/komunitas/' + kom.id;
         
         document.getElementById('komunitas_id').value = kom.id;
+        document.getElementById('kom_nik').value = kom.nik || '';
         document.getElementById('kom_jenis').value = kom.jenis_komunitas || '';
         document.getElementById('kom_nama_komunitas').value = kom.nama_komunitas || '';
         document.getElementById('kom_nama').value = kom.nama || '';

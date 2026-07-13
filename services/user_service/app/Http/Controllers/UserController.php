@@ -387,7 +387,7 @@ public function resetPassword(Request $request)
             'nomor_hp' => $validated['no_hp'] ?? null,
             'alamat' => $validated['alamat'] ?? null,
             'wilayah_kecamatan_id' => $validated['wilayah_kecamatan_id'] ?? null,
-            'wilayah_kelurahan_ids' => isset($validated['wilayah_kelurahan_ids']) ? json_encode($this->kelurahanIds($validated['wilayah_kelurahan_ids'])) : null,
+            'wilayah_kelurahan_ids' => !empty($validated['wilayah_kelurahan_ids']) ? json_encode($this->kelurahanIds($validated['wilayah_kelurahan_ids'])) : null,
             'updated_at' => now(),
         ];
 

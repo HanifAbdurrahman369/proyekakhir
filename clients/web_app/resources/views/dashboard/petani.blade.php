@@ -117,7 +117,7 @@
                         $status = $item['status_verifikasi'] ?? 'PENDING';
                         $statusClass = $status === 'DITERIMA' ? 'bg-emerald-50 text-emerald-700' : ($status === 'DITOLAK' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700');
                     @endphp
-                    <article class="p-5">
+                    <article class="p-5 cursor-pointer hover:bg-slate-50 transition-colors" onclick="openLahanModal(this)" data-lahan="{{ base64_encode(json_encode($item)) }}">
                         <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div>
                                 <h3 class="text-sm font-bold text-[#022c22]">{{ $item['nama_lahan'] }}</h3>
@@ -149,5 +149,223 @@
             @endif
         </section>
     @endif
+</div>
+
+<!-- Modal Detail Lahan -->
+<div id="lahanDetailModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm opacity-0 transition-opacity duration-300">
+    <div class="w-full max-w-lg scale-95 rounded-2xl bg-white shadow-2xl transition-transform duration-300 overflow-hidden m-4 max-h-[90vh] flex flex-col">
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 bg-slate-50">
+            <h3 class="text-lg font-bold text-slate-800" id="modalLahanTitle">Detail Lahan</h3>
+            <button onclick="closeLahanModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        
+        <!-- Body -->
+        <div class="p-6 overflow-y-auto">
+            <!-- Status Badge -->
+            <div class="mb-5 flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Status Pengajuan</span>
+                <span id="modalLahanStatus" class="px-3 py-1 rounded-full text-xs font-bold"></span>
+            </div>
+
+            <!-- Flow -->
+            <div class="mb-6 relative">
+                <div class="absolute left-[15px] top-4 bottom-4 w-0.5 bg-slate-200 -z-10"></div>
+                <div class="space-y-4">
+                    <!-- Step 1 -->
+                    <div class="flex gap-4">
+                        <div class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-emerald-200">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-slate-800">1. Isi Formulir</p>
+                            <p class="text-xs text-slate-500">Data lahan telah berhasil disubmit.</p>
+                        </div>
+                    </div>
+                    <!-- Step 2 -->
+                    <div class="flex gap-4">
+                        <div id="step2Icon" class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center shrink-0 transition-colors duration-300">2</div>
+                        <div>
+                            <p class="text-sm font-bold text-slate-800">2. Persetujuan Petugas</p>
+                            <p id="step2Desc" class="text-xs text-slate-500">Tunggu Petugas menyetujui pengajuan Anda.</p>
+                        </div>
+                    </div>
+                    <!-- Step 3 -->
+                    <div class="flex gap-4">
+                        <div id="step3Icon" class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center shrink-0 transition-colors duration-300">3</div>
+                        <div>
+                            <p class="text-sm font-bold text-slate-800">3. Hubungi Petugas</p>
+                            <p id="step3Desc" class="text-xs text-slate-500">Jika disetujui, hubungi petugas untuk pemetaan lahan.</p>
+                        </div>
+                    </div>
+                    <!-- Step 4 -->
+                    <div class="flex gap-4">
+                        <div id="step4Icon" class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center shrink-0 transition-colors duration-300">4</div>
+                        <div>
+                            <p class="text-sm font-bold text-slate-800">4. Terverifikasi</p>
+                            <p id="step4Desc" class="text-xs text-slate-500">Lahan terpetakan dan siap digunakan untuk panen.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lahan Details -->
+            <div class="bg-slate-50 rounded-xl p-4 border border-slate-100 space-y-3">
+                <div>
+                    <p class="text-[10px] uppercase font-bold text-slate-400">Nama Lahan</p>
+                    <p id="modalLahanName" class="text-sm font-bold text-slate-800"></p>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <p class="text-[10px] uppercase font-bold text-slate-400">Luas Lahan</p>
+                        <p id="modalLahanLuas" class="text-sm font-bold text-slate-800"></p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] uppercase font-bold text-slate-400">Kecamatan</p>
+                        <p id="modalLahanKecamatan" class="text-sm font-bold text-slate-800"></p>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-[10px] uppercase font-bold text-slate-400">Alamat Lengkap</p>
+                    <p id="modalLahanAlamat" class="text-xs text-slate-700"></p>
+                </div>
+            </div>
+            
+            <!-- Rejection Reason -->
+            <div id="modalLahanReject" class="mt-4 hidden p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="border-t border-slate-100 p-4 bg-slate-50 flex justify-end gap-3">
+            <button onclick="closeLahanModal()" class="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition">Tutup</button>
+            <a id="modalLahanWA" href="#" target="_blank" class="hidden items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[#25D366] hover:bg-[#128C7E] transition shadow-md shadow-green-500/20">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                Hubungi Petugas
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openLahanModal(element) {
+        let item = {};
+        try {
+            item = JSON.parse(atob(element.getAttribute('data-lahan')));
+        } catch(e) {
+            console.error('Invalid lahan data', e);
+            return;
+        }
+
+        const modal = document.getElementById('lahanDetailModal');
+        const modalBox = modal.querySelector('div.scale-95');
+        
+        // Populate text
+        document.getElementById('modalLahanTitle').innerText = item.nama_lahan || 'Detail Lahan';
+        document.getElementById('modalLahanName').innerText = item.nama_lahan || '-';
+        document.getElementById('modalLahanLuas').innerText = (item.luas_lahan_hektar || 0) + ' Ha';
+        document.getElementById('modalLahanKecamatan').innerText = item.nama_kecamatan || item.kecamatan || '-';
+        document.getElementById('modalLahanAlamat').innerText = item.alamat_detail || '-';
+        
+        // Status Badge & Flow logic
+        const statusEl = document.getElementById('modalLahanStatus');
+        const waBtn = document.getElementById('modalLahanWA');
+        const rejectBox = document.getElementById('modalLahanReject');
+        
+        const checkIcon = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>`;
+        const idleIconCls = 'w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center shrink-0 transition-colors duration-300';
+        const successIconCls = 'w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-emerald-200 transition-colors duration-300';
+        const activeIconCls = 'w-8 h-8 rounded-full bg-emerald-100 border-2 border-emerald-500 text-emerald-600 flex items-center justify-center shrink-0 transition-colors duration-300 font-bold';
+        
+        // Reset Steps Default
+        document.getElementById('step2Icon').className = idleIconCls;
+        document.getElementById('step2Icon').innerHTML = '2';
+        document.getElementById('step2Desc').innerText = 'Tunggu Petugas menyetujui pengajuan Anda.';
+        
+        document.getElementById('step3Icon').className = idleIconCls;
+        document.getElementById('step3Icon').innerHTML = '3';
+        document.getElementById('step3Desc').innerText = 'Jika disetujui, hubungi petugas untuk pemetaan lahan.';
+        
+        document.getElementById('step4Icon').className = idleIconCls;
+        document.getElementById('step4Icon').innerHTML = '4';
+        document.getElementById('step4Desc').innerText = 'Lahan terpetakan dan siap digunakan untuk panen.';
+
+        waBtn.classList.add('hidden');
+        rejectBox.classList.add('hidden');
+
+        // Status Evaluation
+        let statusText = item.status_verifikasi || 'PENDING';
+        const hasPolygon = item.polygon_geojson || item.geojson || item.polygon_area;
+        if (hasPolygon) statusText = 'TERVERIFIKASI';
+
+        if (statusText === 'DITERIMA' || statusText === 'TERVERIFIKASI') {
+            statusEl.className = 'px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700';
+            statusEl.innerText = statusText;
+            
+            // Step 2 Success
+            document.getElementById('step2Icon').className = successIconCls;
+            document.getElementById('step2Icon').innerHTML = checkIcon;
+            document.getElementById('step2Desc').innerText = 'Pengajuan telah disetujui petugas.';
+            
+            // WA Button logic
+            waBtn.classList.remove('hidden');
+            const rawPhone = item.petugas_no_hp || '6285753510996'; 
+            const phone = rawPhone.replace(/^0/, '62');
+            const message = `Halo Petugas, pengajuan lahan sawah saya bernama *${item.nama_lahan}* seluas *${item.luas_lahan_hektar} Ha* telah disetujui. Saya ingin berkoordinasi untuk pemetaan poligon lahan.`;
+            waBtn.href = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+
+            if (statusText === 'TERVERIFIKASI') {
+                document.getElementById('step3Icon').className = successIconCls;
+                document.getElementById('step3Icon').innerHTML = checkIcon;
+                document.getElementById('step3Desc').innerText = 'Sudah berkoordinasi dengan petugas.';
+
+                document.getElementById('step4Icon').className = successIconCls;
+                document.getElementById('step4Icon').innerHTML = checkIcon;
+                document.getElementById('step4Desc').innerText = 'Lahan telah terpetakan dan siap digunakan.';
+            } else {
+                document.getElementById('step3Icon').className = activeIconCls;
+                document.getElementById('step3Desc').innerText = 'Silakan tekan tombol Hubungi Petugas via WhatsApp.';
+            }
+
+        } else if (statusText === 'DITOLAK') {
+            statusEl.className = 'px-3 py-1 rounded-full text-[10px] font-bold bg-red-50 text-red-700';
+            statusEl.innerText = 'DITOLAK';
+            
+            document.getElementById('step2Icon').className = 'w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-red-200 transition-colors duration-300';
+            document.getElementById('step2Icon').innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>';
+            document.getElementById('step2Desc').innerText = 'Pengajuan lahan ditolak.';
+            
+            rejectBox.classList.remove('hidden');
+            rejectBox.innerHTML = `<strong>Catatan Penolakan:</strong><br>${item.alasan_penolakan || item.catatan_verifikasi || 'Perbaiki data lahan Anda.'}`;
+        } else {
+            statusEl.className = 'px-3 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700';
+            statusEl.innerText = 'PENDING';
+            document.getElementById('step2Icon').className = activeIconCls;
+        }
+
+        // Show Modal
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        void modal.offsetWidth; // Trigger reflow
+        modal.classList.remove('opacity-0');
+        modalBox.classList.remove('scale-95');
+    }
+
+    function closeLahanModal() {
+        const modal = document.getElementById('lahanDetailModal');
+        const modalBox = modal.querySelector('div.scale-95') || modal.children[0];
+        
+        modal.classList.add('opacity-0');
+        modalBox.classList.add('scale-95');
+        
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }, 300);
+    }
+</script>
 </div>
 @endsection

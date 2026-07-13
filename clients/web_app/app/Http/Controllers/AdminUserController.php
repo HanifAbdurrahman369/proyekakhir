@@ -58,6 +58,8 @@ class AdminUserController extends Controller
     {
         try {
             $response = $this->api()->get($this->gatewayUrl() . '/api/' . ltrim($endpoint, '/'));
+            \Log::info("getRows {$endpoint} status: " . $response->status());
+            if (!$response->successful()) \Log::error("getRows {$endpoint} failed", ['body' => $response->body()]);
             return $response->successful() ? $this->responseRows($response) : [];
         } catch (\Throwable $e) {
             report($e);
