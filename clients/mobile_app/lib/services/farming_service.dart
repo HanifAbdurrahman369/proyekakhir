@@ -328,14 +328,42 @@ class FarmingService {
     }
   }
 
+  /// Pejabat: Mengambil detail produksi per kelurahan
+  Future<List<dynamic>> getProduksiKelurahanPejabat() async {
+    try {
+      final response = await _apiClient.dio.get('/produksi-kelurahan');
+      return response.data['data'] as List<dynamic>? ?? [];
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data['message'] ?? 'Gagal memuat produksi per kelurahan.',
+      );
+    }
+  }
+
   /// Pejabat: Mengambil detail produksi per kecamatan
   Future<List<dynamic>> getProduksiKecamatanPejabat() async {
     try {
-      final response = await _apiClient.dio.get('/produksi-kecamatan');
+      final response = await _apiClient.dio.get('/top-kecamatan');
       return response.data['data'] as List<dynamic>? ?? [];
     } on DioException catch (e) {
       throw Exception(
         e.response?.data['message'] ?? 'Gagal memuat produksi per kecamatan.',
+      );
+    }
+  }
+
+  /// Pejabat: Mengambil historis produksi per kecamatan
+  Future<Map<String, dynamic>> getHistorisProduksiKecamatan(int kecamatanId, {String? tahun}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (tahun != null && tahun != 'all') {
+        queryParams['tahun'] = tahun;
+      }
+      final response = await _apiClient.dio.get('/statistik/kecamatan/$kecamatanId', queryParameters: queryParams);
+      return response.data['data'] as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data['message'] ?? 'Gagal memuat historis produksi kecamatan.',
       );
     }
   }

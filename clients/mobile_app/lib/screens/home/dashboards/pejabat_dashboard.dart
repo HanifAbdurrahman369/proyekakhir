@@ -416,9 +416,165 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
             ),
             const SizedBox(height: 20),
 
-            // 3. Stats Cards (Total Produksi & Lahan Aktif)
-            Row(
-              children: [
+            // 3. Stats Cards (4 Cards: Cakupan Wilayah, Produktivitas, Lahan, Produksi)
+            Builder(
+              builder: (context) {
+                final int countKecamatan = provider.produksiKecamatanPejabat.length;
+                final int countKelurahan = provider.produksiKelurahanPejabat.length;
+                final double avgProd = provider.totalLahanPejabat > 0 ? (provider.produksiPejabat / provider.totalLahanPejabat) : 0.0;
+                
+                return Column(
+                  children: [
+                    Row(
+                      children: [
+                        // Card Cakupan Wilayah
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            height: 190,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(26),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'CAKUPAN WILAYAH',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.grey[500],
+                                        letterSpacing: 1.0,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                                      textBaseline: TextBaseline.alphabetic,
+                                      children: [
+                                        Text(
+                                          countKecamatan.toString(),
+                                          style: GoogleFonts.outfit(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.bold,
+                                            color: const Color(0xFF14280B),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Kec',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 12,
+                                            color: Colors.grey[400],
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                                      textBaseline: TextBaseline.alphabetic,
+                                      children: [
+                                        Text(
+                                          countKelurahan.toString(),
+                                          style: GoogleFonts.outfit(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.grey[700],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Kel/Desa',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 11,
+                                            color: Colors.grey[400],
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        // Card Rata-rata Produktivitas
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            height: 190,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(26),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'RATA-RATA PRODUKTIVITAS',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.grey[500],
+                                        letterSpacing: 1.0,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      _formatNumber(avgProd),
+                                      style: GoogleFonts.outfit(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF14280B),
+                                      ),
+                                    ),
+                                    Text(
+                                      'Ton/Ha',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        color: Colors.grey[400],
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Column(
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(4),
+                                      child: LinearProgressIndicator(
+                                        value: 0.85,
+                                        backgroundColor: Colors.grey[100],
+                                        color: Colors.blue[500],
+                                        minHeight: 6,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
                 // Card Total Produksi
                 Expanded(
                   child: InkWell(
@@ -596,7 +752,11 @@ class _PejabatDashboardState extends State<PejabatDashboard> {
                     ),
                   ),
                 ),
-              ],
+                      ],
+                    ),
+                  ],
+                );
+              }
             ),
             const SizedBox(height: 16),
 

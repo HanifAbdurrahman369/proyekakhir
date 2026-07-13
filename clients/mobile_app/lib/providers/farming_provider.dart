@@ -44,6 +44,7 @@ class FarmingProvider extends ChangeNotifier {
   double _totalLahanPejabat = 0.0;
   Map<int, double> _produksiBulananPejabat = {};
   List<dynamic> _produksiKecamatanPejabat = [];
+  List<dynamic> _produksiKelurahanPejabat = [];
   List<dynamic> _lahanKecamatanPejabat = [];
   bool _isPejabatLoading = false;
 
@@ -106,6 +107,7 @@ class FarmingProvider extends ChangeNotifier {
   double get totalLahanPejabat => _totalLahanPejabat;
   Map<int, double> get produksiBulananPejabat => _produksiBulananPejabat;
   List<dynamic> get produksiKecamatanPejabat => _produksiKecamatanPejabat;
+  List<dynamic> get produksiKelurahanPejabat => _produksiKelurahanPejabat;
   List<dynamic> get lahanKecamatanPejabat => _lahanKecamatanPejabat;
   bool get isPejabatLoading => _isPejabatLoading;
 
@@ -510,6 +512,7 @@ class FarmingProvider extends ChangeNotifier {
         _farmingService.getTotalLahanPejabat(),
         _farmingService.getProduksiBulananPejabat(),
         _farmingService.getProduksiKecamatanPejabat(),
+        _farmingService.getProduksiKelurahanPejabat(),
         _farmingService.getLahanKecamatanPejabat(),
       ]);
 
@@ -517,7 +520,8 @@ class FarmingProvider extends ChangeNotifier {
       _totalLahanPejabat = results[1] as double;
       _produksiBulananPejabat = results[2] as Map<int, double>;
       _produksiKecamatanPejabat = results[3] as List<dynamic>;
-      _lahanKecamatanPejabat = results[4] as List<dynamic>;
+      _produksiKelurahanPejabat = results[4] as List<dynamic>;
+      _lahanKecamatanPejabat = results[5] as List<dynamic>;
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
     } finally {

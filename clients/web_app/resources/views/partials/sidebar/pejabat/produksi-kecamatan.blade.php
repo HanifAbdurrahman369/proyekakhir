@@ -22,7 +22,7 @@
     </div>
 
     <div class="flex items-center gap-3">
-        <a href="{{ route('dashboard.pejabat') }}"
+        <a href="javascript:history.back()"
            class="inline-flex items-center gap-2 px-5 py-3 rounded-2xl
                   bg-white border border-[#d1fae5] text-[#047857] font-bold text-sm
                   shadow-md hover:bg-[#ecfdf5] hover:scale-105 transition-all duration-300">

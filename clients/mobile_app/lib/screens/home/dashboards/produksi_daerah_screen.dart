@@ -703,7 +703,7 @@ class _ProduksiDaerahScreenState extends State<ProduksiDaerahScreen> with Single
     final baseUrl = ApiEndpoints.baseUrl;
     final uri = Uri.parse(baseUrl);
     final webAppUrl = '${uri.scheme}://${uri.host}:8080';
-    final downloadUrl = Uri.parse('$webAppUrl/pejabat/produksi-kecamatan/$format?token=$token');
+    final downloadUrl = Uri.parse('$webAppUrl/pejabat/produksi-kelurahan/$format?token=$token');
 
     if (await canLaunchUrl(downloadUrl)) {
       await launchUrl(downloadUrl, mode: LaunchMode.externalApplication);
