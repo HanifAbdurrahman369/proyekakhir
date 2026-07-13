@@ -189,6 +189,16 @@ class FarmingProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> deleteNotifikasi(int id) async {
+    final success = await _farmingService.deleteNotifikasi(id);
+    if (success) {
+      _notifikasiList.removeWhere((n) => n['id'] == id);
+      _notifikasiCount = _notifikasiList.length;
+      notifyListeners();
+    }
+    return success;
+  }
+
   /// Fetch all required dashboard data in one go (lahan, total produksi, active cycles)
   Future<void> fetchDashboardData({int lahanPage = 1}) async {
     _isLoading = true;

@@ -218,11 +218,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                               ),
-                              onTap: () => _openNotificationTarget(
-                                context,
-                                user,
-                                (item['target_url'] ?? '').toString(),
-                              ),
+                              onTap: () {
+                                final notifId = item['id'];
+                                if (notifId != null) {
+                                  farmingProvider.deleteNotifikasi(int.tryParse(notifId.toString()) ?? 0);
+                                }
+                                _openNotificationTarget(
+                                  context,
+                                  user,
+                                  (item['target_url'] ?? '').toString(),
+                                );
+                              },
                             );
                           },
                         ),

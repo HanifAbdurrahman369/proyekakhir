@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../core/network/api_client.dart';
 
 class FarmingService {
@@ -17,9 +18,19 @@ class FarmingService {
         queryParameters: queryParams,
       );
       return response.data as Map<String, dynamic>;
-    } on DioException catch (e) {
-      final message = e.response?.data['message'] ?? 'Gagal memuat notifikasi.';
-      throw Exception(message);
+    } catch (e) {
+      debugPrint('Error getNotifikasi: $e');
+      return {'success': false, 'data': []};
+    }
+  }
+
+  Future<bool> deleteNotifikasi(int id) async {
+    try {
+      final response = await _apiClient.dio.delete('/notifikasi/$id');
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error deleteNotifikasi: $e');
+      return false;
     }
   }
 
