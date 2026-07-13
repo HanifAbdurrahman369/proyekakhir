@@ -163,7 +163,8 @@ class SiklusTanamController extends Controller
 
         $tanggalPanen = Carbon::parse($request->tanggal_panen);
 
-        $laporan = LaporPanen::where('tanam_padi_id', $tanam->id)->first();
+        try {
+            $laporan = LaporPanen::where('tanam_padi_id', $tanam->id)->first();
         if ($laporan && $laporan->status_verifikasi !== 'DITOLAK') {
             return response()->json([
                 'success' => false,
@@ -205,6 +206,13 @@ class SiklusTanamController extends Controller
             '/verifikasi-data-petani?tipe=panen&id=' . $laporan->id,
             $tanam->lahan->assigned_petugas_id ? (int) $tanam->lahan->assigned_petugas_id : null
         );
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Internal Server Error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine()
+            ], 500);
+        }
 
         return response()->json([
             'success' => true,

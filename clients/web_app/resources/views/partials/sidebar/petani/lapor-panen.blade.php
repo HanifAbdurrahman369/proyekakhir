@@ -89,8 +89,8 @@
 
             @if(!$isEdit)
                 <div>
-                    <label class="mb-1.5 block text-xs font-bold text-slate-700">Proses tanam siap panen</label>
-                    <select name="siklus_tanam_id" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#047857] focus:border-[#047857] focus:outline-none focus:ring-2 focus:ring-[#047857]/20">
+                    <label for="siklus_tanam_id" class="mb-1.5 block text-xs font-bold text-slate-700">Proses tanam siap panen</label>
+                    <select id="siklus_tanam_id" name="siklus_tanam_id" required class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#047857] focus:border-[#047857] focus:outline-none focus:ring-2 focus:ring-[#047857]/20">
                         <option value="">Pilih proses tanam</option>
                         @foreach($siapPanen as $item)
                             <option value="{{ $item['id'] }}" @selected((string) old('siklus_tanam_id') === (string) $item['id'])>
@@ -111,14 +111,14 @@
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                    <label class="mb-1.5 block text-xs font-bold text-slate-700">Tanggal panen</label>
-                    <input type="date" name="tanggal_panen" max="{{ date('Y-m-d') }}" required
+                    <label for="tanggal_panen" class="mb-1.5 block text-xs font-bold text-slate-700">Tanggal panen</label>
+                    <input id="tanggal_panen" type="date" name="tanggal_panen" max="{{ date('Y-m-d') }}" required
                            value="{{ old('tanggal_panen', $editPanen['tanggal_panen'] ?? date('Y-m-d')) }}"
                            class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#047857] focus:border-[#047857] focus:outline-none focus:ring-2 focus:ring-[#047857]/20">
                 </div>
                 <div>
-                    <label class="mb-1.5 block text-xs font-bold text-slate-700">Hasil panen (ton)</label>
-                    <input type="number" name="hasil_panen" min="0.01" step="0.01" required
+                    <label for="hasil_panen" class="mb-1.5 block text-xs font-bold text-slate-700">Hasil panen (ton)</label>
+                    <input id="hasil_panen" type="number" name="hasil_panen" min="0.01" step="0.01" required
                            value="{{ old('hasil_panen', $editPanen['hasil_panen'] ?? '') }}" placeholder="Contoh: 4.50"
                            class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm transition-all hover:border-[#047857] focus:border-[#047857] focus:outline-none focus:ring-2 focus:ring-[#047857]/20">
                 </div>
