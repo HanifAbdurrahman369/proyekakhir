@@ -22,7 +22,7 @@ class MobileAppDownloadController extends Controller
             abort(403, 'Unduhan aplikasi mobile hanya tersedia untuk Kelompok Tani, Brigade Pangan, dan Petugas.');
         }
 
-        $apkPath = storage_path('app/sipetani-mobile.apk');
+        $apkPath = storage_path('app/SiPetani.apk');
 
         if (!is_file($apkPath)) {
             return redirect()
@@ -30,7 +30,7 @@ class MobileAppDownloadController extends Controller
                 ->with('error', 'File aplikasi mobile belum tersedia. Silakan hubungi admin.');
         }
 
-        return response()->download($apkPath, 'sipetani-mobile.apk', [
+        return response()->download($apkPath, 'SiPetani.apk', [
             'Content-Type' => 'application/vnd.android.package-archive',
             'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
         ]);
