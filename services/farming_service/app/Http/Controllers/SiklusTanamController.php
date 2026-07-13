@@ -147,8 +147,8 @@ class SiklusTanamController extends Controller
         ]);
 
         [$userId, $roleId] = $this->authUser($request);
-        if ($roleId !== self::ROLE_KELOMPOK_TANI) {
-            return $this->forbidden('Laporan hasil panen hanya dapat dibuat oleh Kelompok Tani sebagai pemilik lahan.');
+        if (!$this->rolePetani($roleId)) {
+            return $this->forbidden('Laporan hasil panen hanya dapat dibuat oleh Kelompok Tani atau Brigade Pangan sebagai pemilik lahan.');
         }
 
         $tanam = SiklusTanam::with(['lahan', 'bibit'])
@@ -199,7 +199,7 @@ class SiklusTanamController extends Controller
 
         $this->buatNotifikasiPetugas(
             'Laporan Panen Baru',
-            'Kelompok Tani mengirim laporan panen untuk lahan ' . $tanam->lahan->nama_lahan . '.',
+            'Kelompok Tani/Brigade Pangan mengirim laporan panen untuk lahan ' . $tanam->lahan->nama_lahan . '.',
             'panen_padi',
             (int) $laporan->id,
             '/verifikasi-data-petani?tipe=panen&id=' . $laporan->id,
@@ -221,8 +221,8 @@ class SiklusTanamController extends Controller
         ]);
 
         [$userId, $roleId] = $this->authUser($request);
-        if ($roleId !== self::ROLE_KELOMPOK_TANI) {
-            return $this->forbidden('Perbaikan laporan panen hanya dapat dilakukan Kelompok Tani.');
+        if (!$this->rolePetani($roleId)) {
+            return $this->forbidden('Perbaikan laporan panen hanya dapat dilakukan Kelompok Tani atau Brigade Pangan.');
         }
 
         $laporan = LaporPanen::with('siklusTanam')
@@ -250,7 +250,7 @@ class SiklusTanamController extends Controller
 
         $this->buatNotifikasiPetugas(
             'Perbaikan Laporan Panen',
-            'Kelompok Tani mengajukan ulang laporan panen yang telah diperbaiki.',
+            'Kelompok Tani/Brigade Pangan mengajukan ulang laporan panen yang telah diperbaiki.',
             'panen_padi',
             (int) $laporan->id,
             '/verifikasi-data-petani?tipe=panen&id=' . $laporan->id,
@@ -767,10 +767,8 @@ class SiklusTanamController extends Controller
 
     private function batasiTanamUntukPetani($query, int $userId, int $roleId): void
     {
-        if ($roleId === self::ROLE_KELOMPOK_TANI) {
+        if ($this->rolePetani($roleId)) {
             $query->whereHas('lahan', fn ($q) => $q->where('pemilik_id', $userId));
-        } elseif ($roleId === self::ROLE_BRIGADE_PANGAN) {
-            $query->where('pemupukan_dicatat_oleh', $userId);
         } else {
             $query->whereRaw('1 = 0');
         }
@@ -780,15 +778,8 @@ class SiklusTanamController extends Controller
     {
         $query = LahanSawah::where('id', $lahanId)->where('status_verifikasi', 'DITERIMA');
         
-        if ($roleId === self::ROLE_KELOMPOK_TANI) {
+        if ($this->rolePetani($roleId)) {
             return $query->where('pemilik_id', $userId)->first();
-        } elseif ($roleId === self::ROLE_BRIGADE_PANGAN) {
-            return $query->where(function ($q) use ($userId) {
-                $q->where('pemilik_id', $userId)
-                  ->orWhereHas('pemilik', function ($q2) {
-                      $q2->where('role_id', self::ROLE_KELOMPOK_TANI);
-                  });
-            })->first();
         }
         
         return null;
@@ -801,22 +792,8 @@ class SiklusTanamController extends Controller
             return ['error' => 'Jenis bibit tidak ditemukan.', 'bibit' => null];
         }
 
-        $bulan = (int) Carbon::parse($tanggalTanam)->format('n');
-        $varietas = mb_strtolower((string) $bibit->varietas);
-        if ($roleId === self::ROLE_KELOMPOK_TANI) {
-            if ((int) $lahan->pemilik_id !== $userId) {
-                if ($varietas !== 'lokal' || $bulan < 1 || $bulan > 9) {
-                    return ['error' => 'Kelompok Tani menggunakan bibit lokal pada Januari sampai September.', 'bibit' => $bibit];
-                }
-            }
-        }
-        
-        if ($roleId === self::ROLE_BRIGADE_PANGAN) {
-            if ((int) $lahan->pemilik_id !== $userId) {
-                if ($varietas !== 'unggul' || !in_array($bulan, [10, 11, 12, 1], true)) {
-                    return ['error' => 'Brigade Pangan menggunakan bibit unggul pada Oktober sampai Januari di lahan kelompok tani.', 'bibit' => $bibit];
-                }
-            }
+        if (!$this->rolePetani($roleId) || (int) $lahan->pemilik_id !== $userId) {
+            return ['error' => 'Lahan tidak terdaftar untuk akun ini atau belum disetujui.', 'bibit' => $bibit];
         }
 
         return ['error' => null, 'bibit' => $bibit];
@@ -871,7 +848,7 @@ class SiklusTanamController extends Controller
             'takaran' => $pemupukanAwal['takaran'],
             'can_edit' => $item->status_aktif === 'AKTIF',
             'can_delete' => $item->status_aktif === 'AKTIF' && !$item->panen,
-            'can_report_harvest' => $roleId === self::ROLE_KELOMPOK_TANI
+            'can_report_harvest' => $this->rolePetani($roleId)
                 && (int) ($item->lahan?->pemilik_id ?? 0) === $userId
                 && $item->status_aktif === 'AKTIF'
                 && now()->startOfDay()->gte($estimasi->startOfDay())

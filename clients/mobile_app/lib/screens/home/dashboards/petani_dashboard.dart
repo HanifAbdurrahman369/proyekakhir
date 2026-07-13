@@ -75,13 +75,6 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
     final roleId = user?.roleId ?? 1;
     final roleName = roleId == 5 ? 'Brigade Pangan' : 'Kelompok Tani';
 
-    final currentMonth = DateTime.now().month;
-    final isKelompokTaniAllowed = (currentMonth >= 1 && currentMonth <= 9);
-    final isBrigadePanganAllowed = [10, 11, 12, 1].contains(currentMonth);
-    final isAllowedToPlant =
-        (roleId == 1 && isKelompokTaniAllowed) ||
-        (roleId == 5 && isBrigadePanganAllowed);
-
     final lahanList = farmingProvider.lahanData['data'] as List<dynamic>? ?? [];
 
     if (farmingProvider.isLoading &&
@@ -205,13 +198,9 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                 return Row(
                   children: [
                     _buildStatCard(
-                      title: roleId == 5 ? 'PROSES AKTIF' : 'LAHAN TERDAFTAR',
-                      value: roleId == 5
-                          ? '${activeCycles.length}'
-                          : '$totalLahan',
-                      desc: roleId == 5
-                          ? 'Siklus tanam yang sedang digarap'
-                          : 'Pengajuan lahan pada akun Anda',
+                      title: 'LAHAN TERDAFTAR',
+                      value: '$totalLahan',
+                      desc: 'Pengajuan lahan pada akun Anda',
                       width: cardWidth,
                     ),
                     const SizedBox(width: 16),
@@ -231,88 +220,80 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
             // 4. Action Buttons Row (Sejajar di bawah 2 card statistik utama)
             Row(
               children: [
-                  Expanded(
-                    child: _buildActionButton(
-                      label: 'Tambah Lahan',
-                      icon: Icons.add_location_alt_rounded,
-                      onPressed: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const TambahLahanScreen(),
-                          ),
-                        );
-                        if (!context.mounted) return;
-                        context.read<FarmingProvider>().fetchDashboardData(
-                          lahanPage: _currentLahanPage,
-                        );
-                      },
-                      textColor: const Color(0xFF3E7D00),
-                      bgColor: Colors.white,
-                      borderColor: const Color(0xFF3E7D00),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
                 Expanded(
                   child: _buildActionButton(
-                    label: isAllowedToPlant ? 'Lapor Tanam' : 'Lapor Tanam (Kunci)',
-                    icon: isAllowedToPlant ? Icons.grass_rounded : Icons.lock_outline_rounded,
-                    onPressed: isAllowedToPlant
-                        ? () async {
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const LaporTanamScreen(),
-                              ),
-                            );
-                            if (!context.mounted) return;
-                            context.read<FarmingProvider>().fetchDashboardData(
-                              lahanPage: _currentLahanPage,
-                            );
-                          }
-                        : null,
+                    label: 'Tambah Lahan',
+                    icon: Icons.add_location_alt_rounded,
+                    onPressed: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TambahLahanScreen(),
+                        ),
+                      );
+                      if (!context.mounted) return;
+                      context.read<FarmingProvider>().fetchDashboardData(
+                        lahanPage: _currentLahanPage,
+                      );
+                    },
+                    textColor: const Color(0xFF3E7D00),
+                    bgColor: Colors.white,
+                    borderColor: const Color(0xFF3E7D00),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildActionButton(
+                    label: 'Lapor Tanam',
+                    icon: Icons.grass_rounded,
+                    onPressed: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LaporTanamScreen(),
+                        ),
+                      );
+                      if (!context.mounted) return;
+                      context.read<FarmingProvider>().fetchDashboardData(
+                        lahanPage: _currentLahanPage,
+                      );
+                    },
                     textColor: Colors.white,
                     bgColor: const Color(0xFF3E7D00),
                   ),
                 ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildActionButton(
-                      label: 'Lapor Hasil Panen',
-                      icon: Icons.check_circle_outline_rounded,
-                      onPressed: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const LaporPanenScreen(),
-                          ),
-                        );
-                        if (!context.mounted) return;
-                        context.read<FarmingProvider>().fetchDashboardData(
-                          lahanPage: _currentLahanPage,
-                        );
-                      },
-                      textColor: Colors.white,
-                      bgColor: const Color(0xFF203C10),
-                    ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildActionButton(
+                    label: 'Lapor Hasil Panen',
+                    icon: Icons.check_circle_outline_rounded,
+                    onPressed: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LaporPanenScreen(),
+                        ),
+                      );
+                      if (!context.mounted) return;
+                      context.read<FarmingProvider>().fetchDashboardData(
+                        lahanPage: _currentLahanPage,
+                      );
+                    },
+                    textColor: Colors.white,
+                    bgColor: const Color(0xFF203C10),
                   ),
+                ),
               ],
             ),
             const SizedBox(height: 16),
 
-            // 5. Removed Lock Alert Banner
-
-            // 6. Statistics Card (Aturan Masa Tanam)
+            // 5. Statistics Card (Proses Aktif)
             LayoutBuilder(
               builder: (context, constraints) {
                 return _buildStatCard(
-                  title: 'ATURAN MASA TANAM',
-                  value: roleId == 5
-                      ? 'Oktober - Januari'
-                      : 'Januari - September',
-                  desc: roleId == 5
-                      ? 'Bibit unggul lahan Kelompok Tani induk'
-                      : 'Bibit lokal sebagai pemilik lahan',
+                  title: 'PROSES AKTIF',
+                  value: '${activeCycles.length}',
+                  desc: 'Siklus tanam berjalan yang terhubung dengan akun Anda',
                   width: constraints.maxWidth,
                   isLightGreen: true,
                 );
@@ -325,17 +306,12 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
             const SizedBox(height: 24),
 
             // 7. Lahan List Section
-            _buildLahanListSection(
-              lahanList,
-              farmingProvider.lahanData,
-              roleId,
-            ),
+            _buildLahanListSection(lahanList, farmingProvider.lahanData),
           ],
         ),
       ),
     );
   }
-
 
   Widget _buildActionButton({
     required String label,
@@ -354,10 +330,10 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
         disabledForegroundColor: Colors.grey[500],
         disabledBackgroundColor: Colors.grey[200],
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        side: borderColor != null && !isDisabled ? BorderSide(color: borderColor, width: 1.5) : BorderSide.none,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        side: borderColor != null && !isDisabled
+            ? BorderSide(color: borderColor, width: 1.5)
+            : BorderSide.none,
         elevation: 0,
       ),
       child: Row(
@@ -365,7 +341,11 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 13, color: isDisabled ? Colors.grey[500] : textColor),
+            Icon(
+              icon,
+              size: 13,
+              color: isDisabled ? Colors.grey[500] : textColor,
+            ),
             const SizedBox(width: 4),
           ],
           Flexible(
@@ -557,7 +537,6 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                 final progress =
                     double.tryParse(cycle['progress_persen'].toString()) ?? 0.0;
                 final remainingDays = cycle['hari_tersisa'] ?? 0;
-                final isBrigade = cycle['peran_pelapor'] == 'brigade_pangan';
 
                 return Padding(
                   padding: const EdgeInsets.all(16),
@@ -582,7 +561,7 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Bibit: ${cycle['nama_bibit'] ?? '-'} · ${isBrigade ? 'Brigade Pangan' : 'Kelompok Tani'}',
+                                  'Bibit: ${cycle['nama_bibit'] ?? '-'} · Laporan tanam',
                                   style: GoogleFonts.inter(
                                     fontSize: 12,
                                     color: Colors.grey[500],
@@ -627,13 +606,16 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                               await Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => EditLaporTanamScreen(cycleData: cycle),
+                                  builder: (context) =>
+                                      EditLaporTanamScreen(cycleData: cycle),
                                 ),
                               );
                               if (!context.mounted) return;
-                              context.read<FarmingProvider>().fetchDashboardData(
-                                lahanPage: _currentLahanPage,
-                              );
+                              context
+                                  .read<FarmingProvider>()
+                                  .fetchDashboardData(
+                                    lahanPage: _currentLahanPage,
+                                  );
                             },
                             child: Container(
                               padding: const EdgeInsets.all(6),
@@ -695,7 +677,6 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
   Widget _buildLahanListSection(
     List<dynamic> lahanList,
     Map<String, dynamic> lahanData,
-    int roleId,
   ) {
     final currentPage = lahanData['current_page'] ?? 1;
     final lastPage = lahanData['last_page'] ?? 1;
@@ -715,9 +696,7 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  roleId == 5
-                      ? 'Daftar lahan garapan Brigade Pangan'
-                      : 'Daftar lahan milik Kelompok Tani',
+                  'Daftar lahan sawah',
                   style: GoogleFonts.outfit(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -726,9 +705,7 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  roleId == 5
-                      ? 'Daftar lahan yang Anda garap dan kelola.'
-                      : 'Status pengajuan dan catatan verifikasi petugas.',
+                  'Status pengajuan dan catatan verifikasi petugas.',
                   style: GoogleFonts.inter(
                     fontSize: 10,
                     color: Colors.grey[500],
@@ -743,9 +720,7 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
               padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
               child: Center(
                 child: Text(
-                  roleId == 5
-                      ? 'Belum ada lahan yang ditugaskan.'
-                      : 'Belum ada lahan yang diajukan.',
+                  'Belum ada lahan yang diajukan.',
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: Colors.grey[500],

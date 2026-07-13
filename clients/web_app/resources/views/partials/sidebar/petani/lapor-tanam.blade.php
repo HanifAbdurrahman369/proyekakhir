@@ -18,7 +18,7 @@
             <p class="mt-1 text-xs text-slate-500">Estimasi panen dihitung otomatis berdasarkan masa varietas bibit.</p>
         </div>
         <span class="inline-flex w-fit rounded-full border border-[#d1fae5] bg-[#ecfdf5] px-3 py-1 text-[11px] font-bold text-[#047857]">
-            {{ $roleId === 5 ? 'Bibit unggul: Oktober - Januari' : 'Bibit lokal: Januari - September' }}
+            Akses lapor tanam aktif
         </span>
     </header>
 

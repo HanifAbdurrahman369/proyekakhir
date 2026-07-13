@@ -3,7 +3,7 @@ class ApiEndpoints {
   // flutter build apk --dart-define=API_BASE_URL=http://IP_BACKEND:8003/api
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.1.6:8003/api',
+    defaultValue: 'https://api.sigpala.my.id/api',
   );
 
   // Auth & User Endpoints

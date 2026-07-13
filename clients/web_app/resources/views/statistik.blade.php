@@ -1,4 +1,4 @@
-<div class="flex w-full py-16 px-4 flex-col items-center gap-12 bg-slate-50 font-['Poppins']">
+<div class="flex w-full py-12 px-6 sm:px-10 lg:px-12 flex-col items-center gap-12 bg-white/90 backdrop-blur-md font-['Poppins'] rounded-[2.5rem] shadow-sm border border-slate-100/60 mt-4 mb-8">
     <div class="text-center space-y-3">
         <p class="text-emerald-600 font-semibold tracking-[0.3em] text-base uppercase">Pusat Data Analisis</p>
         <h2 class="text-slate-900 text-4xl md:text-5xl font-extrabold tracking-tight">STATISTIK & VISUALISASI</h2>
@@ -212,6 +212,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
+    window.IS_PEJABAT = {{ isset($isPejabat) && $isPejabat ? 'true' : 'false' }};
     let globalData = [];
     let filteredData = [];
     let rekapPadiKecamatan = [];
@@ -440,7 +441,9 @@
 
         tbody.innerHTML = rekapPadiKecamatan.map((item, index) => {
             const bg = index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30';
-            const href = `/statistik/kecamatan/${encodeURIComponent(item.id || item.kecamatan_id || item.nama_kecamatan)}`;
+            const isPejabat = typeof window.IS_PEJABAT !== 'undefined' && window.IS_PEJABAT;
+            const identifier = encodeURIComponent(item.id || item.kecamatan_id || item.nama_kecamatan);
+            const href = isPejabat ? `/pejabat/produksi-kecamatan?kecamatan=${identifier}` : `/statistik/kecamatan/${identifier}`;
             const status = item.is_sementara ? '<span class="ml-2 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-700">Sementara</span>' : '';
 
             return `

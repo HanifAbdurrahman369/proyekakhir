@@ -71,6 +71,7 @@
 
 <script>
     window.GATEWAY_URL = "{{ env('GATEWAY_URL', 'http://127.0.0.1:8003') }}";
+    window.IS_PEJABAT = {{ request()->routeIs('map.pejabat') ? 'true' : 'false' }};
 </script>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

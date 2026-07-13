@@ -1,6 +1,8 @@
 @extends('layouts.app')
 
 @php
+    $roleId = (int) session('role_id');
+    $roleName = $roleId === 5 ? 'Brigade Pangan' : 'Kelompok Tani';
     $isEdit = !empty($editPanen);
     $siapPanen = collect($siklusTanam ?? [])->filter(fn ($item) => !empty($item['can_report_harvest']));
 @endphp
@@ -10,7 +12,7 @@
 @section('content')
 <div class="mx-auto max-w-3xl space-y-5 px-4 py-6 sm:px-6">
     <header>
-        <p class="text-[11px] font-bold uppercase text-[#047857]">Kelompok Tani</p>
+        <p class="text-[11px] font-bold uppercase text-[#047857]">{{ $roleName }}</p>
         <h1 class="mt-1 text-xl font-bold text-[#022c22]">{{ $isEdit ? 'Perbaiki laporan hasil panen' : 'Laporan hasil panen' }}</h1>
         <p class="mt-1 text-xs text-slate-500">Hasil panen akan masuk ke riwayat dan statistik setelah disetujui petugas.</p>
     </header>

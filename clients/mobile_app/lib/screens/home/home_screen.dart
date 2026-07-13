@@ -114,13 +114,6 @@ class HomeScreen extends StatelessWidget {
         _ => 'Pengguna',
       };
 
-      final currentMonth = DateTime.now().month;
-      final isKelompokTaniAllowed = (currentMonth >= 1 && currentMonth <= 9);
-      final isBrigadePanganAllowed = [10, 11, 12, 1].contains(currentMonth);
-      final isAllowedToPlant =
-          (roleId == 1 && isKelompokTaniAllowed) ||
-          (roleId == 5 && isBrigadePanganAllowed);
-
       // Hanya tampilkan menu petani jika peran adalah kelompok tani (1) atau brigade pangan (5)
       final isFarmerRole = (roleId == 1 || roleId == 5);
 
@@ -230,7 +223,7 @@ class HomeScreen extends StatelessWidget {
                     _buildCategoryHeader('LAHAN & PRODUKSI'),
                     _buildDrawerItem(
                       icon: Icons.landscape_rounded,
-                      label: roleId == 5 ? 'Proses Tanam' : 'Lahan Sawah',
+                      label: 'Lahan Sawah',
                       isSelected: true,
                       onTap: () => Navigator.pop(context),
                     ),
@@ -251,25 +244,17 @@ class HomeScreen extends StatelessWidget {
                       },
                     ),
                     _buildDrawerItem(
-                      icon: isAllowedToPlant
-                          ? Icons.grass_rounded
-                          : Icons.lock_outline_rounded,
-                      label: isAllowedToPlant
-                          ? 'Lapor Tanam'
-                          : 'Lapor Tanam (Kunci)',
-                      isLocked: !isAllowedToPlant,
-                      onTap: isAllowedToPlant
-                          ? () {
-                              Navigator.pop(context);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const LaporTanamScreen(),
-                                ),
-                              );
-                            }
-                          : null,
+                      icon: Icons.grass_rounded,
+                      label: 'Lapor Tanam',
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LaporTanamScreen(),
+                          ),
+                        );
+                      },
                     ),
                     _buildDrawerItem(
                       icon: Icons.scale_rounded,

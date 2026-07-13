@@ -32,7 +32,8 @@
             <tr class="border-b">
                 <th class="text-left py-3">No</th>
                 <th class="text-left py-3">Kecamatan</th>
-                <th class="text-right py-3">Luas Lahan (Ha)</th>
+                <th class="text-right py-3">Total Lahan (Ha)</th>
+                <th class="text-right py-3">Total Luas Tanam (Ha)</th>
             </tr>
         </thead>
 
@@ -40,18 +41,22 @@
 
             @forelse($data as $index => $item)
 
-                <tr class="border-b hover:bg-slate-50">
+                <tr class="border-b hover:bg-slate-50 transition-colors">
 
-                    <td class="py-3">
+                    <td class="py-3 text-slate-500">
                         {{ $index + 1 }}
                     </td>
 
-                    <td class="py-3 font-semibold">
+                    <td class="py-3 font-semibold text-slate-700">
                         {{ $item['nama_kecamatan'] }}
                     </td>
 
                     <td class="py-3 text-right font-bold text-emerald-700">
                         {{ number_format($item['total_lahan'], 2) }}
+                    </td>
+                    
+                    <td class="py-3 text-right font-bold text-amber-600">
+                        {{ number_format($item['total_luas_tanam'] ?? 0, 2) }}
                     </td>
 
                 </tr>
@@ -59,7 +64,7 @@
             @empty
 
                 <tr class="border-b">
-                    <td colspan="3" class="text-center py-6 text-slate-500">
+                    <td colspan="4" class="text-center py-6 text-slate-500">
                         Belum ada data lahan.
                     </td>
                 </tr>

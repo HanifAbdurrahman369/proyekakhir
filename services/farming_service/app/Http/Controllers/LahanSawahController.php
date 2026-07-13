@@ -264,7 +264,7 @@ class LahanSawahController extends Controller
         if (!in_array((int) ($user->role_id ?? 0), [1, 5], true)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Pengajuan lahan baru hanya dapat dibuat oleh Kelompok Tani.',
+                'message' => 'Pengajuan lahan baru hanya dapat dibuat oleh Kelompok Tani atau Brigade Pangan.',
             ], 403);
         }
 
@@ -523,7 +523,7 @@ class LahanSawahController extends Controller
         if (!in_array((int) ($user->role_id ?? 0), [1, 5], true)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Perbaikan pengajuan lahan hanya dapat dilakukan oleh Kelompok Tani.',
+                'message' => 'Perbaikan pengajuan lahan hanya dapat dilakukan oleh Kelompok Tani atau Brigade Pangan.',
             ], 403);
         }
 
@@ -631,7 +631,7 @@ class LahanSawahController extends Controller
     {
         $user = $request->attributes->get('auth');
         if (!in_array((int) ($user->role_id ?? 0), [1, 5], true)) {
-            return response()->json(['success' => false, 'message' => 'Penghapusan lahan hanya tersedia untuk Kelompok Tani.'], 403);
+            return response()->json(['success' => false, 'message' => 'Penghapusan lahan hanya tersedia untuk Kelompok Tani atau Brigade Pangan.'], 403);
         }
 
         $data = LahanSawah::where('id', $id)->where('pemilik_id', $user->sub)->first();

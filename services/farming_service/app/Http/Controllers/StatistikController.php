@@ -201,7 +201,6 @@ class StatistikController extends Controller
             )
             ->groupBy('kecamatan.nama_kecamatan')
             ->orderByDesc('produksi_pejabat')
-            ->limit(5)
             ->get();
 
         return response()->json([

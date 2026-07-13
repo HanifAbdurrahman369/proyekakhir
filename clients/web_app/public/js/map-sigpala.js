@@ -145,6 +145,10 @@ function sigpalaProductivityBadge(label, key) {
 
 function sigpalaKecamatanDetailHref(props) {
     const identifier = props.kecamatan_id || props.id || props.nama_kecamatan || props.kecamatan || props.label || '';
+    const isPejabat = typeof window.IS_PEJABAT !== 'undefined' && (window.IS_PEJABAT === true || window.IS_PEJABAT === 'true');
+    if (isPejabat) {
+        return `/pejabat/produksi-kecamatan?kecamatan=${encodeURIComponent(String(identifier))}`;
+    }
     return `/statistik/kecamatan/${encodeURIComponent(String(identifier))}`;
 }
 

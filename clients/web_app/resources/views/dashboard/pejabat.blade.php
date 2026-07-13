@@ -19,67 +19,94 @@
     </a>
 </div>
 
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6 items-stretch">
+@php
+$countKecamatan = count($produksiKecamatan ?? []);
+$countKelurahan = count($produksiKelurahanData ?? []);
+$avgProd = ($totalLahan ?? 0) > 0 ? (($produksiPejabat ?? 0) / $totalLahan) : 0;
+@endphp
 
-    {{-- Total Produksi --}}
-    <a href="{{ route('produksi.kecamatan') }}"
-       class="glass-card rounded-[26px] p-5 flex flex-col justify-between min-h-[180px] hover:scale-[1.02] transition">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 items-stretch">
 
+    {{-- Wilayah Terdaftar --}}
+    <div class="glass-card rounded-[26px] p-5 flex flex-col justify-between min-h-[160px] hover:scale-[1.02] transition">
         <div>
-            <p class="text-[11px] text-slate-500 font-bold uppercase tracking-wide">
-                Total Produksi
+            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wide">
+                Cakupan Wilayah
             </p>
-
-            <p class="text-3xl font-extrabold text-[#022c22] mt-3">
-                {{ number_format($produksiPejabat ?? 0, 2) }}
-                <span class="text-sm text-slate-400">Ton</span>
-            </p>
-        </div>
-
-        <div>
-            <div class="w-full bg-slate-100 h-2 mt-4 rounded-full overflow-hidden">
-                <div class="bg-[#047857] h-full w-[75%]"></div>
+            <div class="mt-3 flex items-baseline gap-2">
+                <p class="text-3xl font-extrabold text-[#022c22]">
+                    {{ $countKecamatan }}
+                </p>
+                <span class="text-xs text-slate-400 font-medium">Kecamatan</span>
             </div>
+            <div class="mt-1 flex items-baseline gap-2">
+                <p class="text-lg font-bold text-slate-700">
+                    {{ $countKelurahan }}
+                </p>
+                <span class="text-xs text-slate-400">Kelurahan/Desa</span>
+            </div>
+        </div>
+    </div>
 
-            <p class="text-xs text-emerald-700 mt-3 font-medium">
-                Klik untuk detail per kecamatan →
+    {{-- Rata-rata Produktivitas --}}
+    <div class="glass-card rounded-[26px] p-5 flex flex-col justify-between min-h-[160px] hover:scale-[1.02] transition">
+        <div>
+            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wide">
+                Rata-rata Produktivitas
+            </p>
+            <p class="text-3xl font-extrabold text-[#022c22] mt-3">
+                {{ number_format($avgProd, 2) }}
+                <span class="text-sm text-slate-400">Ton/Ha</span>
             </p>
         </div>
-
-    </a>
+        <div class="w-full bg-slate-100 h-2 mt-4 rounded-full overflow-hidden">
+            <div class="bg-blue-500 h-full w-[85%]"></div>
+        </div>
+    </div>
 
     {{-- Lahan Aktif --}}
-    <a href="{{ route('lahan.kecamatan') }}"
-       class="glass-card rounded-[26px] p-5 flex flex-col justify-between min-h-[180px] hover:scale-[1.02] transition">
-
+    <a href="{{ route('lahan.kecamatan') }}" class="glass-card rounded-[26px] p-5 flex flex-col justify-between min-h-[160px] hover:scale-[1.02] transition">
         <div>
-            <p class="text-[11px] text-slate-500 font-bold uppercase tracking-wide">
-                Lahan Aktif
+            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wide">
+                Lahan Aktif Terverifikasi
             </p>
-
             <p class="text-3xl font-extrabold text-[#022c22] mt-3">
                 {{ number_format($totalLahan ?? 0, 2) }}
                 <span class="text-sm text-slate-400">Ha</span>
             </p>
         </div>
-
         <div>
             <div class="w-full bg-slate-100 h-2 mt-4 rounded-full overflow-hidden">
                 <div class="bg-emerald-500 h-full w-[60%]"></div>
             </div>
+            <p class="text-[10px] text-emerald-700 mt-2 font-medium">Klik untuk luas lahan per kecamatan &rarr;</p>
+        </div>
+    </a>
 
-            <p class="text-xs text-emerald-700 mt-3 font-medium">
-                Klik untuk luas lahan per kecamatan →
+    {{-- Total Produksi --}}
+    <a href="{{ route('produksi.kecamatan') }}" class="glass-card rounded-[26px] p-5 flex flex-col justify-between min-h-[160px] hover:scale-[1.02] transition">
+        <div>
+            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wide">
+                Total Produksi
+            </p>
+            <p class="text-3xl font-extrabold text-[#022c22] mt-3">
+                {{ number_format($produksiPejabat ?? 0, 2) }}
+                <span class="text-sm text-slate-400">Ton</span>
             </p>
         </div>
-
+        <div>
+            <div class="w-full bg-slate-100 h-2 mt-4 rounded-full overflow-hidden">
+                <div class="bg-emerald-500 h-full w-[75%]"></div>
+            </div>
+            <p class="text-[10px] text-emerald-700 mt-2 font-medium">Klik untuk detail per kecamatan &rarr;</p>
+        </div>
     </a>
 
 </div>
 
 @php
 $maxProduksi = 1.0;
-foreach($produksiKecamatan as $item) {
+foreach($topKecamatan as $item) {
     $val = (float)($item['produksi_pejabat'] ?? 0);
     if($val > $maxProduksi) $maxProduksi = $val;
 }
@@ -96,7 +123,7 @@ foreach($produksiKecamatan as $item) {
         </div>
 
         <div class="space-y-4">
-            @forelse($produksiKecamatan as $index => $item)
+            @forelse($topKecamatan as $index => $item)
                 @php
                     $total = (float)($item['produksi_pejabat'] ?? 0);
                     $percent = $maxProduksi > 0 ? ($total / $maxProduksi) * 100 : 0;

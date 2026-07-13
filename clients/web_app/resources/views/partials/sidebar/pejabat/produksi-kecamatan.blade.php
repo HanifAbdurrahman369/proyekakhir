@@ -96,12 +96,13 @@
             <thead class="text-xs text-slate-500 uppercase bg-slate-50 rounded-xl">
                 <tr>
                     <th class="px-6 py-4 rounded-tl-2xl font-bold">No</th>
-                    <th class="px-6 py-4 font-bold">Tahun Basis</th>
-                    <th class="px-6 py-4 font-bold">Nama Petani</th>
-                    <th class="px-6 py-4 font-bold">Kelurahan</th>
+                    <th class="px-6 py-4 font-bold">Tahun</th>
                     <th class="px-6 py-4 text-right font-bold">Luas Tanam (Ha)</th>
-                    <th class="px-6 py-4 text-right font-bold">Hasil Panen (Ton)</th>
-                    <th class="px-6 py-4 text-right rounded-tr-2xl font-bold">Rata-rata (Ton/Ha)</th>
+                    <th class="px-6 py-4 text-right font-bold">Luas Panen (Ha)</th>
+                    <th class="px-6 py-4 text-right font-bold">Produktivitas (Ton/Ha)</th>
+                    <th class="px-6 py-4 text-right font-bold">Produksi (Ton)</th>
+                    <th class="px-6 py-4 font-bold">Status Data</th>
+                    <th class="px-6 py-4 rounded-tr-2xl font-bold">Sumber</th>
                 </tr>
             </thead>
             <tbody id="detail-table-body" class="divide-y divide-slate-100">
@@ -143,6 +144,29 @@
                 loadData(id, e.target.value);
             }
         });
+
+        // Cek URL parameter untuk auto-select kecamatan
+        const urlParams = new URLSearchParams(window.location.search);
+        const kecamatanParam = urlParams.get('kecamatan');
+        
+        if (kecamatanParam) {
+            let found = false;
+            Array.from(kecamatanSelect.options).forEach(opt => {
+                if (opt.value === kecamatanParam || opt.text.toLowerCase() === kecamatanParam.toLowerCase()) {
+                    kecamatanSelect.value = opt.value;
+                    found = true;
+                }
+            });
+            if (found) {
+                loadData(kecamatanSelect.value, 'all');
+            }
+        } else {
+            // Auto select the first kecamatan if available
+            if (kecamatanSelect.options.length > 1) {
+                kecamatanSelect.value = kecamatanSelect.options[1].value;
+                loadData(kecamatanSelect.value, 'all');
+            }
+        }
     });
 
     function loadData(kecamatanId, tahun) {
@@ -150,7 +174,7 @@
         if (tahun && tahun !== 'all') url.searchParams.set('tahun', tahun);
 
         const tbody = document.getElementById('detail-table-body');
-        tbody.innerHTML = '<tr><td colspan="7" class="py-10 text-center text-slate-400">Memuat data...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="py-10 text-center text-slate-400">Memuat data...</td></tr>';
         
         document.getElementById('empty-state').classList.add('hidden');
         document.getElementById('data-container').classList.remove('hidden');
@@ -162,7 +186,7 @@
                 renderData(res.data, kecamatanId, tahun);
             })
             .catch(err => {
-                tbody.innerHTML = `<tr><td colspan="7" class="py-10 text-center text-red-500">Gagal memuat data: ${err.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="py-10 text-center text-red-500">Gagal memuat data: ${err.message}</td></tr>`;
             });
     }
 
@@ -170,9 +194,9 @@
         // Render summary
         const summary = data.summary || {};
         document.getElementById('summary-luas-tanam').textContent = Number(summary.total_luas_tanam_ha || 0).toLocaleString('id-ID', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        document.getElementById('summary-produksi').textContent = Number(summary.total_hasil_panen_ton || 0).toLocaleString('id-ID', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        document.getElementById('summary-avg').textContent = Number(summary.avg_produktivitas || 0).toLocaleString('id-ID', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        document.getElementById('summary-count').textContent = Number(summary.total_record || 0).toLocaleString('id-ID');
+        document.getElementById('summary-produksi').textContent = Number(summary.total_produksi_ton || 0).toLocaleString('id-ID', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('summary-avg').textContent = Number(summary.rata_produktivitas_ton_ha || 0).toLocaleString('id-ID', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('summary-count').textContent = Number(summary.jumlah_tahun || 0).toLocaleString('id-ID');
 
         // Populate years if needed
         const tahunSelect = document.getElementById('tahun-select');
@@ -194,18 +218,23 @@
         const rows = data.rows || [];
         
         if (rows.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="py-10 text-center text-slate-400">Tidak ada data untuk filter yang dipilih.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="py-10 text-center text-slate-400">Tidak ada data untuk filter yang dipilih.</td></tr>';
         } else {
             let html = '';
             rows.forEach((row, i) => {
                 html += `<tr class="border-b border-slate-50 hover:bg-emerald-50/30 transition">
                     <td class="px-6 py-4 font-medium text-slate-500">${i + 1}</td>
-                    <td class="px-6 py-4 font-bold text-slate-700">${row.tahun_lbs || '-'}</td>
-                    <td class="px-6 py-4 text-slate-600">${row.pemilik_lahan || '-'}</td>
-                    <td class="px-6 py-4 text-slate-600">${row.nama_kelurahan || '-'}</td>
-                    <td class="px-6 py-4 text-right font-medium text-slate-700">${Number(row.luas_tanam_hektar || 0).toLocaleString('id-ID', {minimumFractionDigits: 2})}</td>
-                    <td class="px-6 py-4 text-right font-bold text-emerald-600">${Number(row.hasil_panen_ton || 0).toLocaleString('id-ID', {minimumFractionDigits: 2})}</td>
+                    <td class="px-6 py-4 font-bold text-slate-700">${row.tahun || '-'}</td>
+                    <td class="px-6 py-4 text-right font-medium text-slate-700">${Number(row.luas_tanam_ha || 0).toLocaleString('id-ID', {minimumFractionDigits: 2})}</td>
+                    <td class="px-6 py-4 text-right font-medium text-slate-700">${Number(row.luas_panen_ha || 0).toLocaleString('id-ID', {minimumFractionDigits: 2})}</td>
                     <td class="px-6 py-4 text-right font-medium text-slate-600">${Number(row.produktivitas_ton_ha || 0).toLocaleString('id-ID', {minimumFractionDigits: 2})}</td>
+                    <td class="px-6 py-4 text-right font-bold text-emerald-600">${Number(row.produksi_ton || 0).toLocaleString('id-ID', {minimumFractionDigits: 2})}</td>
+                    <td class="px-6 py-4 text-slate-600">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${row.is_sementara ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
+                            ${row.status_data || '-'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-slate-500 text-xs">${row.sumber_data || '-'}</td>
                 </tr>`;
             });
             tbody.innerHTML = html;

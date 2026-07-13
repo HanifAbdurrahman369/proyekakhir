@@ -42,7 +42,7 @@
             background:
                 radial-gradient(circle at top left, rgba(4,120,87,.12), transparent 32%),
                 radial-gradient(circle at bottom right, rgba(4,120,87,.10), transparent 35%),
-                linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 42%, #ffffff 100%);
+                linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
             color: var(--ink);
         }
 
@@ -183,7 +183,6 @@
         .from-\[\#65bd00\],
         .from-\[\#047857\] {
             --tw-gradient-from: var(--brand-green) var(--tw-gradient-from-position) !important;
-            --tw-gradient-to: rgba(4,120,87,0) var(--tw-gradient-to-position) !important;
             --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
         }
 
