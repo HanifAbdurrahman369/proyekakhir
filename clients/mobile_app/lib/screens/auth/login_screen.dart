@@ -61,7 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
               style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
             ),
             content: Text(
-              'Jawaban verifikasi penjumlahan salah. Silakan jawab pertanyaan baru.',
+              'penjumlahan salah',
               style: GoogleFonts.inter(),
             ),
             actions: [
@@ -94,6 +94,13 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       _generateCaptcha();
       if (mounted) {
+        String errorMsg = e.toString().replaceAll('Exception: ', '');
+        if (errorMsg.toLowerCase().contains('email tidak ditemukan') || errorMsg.toLowerCase().contains('tidak ditemukan di sistem')) {
+          errorMsg = 'gmail salah';
+        } else if (errorMsg.toLowerCase().contains('password yang anda masukkan salah') || errorMsg.toLowerCase().contains('password salah') || errorMsg.toLowerCase().contains('salah')) {
+          errorMsg = 'password salah';
+        }
+
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -103,7 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
               style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
             ),
             content: Text(
-              e.toString().replaceAll('Exception: ', ''),
+              errorMsg,
               style: GoogleFonts.inter(),
             ),
             actions: [

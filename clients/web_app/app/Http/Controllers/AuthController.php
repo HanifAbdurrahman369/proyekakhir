@@ -104,7 +104,7 @@ class AuthController extends Controller
 
             return back()
                 ->withErrors([
-                    'login' => 'Jawaban verifikasi penjumlahan salah. Silakan jawab pertanyaan baru.'
+                    'math_captcha_answer' => 'penjumlahan salah'
                 ])
                 ->withInput($request->except(['password', 'math_captcha_answer']));
         }
@@ -186,6 +186,13 @@ class AuthController extends Controller
 
         if (isset($responseData['message'])) {
             $errorMsg = $responseData['message'];
+            
+            if (stripos($errorMsg, 'email tidak ditemukan') !== false || stripos($errorMsg, 'tidak ditemukan di sistem') !== false) {
+                return back()->withErrors(['email' => 'gmail salah'])->withInput($request->except(['password', 'math_captcha_answer']));
+            }
+            if (stripos($errorMsg, 'password yang anda masukkan salah') !== false || stripos($errorMsg, 'password salah') !== false || stripos($errorMsg, 'salah') !== false) {
+                return back()->withErrors(['password' => 'password salah'])->withInput($request->except(['password', 'math_captcha_answer']));
+            }
         } elseif ($response->serverError()) {
             $errorMsg = 'Terjadi kesalahan fatal di Auth Service.';
         }
