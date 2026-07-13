@@ -581,14 +581,14 @@
                                             <p class="text-xs text-slate-500">Varietas: {{ $ambil($panen, ['varietas','bibit.varietas']) }}</p>
                                             <p class="text-xs text-slate-500">Masa tanam: {{ $ambil($panen, ['masa_tanam_hari','bibit.masa_tanam_hari'], '-') }} hari</p>
                                         </td>
-                                        <td class="px-5 py-4 text-slate-700">{{ \Carbon\Carbon::parse($ambil($panen, ['tanggal_tanam']))->format('d M Y') }}</td>
+                                        <td class="px-5 py-4 text-slate-700">{{ $ambil($panen, ['tanggal_tanam']) !== '-' ? \Carbon\Carbon::parse($ambil($panen, ['tanggal_tanam']))->format('d M Y') : '-' }}</td>
                                         <td class="px-5 py-4 text-slate-700 whitespace-nowrap">
-                                            {{ $ambil($panen, ['estimasi_tanggal_panen']) ? \Carbon\Carbon::parse($ambil($panen, ['estimasi_tanggal_panen']))->format('d M Y') : '-' }}
-                                            @if($ambil($panen, ['estimasi_tanggal_panen_akhir']))
+                                            {{ $ambil($panen, ['estimasi_tanggal_panen']) && $ambil($panen, ['estimasi_tanggal_panen']) !== '-' ? \Carbon\Carbon::parse($ambil($panen, ['estimasi_tanggal_panen']))->format('d M Y') : '-' }}
+                                            @if($ambil($panen, ['estimasi_tanggal_panen_akhir']) && $ambil($panen, ['estimasi_tanggal_panen_akhir']) !== '-')
                                                 <br>s/d<br>{{ \Carbon\Carbon::parse($ambil($panen, ['estimasi_tanggal_panen_akhir']))->format('d M Y') }}
                                             @endif
                                         </td>
-                                        <td class="px-5 py-4 text-slate-700">{{ \Carbon\Carbon::parse($ambil($panen, ['tanggal_panen']))->format('d M Y') }}</td>
+                                        <td class="px-5 py-4 text-slate-700">{{ $ambil($panen, ['tanggal_panen']) !== '-' ? \Carbon\Carbon::parse($ambil($panen, ['tanggal_panen']))->format('d M Y') : '-' }}</td>
                                         <td class="px-5 py-4"><p class="font-extrabold text-primary-700">{{ $angka($ambil($panen, ['hasil_panen'], 0)) }} Ton</p></td>
                                         <td class="px-5 py-4">
                                             <div class="flex flex-col gap-1">
