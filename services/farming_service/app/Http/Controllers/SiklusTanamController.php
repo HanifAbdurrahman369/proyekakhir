@@ -469,7 +469,8 @@ class SiklusTanamController extends Controller
             if ($panen->status_verifikasi === 'DITERIMA') {
                 return ['status' => 409, 'body' => ['success' => false, 'message' => 'Laporan panen sudah pernah disetujui.']];
             }
-            if (!$this->petugasBolehVerifikasiLahan($petugasId, (int) $panen->lahan_id)) {
+            $tanam = SiklusTanam::where('id', $panen->tanam_padi_id)->first();
+            if (!$tanam || !$this->petugasBolehVerifikasiLahan($petugasId, (int) $tanam->lahan_id)) {
                 return ['status' => 403, 'body' => ['success' => false, 'message' => 'Laporan panen berada di luar wilayah kerja petugas.']];
             }
 
@@ -519,7 +520,8 @@ class SiklusTanamController extends Controller
         if ($panen->status_verifikasi === 'DITERIMA') {
             return response()->json(['success' => false, 'message' => 'Hasil panen yang sudah diterima tidak boleh ditolak ulang.'], 400);
         }
-        if (!$this->petugasBolehVerifikasiLahan($petugasId, (int) $panen->lahan_id)) {
+        $tanam = SiklusTanam::where('id', $panen->tanam_padi_id)->first();
+        if (!$tanam || !$this->petugasBolehVerifikasiLahan($petugasId, (int) $tanam->lahan_id)) {
             return response()->json(['success' => false, 'message' => 'Laporan panen berada di luar wilayah kerja petugas.'], 403);
         }
 

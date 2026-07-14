@@ -36,8 +36,7 @@ class RiwayatPanenController extends Controller
                 'ls.luas_lahan_ha',
                 'jb.nama_bibit',
                 'jb.varietas'
-            ])
-            ->whereDate('rp.tanggal_panen', '<=', now()->toDateString());
+            ]);
 
         if (in_array($roleId, [1, 5], true)) {
             $query->where('rp.pemilik_id', $userId);
