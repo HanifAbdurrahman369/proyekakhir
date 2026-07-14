@@ -38,9 +38,7 @@ class MobileAppDownloadController extends Controller
         $apkPath = storage_path('app/SiPetani.apk');
 
         if (!is_file($apkPath)) {
-            return redirect()
-                ->back()
-                ->with('error', 'File aplikasi mobile belum tersedia. Silakan hubungi admin.');
+            abort(404, 'File aplikasi mobile (SiPetani.apk) belum tersedia di server produksi. Silakan upload file apk ke folder storage/app/ di server.');
         }
 
         return response()->download($apkPath, 'SiPetani.apk', [
