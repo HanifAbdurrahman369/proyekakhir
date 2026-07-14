@@ -171,12 +171,23 @@ class PetugasLahanTermonitorContent extends StatelessWidget {
                     )
                     .length;
 
+                final latestSensor = sensors.firstWhere(
+                  (sensor) => _value(sensor, ['device_id']) == deviceId,
+                  orElse: () => <String, dynamic>{},
+                );
+                
+                final trailingText = latestSensor.isEmpty
+                    ? '$logsCount logs'
+                    : 'pH: ${_value(latestSensor, ['ph_tanah'])} | '
+                      'NPK: ${_value(latestSensor, ['n', 'n_level'])}-${_value(latestSensor, ['p', 'p_level'])}-${_value(latestSensor, ['k', 'k_level'])}\n'
+                      'Air: ${_value(latestSensor, ['water_level'])}';
+
                 return _dataRow(
                   icon: Icons.landscape_rounded,
                   title: _value(land, ['nama_lahan', 'name'], fallback: '-'),
                   subtitle: _value(land, ['alamat', 'address'], fallback: '-'),
                   trailingTitle: deviceId.isEmpty ? '-' : deviceId,
-                  trailingSubtitle: '$logsCount logs',
+                  trailingSubtitle: trailingText,
                 );
               }).toList(),
             ),
@@ -207,7 +218,10 @@ class PetugasLahanTermonitorContent extends StatelessWidget {
                     );
                 final sensorText = latestSensor == null
                     ? 'Belum ada sensor'
-                    : 'pH ${_value(latestSensor, ['ph_tanah'])} - ${_formatDate(_value(latestSensor, ['waktu_rekam']))}';
+                    : 'pH: ${_value(latestSensor, ['ph_tanah'])} | '
+                      'NPK: ${_value(latestSensor, ['n', 'n_level'])}-${_value(latestSensor, ['p', 'p_level'])}-${_value(latestSensor, ['k', 'k_level'])} | '
+                      'Air: ${_value(latestSensor, ['water_level'])}\n'
+                      '${_formatDate(_value(latestSensor, ['waktu_rekam']))}';
 
                 return _dataRow(
                   icon: Icons.sensors_rounded,
@@ -329,7 +343,7 @@ class PetugasLahanTermonitorContent extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           SizedBox(
-            width: 88,
+            width: 110,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -351,7 +365,7 @@ class PetugasLahanTermonitorContent extends StatelessWidget {
                     fontSize: 10,
                     color: const Color(0xFF94A3B8),
                   ),
-                  maxLines: 2,
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],

@@ -22,6 +22,7 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
   final _latController = TextEditingController();
   final _lngController = TextEditingController();
   final _polygonGeoJsonController = TextEditingController();
+  final _pemilikController = TextEditingController();
 
   String _source = 'baru';
   Map<String, dynamic>? _selectedLahan;
@@ -57,6 +58,7 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
     _latController.dispose();
     _lngController.dispose();
     _polygonGeoJsonController.dispose();
+    _pemilikController.dispose();
     super.dispose();
   }
 
@@ -811,6 +813,12 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
                 required: true,
               ),
               const SizedBox(height: 12),
+              _textField(
+                _pemilikController,
+                'Pemilik Lahan',
+                enabled: false,
+              ),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
@@ -1122,6 +1130,7 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
     setState(() {
       _selectedLahan = row;
       _namaController.text = _text(row['nama_lahan'], '');
+      _pemilikController.text = _text(row['nama_petani'] ?? row['nama_pemilik'], 'Tidak diketahui');
       _alamatController.text = _text(row['alamat_detail'], '');
       _luasController.text = _formatNumber(
         row['luas_lahan_hektar'],

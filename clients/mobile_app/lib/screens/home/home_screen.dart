@@ -19,6 +19,7 @@ import 'dashboards/produksi_daerah_screen.dart';
 import 'petugas_lahan_termonitor_screen.dart';
 import 'petugas_spasial_screen.dart';
 import 'petugas_verifikasi_screen.dart';
+import 'petugas_komunitas_screen.dart';
 import 'edit_profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -581,6 +582,19 @@ class _HomeScreenState extends State<HomeScreen> {
                           MaterialPageRoute(
                             builder: (context) =>
                                 const PetugasVerifikasiScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildDrawerItem(
+                      icon: Icons.groups_rounded,
+                      label: 'Manajemen Komunitas',
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PetugasKomunitasScreen(),
                           ),
                         );
                       },
