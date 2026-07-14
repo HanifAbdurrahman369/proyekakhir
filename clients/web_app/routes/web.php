@@ -41,6 +41,7 @@ Route::post('/register', [AuthController::class, 'register']);
 
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/download-mobile-app', [MobileAppDownloadController::class, 'download'])->name('mobile-app.download');
+Route::get('/download-mobile-app/file', [MobileAppDownloadController::class, 'downloadFile'])->name('mobile-app.file');
 
 Route::get('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.request');
 Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');

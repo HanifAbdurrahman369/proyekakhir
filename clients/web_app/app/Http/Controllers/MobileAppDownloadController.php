@@ -22,6 +22,19 @@ class MobileAppDownloadController extends Controller
             abort(403, 'Unduhan aplikasi mobile hanya tersedia untuk Kelompok Tani, Brigade Pangan, dan Petugas.');
         }
 
+        return view('mobile-app.download');
+    }
+
+    public function downloadFile(Request $request)
+    {
+        if (!session('token') || !session('role_id')) {
+            return redirect()->route('login');
+        }
+
+        if (!in_array((int) session('role_id'), self::ALLOWED_ROLES, true)) {
+            abort(403, 'Unduhan aplikasi mobile hanya tersedia untuk Kelompok Tani, Brigade Pangan, dan Petugas.');
+        }
+
         $apkPath = storage_path('app/SiPetani.apk');
 
         if (!is_file($apkPath)) {
