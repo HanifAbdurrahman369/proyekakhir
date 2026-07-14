@@ -307,8 +307,6 @@ class LahanSawahController extends Controller
             'produktivitas_ton_ha' => 0,
             'latitude' => null,
             'longitude' => null,
-            'butuh_bantuan_pemetaan' => false,
-            'foto_lahan' => $request->foto_lahan ?? null,
         ];
 
         if (Schema::hasColumn('lahan_sawah', 'assigned_petugas_id')) {
@@ -411,7 +409,6 @@ class LahanSawahController extends Controller
             'luas_tanam_hektar',
             'latitude',
             'longitude',
-            'foto_lahan',
             'alamat_detail',
         ];
 
@@ -578,7 +575,6 @@ class LahanSawahController extends Controller
             'luas_lahan_hektar' => $request->luas_lahan_hektar,
             'status_verifikasi' => 'PENDING',
             'alasan_penolakan' => null,
-            'butuh_bantuan_pemetaan' => false,
         ];
 
         if (Schema::hasColumn('lahan_sawah', 'assigned_petugas_id')) {

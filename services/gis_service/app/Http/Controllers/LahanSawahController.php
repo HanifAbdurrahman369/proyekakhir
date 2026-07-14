@@ -207,7 +207,6 @@ class LahanSawahController extends Controller
             'alamat_detail' => 'nullable|string|max:500',
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
-            'foto_lahan' => 'nullable|string|max:150',
             'polygon_geojson' => 'required|string',
             'spasial_updated_by' => 'nullable|integer',
         ]);
@@ -244,7 +243,6 @@ class LahanSawahController extends Controller
             'koordinat_tengah' => $lat . ',' . $lng,
             'latitude' => $lat,
             'longitude' => $lng,
-            'foto_lahan' => $request->input('foto_lahan'),
         ];
 
         if (Schema::hasColumn('lahan_sawah', 'polygon_geojson')) {
@@ -363,7 +361,6 @@ class LahanSawahController extends Controller
             "$table.koordinat_tengah",
             "$table.latitude",
             "$table.longitude",
-            $table === 'lahan_sawah' ? "$table.foto_lahan" : DB::raw("NULL as foto_lahan"),
             "$table.status_verifikasi",
             $table === 'lahan_huma' ? "$table.nama_pemilik as nama_petani" : 'pemilik.nama_lengkap as nama_petani',
             'pemilik.email as email_petani',
