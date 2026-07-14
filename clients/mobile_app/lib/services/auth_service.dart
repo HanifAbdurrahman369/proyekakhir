@@ -9,11 +9,11 @@ class AuthService {
   AuthService(this._apiClient);
 
   /// Mengirim request login ke backend
-  Future<Map<String, dynamic>> login(String email, String password) async {
+  Future<Map<String, dynamic>> login(String loginId, String password) async {
     try {
       final response = await _apiClient.dio.post(
         ApiEndpoints.login,
-        data: {'email': email, 'password': password},
+        data: {'login_id': loginId, 'password': password},
       );
 
       return response.data as Map<String, dynamic>;
@@ -27,7 +27,7 @@ class AuthService {
 
   /// Mengirim request registrasi baru (sebagai petani) ke backend
   Future<Map<String, dynamic>> register({
-    required String namaLengkap,
+    required String nik,
     required String email,
     required String password,
     required String passwordConfirmation,
@@ -37,7 +37,7 @@ class AuthService {
       final response = await _apiClient.dio.post(
         ApiEndpoints.register,
         data: {
-          'nama_lengkap': namaLengkap,
+          'nik': nik,
           'email': email,
           'password': password,
           'password_confirmation': passwordConfirmation,

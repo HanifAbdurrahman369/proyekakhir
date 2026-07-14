@@ -90,27 +90,29 @@ class UserController extends Controller
             */
 
             $validated = $request->validate([
-                'nama_lengkap' => 'required|string|max:255',
+                'nik' => 'required|string|size:16',
                 'email' => 'required|email|unique:users,email',
                 'password' => 'required|string|min:6|confirmed',
                 'jenis_kelompok' => 'required|in:kelompok_tani,brigade_pangan',
             ], [
+                'nik.required' => 'NIK wajib diisi.',
+                'nik.size' => 'NIK harus berjumlah 16 digit.',
                 'jenis_kelompok.required' => 'Silakan pilih Kelompok Tani atau Brigade Pangan.',
                 'jenis_kelompok.in' => 'Pilihan keanggotaan tidak valid.',
             ]);
 
             $komunitas = DB::table('komunitas')
-                ->whereRaw('LOWER(TRIM(nama)) = ?', [mb_strtolower(trim($validated['nama_lengkap']))])
+                ->where('nik', $validated['nik'])
                 ->where('jenis_komunitas', $validated['jenis_kelompok'])
                 ->where('status_keanggotaan', 'AKTIF')
                 ->first();
 
             if (!$komunitas) {
                 return response()->json([
-                    'message' => 'Mohon maaf, data Anda belum terdaftar pada database Kelompok Tani atau Brigade Pangan. Silakan hubungi petugas untuk memastikan pendataan keanggotaan terlebih dahulu.',
+                    'message' => 'Mohon maaf, NIK Anda belum terdaftar pada database Kelompok Tani atau Brigade Pangan aktif. Silakan hubungi petugas untuk memastikan pendataan keanggotaan terlebih dahulu.',
                     'errors' => [
-                        'nama_lengkap' => [
-                            'Data petani tidak ditemukan pada kategori keanggotaan yang dipilih.'
+                        'nik' => [
+                            'NIK tidak ditemukan pada kategori keanggotaan yang dipilih atau status tidak aktif.'
                         ],
                     ],
                 ], 422);
@@ -141,7 +143,8 @@ class UserController extends Controller
             $user = User::create([
                 'role_id' => $role->id,
                 'komunitas_id' => $komunitas->id,
-                'nama_lengkap' => $validated['nama_lengkap'],
+                'nik' => $validated['nik'],
+                'nama_lengkap' => $komunitas->nama,
                 'email' => $validated['email'],
                 'password' => $validated['password'],
                 'no_hp' => $komunitas->nomor_hp ?? null,
@@ -151,10 +154,12 @@ class UserController extends Controller
             return response()->json([
                 'message' => 'Registrasi berhasil sebagai ' . str_replace('_', ' ', $validated['jenis_kelompok']),
                 'user' => [
-                    'id' => $user->id,
+                    'id' => (int) $user->id,
                     'nama_lengkap' => $user->nama_lengkap,
                     'email' => $user->email,
-                    'role_id' => (int) $role->id,
+                    'nik' => $user->nik,
+                    'nip' => $user->nip,
+                    'role_id' => $user->role_id !== null ? (int) $user->role_id : null,
                     'role' => $validated['jenis_kelompok'],
                     'no_hp' => $user->no_hp,
                     'alamat' => $user->alamat,
@@ -331,6 +336,7 @@ public function resetPassword(Request $request)
             'no_hp' => ['nullable', 'string', 'max:20'],
             'alamat' => ['nullable', 'string'],
             'nik' => ['nullable', 'string', 'max:20'],
+            'nip' => ['nullable', 'string', 'max:20'],
             'wilayah_kecamatan_id' => ['nullable', 'integer', 'exists:kecamatan,id'],
             'wilayah_kelurahan_ids' => ['nullable', 'array'],
             'wilayah_kelurahan_ids.*' => ['integer', 'exists:kelurahan,id'],
@@ -356,6 +362,8 @@ public function resetPassword(Request $request)
             'nama_lengkap' => $validated['nama_lengkap'],
             'email' => $validated['email'],
             'role_id' => $roleId,
+            'nik' => $validated['nik'] ?? null,
+            'nip' => $validated['nip'] ?? null,
             'no_hp' => $validated['no_hp'] ?? null,
             'alamat' => $validated['alamat'] ?? null,
         ];
@@ -384,6 +392,7 @@ public function resetPassword(Request $request)
             'nama' => $validated['nama_lengkap'],
             'nama_komunitas' => $namaKomunitas,
             'nik' => $validated['nik'] ?? null,
+            'nip' => $validated['nip'] ?? null,
             'nomor_hp' => $validated['no_hp'] ?? null,
             'alamat' => $validated['alamat'] ?? null,
             'wilayah_kecamatan_id' => $validated['wilayah_kecamatan_id'] ?? null,
@@ -437,9 +446,10 @@ public function resetPassword(Request $request)
             'komunitas_jenis' => $komunitas->jenis_komunitas ?? null,
             'nama_lengkap' => $user->nama_lengkap,
             'email' => $user->email,
+            'nik' => $user->nik ?? $komunitas->nik ?? null,
+            'nip' => $user->nip ?? $komunitas->nip ?? null,
             'no_hp' => $user->no_hp ?? null,
             'alamat' => $user->alamat ?? null,
-            'nik' => $komunitas->nik ?? null,
             'wilayah_kecamatan_id' => $komunitas->wilayah_kecamatan_id ?? null,
             'wilayah_kecamatan_nama' => ($komunitas && $komunitas->wilayah_kecamatan_id)
                 ? DB::table('kecamatan')->where('id', $komunitas->wilayah_kecamatan_id)->value('nama_kecamatan')

@@ -15,6 +15,8 @@ class User extends Authenticatable
      * Atribut yang dapat diisi secara massal (Mass Assignment).
      */
     protected $fillable = [
+        'nik',
+        'nip',
         'role_id',
         'komunitas_id',
         'nama_lengkap',

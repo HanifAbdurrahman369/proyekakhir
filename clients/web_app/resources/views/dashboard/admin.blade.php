@@ -454,9 +454,15 @@
                                 <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Lengkap <span class="text-red-500">*</span></label>
                                 <input type="text" name="nama_lengkap" required class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all outline-none shadow-sm">
                             </div>
-                            <div>
-                                <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">NIK / ID Pegawai</label>
-                                <input type="text" name="nik" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all outline-none shadow-sm">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">NIK</label>
+                                    <input type="text" name="nik" placeholder="16 Digit NIK" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all outline-none shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">NIP</label>
+                                    <input type="text" name="nip" placeholder="18 Digit NIP" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all outline-none shadow-sm">
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Alamat Email Aktif <span class="text-red-500">*</span></label>
@@ -602,9 +608,15 @@
                                 <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Lengkap <span class="text-red-500">*</span></label>
                                 <input type="text" id="edit-nama" name="nama_lengkap" required class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all outline-none shadow-sm">
                             </div>
-                            <div>
-                                <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">NIK / ID Pegawai</label>
-                                <input type="text" id="edit-nik" name="nik" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all outline-none shadow-sm">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">NIK</label>
+                                    <input type="text" id="edit-nik" name="nik" placeholder="16 Digit NIK" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all outline-none shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">NIP</label>
+                                    <input type="text" id="edit-nip" name="nip" placeholder="18 Digit NIP" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:bg-white focus:ring-2 focus:ring-[#047857]/30 focus:border-[#047857] transition-all outline-none shadow-sm">
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Alamat Email Aktif <span class="text-red-500">*</span></label>
@@ -925,9 +937,15 @@
                                 <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Komunitas <span class="text-red-500">*</span></label>
                                 <input type="text" name="nama_komunitas" required placeholder="Contoh: Makmur Jaya" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-[#047857]/30 outline-none shadow-sm">
                             </div>
-                            <div>
-                                <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">NIK Ketua / PIC</label>
-                                <input type="text" name="nik" placeholder="Opsional" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-[#047857]/30 outline-none shadow-sm">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">NIK Ketua / PIC</label>
+                                    <input type="text" name="nik" placeholder="Opsional (16 Digit NIK)" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-[#047857]/30 outline-none shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">NIP Pegawai</label>
+                                    <input type="text" name="nip" placeholder="Opsional (18 Digit NIP)" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-[#047857]/30 outline-none shadow-sm">
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Ketua / PIC <span class="text-red-500">*</span></label>
@@ -1035,9 +1053,15 @@
                                 <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Komunitas <span class="text-red-500">*</span></label>
                                 <input type="text" id="kom_edit_nama_komunitas" name="nama_komunitas" required class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-[#047857]/30 outline-none shadow-sm">
                             </div>
-                            <div>
-                                <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">NIK Ketua / PIC</label>
-                                <input type="text" id="kom_edit_nik" name="nik" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-[#047857]/30 outline-none shadow-sm">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">NIK Ketua / PIC</label>
+                                    <input type="text" id="kom_edit_nik" name="nik" placeholder="16 Digit NIK" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-[#047857]/30 outline-none shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">NIP Pegawai</label>
+                                    <input type="text" id="kom_edit_nip" name="nip" placeholder="18 Digit NIP" class="w-full bg-white border border-slate-200 rounded-[12px] text-sm px-4 py-3 focus:ring-2 focus:ring-[#047857]/30 outline-none shadow-sm">
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Ketua / PIC <span class="text-red-500">*</span></label>
@@ -1275,6 +1299,7 @@
             document.getElementById('edit-hp').value = user.no_hp || '';
             document.getElementById('edit-alamat').value = user.alamat || '';
             document.getElementById('edit-nik').value = user.nik || '';
+            document.getElementById('edit-nip').value = user.nip || '';
             document.getElementById('edit-password').value = '';
             document.getElementById('edit-password-confirmation').value = '';
             
@@ -1329,6 +1354,8 @@
         document.getElementById('kom_edit_jenis').value = kom.jenis_komunitas || '';
         document.getElementById('kom_edit_nama_komunitas').value = kom.nama_komunitas || '';
         document.getElementById('kom_edit_nama').value = kom.nama || '';
+        document.getElementById('kom_edit_nik').value = kom.nik || '';
+        document.getElementById('kom_edit_nip').value = kom.nip || '';
         document.getElementById('kom_edit_hp').value = kom.nomor_hp || '';
         document.getElementById('kom_edit_kecamatan').value = kom.wilayah_kecamatan_id || '';
         document.getElementById('kom_edit_alamat').value = kom.alamat || '';

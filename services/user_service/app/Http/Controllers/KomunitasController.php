@@ -38,6 +38,7 @@ class KomunitasController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'nik' => 'nullable|string|max:20|unique:komunitas,nik',
+            'nip' => 'nullable|string|max:20|unique:komunitas,nip',
             'jenis_komunitas' => 'required|string|max:30|in:kelompok_tani,brigade_pangan,BPP',
             'nama' => 'required|string|max:150',
             'nama_komunitas' => 'nullable|string|max:150',
@@ -83,6 +84,7 @@ class KomunitasController extends Controller
 
         $validator = Validator::make($request->all(), [
             'nik' => 'nullable|string|max:20|unique:komunitas,nik,' . $id,
+            'nip' => 'nullable|string|max:20|unique:komunitas,nip,' . $id,
             'jenis_komunitas' => 'sometimes|string|max:30|in:kelompok_tani,brigade_pangan,BPP',
             'nama' => 'sometimes|string|max:150',
             'nama_komunitas' => 'nullable|string|max:150',

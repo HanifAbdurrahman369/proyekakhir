@@ -33,6 +33,12 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
   int? _tipeLahanId;
   String _tahunLbs = '2024';
 
+  final String _osmUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+  final String _satelliteUrl =
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+  final String _topoUrl = 'https://a.tile.opentopomap.org/{z}/{x}/{y}.png';
+  String _selectedBaseMap = '🗺️ Peta Standar';
+
   static const LatLng _batolaCenter = LatLng(-3.120, 114.600);
 
   @override
@@ -569,7 +575,11 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
         ),
         children: [
           TileLayer(
-            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            urlTemplate: _selectedBaseMap == '🛰️ Citra Satelit'
+                ? _satelliteUrl
+                : _selectedBaseMap == '⛰️ Peta Topografi'
+                    ? _topoUrl
+                    : _osmUrl,
             userAgentPackageName: 'com.sigpala.batola.mobile_app',
           ),
           PolygonLayer(polygons: kecamatanPolygons),
@@ -581,7 +591,8 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
           RichAttributionWidget(
             attributions: [
               TextSourceAttribution(
-                'OpenStreetMap',
+                _selectedBaseMap == '🛰️ Citra Satelit' ? 'Esri, Maxar, Earthstar Geographics' : 
+                _selectedBaseMap == '⛰️ Peta Topografi' ? 'OpenTopoMap' : 'OpenStreetMap',
                 textStyle: GoogleFonts.inter(fontSize: 10),
               ),
             ],
@@ -603,6 +614,20 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Pilihan Base Map
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _baseMapTab('🗺️ Peta Standar'),
+                const SizedBox(width: 8),
+                _baseMapTab('🛰️ Citra Satelit'),
+                const SizedBox(width: 8),
+                _baseMapTab('⛰️ Peta Topografi'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
           Text(
             enabled
                 ? (_drawPolygonMode
@@ -652,6 +677,29 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _baseMapTab(String title) {
+    final isSelected = _selectedBaseMap == title;
+    return InkWell(
+      onTap: () => setState(() => _selectedBaseMap = title),
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF3E7D00) : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          title,
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            color: isSelected ? Colors.white : const Color(0xFF64748B),
+          ),
+        ),
       ),
     );
   }

@@ -15,7 +15,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _loginIdController = TextEditingController();
   final _passwordController = TextEditingController();
   final _captchaController = TextEditingController();
   bool _obscurePassword = true;
@@ -39,7 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _loginIdController.dispose();
     _passwordController.dispose();
     _captchaController.dispose();
     super.dispose();
@@ -79,7 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     try {
       await authProvider.login(
-        _emailController.text.trim(),
+        _loginIdController.text.trim(),
         _passwordController.text,
       );
       if (mounted) {
@@ -131,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
   // Menampilkan Sheet Dialog untuk pendaftaran akun Petani Baru (Buat Akun Baru)
   void _showRegisterDialog() {
     final registerFormKey = GlobalKey<FormState>();
-    final nameController = TextEditingController();
+    final nikController = TextEditingController();
     final regEmailController = TextEditingController();
     final regPasswordController = TextEditingController();
     final regConfirmPasswordController = TextEditingController();
@@ -190,9 +190,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 24),
                         
-                        // Nama Lengkap
+                        // NIK
                         Text(
-                          'Nama Lengkap',
+                          'Nomor Induk Kependudukan (NIK)',
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -201,13 +201,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
-                          controller: nameController,
+                          controller: nikController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 16,
                           style: GoogleFonts.inter(fontSize: 14),
                           decoration: _inputDecoration(
-                            hint: 'Nama lengkap Anda',
-                            icon: Icons.person_outline_rounded,
-                          ),
-                          validator: (v) => v == null || v.trim().isEmpty ? 'Nama lengkap wajib diisi' : null,
+                            hint: 'Masukkan 16 digit NIK Anda',
+                            icon: Icons.badge_outlined,
+                          ).copyWith(counterText: ''),
+                          validator: (v) => v == null || v.trim().length != 16 ? 'NIK wajib 16 digit' : null,
                         ),
                         const SizedBox(height: 16),
 
@@ -348,7 +350,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                           if (!registerFormKey.currentState!.validate()) return;
                                           try {
                                             await auth.register(
-                                              namaLengkap: nameController.text.trim(),
+                                              nik: nikController.text.trim(),
                                               email: regEmailController.text.trim(),
                                               password: regPasswordController.text,
                                               passwordConfirmation: regConfirmPasswordController.text,
@@ -618,7 +620,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             // Email Label
                             Text(
-                              'Email',
+                              'NIK / NIP',
                               style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
@@ -626,21 +628,18 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            // Email Input
+                            // Login ID Input
                             TextFormField(
-                              controller: _emailController,
-                              keyboardType: TextInputType.emailAddress,
+                              controller: _loginIdController,
+                              keyboardType: TextInputType.number,
                               style: GoogleFonts.inter(fontSize: 14),
                               decoration: _inputDecoration(
-                                hint: 'nama@email.com',
-                                icon: Icons.mail_outline_rounded,
+                                hint: 'Masukkan 16 digit NIK atau 18 digit NIP',
+                                icon: Icons.badge_outlined,
                               ),
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
-                                  return 'Email tidak boleh kosong';
-                                }
-                                if (!value.contains('@')) {
-                                  return 'Format email tidak valid';
+                                  return 'NIK / NIP tidak boleh kosong';
                                 }
                                 return null;
                               },

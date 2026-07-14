@@ -10,6 +10,7 @@ class Kelompok extends Model
 
     protected $fillable = [
         'nik',
+        'nip',
         'jenis_komunitas',
         'nama',
         'nama_komunitas',

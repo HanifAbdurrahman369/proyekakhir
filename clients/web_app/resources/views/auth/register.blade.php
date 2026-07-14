@@ -34,12 +34,15 @@
     @csrf
 
     <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-2">Nama Lengkap</label>
+        <label class="block text-sm font-semibold text-slate-700 mb-2">Nomor Induk Kependudukan (NIK)</label>
         <input type="text"
-               name="nama_lengkap"
-               value="{{ old('nama_lengkap') }}"
-               placeholder="Nama lengkap Anda"
-               class="auth-input w-full px-4 py-3.5 border border-slate-200 rounded-2xl text-sm bg-white outline-none transition placeholder-slate-300 @error('nama_lengkap') border-red-400 @enderror"
+               name="nik"
+               value="{{ old('nik') }}"
+               placeholder="Masukkan 16 digit NIK Anda"
+               maxlength="16"
+               pattern="\d{16}"
+               title="NIK harus berjumlah 16 digit angka"
+               class="auth-input w-full px-4 py-3.5 border border-slate-200 rounded-2xl text-sm bg-white outline-none transition placeholder-slate-300 @error('nik') border-red-400 @enderror"
                required>
     </div>
 
@@ -59,7 +62,7 @@
                 class="auth-input w-full px-4 py-3.5 border border-slate-200 rounded-2xl text-sm bg-white outline-none transition @error('jenis_kelompok') border-red-400 @enderror"
                 required>
             <option value="">Pilih sumber data petani</option>
-            <option value="komunitas_tani" @selected(old('jenis_kelompok') === 'komunitas_tani')>Komunitas Tani</option>
+            <option value="kelompok_tani" @selected(old('jenis_kelompok') === 'kelompok_tani')>Kelompok Tani</option>
             <option value="brigade_pangan" @selected(old('jenis_kelompok') === 'brigade_pangan')>Brigade Pangan</option>
         </select>
     </div>

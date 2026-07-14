@@ -16,7 +16,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $validated = $request->validate([
-            'email' => 'required|email',
+            'login_id' => 'required|string',
             'password' => 'required|string',
         ]);
 
@@ -26,11 +26,13 @@ class AuthController extends Controller
         (LEBIH CEPAT DARIPADA HTTP CALL)
         ===================================
         */
-        $user = User::where('email', $validated['email'])->first();
+        $user = User::where('nik', $validated['login_id'])
+            ->orWhere('nip', $validated['login_id'])
+            ->first();
 
         if (!$user) {
             return response()->json([
-                'message' => 'Email tidak ditemukan di sistem'
+                'message' => 'NIK atau NIP tidak ditemukan di sistem'
             ], 404);
         }
 
@@ -54,6 +56,8 @@ class AuthController extends Controller
             'iss' => 'auth-service',
             'sub' => $user->id,
             'email' => $user->email,
+            'nik' => $user->nik,
+            'nip' => $user->nip,
             'role_id' => $user->role_id,
             'komunitas_id' => $user->komunitas_id ?? null,
             'iat' => time(),
@@ -237,6 +241,8 @@ class AuthController extends Controller
             'id' => (int) $user->id,
             'nama_lengkap' => $user->nama_lengkap,
             'email' => $user->email,
+            'nik' => $user->nik,
+            'nip' => $user->nip,
             'role_id' => $user->role_id !== null ? (int) $user->role_id : null,
             'komunitas_id' => $user->komunitas_id !== null ? (int) $user->komunitas_id : null,
             'no_hp' => $user->no_hp,

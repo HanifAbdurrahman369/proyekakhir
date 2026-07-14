@@ -37,28 +37,28 @@
 <form action="/login" method="POST" class="space-y-5">
     @csrf
 
-    {{-- Email --}}
+    {{-- NIK / NIP --}}
     <div>
         <label class="block text-sm font-semibold text-slate-700 mb-2">
-            Email
+            Nomor Induk Kependudukan / Pegawai (NIK/NIP)
         </label>
 
         <div class="relative">
             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                 </svg>
             </span>
 
-            <input type="email"
-                   name="email"
-                   value="{{ old('email') }}"
-                   placeholder="nama@email.com"
-                   class="auth-input w-full pl-12 pr-4 py-3.5 border border-slate-200 rounded-2xl text-sm bg-white outline-none transition placeholder-slate-300 @error('email') border-red-400 @enderror"
+            <input type="text"
+                   name="login_id"
+                   value="{{ old('login_id') }}"
+                   placeholder="Masukkan NIK atau NIP"
+                   class="auth-input w-full pl-12 pr-4 py-3.5 border border-slate-200 rounded-2xl text-sm bg-white outline-none transition placeholder-slate-300 @error('login_id') border-red-400 @enderror"
                    required>
         </div>
 
-        @error('email')
+        @error('login_id')
             <p class="text-xs text-red-500 mt-2">{{ $message }}</p>
         @enderror
     </div>

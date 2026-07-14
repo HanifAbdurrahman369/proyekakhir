@@ -44,12 +44,12 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// Menangani aksi login pengguna
-  Future<void> login(String email, String password) async {
+  Future<void> login(String loginId, String password) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      final data = await _authService.login(email, password);
+      final data = await _authService.login(loginId, password);
       _token = data['token'] as String;
 
       final prefs = await SharedPreferences.getInstance();
@@ -64,7 +64,7 @@ class AuthProvider extends ChangeNotifier {
 
   /// Menangani aksi registrasi petani baru
   Future<void> register({
-    required String namaLengkap,
+    required String nik,
     required String email,
     required String password,
     required String passwordConfirmation,
@@ -75,7 +75,7 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       await _authService.register(
-        namaLengkap: namaLengkap,
+        nik: nik,
         email: email,
         password: password,
         passwordConfirmation: passwordConfirmation,

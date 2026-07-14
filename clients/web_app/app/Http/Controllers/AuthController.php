@@ -70,12 +70,11 @@ class AuthController extends Controller
         |--------------------------------------------------------------------------
         */
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email',
+            'login_id' => 'required|string',
             'password' => 'required|string',
             'math_captcha_answer' => 'required|numeric',
         ], [
-            'email.required' => 'Email wajib diisi.',
-            'email.email' => 'Format email tidak valid.',
+            'login_id.required' => 'NIK / NIP wajib diisi.',
             'password.required' => 'Password wajib diisi.',
             'math_captcha_answer.required' => 'Jawaban verifikasi penjumlahan wajib diisi.',
             'math_captcha_answer.numeric' => 'Jawaban verifikasi harus berupa angka.',
@@ -122,7 +121,7 @@ class AuthController extends Controller
                 ->withoutVerifying()
                 ->timeout(10)
                 ->post($this->gatewayUrl() . '/api/login', [
-                    'email' => $request->email,
+                    'login_id' => $request->login_id,
                     'password' => $request->password,
                 ]);
 
@@ -187,8 +186,8 @@ class AuthController extends Controller
         if (isset($responseData['message'])) {
             $errorMsg = $responseData['message'];
             
-            if (stripos($errorMsg, 'email tidak ditemukan') !== false || stripos($errorMsg, 'tidak ditemukan di sistem') !== false) {
-                return back()->withErrors(['email' => 'gmail salah'])->withInput($request->except(['password', 'math_captcha_answer']));
+            if (stripos($errorMsg, 'nik atau nip tidak ditemukan') !== false || stripos($errorMsg, 'tidak ditemukan di sistem') !== false) {
+                return back()->withErrors(['login_id' => 'NIK/NIP salah'])->withInput($request->except(['password', 'math_captcha_answer']));
             }
             if (stripos($errorMsg, 'password yang anda masukkan salah') !== false || stripos($errorMsg, 'password salah') !== false || stripos($errorMsg, 'salah') !== false) {
                 return back()->withErrors(['password' => 'password salah'])->withInput($request->except(['password', 'math_captcha_answer']));
@@ -222,13 +221,14 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'nama_lengkap' => 'required|string|max:255',
+            'nik' => 'required|string|size:16',
             'email' => 'required|email',
-            'jenis_kelompok' => 'required|in:komunitas_tani,brigade_pangan',
+            'jenis_kelompok' => 'required|in:kelompok_tani,brigade_pangan',
             'password' => 'required|string|min:6|confirmed',
         ], [
-            'nama_lengkap.required' => 'Nama lengkap wajib diisi.',
-            'email.required' => 'Gmail wajib diisi.',
+            'nik.required' => 'NIK wajib diisi.',
+            'nik.size' => 'NIK harus 16 digit.',
+            'email.required' => 'Email wajib diisi.',
             'email.email' => 'Format Gmail tidak valid.',
             'jenis_kelompok.required' => 'Silakan pilih Kelompok Tani atau Brigade Pangan.',
             'jenis_kelompok.in' => 'Pilihan keanggotaan tidak valid.',
@@ -248,7 +248,7 @@ class AuthController extends Controller
                 ->withoutVerifying()
                 ->timeout(10)
                 ->post($this->gatewayUrl() . '/api/register', [
-                    'nama_lengkap' => $request->nama_lengkap,
+                    'nik' => $request->nik,
                     'email' => $request->email,
                     'jenis_kelompok' => $request->jenis_kelompok,
                     'password' => $request->password,
@@ -267,7 +267,7 @@ class AuthController extends Controller
                 ->withoutVerifying()
                 ->timeout(10)
                 ->post($this->gatewayUrl() . '/api/login', [
-                    'email' => $request->email,
+                    'login_id' => $request->nik,
                     'password' => $request->password,
                 ]);
 
