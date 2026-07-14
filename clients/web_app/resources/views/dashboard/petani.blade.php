@@ -153,7 +153,7 @@
 
 <!-- Modal Detail Lahan -->
 <div id="lahanDetailModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm opacity-0 transition-opacity duration-300">
-    <div class="w-full max-w-lg scale-95 rounded-2xl bg-white shadow-2xl transition-transform duration-300 overflow-hidden m-4 max-h-[90vh] flex flex-col">
+    <div class="w-full max-w-md scale-95 rounded-3xl bg-white shadow-2xl transition-transform duration-300 overflow-hidden m-4 max-h-[90vh] flex flex-col">
         <!-- Header -->
         <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 bg-slate-50">
             <h3 class="text-lg font-bold text-slate-800" id="modalLahanTitle">Detail Lahan</h3>

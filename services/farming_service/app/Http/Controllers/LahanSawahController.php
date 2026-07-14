@@ -56,7 +56,7 @@ class LahanSawahController extends Controller
             $select[] = 'status_spasial';
         }
 
-        $query = LahanSawah::with('pemilik:id,nama_lengkap');
+        $query = LahanSawah::with(['pemilik:id,nama_lengkap', 'kecamatanLahan:id,nama_kecamatan']);
         if (in_array($roleId, [1, 5], true)) {
             $query->where('pemilik_id', $user->sub);
         } else {
@@ -73,6 +73,7 @@ class LahanSawahController extends Controller
             $row->nomor_urut = $offset + $index + 1;
             $row->user_id = $row->pemilik_id;
             $row->pemilik_lahan = $row->pemilik?->nama_lengkap;
+            $row->nama_kecamatan = $row->kecamatanLahan?->nama_kecamatan;
 
             return $row;
         });

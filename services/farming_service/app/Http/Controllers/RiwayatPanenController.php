@@ -22,11 +22,20 @@ class RiwayatPanenController extends Controller
 
         $query = DB::table('panen_padi as rp')
             ->leftJoin('users as pemilik', 'pemilik.id', '=', 'rp.pemilik_id')
-
+            ->leftJoin('tanam_padi as tp', 'tp.id', '=', 'rp.tanam_padi_id')
+            ->leftJoin('lahan_sawah as ls', 'ls.id', '=', 'tp.lahan_id')
+            ->leftJoin('jenis_bibit as jb', 'jb.id', '=', 'tp.bibit_id')
             ->select([
                 'rp.*',
                 'pemilik.nama_lengkap as nama_pemilik',
-
+                'tp.tanggal_tanam',
+                'tp.lahan_id',
+                'tp.bibit_id',
+                'tp.luas_tanam_hektar',
+                'ls.nama_lahan',
+                'ls.luas_lahan_ha',
+                'jb.nama_bibit',
+                'jb.varietas'
             ])
             ->whereDate('rp.tanggal_panen', '<=', now()->toDateString());
 
