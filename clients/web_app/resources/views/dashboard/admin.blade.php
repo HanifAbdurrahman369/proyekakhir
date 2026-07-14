@@ -285,7 +285,6 @@
             </div>
         </div>
     </div>
-    </div>
     
     {{-- A1-B: TABEL DATA KOMUNITAS --}}
     <div id="komunitas-section" class="admin-section hidden">
@@ -1104,6 +1103,8 @@
             </form>
         </div>
     </div>
+</div>
+</div>
 
 
 
@@ -1171,15 +1172,6 @@
             }
             select.appendChild(option);
         });
-    }
-
-    function syncKomunitasFields(scope) {
-        const role = byScope('data-petugas-role', scope);
-        const roleId = role ? String(role.value) : '';
-        const enabled = (roleId === '1' || roleId === '2' || roleId === '5');
-        
-        setKomunitasFieldsEnabled(scope, enabled, roleId);
-        setPetugasFieldsEnabled(scope, roleId === '2');
     }
 
     function syncRoleScopedFields(scope) {
