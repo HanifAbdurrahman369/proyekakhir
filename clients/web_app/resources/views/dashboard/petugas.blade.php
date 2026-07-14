@@ -960,7 +960,7 @@
                                         <span>Data Polygon Geometri (GeoJSON)</span>
                                         <span id="polygonStatusText" class="text-[10px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Menunggu Input</span>
                                     </label>
-                                    <textarea name="polygon_geojson" id="polygon_geojson" rows="3" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-xs font-mono bg-slate-100 text-slate-600 cursor-not-allowed outline-none" required readonly placeholder="Klik tombol Gambar Batas pada peta, lalu klik minimal 3 titik batas lahan."></textarea>
+                                    <textarea name="polygon_geojson" id="polygon_geojson" rows="3" class="w-full rounded-xl border border-slate-300 px-4 py-3 text-xs font-mono bg-white text-slate-700 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all" required placeholder='Bisa didapat dari tombol Gambar Batas, atau paste GeoJSON Anda di sini. Contoh: {"type":"Polygon","coordinates":[[[lng,lat],...]]}'></textarea>
                                 </div>
                             </div>
 
@@ -2046,6 +2046,27 @@
                     clearPolygonLayer();
                     if (polygonInput) polygonInput.value = '';
                     updateMapTools();
+                });
+                
+                polygonInput?.addEventListener('input', function(e) {
+                    if (!selectedLahanId) return;
+                    const val = e.target.value.trim();
+                    if (!val) {
+                        clearPolygonLayer();
+                        polygonPoints = [];
+                        updateLuasDariPeta(false);
+                        updateMapTools();
+                        return;
+                    }
+                    try {
+                        const parsed = JSON.parse(val);
+                        if (parsed.type) {
+                            drawGeometry(parsed);
+                            if (selectedMapLabel) selectedMapLabel.textContent = 'Batas area berhasil diperbarui dari input teks GeoJSON.';
+                        }
+                    } catch (err) {
+                        // ignore parsing error while typing
+                    }
                 });
 
                 document.getElementById('btnResetForm')?.addEventListener('click', resetForm);

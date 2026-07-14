@@ -21,6 +21,7 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
   final _luasController = TextEditingController();
   final _latController = TextEditingController();
   final _lngController = TextEditingController();
+  final _polygonGeoJsonController = TextEditingController();
 
   String _source = 'baru';
   Map<String, dynamic>? _selectedLahan;
@@ -49,6 +50,7 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
     _luasController.dispose();
     _latController.dispose();
     _lngController.dispose();
+    _polygonGeoJsonController.dispose();
     super.dispose();
   }
 
@@ -895,6 +897,14 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
                 ],
               ),
               const SizedBox(height: 12),
+              _textField(
+                _polygonGeoJsonController,
+                'Data Polygon Geometri (GeoJSON)',
+                enabled: !locked,
+                maxLines: 4,
+                onChanged: _onGeoJsonInputChanged,
+              ),
+              const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -913,8 +923,8 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
                     Expanded(
                       child: Text(
                         _polygonPoints.length >= 3
-                            ? 'Polygon siap disimpan dengan ${_polygonPoints.length} titik.'
-                            : 'Minimal 3 titik batas area diperlukan. Saat ini ${_polygonPoints.length} titik.',
+                            ? 'Batas area siap disimpan. Jumlah titik: ${_polygonPoints.length}.'
+                            : 'Bisa didapat dari peta, atau paste GeoJSON Anda di atas.',
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           color: const Color(0xFF475569),
@@ -978,12 +988,14 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
     bool required = false,
     int maxLines = 1,
     TextInputType? keyboardType,
+    void Function(String)? onChanged,
   }) {
     return TextFormField(
       controller: controller,
       enabled: enabled,
       maxLines: maxLines,
       keyboardType: keyboardType,
+      onChanged: onChanged,
       decoration: _inputDecoration(label),
       style: GoogleFonts.inter(
         fontSize: 13,
@@ -1070,6 +1082,7 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
       _latController.text = point?.latitude.toStringAsFixed(7) ?? '';
       _lngController.text = point?.longitude.toStringAsFixed(7) ?? '';
       _polygonPoints = polygon;
+      _polygonGeoJsonController.text = row['polygon_geojson'] ?? row['geojson'] ?? '';
       _drawPolygonMode = polygon.isEmpty;
       _kecamatanId = int.tryParse(row['kecamatan_id']?.toString() ?? '');
       _kelurahanId = int.tryParse(row['kelurahan_id']?.toString() ?? '');
@@ -1195,6 +1208,7 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
         _polygonPoints.clear();
         _latController.clear();
         _lngController.clear();
+        _polygonGeoJsonController.clear();
       });
     }
     _snack(
@@ -1204,6 +1218,33 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
                 'Gagal mengosongkan polygon.'),
       error: !success,
     );
+  }
+
+  void _onGeoJsonInputChanged(String val) {
+    if (val.trim().isEmpty) {
+      setState(() {
+        _polygonPoints.clear();
+      });
+      return;
+    }
+    try {
+      final decoded = jsonDecode(val);
+      if (decoded['type'] == 'Polygon') {
+        final parsedPoints = _pointsFromGeometry(decoded);
+        if (parsedPoints.isNotEmpty) {
+          setState(() {
+            _polygonPoints.clear();
+            _polygonPoints.addAll(parsedPoints);
+            _drawPolygonMode = false;
+          });
+          try {
+            final bounds = LatLngBounds.fromPoints(_polygonPoints);
+            _mapController.fitCamera(
+                CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(24)));
+          } catch (_) {}
+        }
+      }
+    } catch (_) {}
   }
 
   String _buildPolygonGeoJson() {

@@ -17,9 +17,6 @@
             Mohon tunggu, aplikasi <strong>SiPetani.apk</strong> sedang diunduh ke perangkat Anda.
         </p>
 
-        <!-- Hidden iframe to trigger download without changing page -->
-        <iframe id="download-frame" src="about:blank" style="display:none;"></iframe>
-
         <div class="space-y-3 w-full">
             <button onclick="startDownload()" class="block w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-colors text-sm">
                 Coba Unduh Ulang
@@ -40,12 +37,12 @@
 
 <script>
     function startDownload() {
-        document.getElementById('download-frame').src = "{{ route('mobile-app.file') }}";
+        window.location.href = "{{ route('mobile-app.file') }}";
     }
 
     // Trigger download automatically on load
     window.onload = function() {
-        startDownload();
+        setTimeout(startDownload, 1000);
     };
 </script>
 @endsection
