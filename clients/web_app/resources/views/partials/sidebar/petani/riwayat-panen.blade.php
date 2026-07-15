@@ -220,6 +220,17 @@
                                         </div>
                                     </div>
 
+                                @elseif(($item['status_verifikasi'] ?? '') === 'BELUM_PANEN')
+
+                                    <div class="flex flex-col gap-1">
+                                        <span class="w-fit px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">
+                                            PROSES TANAM
+                                        </span>
+                                        <span class="text-[10px] text-gray-500 max-w-[200px] break-words mt-1">
+                                            Menunggu laporan panen diinput.
+                                        </span>
+                                    </div>
+
                                 @else
 
                                     <div class="flex flex-col gap-1">
