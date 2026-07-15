@@ -107,6 +107,7 @@ class SiklusTanamController extends Controller
             $request
         ) {
             $tanam = SiklusTanam::create([
+                'petani_id' => $userId,
                 'lahan_id' => $lahan->id,
                 'luas_tanam_hektar' => $luasTanam,
                 'bibit_id' => $bibit->id,
@@ -176,7 +177,14 @@ class SiklusTanamController extends Controller
         $hasil = (float) $request->hasil_panen;
         $payload = [
             'tanam_padi_id' => $tanam->id,
+            'lahan_id' => $tanam->lahan_id,
+            'bibit_id' => $tanam->bibit_id,
             'pemilik_id' => $tanam->lahan->pemilik_id,
+            'petani_id' => $userId,
+            'nama_lahan' => $tanam->lahan->nama_lahan,
+            'nama_bibit' => $tanam->bibit->nama_bibit,
+            'varietas' => $tanam->bibit->varietas,
+            'tanggal_tanam' => $tanam->tanggal_tanam,
             'tanggal_panen' => $tanggalPanen->toDateString(),
             'hasil_panen_ton' => $hasil,
             'status_verifikasi' => 'PENDING',

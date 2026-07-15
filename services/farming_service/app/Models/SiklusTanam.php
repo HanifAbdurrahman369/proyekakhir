@@ -11,6 +11,7 @@ class SiklusTanam extends Model
     public $timestamps = true;
 
     protected $fillable = [
+        'petani_id',
         'lahan_id',
         'luas_tanam_hektar',
         'bibit_id',
