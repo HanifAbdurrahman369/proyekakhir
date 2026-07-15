@@ -82,6 +82,13 @@ class _LoginScreenState extends State<LoginScreen> {
         _loginIdController.text.trim(),
         _passwordController.text,
       );
+
+      final user = authProvider.currentUser;
+      if (user != null && user.roleId != 1 && user.roleId != 2 && user.roleId != 5) {
+        await authProvider.logout();
+        throw Exception('Role ini tidak diizinkan mengakses aplikasi mobile. Silakan gunakan versi website.');
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -95,8 +102,8 @@ class _LoginScreenState extends State<LoginScreen> {
       _generateCaptcha();
       if (mounted) {
         String errorMsg = e.toString().replaceAll('Exception: ', '');
-        if (errorMsg.toLowerCase().contains('email tidak ditemukan') || errorMsg.toLowerCase().contains('tidak ditemukan di sistem')) {
-          errorMsg = 'gmail salah';
+        if (errorMsg.toLowerCase().contains('email tidak ditemukan') || errorMsg.toLowerCase().contains('tidak ditemukan di sistem') || errorMsg.toLowerCase().contains('nik atau nip tidak ditemukan')) {
+          errorMsg = 'NIK / NIP salah';
         } else if (errorMsg.toLowerCase().contains('password yang anda masukkan salah') || errorMsg.toLowerCase().contains('password salah') || errorMsg.toLowerCase().contains('salah')) {
           errorMsg = 'password salah';
         }

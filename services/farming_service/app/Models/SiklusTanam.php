@@ -22,6 +22,7 @@ class SiklusTanam extends Model
         'pemupukan_dicatat_at',
         'estimasi_hari',
         'estimasi_tanggal_panen',
+        'estimasi_tanggal_panen_akhir',
         'status_aktif',
         'status_verifikasi',
         'diverifikasi_oleh',
@@ -32,6 +33,7 @@ class SiklusTanam extends Model
     protected $casts = [
         'tanggal_tanam' => 'date',
         'estimasi_tanggal_panen' => 'date',
+        'estimasi_tanggal_panen_akhir' => 'date',
         'tanggal_pemupukan' => 'date',
         'luas_tanam_hektar' => 'float',
         'takaran_pupuk_kg' => 'float',

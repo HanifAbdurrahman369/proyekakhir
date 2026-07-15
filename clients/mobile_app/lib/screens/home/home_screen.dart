@@ -8,14 +8,10 @@ import '../../providers/farming_provider.dart';
 import '../../models/user.dart';
 import 'dashboards/petani_dashboard.dart';
 import 'dashboards/petugas_dashboard.dart';
-import 'dashboards/pejabat_dashboard.dart';
-import 'dashboards/admin_dashboard.dart';
 import 'riwayat_aktivitas_screen.dart';
 import 'tambah_lahan_screen.dart';
 import 'lapor_tanam_screen.dart';
 import 'lapor_panen_screen.dart';
-import 'sebaran_lahan_screen.dart';
-import 'dashboards/produksi_daerah_screen.dart';
 import 'petugas_lahan_termonitor_screen.dart';
 import 'petugas_spasial_screen.dart';
 import 'petugas_verifikasi_screen.dart';
@@ -288,10 +284,6 @@ class _HomeScreenState extends State<HomeScreen> {
           return PetaniDashboard(user: user);
         case 2:
           return PetugasDashboard(user: user);
-        case 3:
-          return PejabatDashboard(user: user);
-        case 4:
-          return AdminDashboard(user: user);
         default:
           return Center(
             child: Padding(
@@ -608,44 +600,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           context,
                           MaterialPageRoute(
                             builder: (context) => const EditProfileScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                  ] else if (roleId == 3) ...[
-                    // Category: LAPORAN EKSEKUTIF
-                    _buildCategoryHeader('LAPORAN EKSEKUTIF'),
-                    _buildDrawerItem(
-                      icon: Icons.dashboard_rounded,
-                      label: 'Statistik Utama',
-                      isSelected: true,
-                      onTap: () => Navigator.pop(context),
-                    ),
-                    _buildDrawerItem(
-                      icon: Icons.map_rounded,
-                      label: 'Sebaran Lahan',
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const SebaranLahanScreen(),
-                          ),
-                        );
-                      },
-                    ),
-
-                    // Category: ANALISIS DATA
-                    _buildCategoryHeader('ANALISIS DATA'),
-                    _buildDrawerItem(
-                      icon: Icons.analytics_rounded,
-                      label: 'Produksi Daerah',
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ProduksiDaerahScreen(),
                           ),
                         );
                       },
