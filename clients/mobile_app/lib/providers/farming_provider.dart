@@ -809,7 +809,7 @@ class FarmingProvider extends ChangeNotifier {
   }
 
   /// Petugas: Memperbarui data spasial lahan
-  Future<bool> updateSpasialLahan(int id, Map<String, dynamic> data) async {
+  Future<bool> updateSpasialLahan(String id, Map<String, dynamic> data) async {
     _isPetugasLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -945,7 +945,10 @@ class FarmingProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> savePetugasSpasial(int id, Map<String, dynamic> payload) async {
+  Future<bool> savePetugasSpasial(
+    String id,
+    Map<String, dynamic> payload,
+  ) async {
     _isPetugasActionLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -963,7 +966,7 @@ class FarmingProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> deletePetugasSpasial(int id) async {
+  Future<bool> deletePetugasSpasial(String id) async {
     _isPetugasActionLoading = true;
     _errorMessage = null;
     notifyListeners();

@@ -109,6 +109,8 @@ class AuthProvider extends ChangeNotifier {
     required String email,
     String? noHp,
     String? alamat,
+    int? wilayahKecamatanId,
+    int? wilayahKelurahanId,
   }) async {
     _isLoading = true;
     notifyListeners();
@@ -119,6 +121,8 @@ class AuthProvider extends ChangeNotifier {
         email: email,
         noHp: noHp,
         alamat: alamat,
+        wilayahKecamatanId: wilayahKecamatanId,
+        wilayahKelurahanId: wilayahKelurahanId,
       );
     } finally {
       _isLoading = false;

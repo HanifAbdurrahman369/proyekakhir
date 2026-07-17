@@ -80,6 +80,8 @@ class AuthService {
     required String email,
     String? noHp,
     String? alamat,
+    int? wilayahKecamatanId,
+    int? wilayahKelurahanId,
   }) async {
     try {
       final response = await _apiClient.dio.put(
@@ -89,6 +91,8 @@ class AuthService {
           'email': email,
           'no_hp': noHp,
           'alamat': alamat,
+          'wilayah_kecamatan_id': wilayahKecamatanId,
+          'wilayah_kelurahan_id': wilayahKelurahanId,
         },
       );
       final userData = response.data['user'];
@@ -146,7 +150,10 @@ class AuthService {
 
   Future<Map<String, dynamic>> getUsers({int page = 1}) async {
     try {
-      final response = await _apiClient.dio.get('/users', queryParameters: {'page': page});
+      final response = await _apiClient.dio.get(
+        '/users',
+        queryParameters: {'page': page},
+      );
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       throw Exception(e.response?.data['message'] ?? 'Gagal memuat pengguna.');
@@ -155,28 +162,40 @@ class AuthService {
 
   Future<Map<String, dynamic>> getKomunitas({int page = 1}) async {
     try {
-      final response = await _apiClient.dio.get('/komunitas', queryParameters: {'page': page});
+      final response = await _apiClient.dio.get(
+        '/komunitas',
+        queryParameters: {'page': page},
+      );
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       throw Exception(e.response?.data['message'] ?? 'Gagal memuat komunitas.');
     }
   }
 
-  Future<Map<String, dynamic>> createKomunitas(Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> createKomunitas(
+    Map<String, dynamic> data,
+  ) async {
     try {
       final response = await _apiClient.dio.post('/komunitas', data: data);
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
-      throw Exception(e.response?.data['message'] ?? 'Gagal menambah komunitas.');
+      throw Exception(
+        e.response?.data['message'] ?? 'Gagal menambah komunitas.',
+      );
     }
   }
 
-  Future<Map<String, dynamic>> updateKomunitas(int id, Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> updateKomunitas(
+    int id,
+    Map<String, dynamic> data,
+  ) async {
     try {
       final response = await _apiClient.dio.put('/komunitas/$id', data: data);
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
-      throw Exception(e.response?.data['message'] ?? 'Gagal mengubah komunitas.');
+      throw Exception(
+        e.response?.data['message'] ?? 'Gagal mengubah komunitas.',
+      );
     }
   }
 
@@ -185,7 +204,9 @@ class AuthService {
       final response = await _apiClient.dio.delete('/komunitas/$id');
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
-      throw Exception(e.response?.data['message'] ?? 'Gagal menghapus komunitas.');
+      throw Exception(
+        e.response?.data['message'] ?? 'Gagal menghapus komunitas.',
+      );
     }
   }
 }

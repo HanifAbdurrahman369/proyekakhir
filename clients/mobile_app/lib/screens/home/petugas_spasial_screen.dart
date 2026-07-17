@@ -71,13 +71,22 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
     final rows = provider.petugasSpasialRows
         .map((e) => Map<String, dynamic>.from(e as Map))
         .toList();
+    final termonitor = rows.where(_isLahanTermonitor).toList();
     final belum = rows
-        .where((row) => _statusSpasial(row) == 'BELUM_DIPETAKAN')
+        .where(
+          (row) =>
+              !_isLahanTermonitor(row) &&
+              row['status_verifikasi']?.toString().toUpperCase() ==
+                  'DITERIMA' &&
+              !_hasSpatialData(row),
+        )
         .toList();
-    final sudah = rows
-        .where((row) => _statusSpasial(row) == 'SUDAH_DIPETAKAN')
-        .toList();
-    final list = _source == 'baru' ? belum : sudah;
+    final sudah = rows.where(_hasSpatialData).toList();
+    final list = switch (_source) {
+      'baru' => belum,
+      'termonitor' => termonitor,
+      _ => sudah,
+    };
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F9F4),
@@ -99,9 +108,17 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(16),
               children: [
-                _buildSummary(provider.petugasSpasialSummary),
+                _buildSummary(
+                  total: belum.length + sudah.length,
+                  belum: belum.length,
+                  sudah: sudah.length,
+                ),
                 const SizedBox(height: 14),
-                _buildSourceSwitch(belum.length, sudah.length),
+                _buildSourceSwitch(
+                  belum.length,
+                  sudah.length,
+                  termonitor.length,
+                ),
                 const SizedBox(height: 12),
                 if (provider.isPetugasSpasialLoading && rows.isEmpty)
                   const Padding(
@@ -144,11 +161,12 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
     );
   }
 
-  Widget _buildSummary(Map<String, dynamic> summary) {
-    final total = summary['total'] ?? 0;
-    final belum = summary['belum_dipetakan'] ?? 0;
-    final sudah = summary['sudah_dipetakan'] ?? 0;
-    final lengkap = summary['persentase_lengkap'] ?? 0;
+  Widget _buildSummary({
+    required int total,
+    required int belum,
+    required int sudah,
+  }) {
+    final lengkap = total > 0 ? (sudah / total) * 100 : 0;
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -180,7 +198,11 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
           const SizedBox(height: 14),
           Row(
             children: [
-              _buildSummaryPill('Total', '$total', const Color(0xFF14280B)),
+              _buildSummaryPill(
+                'Total SiPetani',
+                '$total',
+                const Color(0xFF14280B),
+              ),
               const SizedBox(width: 8),
               _buildSummaryPill('Baru', '$belum', const Color(0xFFD97706)),
               const SizedBox(width: 8),
@@ -234,7 +256,7 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
     );
   }
 
-  Widget _buildSourceSwitch(int belum, int sudah) {
+  Widget _buildSourceSwitch(int belum, int sudah, int termonitor) {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -246,6 +268,7 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
         children: [
           _buildSourceButton('baru', 'Belum Dipetakan', belum),
           _buildSourceButton('lama', 'Sudah Dipetakan', sudah),
+          _buildSourceButton('termonitor', 'Lahan Termonitor', termonitor),
         ],
       ),
     );
@@ -306,9 +329,12 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        _source == 'baru'
-                            ? 'Lahan disetujui yang belum punya polygon.'
-                            : 'Data yang sudah memiliki titik atau polygon.',
+                        switch (_source) {
+                          'baru' => 'Lahan disetujui yang belum punya polygon.',
+                          'termonitor' =>
+                            'Lahan Huma yang terhubung sensor IoT.',
+                          _ => 'Data yang sudah memiliki titik atau polygon.',
+                        },
                         style: GoogleFonts.inter(
                           fontSize: 11,
                           color: const Color(0xFF64748B),
@@ -580,8 +606,8 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
             urlTemplate: _selectedBaseMap == '🛰️ Citra Satelit'
                 ? _satelliteUrl
                 : _selectedBaseMap == '⛰️ Peta Topografi'
-                    ? _topoUrl
-                    : _osmUrl,
+                ? _topoUrl
+                : _osmUrl,
             userAgentPackageName: 'com.sigpala.batola.mobile_app',
           ),
           PolygonLayer(polygons: kecamatanPolygons),
@@ -593,8 +619,11 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
           RichAttributionWidget(
             attributions: [
               TextSourceAttribution(
-                _selectedBaseMap == '🛰️ Citra Satelit' ? 'Esri, Maxar, Earthstar Geographics' : 
-                _selectedBaseMap == '⛰️ Peta Topografi' ? 'OpenTopoMap' : 'OpenStreetMap',
+                _selectedBaseMap == '🛰️ Citra Satelit'
+                    ? 'Esri, Maxar, Earthstar Geographics'
+                    : _selectedBaseMap == '⛰️ Peta Topografi'
+                    ? 'OpenTopoMap'
+                    : 'OpenStreetMap',
                 textStyle: GoogleFonts.inter(fontSize: 10),
               ),
             ],
@@ -801,7 +830,11 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
                     ),
                   ),
                   _buildStatusChip(
-                    locked ? 'TERKUNCI' : _statusSpasial(_selectedLahan!),
+                    locked
+                        ? 'TERKUNCI'
+                        : (_isLahanTermonitor(_selectedLahan!)
+                              ? 'TERMONITOR'
+                              : _statusSpasial(_selectedLahan!)),
                   ),
                 ],
               ),
@@ -813,11 +846,7 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
                 required: true,
               ),
               const SizedBox(height: 12),
-              _textField(
-                _pemilikController,
-                'Pemilik Lahan',
-                enabled: false,
-              ),
+              _textField(_pemilikController, 'Pemilik Lahan', enabled: false),
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -1101,6 +1130,8 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
         ? ('SUDAH DIPETAKAN', const Color(0xFF16A34A), const Color(0xFFDCFCE7))
         : text == 'BELUM_DIPETAKAN'
         ? ('BELUM DIPETAKAN', const Color(0xFFD97706), const Color(0xFFFFFBEB))
+        : text == 'TERMONITOR'
+        ? ('TERMONITOR', const Color(0xFF0369A1), const Color(0xFFE0F2FE))
         : ('TERKUNCI', const Color(0xFF64748B), const Color(0xFFF1F5F9));
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
@@ -1130,7 +1161,10 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
     setState(() {
       _selectedLahan = row;
       _namaController.text = _text(row['nama_lahan'], '');
-      _pemilikController.text = _text(row['nama_petani'] ?? row['nama_pemilik'], 'Tidak diketahui');
+      _pemilikController.text = _text(
+        row['nama_petani'] ?? row['nama_pemilik'],
+        'Tidak diketahui',
+      );
       _alamatController.text = _text(row['alamat_detail'], '');
       _luasController.text = _formatNumber(
         row['luas_lahan_hektar'],
@@ -1139,7 +1173,8 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
       _latController.text = point?.latitude.toStringAsFixed(7) ?? '';
       _lngController.text = point?.longitude.toStringAsFixed(7) ?? '';
       _polygonPoints = polygon;
-      _polygonGeoJsonController.text = row['polygon_geojson'] ?? row['geojson'] ?? '';
+      _polygonGeoJsonController.text =
+          row['polygon_geojson'] ?? row['geojson'] ?? '';
       _drawPolygonMode = polygon.isEmpty;
       _kecamatanId = int.tryParse(row['kecamatan_id']?.toString() ?? '');
       _kelurahanId = int.tryParse(row['kelurahan_id']?.toString() ?? '');
@@ -1171,8 +1206,8 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
       return;
     }
 
-    final id = int.tryParse(_selectedLahan!['id'].toString());
-    if (id == null) {
+    final id = _selectedLahan!['id']?.toString().trim() ?? '';
+    if (id.isEmpty) {
       _snack('ID lahan tidak valid.', error: true);
       return;
     }
@@ -1213,8 +1248,8 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
 
   Future<void> _deleteSpatial() async {
     if (_selectedLahan == null) return;
-    final id = int.tryParse(_selectedLahan!['id'].toString());
-    if (id == null) return;
+    final id = _selectedLahan!['id']?.toString().trim() ?? '';
+    if (id.isEmpty) return;
 
     final confirm = await showDialog<bool>(
       context: context,
@@ -1297,7 +1332,11 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
           try {
             final bounds = LatLngBounds.fromPoints(_polygonPoints);
             _mapController.fitCamera(
-                CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(24)));
+              CameraFit.bounds(
+                bounds: bounds,
+                padding: const EdgeInsets.all(24),
+              ),
+            );
           } catch (_) {}
         }
       }
@@ -1469,6 +1508,16 @@ class _PetugasSpasialScreenState extends State<PetugasSpasialScreen> {
     return (row['polygon_geojson'] ?? row['geojson']) == null
         ? 'BELUM_DIPETAKAN'
         : 'SUDAH_DIPETAKAN';
+  }
+
+  bool _isLahanTermonitor(Map<String, dynamic> row) {
+    return row['id']?.toString().startsWith('H-') ?? false;
+  }
+
+  bool _hasSpatialData(Map<String, dynamic> row) {
+    final polygon =
+        row['polygon_geojson'] ?? row['geojson'] ?? row['polygon_area'];
+    return polygon != null && polygon.toString().trim().isNotEmpty;
   }
 
   String _text(dynamic value, String fallback) {

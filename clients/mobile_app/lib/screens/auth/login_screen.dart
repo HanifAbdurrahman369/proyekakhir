@@ -1,7 +1,9 @@
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../providers/auth_provider.dart';
 import 'forgot_password_screen.dart';
 
@@ -20,6 +22,8 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   int _num1 = 0;
   int _num2 = 0;
+  String? _loginError;
+  String? _captchaError;
 
   @override
   void initState() {
@@ -27,14 +31,37 @@ class _LoginScreenState extends State<LoginScreen> {
     _generateCaptcha();
   }
 
-  void _generateCaptcha() {
+  void _generateCaptcha({String? error}) {
     final random = math.Random();
     setState(() {
-      // Sama dengan website: kedua angka captcha berada pada rentang 1-9.
       _num1 = random.nextInt(9) + 1;
       _num2 = random.nextInt(9) + 1;
       _captchaController.clear();
+      _captchaError = error;
     });
+  }
+
+  Future<void> _openPublicDashboard() async {
+    const configuredUrl = String.fromEnvironment(
+      'PUBLIC_WEB_URL',
+      defaultValue: '',
+    );
+    final url = configuredUrl.isNotEmpty
+        ? configuredUrl
+        : (kReleaseMode
+              ? 'https://agrilytics-batola.poliban.ac.id'
+              : 'http://10.0.2.2:8080');
+
+    if (!await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    )) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Dashboard publik belum dapat dibuka.')),
+        );
+      }
+    }
   }
 
   @override
@@ -46,32 +73,16 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
+    setState(() {
+      _loginError = null;
+      _captchaError = null;
+    });
+
     if (!_formKey.currentState!.validate()) return;
 
     final captchaAnswer = int.tryParse(_captchaController.text.trim());
     if (captchaAnswer != _num1 + _num2) {
-      _generateCaptcha();
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: Text(
-              'Verifikasi Gagal',
-              style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
-            ),
-            content: Text('penjumlahan salah', style: GoogleFonts.inter()),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('OK', style: TextStyle(color: Colors.green[800])),
-              ),
-            ],
-          ),
-        );
-      }
+      _generateCaptcha(error: 'penjumlahan salah');
       return;
     }
 
@@ -93,19 +104,10 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Selamat datang kembali, ${authProvider.currentUser?.namaLengkap}!',
-            ),
-            backgroundColor: Colors.green[800],
-          ),
-        );
-        Navigator.pop(
-          context,
-        ); // Menutup halaman login agar AuthWrapper langsung memuat HomeScreen
-      }
+      // AuthWrapper mengamati AuthProvider dan otomatis mengganti LoginScreen
+      // dengan HomeScreen. Jangan melakukan Navigator.pop di sini karena
+      // LoginScreen adalah route utama; mem-pop route ini menghasilkan layar
+      // hitam setelah login berhasil.
     } catch (e) {
       _generateCaptcha();
       if (mounted) {
@@ -122,25 +124,9 @@ class _LoginScreenState extends State<LoginScreen> {
           errorMsg = 'password salah';
         }
 
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: Text(
-              'Login Gagal',
-              style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
-            ),
-            content: Text(errorMsg, style: GoogleFonts.inter()),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('OK', style: TextStyle(color: Colors.green[800])),
-              ),
-            ],
-          ),
-        );
+        setState(() {
+          _loginError = errorMsg;
+        });
       }
     }
   }
@@ -630,9 +616,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Column(
                       children: [
                         GestureDetector(
-                          onTap: () {
-                            Navigator.pop(context);
-                          },
+                          onTap: _openPublicDashboard,
                           child: MouseRegion(
                             cursor: SystemMouseCursors.click,
                             child: Container(
@@ -703,7 +687,68 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // Email Label
+                            InkWell(
+                              onTap: _openPublicDashboard,
+                              borderRadius: BorderRadius.circular(10),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 4,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.arrow_back_rounded,
+                                      size: 18,
+                                      color: Color(0xFF047857),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Kembali ke Dashboard Publik',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF047857),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            if (_loginError != null) ...[
+                              Container(
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFEF2F2),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: const Color(0xFFFECACA),
+                                  ),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(
+                                      Icons.error_rounded,
+                                      color: Color(0xFFDC2626),
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        _loginError!,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 13,
+                                          color: const Color(0xFFDC2626),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                            ],
                             Text(
                               'Nomor Induk Kependudukan / Pegawai (NIK/NIP)',
                               style: GoogleFonts.inter(
@@ -720,7 +765,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               style: GoogleFonts.inter(fontSize: 14),
                               decoration: _inputDecoration(
                                 hint: 'Masukkan NIK atau NIP',
-                                icon: Icons.badge_outlined,
+                                icon: Icons.person_rounded,
                               ),
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
@@ -829,8 +874,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                           ),
                                           gradient: const LinearGradient(
                                             colors: [
-                                              Color(0xFF5EA500),
-                                              Color(0xFF3E7D00),
+                                              Color(0xFF10B981),
+                                              Color(0xFF047857),
                                             ],
                                             begin: Alignment.topLeft,
                                             end: Alignment.bottomRight,
@@ -838,7 +883,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ),
                                         alignment: Alignment.center,
                                         child: const Icon(
-                                          Icons.add_rounded,
+                                          Icons.calculate_rounded,
                                           color: Colors.white,
                                           size: 20,
                                         ),
@@ -941,6 +986,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ],
                               ),
                             ),
+                            if (_captchaError != null) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                _captchaError!,
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: const Color(0xFFEF4444),
+                                ),
+                              ),
+                            ],
                             const SizedBox(height: 24),
                             // Submit button with Gradient and Shadow
                             Container(
@@ -949,8 +1004,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 borderRadius: BorderRadius.circular(16),
                                 gradient: const LinearGradient(
                                   colors: [
-                                    Color(0xFF5EA500),
-                                    Color(0xFF3E7D00),
+                                    Color(0xFF10B981),
+                                    Color(0xFF047857),
                                   ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
@@ -958,7 +1013,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 boxShadow: [
                                   BoxShadow(
                                     color: const Color(
-                                      0xFF5EA500,
+                                      0xFF10B981,
                                     ).withValues(alpha: 0.25),
                                     offset: const Offset(0, 8),
                                     blurRadius: 16,

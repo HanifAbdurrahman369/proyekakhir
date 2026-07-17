@@ -22,7 +22,7 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
   String _currentView =
       'dashboard'; // 'dashboard', 'verifikasi', 'spasial', 'termonitor'
   String _verifikasiTab = 'lahan'; // 'lahan', 'panen'
-  String _spasialTab = 'belum'; // 'belum', 'sudah'
+  String _spasialTab = 'belum'; // 'belum', 'sudah', 'termonitor'
 
   // Search controllers
   final TextEditingController _spasialSearchController =
@@ -1093,10 +1093,14 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
     }
 
     final filteredList = provider.spasialLahanList.where((item) {
+      final isTermonitor = item['id']?.toString().startsWith('H-') ?? false;
+
       // tab selection filter
       if (_spasialTab == 'belum') {
         final isApproved = item['status_verifikasi'] == 'DITERIMA';
-        if (!isApproved || hasSpatialData(item)) return false;
+        if (isTermonitor || !isApproved || hasSpatialData(item)) return false;
+      } else if (_spasialTab == 'termonitor') {
+        if (!isTermonitor) return false;
       } else {
         if (!hasSpatialData(item)) return false;
       }
@@ -1118,22 +1122,30 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Tab Header: Belum vs Sudah Dipetakan
+        // Tiga sumber data sama seperti fitur manajemen spasial website.
         Row(
           children: [
             Expanded(
               child: _buildTabButton(
-                label: 'Belum Dipetakan',
+                label: 'Belum',
                 isActive: _spasialTab == 'belum',
                 onTap: () => setState(() => _spasialTab = 'belum'),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 6),
             Expanded(
               child: _buildTabButton(
-                label: 'Sudah Dipetakan',
+                label: 'Dipetakan',
                 isActive: _spasialTab == 'sudah',
                 onTap: () => setState(() => _spasialTab = 'sudah'),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: _buildTabButton(
+                label: 'Termonitor',
+                isActive: _spasialTab == 'termonitor',
+                onTap: () => setState(() => _spasialTab = 'termonitor'),
               ),
             ),
           ],
@@ -1186,6 +1198,8 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                   ? '${_formatDouble(double.parse(item['luas_lahan_hektar'].toString()))} Ha'
                   : '-';
               final mapped = hasSpatialData(item);
+              final termonitor =
+                  item['id']?.toString().startsWith('H-') ?? false;
 
               return Container(
                 padding: const EdgeInsets.all(16),
@@ -1216,20 +1230,32 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: mapped ? Colors.green[50] : Colors.amber[50],
+                            color: termonitor
+                                ? Colors.lightBlue[50]
+                                : mapped
+                                ? Colors.green[50]
+                                : Colors.amber[50],
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: mapped
+                              color: termonitor
+                                  ? Colors.lightBlue[200]!
+                                  : mapped
                                   ? Colors.green[200]!
                                   : Colors.amber[200]!,
                             ),
                           ),
                           child: Text(
-                            mapped ? 'SUDAH DIPETAKAN' : 'BELUM DIPETAKAN',
+                            termonitor
+                                ? 'TERMONITOR'
+                                : mapped
+                                ? 'SUDAH DIPETAKAN'
+                                : 'BELUM DIPETAKAN',
                             style: GoogleFonts.inter(
                               fontSize: 9,
                               fontWeight: FontWeight.bold,
-                              color: mapped
+                              color: termonitor
+                                  ? Colors.lightBlue[800]
+                                  : mapped
                                   ? Colors.green[800]
                                   : Colors.amber[800],
                             ),
@@ -1560,7 +1586,7 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
                         'polygon_geojson': geojsonController.text.trim(),
                       };
                       final success = await provider.updateSpasialLahan(
-                        item['id'],
+                        item['id'].toString(),
                         payload,
                       );
                       messenger.showSnackBar(

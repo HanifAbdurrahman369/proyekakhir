@@ -1,10 +1,22 @@
+import 'package:flutter/foundation.dart';
+
 class ApiEndpoints {
-  // Bisa dioverride saat build:
-  // flutter build apk --dart-define=API_BASE_URL=http://IP_BACKEND:8003/api
-  static const String baseUrl = String.fromEnvironment(
+  static const String _configuredBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://api.sigpala.my.id/api',
+    defaultValue: '',
   );
+
+  /// `flutter run` pada emulator Android terhubung ke service lokal Windows.
+  /// Build release tetap terhubung ke API produksi yang sama dengan website.
+  static String get baseUrl {
+    if (_configuredBaseUrl.isNotEmpty) {
+      return _configuredBaseUrl;
+    }
+
+    return kReleaseMode
+        ? 'https://api.sigpala.my.id/api'
+        : 'http://10.0.2.2:8003/api';
+  }
 
   // Auth & User Endpoints
   static const String login = '/login';

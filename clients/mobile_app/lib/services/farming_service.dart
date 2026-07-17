@@ -563,7 +563,7 @@ class FarmingService {
   }
 
   Future<Map<String, dynamic>> savePetugasSpasialLahan(
-    int id,
+    String id,
     Map<String, dynamic> payload,
   ) async {
     try {
@@ -579,7 +579,7 @@ class FarmingService {
     }
   }
 
-  Future<Map<String, dynamic>> deletePetugasSpasialLahan(int id) async {
+  Future<Map<String, dynamic>> deletePetugasSpasialLahan(String id) async {
     try {
       final response = await _apiClient.dio.delete('/spasial-lahan/$id');
       return response.data as Map<String, dynamic>;
@@ -699,7 +699,7 @@ class FarmingService {
 
   /// Petugas: Menyimpan/mengubah data spasial lahan
   Future<Map<String, dynamic>> updateSpasialLahan(
-    int id,
+    String id,
     Map<String, dynamic> payload,
   ) async {
     try {

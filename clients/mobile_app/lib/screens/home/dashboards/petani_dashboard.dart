@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../models/user.dart';
 import '../../../providers/farming_provider.dart';
 import '../tambah_lahan_screen.dart';
 import '../lapor_tanam_screen.dart';
 import '../edit_lapor_tanam_screen.dart';
 import '../lapor_panen_screen.dart';
+import '../riwayat_aktivitas_screen.dart';
 
 class PetaniDashboard extends StatefulWidget {
   final User? user;
@@ -67,6 +69,400 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
   String _formatDouble(double value) {
     return value.toStringAsFixed(2).replaceAll('.', ',');
   }
+
+  bool _hasPolygon(Map<String, dynamic> lahan) =>
+      lahan['polygon_geojson'] != null ||
+      lahan['geojson'] != null ||
+      lahan['polygon_area'] != null;
+
+  String _statusLahan(Map<String, dynamic> lahan) {
+    if (_hasPolygon(lahan)) return 'TERVERIFIKASI';
+    return lahan['status_verifikasi']?.toString() ?? 'PENDING';
+  }
+
+  Future<void> _openRiwayatPerbaikan({bool closeDetail = false}) async {
+    if (closeDetail) Navigator.pop(context);
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const RiwayatAktivitasScreen()),
+    );
+    if (!mounted) return;
+    context.read<FarmingProvider>().fetchDashboardData(
+      lahanPage: _currentLahanPage,
+    );
+  }
+
+  Future<void> _hubungiPetugas(Map<String, dynamic> lahan) async {
+    final rawPhone =
+        lahan['petugas_no_hp']?.toString().trim() ?? '6285753510996';
+    final phone = rawPhone.startsWith('0')
+        ? '62${rawPhone.substring(1)}'
+        : rawPhone;
+    final message =
+        'Halo Petugas, pengajuan lahan sawah saya bernama '
+        '*${lahan['nama_lahan'] ?? '-'}* seluas '
+        '*${lahan['luas_lahan_hektar'] ?? 0} Ha* telah disetujui. '
+        'Saya ingin berkoordinasi untuk pemetaan poligon lahan.';
+    final uri = Uri.https('wa.me', '/$phone', {'text': message});
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication) &&
+        mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('WhatsApp tidak dapat dibuka.')),
+      );
+    }
+  }
+
+  Future<void> _showLahanDetail(Map<String, dynamic> lahan) async {
+    final status = _statusLahan(lahan);
+    final isRejected = status == 'DITOLAK';
+    final isAccepted = status == 'DITERIMA' || status == 'TERVERIFIKASI';
+    final isMapped = status == 'TERVERIFIKASI';
+    final reason =
+        lahan['alasan_penolakan'] ??
+        lahan['catatan_verifikasi'] ??
+        'Perbaiki data lahan Anda.';
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => DraggableScrollableSheet(
+        initialChildSize: 0.82,
+        minChildSize: 0.55,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, controller) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+          ),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 8, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Detail Lahan',
+                        style: GoogleFonts.outfit(
+                          fontSize: 19,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(sheetContext),
+                      tooltip: 'Tutup',
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: ListView(
+                  controller: controller,
+                  padding: const EdgeInsets.all(20),
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'STATUS PENGAJUAN',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF64748B),
+                          ),
+                        ),
+                        _statusBadge(status),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    _flowStep(
+                      number: 1,
+                      title: 'Isi Formulir',
+                      description: 'Data lahan telah berhasil disubmit.',
+                      state: 'done',
+                    ),
+                    _flowStep(
+                      number: 2,
+                      title: 'Persetujuan Petugas',
+                      description: isRejected
+                          ? 'Pengajuan lahan ditolak.'
+                          : isAccepted
+                          ? 'Pengajuan telah disetujui petugas.'
+                          : 'Tunggu petugas menyetujui pengajuan Anda.',
+                      state: isRejected
+                          ? 'rejected'
+                          : isAccepted
+                          ? 'done'
+                          : 'active',
+                    ),
+                    _flowStep(
+                      number: 3,
+                      title: 'Hubungi Petugas',
+                      description: isMapped
+                          ? 'Sudah berkoordinasi dengan petugas.'
+                          : isAccepted
+                          ? 'Tekan tombol Hubungi Petugas via WhatsApp.'
+                          : 'Jika disetujui, hubungi petugas untuk pemetaan.',
+                      state: isMapped
+                          ? 'done'
+                          : isAccepted
+                          ? 'active'
+                          : 'idle',
+                    ),
+                    _flowStep(
+                      number: 4,
+                      title: 'Terverifikasi',
+                      description: isMapped
+                          ? 'Lahan telah terpetakan dan siap digunakan.'
+                          : 'Lahan terpetakan dan siap digunakan untuk panen.',
+                      state: isMapped ? 'done' : 'idle',
+                      showLine: false,
+                    ),
+                    const SizedBox(height: 18),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Column(
+                        children: [
+                          _detailItem(
+                            'Nama Lahan',
+                            lahan['nama_lahan']?.toString() ?? '-',
+                          ),
+                          _detailItem(
+                            'Luas Lahan',
+                            '${lahan['luas_lahan_hektar'] ?? 0} Ha',
+                          ),
+                          _detailItem(
+                            'Kecamatan',
+                            (lahan['nama_kecamatan'] ??
+                                    lahan['kecamatan'] ??
+                                    '-')
+                                .toString(),
+                          ),
+                          _detailItem(
+                            'Alamat Lengkap',
+                            lahan['alamat_detail']?.toString() ?? '-',
+                            isLast: true,
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (isRejected) ...[
+                      const SizedBox(height: 14),
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF2F2),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFFECACA)),
+                        ),
+                        child: Text(
+                          'Catatan Penolakan:\n$reason',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: const Color(0xFFB91C1C),
+                            height: 1.45,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    OutlinedButton(
+                      onPressed: () => Navigator.pop(sheetContext),
+                      child: const Text('Tutup'),
+                    ),
+                    if (isRejected) ...[
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () =>
+                            _openRiwayatPerbaikan(closeDetail: true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red[700],
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Perbaiki Pengajuan'),
+                      ),
+                    ] else if (isAccepted) ...[
+                      const SizedBox(width: 8),
+                      ElevatedButton.icon(
+                        onPressed: () => _hubungiPetugas(lahan),
+                        icon: const Icon(Icons.chat_outlined, size: 18),
+                        label: const Text('Hubungi Petugas'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF22C55E),
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _statusBadge(String status) {
+    final color = status == 'DITOLAK'
+        ? Colors.red
+        : status == 'PENDING'
+        ? Colors.orange
+        : Colors.green;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        status,
+        style: GoogleFonts.inter(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          color: color[700],
+        ),
+      ),
+    );
+  }
+
+  Widget _flowStep({
+    required int number,
+    required String title,
+    required String description,
+    required String state,
+    bool showLine = true,
+  }) {
+    final color = state == 'rejected'
+        ? Colors.red
+        : state == 'done' || state == 'active'
+        ? Colors.green
+        : Colors.grey;
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            width: 34,
+            child: Column(
+              children: [
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: state == 'active'
+                        ? color.withValues(alpha: 0.12)
+                        : state == 'idle'
+                        ? const Color(0xFFE2E8F0)
+                        : color,
+                    shape: BoxShape.circle,
+                    border: state == 'active'
+                        ? Border.all(color: color, width: 2)
+                        : null,
+                  ),
+                  alignment: Alignment.center,
+                  child: state == 'done'
+                      ? const Icon(Icons.check, size: 17, color: Colors.white)
+                      : state == 'rejected'
+                      ? const Icon(Icons.close, size: 17, color: Colors.white)
+                      : Text(
+                          '$number',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: state == 'active'
+                                ? color[700]
+                                : const Color(0xFF64748B),
+                          ),
+                        ),
+                ),
+                if (showLine)
+                  Expanded(
+                    child: Container(width: 2, color: const Color(0xFFE2E8F0)),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$number. $title',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF1E293B),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    description,
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: const Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _detailItem(String label, String value, {bool isLast = false}) =>
+      Padding(
+        padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 110,
+              child: Text(
+                label.toUpperCase(),
+                style: GoogleFonts.inter(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF94A3B8),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Text(
+                value,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF334155),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -736,8 +1132,8 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
               separatorBuilder: (context, index) =>
                   const Divider(height: 1, color: Color(0xFFE2E8F0)),
               itemBuilder: (context, index) {
-                final lahan = lahanList[index];
-                final status = lahan['status_verifikasi'] ?? 'PENDING';
+                final lahan = lahanList[index] as Map<String, dynamic>;
+                final status = _statusLahan(lahan);
 
                 Color statusBg = const Color(0xFFFEF3C7);
                 Color statusTxt = const Color(0xFFD97706);
@@ -752,86 +1148,103 @@ class _PetaniDashboardState extends State<PetaniDashboard> {
                 final detail = lahan['alamat_detail'] ?? '-';
                 final area = lahan['luas_lahan_hektar'] ?? 0;
 
-                return Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
+                return InkWell(
+                  onTap: () => _showLahanDetail(lahan),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    lahan['nama_lahan'] ?? 'Lahan',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFF14280B),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '$detail · $area Ha',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 11,
+                                      color: Colors.grey[500],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: statusBg,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                status.replaceAll('_', ' '),
+                                style: GoogleFonts.inter(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: statusTxt,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (status == 'DITOLAK') ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF2F2),
+                              border: Border.all(
+                                color: const Color(0xFFFEE2E2),
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  lahan['nama_lahan'] ?? 'Lahan',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF14280B),
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '$detail · $area Ha',
+                                  lahan['alasan_penolakan'] ??
+                                      lahan['catatan_verifikasi'] ??
+                                      'Pengajuan perlu diperbaiki.',
                                   style: GoogleFonts.inter(
                                     fontSize: 11,
-                                    color: Colors.grey[500],
+                                    color: const Color(0xFFB91C1C),
+                                    height: 1.4,
                                   ),
+                                ),
+                                const SizedBox(height: 8),
+                                TextButton(
+                                  onPressed: _openRiwayatPerbaikan,
+                                  style: TextButton.styleFrom(
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: const Size(0, 32),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                    foregroundColor: const Color(0xFFB91C1C),
+                                  ),
+                                  child: const Text('Perbaiki pengajuan'),
                                 ),
                               ],
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: statusBg,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              status.replaceAll('_', ' '),
-                              style: GoogleFonts.inter(
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                                color: statusTxt,
-                              ),
-                            ),
-                          ),
                         ],
-                      ),
-                      if (status == 'DITOLAK') ...[
-                        const SizedBox(height: 12),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFEF2F2),
-                            border: Border.all(color: const Color(0xFFFEE2E2)),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                lahan['alasan_penolakan'] ??
-                                    lahan['catatan_verifikasi'] ??
-                                    'Pengajuan perlu diperbaiki.',
-                                style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  color: const Color(0xFFB91C1C),
-                                  height: 1.4,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
                       ],
-                    ],
+                    ),
                   ),
                 );
               },
