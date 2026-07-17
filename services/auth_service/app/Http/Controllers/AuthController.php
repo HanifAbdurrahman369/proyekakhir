@@ -190,16 +190,53 @@ class AuthController extends Controller
         ]);
         $user->save();
 
-        if ($user->role_id == 2 && !empty($user->komunitas_id)) {
+        if ($user->role_id == 2) {
+            // Akun petugas lama dapat belum memiliki relasi entitas wilayah.
+            // Buat satu record wilayah kerja saat profil pertama kali disimpan
+            // supaya web dan mobile tidak memberi sukses palsu.
+            if (empty($user->komunitas_id) &&
+                (!empty($validated['wilayah_kecamatan_id']) || !empty($validated['wilayah_kelurahan_id']))) {
+                $communityId = $user->nip
+                    ? DB::table('komunitas')
+                        ->where('jenis_komunitas', 'BPP')
+                        ->where('nip', $user->nip)
+                        ->value('id')
+                    : null;
+
+                if (!$communityId) {
+                    $communityId = DB::table('komunitas')->insertGetId([
+                        'nip' => $user->nip,
+                        'jenis_komunitas' => 'BPP',
+                        'nama' => $user->nama_lengkap,
+                        'nama_komunitas' => 'Wilayah Kerja ' . $user->nama_lengkap,
+                        'nomor_hp' => $user->no_hp,
+                        'alamat' => $user->alamat,
+                        'status_keanggotaan' => 'AKTIF',
+                        'instansi_asal' => 'DINAS_PERTANIAN',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+
+                $user->komunitas_id = $communityId;
+                $user->save();
+            }
+
             $kelurahan_ids = null;
             if (!empty($validated['wilayah_kelurahan_id'])) {
                 $kelurahan_ids = json_encode([(int) $validated['wilayah_kelurahan_id']]);
             }
 
-            DB::table('komunitas')->where('id', $user->komunitas_id)->update([
-                'wilayah_kecamatan_id' => $validated['wilayah_kecamatan_id'] ?? null,
-                'wilayah_kelurahan_ids' => $kelurahan_ids,
-            ]);
+            if (!empty($user->komunitas_id)) {
+                DB::table('komunitas')->where('id', $user->komunitas_id)->update([
+                    'nama' => $user->nama_lengkap,
+                    'nomor_hp' => $user->no_hp,
+                    'alamat' => $user->alamat,
+                    'wilayah_kecamatan_id' => $validated['wilayah_kecamatan_id'] ?? null,
+                    'wilayah_kelurahan_ids' => $kelurahan_ids,
+                    'updated_at' => now(),
+                ]);
+            }
         }
 
         return response()->json([

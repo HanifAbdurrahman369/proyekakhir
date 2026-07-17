@@ -17,7 +17,7 @@ $db = new PDO(
 $secret = $env['JWT_SECRET'] ?? 'secret-key-sementara-untuk-lokal';
 $gateway = 'http://127.0.0.1:8003/api';
 $results = [];
-$created = ['lahan' => null, 'tanam' => null, 'panen' => null, 'monitoring' => null, 'komunitas' => null];
+$created = ['lahan' => null, 'tanam' => null, 'panen' => null, 'monitoring' => null, 'komunitas' => null, 'profile_komunitas' => null];
 
 function tokenForRole(PDO $db, string $secret, int $roleId): string
 {
@@ -87,6 +87,10 @@ function assertDb(PDO $db, string $label, string $sql, array $bindings, $expecte
 try {
     $farmer = $db->query('SELECT * FROM users WHERE role_id=1 ORDER BY id LIMIT 1')->fetch();
     $officer = $db->query('SELECT * FROM users WHERE role_id=2 ORDER BY id LIMIT 1')->fetch();
+    $officerOriginalKomunitasId = !empty($officer['komunitas_id']) ? (int) $officer['komunitas_id'] : null;
+    $officerOriginalCommunity = $officerOriginalKomunitasId
+        ? $db->query('SELECT * FROM komunitas WHERE id=' . $officerOriginalKomunitasId)->fetch()
+        : null;
     $reference = $db->query('SELECT k.id kecamatan_id, d.id kelurahan_id FROM kecamatan k JOIN kelurahan d ON d.kecamatan_id=k.id ORDER BY k.id,d.id LIMIT 1')->fetch();
     $tipeId = (int) $db->query('SELECT id FROM tipe_lahan ORDER BY id LIMIT 1')->fetchColumn();
     $bibitId = (int) $db->query('SELECT id FROM jenis_bibit ORDER BY id LIMIT 1')->fetchColumn();
@@ -132,13 +136,40 @@ try {
     ]);
 
     $suffix = date('YmdHis');
+    $officerKelurahan = json_decode((string) ($officer['wilayah_kelurahan_ids'] ?? '[]'), true);
+    $officerKelurahanId = is_array($officerKelurahan) && $officerKelurahan
+        ? (int) $officerKelurahan[0]
+        : (int) $reference['kelurahan_id'];
+    api('Update profil wilayah petugas', 'PUT', "{$gateway}/auth/profile", $tokens[2], [
+        'nama_lengkap' => $officer['nama_lengkap'], 'email' => $officer['email'],
+        'no_hp' => $officer['no_hp'], 'alamat' => $officer['alamat'],
+        'wilayah_kecamatan_id' => (int) (($officer['wilayah_kecamatan_id'] ?? null) ?: $reference['kecamatan_id']),
+        'wilayah_kelurahan_id' => $officerKelurahanId,
+    ]);
+    $profileCommunityId = (int) $db->query('SELECT komunitas_id FROM users WHERE id=' . (int) $officer['id'])->fetchColumn();
+    if (!$officerOriginalKomunitasId) {
+        $created['profile_komunitas'] = $profileCommunityId;
+    }
+    assertDb($db, 'DB profil kecamatan petugas tersimpan', 'SELECT wilayah_kecamatan_id FROM komunitas WHERE id=?', [$profileCommunityId], (int) (($officer['wilayah_kecamatan_id'] ?? null) ?: $reference['kecamatan_id']));
+    assertDb($db, 'DB profil kelurahan petugas tersimpan', 'SELECT JSON_UNQUOTE(JSON_EXTRACT(wilayah_kelurahan_ids, "$[0]")) FROM komunitas WHERE id=?', [$profileCommunityId], $officerKelurahanId);
+
     $community = api('Tambah komunitas petugas', 'POST', "{$gateway}/komunitas", $tokens[2], [
         'jenis_komunitas' => 'kelompok_tani', 'nama' => "E2E Komunitas {$suffix}",
         'nama_komunitas' => "E2E Komunitas {$suffix}",
+        'nik' => "99{$suffix}", 'nomor_hp' => '081234567890',
+        'wilayah_kecamatan_id' => (int) $reference['kecamatan_id'],
+        'wilayah_kelurahan_ids' => [(int) $reference['kelurahan_id']],
+        'nama_bpp' => 'BPP Pengujian Integrasi',
+        'alamat' => 'Alamat sekretariat pengujian integrasi',
     ], [201]);
     $created['komunitas'] = (int) $community['data']['id'];
-    assertDb($db, 'DB komunitas tersimpan', 'SELECT COUNT(*) FROM komunitas WHERE id=? AND nama=?', [$created['komunitas'], "E2E Komunitas {$suffix}"], 1);
-    api('Ubah komunitas petugas', 'PUT', "{$gateway}/komunitas/{$created['komunitas']}", $tokens[2], ['nama' => "E2E Komunitas Update {$suffix}", 'nama_komunitas' => "E2E Komunitas Update {$suffix}"]);
+    assertDb($db, 'DB komunitas dan wilayah tersimpan', 'SELECT COUNT(*) FROM komunitas WHERE id=? AND nama=? AND nik=? AND wilayah_kecamatan_id=?', [$created['komunitas'], "E2E Komunitas {$suffix}", "99{$suffix}", (int) $reference['kecamatan_id']], 1);
+    api('Ubah komunitas petugas', 'PUT', "{$gateway}/komunitas/{$created['komunitas']}", $tokens[2], [
+        'nama' => "E2E Komunitas Update {$suffix}",
+        'nama_komunitas' => "E2E Komunitas Update {$suffix}",
+        'status_keanggotaan' => 'TIDAK_AKTIF',
+    ]);
+    assertDb($db, 'DB status komunitas diperbarui', 'SELECT status_keanggotaan FROM komunitas WHERE id=?', [$created['komunitas']], 'TIDAK_AKTIF');
 
     $landPayload = [
         'nama_lahan' => "E2E Lahan {$suffix}",
@@ -225,6 +256,20 @@ try {
         }
         if ($created['komunitas']) {
             $db->prepare('DELETE FROM komunitas WHERE id=?')->execute([$created['komunitas']]);
+        }
+        if ($created['profile_komunitas']) {
+            $db->prepare('UPDATE users SET komunitas_id=? WHERE id=?')->execute([$officerOriginalKomunitasId, $officer['id']]);
+            $db->prepare('DELETE FROM komunitas WHERE id=?')->execute([$created['profile_komunitas']]);
+        } elseif ($officerOriginalCommunity) {
+            $db->prepare('UPDATE komunitas SET wilayah_kecamatan_id=?, wilayah_kelurahan_ids=?, nama=?, nomor_hp=?, alamat=?, updated_at=? WHERE id=?')->execute([
+                $officerOriginalCommunity['wilayah_kecamatan_id'],
+                $officerOriginalCommunity['wilayah_kelurahan_ids'],
+                $officerOriginalCommunity['nama'],
+                $officerOriginalCommunity['nomor_hp'],
+                $officerOriginalCommunity['alamat'],
+                $officerOriginalCommunity['updated_at'],
+                $officerOriginalKomunitasId,
+            ]);
         }
     } catch (Throwable $cleanupError) {
         $results[] = ['label' => 'Cleanup data uji', 'status' => 'ERROR', 'ok' => false, 'message' => $cleanupError->getMessage()];

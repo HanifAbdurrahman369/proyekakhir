@@ -17,6 +17,12 @@
             Mohon tunggu, aplikasi <strong>SiPetani.apk</strong> sedang diunduh ke perangkat Anda.
         </p>
 
+        <div class="mb-6 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-left text-xs text-emerald-900">
+            <div class="flex justify-between gap-3"><span>Versi APK</span><strong>{{ $apkVersion }}</strong></div>
+            <div class="mt-1 flex justify-between gap-3"><span>Diperbarui</span><strong>{{ $apkUpdatedAt }}</strong></div>
+            <div class="mt-1 flex justify-between gap-3"><span>Ukuran</span><strong>{{ $apkSizeMb }} MB</strong></div>
+        </div>
+
         <div class="space-y-3 w-full">
             <button onclick="startDownload()" class="block w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-colors text-sm">
                 Coba Unduh Ulang
@@ -37,7 +43,7 @@
 
 <script>
     function startDownload() {
-        window.location.href = "{{ route('mobile-app.file') }}";
+        window.location.href = @json(route('mobile-app.file', ['v' => $apkFingerprint]));
     }
 
     // Trigger download automatically on load
