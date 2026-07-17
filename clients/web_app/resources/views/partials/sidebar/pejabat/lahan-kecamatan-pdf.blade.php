@@ -4,6 +4,9 @@
     <meta charset="utf-8">
     <title>Rekap Luas Lahan Aktif Per Kecamatan</title>
     <style>
+        html, body {
+            background-color: #ffffff;
+        }
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             color: #1a1a1a;
@@ -39,6 +42,7 @@
         .header-banner .title-container {
             vertical-align: middle;
             padding-left: 12px;
+            width: 48%;
         }
         .header-banner .system-subtitle {
             font-size: 11px;
@@ -58,6 +62,7 @@
         .header-banner .info-container {
             text-align: right;
             vertical-align: middle;
+            width: 42%;
             font-size: 10px;
             color: #555555;
             line-height: 1.4;
@@ -122,14 +127,18 @@
         <table>
             <tr>
                 <td class="logo-container">
-                    <img src="{{ public_path('storage/logo.png') }}" alt="Logo">
+                    @if(file_exists(public_path('storage/logo.png')))
+                        <img src="{{ public_path('storage/logo.png') }}" alt="Logo">
+                    @else
+                        <div style="font-weight: bold; color: #047857; font-size: 24px;">ST</div>
+                    @endif
                 </td>
                 <td class="title-container">
                     <div class="system-subtitle">Sistem Informasi</div>
                     <div class="system-title">Pemetaan Tanaman Padi</div>
                 </td>
                 <td class="info-container">
-                    <div>Rekap Luas Lahan Aktif Per Kecamatan</div>
+                    <div style="font-weight: bold; font-size: 12px; color: #022c22; margin-bottom: 2px;">Rekap Luas Lahan Aktif Per Kecamatan</div>
                     <div style="margin-top: 3px; color: #555555; font-weight: 500;">
                         Tanggal Cetak: {{ now()->translatedFormat('d F Y H:i') }}
                     </div>

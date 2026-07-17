@@ -86,21 +86,20 @@ Route::get('/dashboard-petani', [PetaniController::class, 'index'])->middleware(
 // Memastikan "case 2: return redirect('/dashboard-petugas');" bekerja sempurna dan memuat data peta
 Route::get('/dashboard-petugas', [PetugasController::class, 'index'])->middleware('role:2');
 
-Route::get('/pejabat/cetak-laporan', [PejabatController::class, 'exportDashboardPDF'])->name('pejabat.cetak');
-Route::get('/pejabat/lahan-sawah/pdf', [PejabatController::class, 'exportLahanSawahPDF'])->name('pejabat.lahan_sawah.pdf');
-Route::get('/pejabat/lahan-sawah/excel', [PejabatController::class, 'exportLahanSawahExcel'])->name('pejabat.lahan_sawah.excel');
-Route::get('/pejabat/produksi-kecamatan/excel', [PejabatController::class, 'exportProduksiExcel'])->name('pejabat.produksi_kecamatan.excel');
-Route::get('/pejabat/produksi-kecamatan/pdf', [PejabatController::class, 'exportProduksiPDF'])->name('produksi.kecamatan.pdf');
-Route::get('/pejabat/lahan-kecamatan/pdf', [PejabatController::class, 'exportLahanPDF'])->name('lahan.kecamatan.pdf');
-Route::get('/pejabat/produksi-kelurahan/pdf', [PejabatController::class, 'exportProduksiKelurahanPDF'])->name('pejabat.produksi_kelurahan.pdf');
-Route::get('/pejabat/produksi-kelurahan/excel', [PejabatController::class, 'exportProduksiKelurahanExcel'])->name('pejabat.produksi_kelurahan.excel');
-
 Route::middleware(['role:3'])->group(function () {
     Route::get('/dashboard-pejabat', [PejabatController::class, 'index'])->name('dashboard.pejabat');
     Route::get('/pejabat/produksi-kecamatan', [PejabatController::class, 'produksiKecamatan'])->name('produksi.kecamatan');
     Route::get('/pejabat/lahan-kecamatan', [PejabatController::class, 'lahanKecamatan'])->name('lahan.kecamatan');
     Route::get('/laporan-produksi', [ProduksiDaerahController::class, 'index'])->name('laporan.produksi');
     Route::get('/api/produksi-daerah', [ProduksiDaerahController::class, 'data'])->name('laporan.produksi.data');
+    Route::get('/pejabat/cetak-laporan', [PejabatController::class, 'exportDashboardPDF'])->name('pejabat.cetak');
+    Route::get('/pejabat/lahan-sawah/pdf', [PejabatController::class, 'exportLahanSawahPDF'])->name('pejabat.lahan_sawah.pdf');
+    Route::get('/pejabat/lahan-sawah/excel', [PejabatController::class, 'exportLahanSawahExcel'])->name('pejabat.lahan_sawah.excel');
+    Route::get('/pejabat/produksi-kecamatan/excel', [PejabatController::class, 'exportProduksiExcel'])->name('pejabat.produksi_kecamatan.excel');
+    Route::get('/pejabat/produksi-kecamatan/pdf', [PejabatController::class, 'exportProduksiPDF'])->name('produksi.kecamatan.pdf');
+    Route::get('/pejabat/lahan-kecamatan/pdf', [PejabatController::class, 'exportLahanPDF'])->name('lahan.kecamatan.pdf');
+    Route::get('/pejabat/produksi-kelurahan/pdf', [PejabatController::class, 'exportProduksiKelurahanPDF'])->name('pejabat.produksi_kelurahan.pdf');
+    Route::get('/pejabat/produksi-kelurahan/excel', [PejabatController::class, 'exportProduksiKelurahanExcel'])->name('pejabat.produksi_kelurahan.excel');
 });
 
 

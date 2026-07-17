@@ -12,14 +12,7 @@ class LaporPanen extends Model
 
     protected $fillable = [
         'tanam_padi_id',
-        'lahan_id',
-        'bibit_id',
         'pemilik_id',
-        'petani_id',
-        'nama_lahan',
-        'nama_bibit',
-        'varietas',
-        'tanggal_tanam',
         'diverifikasi_oleh',
         'tanggal_panen',
         'hasil_panen_ton',

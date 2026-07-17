@@ -35,14 +35,14 @@
         <tr>
             <th>Total Luas Tanam (Ha)</th>
             <td>{{ number_format($summary['total_luas_tanam_ha'] ?? 0, 2, ',', '.') }}</td>
-            <th>Total Hasil Panen (Ton)</th>
-            <td>{{ number_format($summary['total_hasil_panen_ton'] ?? 0, 2, ',', '.') }}</td>
+            <th>Total Produksi (Ton)</th>
+            <td>{{ number_format($summary['total_produksi_ton'] ?? 0, 2, ',', '.') }}</td>
         </tr>
         <tr>
-            <th>Rata-rata Produksi (Ton/Ha)</th>
-            <td>{{ number_format($summary['avg_produktivitas'] ?? 0, 2, ',', '.') }}</td>
-            <th>Total Record Data</th>
-            <td>{{ number_format($summary['total_record'] ?? 0, 0, ',', '.') }}</td>
+            <th>Rata-rata Produktivitas (Ton/Ha)</th>
+            <td>{{ number_format($summary['rata_produktivitas_ton_ha'] ?? 0, 3, ',', '.') }}</td>
+            <th>Jumlah Tahun</th>
+            <td>{{ number_format($summary['jumlah_tahun'] ?? 0, 0, ',', '.') }}</td>
         </tr>
     </table>
 
@@ -51,27 +51,29 @@
             <tr>
                 <th width="5%">No</th>
                 <th width="10%">Tahun</th>
-                <th width="20%">Nama Petani</th>
-                <th width="20%">Kelurahan</th>
-                <th width="15%">Luas Tanam (Ha)</th>
-                <th width="15%">Hasil Panen (Ton)</th>
-                <th width="15%">Produktivitas (Ton/Ha)</th>
+                <th width="14%">Luas Tanam (Ha)</th>
+                <th width="14%">Luas Panen (Ha)</th>
+                <th width="14%">Produktivitas (Ton/Ha)</th>
+                <th width="14%">Produksi (Ton)</th>
+                <th width="13%">Status</th>
+                <th width="20%">Sumber</th>
             </tr>
         </thead>
         <tbody>
             @forelse($data as $index => $row)
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
-                    <td class="text-center">{{ $row['tahun_lbs'] ?? '-' }}</td>
-                    <td>{{ $row['pemilik_lahan'] ?? '-' }}</td>
-                    <td>{{ $row['nama_kelurahan'] ?? '-' }}</td>
-                    <td class="text-right">{{ number_format($row['luas_tanam_hektar'] ?? 0, 2, ',', '.') }}</td>
-                    <td class="text-right">{{ number_format($row['hasil_panen_ton'] ?? 0, 2, ',', '.') }}</td>
-                    <td class="text-right">{{ number_format($row['produktivitas_ton_ha'] ?? 0, 2, ',', '.') }}</td>
+                    <td class="text-center">{{ $row['tahun'] ?? '-' }}</td>
+                    <td class="text-right">{{ number_format($row['luas_tanam_ha'] ?? 0, 2, ',', '.') }}</td>
+                    <td class="text-right">{{ number_format($row['luas_panen_ha'] ?? 0, 2, ',', '.') }}</td>
+                    <td class="text-right">{{ number_format($row['produktivitas_ton_ha'] ?? 0, 3, ',', '.') }}</td>
+                    <td class="text-right">{{ number_format($row['produksi_ton'] ?? 0, 2, ',', '.') }}</td>
+                    <td>{{ $row['status_data'] ?? '-' }}</td>
+                    <td>{{ $row['sumber_data'] ?? '-' }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="text-center">Tidak ada data historis yang tersedia.</td>
+                    <td colspan="8" class="text-center">Tidak ada data historis yang tersedia.</td>
                 </tr>
             @endforelse
         </tbody>

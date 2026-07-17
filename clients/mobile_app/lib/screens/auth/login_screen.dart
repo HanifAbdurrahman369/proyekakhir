@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import 'forgot_password_screen.dart';
 
-
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -31,8 +30,9 @@ class _LoginScreenState extends State<LoginScreen> {
   void _generateCaptcha() {
     final random = math.Random();
     setState(() {
-      _num1 = random.nextInt(15) + 1;
-      _num2 = random.nextInt(15) + 1;
+      // Sama dengan website: kedua angka captcha berada pada rentang 1-9.
+      _num1 = random.nextInt(9) + 1;
+      _num2 = random.nextInt(9) + 1;
       _captchaController.clear();
     });
   }
@@ -55,15 +55,14 @@ class _LoginScreenState extends State<LoginScreen> {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: Text(
               'Verifikasi Gagal',
               style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
             ),
-            content: Text(
-              'penjumlahan salah',
-              style: GoogleFonts.inter(),
-            ),
+            content: Text('penjumlahan salah', style: GoogleFonts.inter()),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -84,42 +83,56 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       final user = authProvider.currentUser;
-      if (user != null && user.roleId != 1 && user.roleId != 2 && user.roleId != 5) {
+      if (user != null &&
+          user.roleId != 1 &&
+          user.roleId != 2 &&
+          user.roleId != 5) {
         await authProvider.logout();
-        throw Exception('Role ini tidak diizinkan mengakses aplikasi mobile. Silakan gunakan versi website.');
+        throw Exception(
+          'Role ini tidak diizinkan mengakses aplikasi mobile. Silakan gunakan versi website.',
+        );
       }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Selamat datang kembali, ${authProvider.currentUser?.namaLengkap}!'),
+            content: Text(
+              'Selamat datang kembali, ${authProvider.currentUser?.namaLengkap}!',
+            ),
             backgroundColor: Colors.green[800],
           ),
         );
-        Navigator.pop(context); // Menutup halaman login agar AuthWrapper langsung memuat HomeScreen
+        Navigator.pop(
+          context,
+        ); // Menutup halaman login agar AuthWrapper langsung memuat HomeScreen
       }
     } catch (e) {
       _generateCaptcha();
       if (mounted) {
         String errorMsg = e.toString().replaceAll('Exception: ', '');
-        if (errorMsg.toLowerCase().contains('email tidak ditemukan') || errorMsg.toLowerCase().contains('tidak ditemukan di sistem') || errorMsg.toLowerCase().contains('nik atau nip tidak ditemukan')) {
+        if (errorMsg.toLowerCase().contains('email tidak ditemukan') ||
+            errorMsg.toLowerCase().contains('tidak ditemukan di sistem') ||
+            errorMsg.toLowerCase().contains('nik atau nip tidak ditemukan')) {
           errorMsg = 'NIK / NIP salah';
-        } else if (errorMsg.toLowerCase().contains('password yang anda masukkan salah') || errorMsg.toLowerCase().contains('password salah') || errorMsg.toLowerCase().contains('salah')) {
+        } else if (errorMsg.toLowerCase().contains(
+              'password yang anda masukkan salah',
+            ) ||
+            errorMsg.toLowerCase().contains('password salah') ||
+            errorMsg.toLowerCase().contains('salah')) {
           errorMsg = 'password salah';
         }
 
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: Text(
               'Login Gagal',
               style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
             ),
-            content: Text(
-              errorMsg,
-              style: GoogleFonts.inter(),
-            ),
+            content: Text(errorMsg, style: GoogleFonts.inter()),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -131,8 +144,6 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     }
   }
-
-
 
   // Menampilkan Sheet Dialog untuk pendaftaran akun Petani Baru
   // Menampilkan Sheet Dialog untuk pendaftaran akun Petani Baru (Buat Akun Baru)
@@ -196,7 +207,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        
+
                         // NIK
                         Text(
                           'Nomor Induk Kependudukan (NIK)',
@@ -216,7 +227,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             hint: 'Masukkan 16 digit NIK Anda',
                             icon: Icons.badge_outlined,
                           ).copyWith(counterText: ''),
-                          validator: (v) => v == null || v.trim().length != 16 ? 'NIK wajib 16 digit' : null,
+                          validator: (v) => v == null || v.trim().length != 16
+                              ? 'NIK wajib 16 digit'
+                              : null,
                         ),
                         const SizedBox(height: 16),
 
@@ -239,8 +252,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             icon: Icons.mail_outline_rounded,
                           ),
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty) return 'Email wajib diisi';
-                            if (!v.contains('@')) return 'Format email tidak valid';
+                            if (v == null || v.trim().isEmpty) {
+                              return 'Email wajib diisi';
+                            }
+                            if (!v.contains('@')) {
+                              return 'Format email tidak valid';
+                            }
                             return null;
                           },
                         ),
@@ -259,16 +276,34 @@ class _LoginScreenState extends State<LoginScreen> {
                         DropdownButtonFormField<String>(
                           initialValue: selectedJenisKelompok,
                           dropdownColor: Colors.white,
-                          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF94A3B8)),
-                          style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF0F172A)),
+                          icon: const Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            color: Color(0xFF94A3B8),
+                          ),
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: const Color(0xFF0F172A),
+                          ),
                           items: [
                             DropdownMenuItem(
                               value: 'kelompok_tani',
-                              child: Text('Kelompok Tani', style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF0F172A))),
+                              child: Text(
+                                'Kelompok Tani',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: const Color(0xFF0F172A),
+                                ),
+                              ),
                             ),
                             DropdownMenuItem(
                               value: 'brigade_pangan',
-                              child: Text('Brigade Pangan', style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF0F172A))),
+                              child: Text(
+                                'Brigade Pangan',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: const Color(0xFF0F172A),
+                                ),
+                              ),
                             ),
                           ],
                           onChanged: (val) {
@@ -280,7 +315,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             hint: 'Pilih sumber data petani',
                             icon: Icons.group_outlined,
                           ),
-                          validator: (v) => v == null || v.isEmpty ? 'Sumber data wajib dipilih' : null,
+                          validator: (v) => v == null || v.isEmpty
+                              ? 'Sumber data wajib dipilih'
+                              : null,
                         ),
                         const SizedBox(height: 16),
 
@@ -302,7 +339,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             hint: 'Kata sandi minimal 6 karakter',
                             icon: Icons.lock_outline_rounded,
                           ),
-                          validator: (v) => v == null || v.length < 6 ? 'Sandi minimal 6 karakter' : null,
+                          validator: (v) => v == null || v.length < 6
+                              ? 'Sandi minimal 6 karakter'
+                              : null,
                         ),
                         const SizedBox(height: 16),
 
@@ -324,7 +363,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             hint: 'Ulangi kata sandi di atas',
                             icon: Icons.lock_clock_outlined,
                           ),
-                          validator: (v) => v != regPasswordController.text ? 'Konfirmasi kata sandi tidak cocok' : null,
+                          validator: (v) => v != regPasswordController.text
+                              ? 'Konfirmasi kata sandi tidak cocok'
+                              : null,
                         ),
                         const SizedBox(height: 28),
 
@@ -336,13 +377,18 @@ class _LoginScreenState extends State<LoginScreen> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(16),
                                 gradient: const LinearGradient(
-                                  colors: [Color(0xFF5EA500), Color(0xFF3E7D00)],
+                                  colors: [
+                                    Color(0xFF5EA500),
+                                    Color(0xFF3E7D00),
+                                  ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFF5EA500).withValues(alpha: 0.25),
+                                    color: const Color(
+                                      0xFF5EA500,
+                                    ).withValues(alpha: 0.25),
                                     offset: const Offset(0, 8),
                                     blurRadius: 16,
                                   ),
@@ -354,21 +400,34 @@ class _LoginScreenState extends State<LoginScreen> {
                                   onTap: auth.isLoading
                                       ? null
                                       : () async {
-                                          if (!registerFormKey.currentState!.validate()) return;
+                                          if (!registerFormKey.currentState!
+                                              .validate()) {
+                                            return;
+                                          }
                                           try {
                                             await auth.register(
                                               nik: nikController.text.trim(),
-                                              email: regEmailController.text.trim(),
-                                              password: regPasswordController.text,
-                                              passwordConfirmation: regConfirmPasswordController.text,
-                                              jenisKelompok: selectedJenisKelompok!,
+                                              email: regEmailController.text
+                                                  .trim(),
+                                              password:
+                                                  regPasswordController.text,
+                                              passwordConfirmation:
+                                                  regConfirmPasswordController
+                                                      .text,
+                                              jenisKelompok:
+                                                  selectedJenisKelompok!,
                                             );
                                             if (context.mounted) {
                                               Navigator.pop(context);
-                                              ScaffoldMessenger.of(context).showSnackBar(
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
                                                 SnackBar(
-                                                  content: const Text('Registrasi berhasil! Silakan melakukan login.'),
-                                                  backgroundColor: Colors.green[800],
+                                                  content: const Text(
+                                                    'Registrasi berhasil! Silakan melakukan login.',
+                                                  ),
+                                                  backgroundColor:
+                                                      Colors.green[800],
                                                 ),
                                               );
                                             }
@@ -377,19 +436,37 @@ class _LoginScreenState extends State<LoginScreen> {
                                               showDialog(
                                                 context: context,
                                                 builder: (ctx) => AlertDialog(
-                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          16,
+                                                        ),
+                                                  ),
                                                   title: Text(
                                                     'Registrasi Gagal',
-                                                    style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+                                                    style: GoogleFonts.outfit(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
                                                   ),
                                                   content: Text(
-                                                    e.toString().replaceAll('Exception: ', ''),
+                                                    e.toString().replaceAll(
+                                                      'Exception: ',
+                                                      '',
+                                                    ),
                                                     style: GoogleFonts.inter(),
                                                   ),
                                                   actions: [
                                                     TextButton(
-                                                      onPressed: () => Navigator.pop(ctx),
-                                                      child: Text('OK', style: TextStyle(color: Colors.green[800])),
+                                                      onPressed: () =>
+                                                          Navigator.pop(ctx),
+                                                      child: Text(
+                                                        'OK',
+                                                        style: TextStyle(
+                                                          color:
+                                                              Colors.green[800],
+                                                        ),
+                                                      ),
                                                     ),
                                                   ],
                                                 ),
@@ -496,11 +573,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
           // 2. Grid pattern
-          const Positioned.fill(
-            child: CustomPaint(
-              painter: GridPainter(),
-            ),
-          ),
+          const Positioned.fill(child: CustomPaint(painter: GridPainter())),
           // 3. Radial lighting glows (top-left & bottom-right)
           Positioned(
             left: -150,
@@ -545,7 +618,10 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Center(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24.0,
+                  vertical: 16.0,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -604,7 +680,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                     const SizedBox(height: 32),
-                    
+
                     // Auth Card
                     Container(
                       decoration: BoxDecoration(
@@ -613,7 +689,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         border: Border.all(color: Colors.white, width: 1.5),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF35530E).withValues(alpha: 0.12),
+                            color: const Color(
+                              0xFF35530E,
+                            ).withValues(alpha: 0.12),
                             offset: const Offset(0, 20),
                             blurRadius: 50,
                           ),
@@ -627,7 +705,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             // Email Label
                             Text(
-                              'NIK / NIP',
+                              'Nomor Induk Kependudukan / Pegawai (NIK/NIP)',
                               style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
@@ -641,7 +719,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               keyboardType: TextInputType.number,
                               style: GoogleFonts.inter(fontSize: 14),
                               decoration: _inputDecoration(
-                                hint: 'Masukkan 16 digit NIK atau 18 digit NIP',
+                                hint: 'Masukkan NIK atau NIP',
                                 icon: Icons.badge_outlined,
                               ),
                               validator: (value) {
@@ -669,7 +747,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => const ForgotPasswordScreen(),
+                                        builder: (context) =>
+                                            const ForgotPasswordScreen(),
                                       ),
                                     );
                                   },
@@ -730,7 +809,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF7FCED),
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: const Color(0xFFDFECCC), width: 1.5),
+                                border: Border.all(
+                                  color: const Color(0xFFDFECCC),
+                                  width: 1.5,
+                                ),
                               ),
                               padding: const EdgeInsets.all(16),
                               child: Column(
@@ -742,9 +824,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                         width: 44,
                                         height: 44,
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                           gradient: const LinearGradient(
-                                            colors: [Color(0xFF5EA500), Color(0xFF3E7D00)],
+                                            colors: [
+                                              Color(0xFF5EA500),
+                                              Color(0xFF3E7D00),
+                                            ],
                                             begin: Alignment.topLeft,
                                             end: Alignment.bottomRight,
                                           ),
@@ -759,7 +846,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               'Jawab pertanyaan berikut:',
@@ -801,27 +889,47 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ),
                                       filled: true,
                                       fillColor: Colors.white,
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                      errorStyle: const TextStyle(height: 0, fontSize: 0),
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 12,
+                                          ),
+                                      errorStyle: const TextStyle(
+                                        height: 0,
+                                        fontSize: 0,
+                                      ),
                                       enabledBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(12),
-                                        borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
+                                        borderSide: const BorderSide(
+                                          color: Color(0xFFE2E8F0),
+                                          width: 1.5,
+                                        ),
                                       ),
                                       focusedBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(12),
-                                        borderSide: const BorderSide(color: Color(0xFF66A80F), width: 2),
+                                        borderSide: const BorderSide(
+                                          color: Color(0xFF66A80F),
+                                          width: 2,
+                                        ),
                                       ),
                                       errorBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(12),
-                                        borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+                                        borderSide: const BorderSide(
+                                          color: Colors.redAccent,
+                                          width: 1.5,
+                                        ),
                                       ),
                                       focusedErrorBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(12),
-                                        borderSide: const BorderSide(color: Colors.redAccent, width: 2),
+                                        borderSide: const BorderSide(
+                                          color: Colors.redAccent,
+                                          width: 2,
+                                        ),
                                       ),
                                     ),
                                     validator: (value) {
-                                      if (value == null || value.trim().isEmpty) {
+                                      if (value == null ||
+                                          value.trim().isEmpty) {
                                         return 'Wajib diisi';
                                       }
                                       if (int.tryParse(value.trim()) == null) {
@@ -840,13 +948,18 @@ class _LoginScreenState extends State<LoginScreen> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(16),
                                 gradient: const LinearGradient(
-                                  colors: [Color(0xFF5EA500), Color(0xFF3E7D00)],
+                                  colors: [
+                                    Color(0xFF5EA500),
+                                    Color(0xFF3E7D00),
+                                  ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFF5EA500).withValues(alpha: 0.25),
+                                    color: const Color(
+                                      0xFF5EA500,
+                                    ).withValues(alpha: 0.25),
                                     offset: const Offset(0, 8),
                                     blurRadius: 16,
                                   ),
@@ -892,17 +1005,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                     color: const Color(0xFF64748B),
                                   ),
                                 ),
-                                  GestureDetector(
-                                   onTap: isLoading ? null : _showRegisterDialog,
-                                   child: Text(
-                                     'Daftar sekarang',
-                                     style: GoogleFonts.inter(
-                                       fontSize: 14,
-                                       fontWeight: FontWeight.bold,
-                                       color: const Color(0xFF497D00),
-                                     ),
-                                   ),
-                                 ),
+                                GestureDetector(
+                                  onTap: isLoading ? null : _showRegisterDialog,
+                                  child: Text(
+                                    'Daftar sekarang',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFF497D00),
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ],

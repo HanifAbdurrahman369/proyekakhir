@@ -143,6 +143,7 @@ class LahanSawahController extends Controller
             'nama_lahan',
             'kecamatan_id',
             'kelurahan_id',
+            'tipe_lahan_id',
             'luas_lahan_hektar',
             'alamat_detail',
             'status_verifikasi',
@@ -156,7 +157,7 @@ class LahanSawahController extends Controller
             $select[] = 'luas_tanam_hektar';
         }
 
-        $query = LahanSawah::with(['kecamatanLahan', 'kelurahanLahan', 'pemilik:id,nama_lengkap'])
+        $query = LahanSawah::with(['kecamatanLahan', 'kelurahanLahan', 'tipeLahan', 'pemilik:id,nama_lengkap'])
             ->where('status_verifikasi', 'DITERIMA')
             ->select($select);
 
@@ -170,6 +171,9 @@ class LahanSawahController extends Controller
                 $row->nomor_urut = $index + 1;
                 $row->user_id = $row->pemilik_id;
                 $row->pemilik_lahan = $row->pemilik?->nama_lengkap;
+                $row->nama_kecamatan = $row->kecamatanLahan?->nama_kecamatan;
+                $row->nama_kelurahan = $row->kelurahanLahan?->nama_kelurahan;
+                $row->nama_tipe_lahan = $row->tipeLahan?->nama_tipe;
 
                 return $row;
             });

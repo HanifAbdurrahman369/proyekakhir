@@ -11,6 +11,7 @@ class MonitoringKondisi extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'lahan_id',
         'lahan_huma_id',
         'tanggal_cek',
         'ph_air',
@@ -28,6 +29,11 @@ class MonitoringKondisi extends Model
     ];
 
     public function lahan()
+    {
+        return $this->belongsTo(LahanSawah::class, 'lahan_id');
+    }
+
+    public function lahanHuma()
     {
         return $this->belongsTo(LahanHuma::class, 'lahan_huma_id');
     }

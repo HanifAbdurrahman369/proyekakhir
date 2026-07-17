@@ -65,15 +65,17 @@ class StatistikController extends Controller
     {
         $this->authorizePejabat($request);
 
+        $latestYear = DB::table('statistik_padi_kecamatan')->max('tahun') ?? date('Y');
+
         $data = DB::table('kecamatan')
-            ->leftJoin('lahan_sawah', function($join) {
-                $join->on('kecamatan.id', '=', 'lahan_sawah.kecamatan_id')
-                     ->where('lahan_sawah.status_verifikasi', '=', 'DITERIMA');
+            ->leftJoin('statistik_padi_kecamatan', function ($join) use ($latestYear) {
+                $join->on('kecamatan.id', '=', 'statistik_padi_kecamatan.kecamatan_id')
+                    ->where('statistik_padi_kecamatan.tahun', '=', $latestYear);
             })
             ->select(
                 'kecamatan.id',
                 'kecamatan.nama_kecamatan',
-                DB::raw('COALESCE(SUM(lahan_sawah.hasil_panen_ton), 0) as produksi_pejabat')
+                DB::raw('COALESCE(SUM(statistik_padi_kecamatan.produksi_ton), 0) as produksi_pejabat')
             )
             ->groupBy(
                 'kecamatan.id',
@@ -92,17 +94,26 @@ class StatistikController extends Controller
     {
         $this->authorizePejabat($request);
 
+        $panenPerLahan = DB::table('panen_padi as pp')
+            ->join('tanam_padi as tp', 'tp.id', '=', 'pp.tanam_padi_id')
+            ->where('pp.status_verifikasi', 'DITERIMA')
+            ->select('tp.lahan_id', DB::raw('SUM(pp.hasil_panen_ton) as total_panen'))
+            ->groupBy('tp.lahan_id');
+
         $lahanData = DB::table('lahan_sawah')
             ->join('kelurahan', 'lahan_sawah.kelurahan_id', '=', 'kelurahan.id')
             ->join('kecamatan', 'kelurahan.kecamatan_id', '=', 'kecamatan.id')
             ->leftJoin('tipe_lahan', 'lahan_sawah.tipe_lahan_id', '=', 'tipe_lahan.id')
+            ->leftJoinSub($panenPerLahan, 'panen_diterima', function ($join) {
+                $join->on('panen_diterima.lahan_id', '=', 'lahan_sawah.id');
+            })
             ->where('lahan_sawah.status_verifikasi', 'DITERIMA')
             ->select(
                 'kecamatan.nama_kecamatan',
                 'kelurahan.nama_kelurahan',
                 'lahan_sawah.tahun_lbs',
                 'lahan_sawah.luas_lahan_hektar',
-                'lahan_sawah.hasil_panen_ton',
+                DB::raw('COALESCE(panen_diterima.total_panen, 0) as hasil_panen_ton'),
                 'tipe_lahan.nama_tipe'
             )
             ->get();

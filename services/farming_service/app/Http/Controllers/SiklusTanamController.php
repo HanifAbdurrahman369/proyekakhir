@@ -107,7 +107,6 @@ class SiklusTanamController extends Controller
             $request
         ) {
             $tanam = SiklusTanam::create([
-                'petani_id' => $userId,
                 'lahan_id' => $lahan->id,
                 'luas_tanam_hektar' => $luasTanam,
                 'bibit_id' => $bibit->id,
@@ -177,14 +176,7 @@ class SiklusTanamController extends Controller
         $hasil = (float) $request->hasil_panen;
         $payload = [
             'tanam_padi_id' => $tanam->id,
-            'lahan_id' => $tanam->lahan_id,
-            'bibit_id' => $tanam->bibit_id,
             'pemilik_id' => $tanam->lahan->pemilik_id,
-            'petani_id' => $userId,
-            'nama_lahan' => $tanam->lahan->nama_lahan,
-            'nama_bibit' => $tanam->bibit->nama_bibit,
-            'varietas' => $tanam->bibit->varietas,
-            'tanggal_tanam' => $tanam->tanggal_tanam,
             'tanggal_panen' => $tanggalPanen->toDateString(),
             'hasil_panen_ton' => $hasil,
             'status_verifikasi' => 'PENDING',
@@ -257,7 +249,7 @@ class SiklusTanamController extends Controller
             'panen_padi',
             (int) $laporan->id,
             '/verifikasi-data-petani?tipe=panen&id=' . $laporan->id,
-            $this->assignedPetugasLahan((int) $laporan->lahan_id)
+            $this->assignedPetugasLahan((int) $laporan->siklusTanam->lahan_id)
         );
 
         return response()->json([
@@ -497,7 +489,7 @@ class SiklusTanamController extends Controller
                 'catatan_verifikasi' => null,
             ]);
 
-            $this->sinkronkanInfoLahanDariPanenTerakhir((int) $panen->lahan_id);
+            $this->sinkronkanInfoLahanDariPanenTerakhir((int) $tanam->lahan_id);
             $this->tandaiNotifikasiPanenTerbaca((int) $panen->id);
 
             return [

@@ -71,7 +71,10 @@ class _PetugasKomunitasScreenState extends State<PetugasKomunitasScreen> {
       await _authService.deleteKomunitas(id);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Komunitas berhasil dihapus'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Komunitas berhasil dihapus'),
+            backgroundColor: Colors.green,
+          ),
         );
         _fetchKomunitas();
       }
@@ -87,8 +90,12 @@ class _PetugasKomunitasScreenState extends State<PetugasKomunitasScreen> {
 
   void _showFormDialog({Map<String, dynamic>? komunitas}) {
     final isEdit = komunitas != null;
-    final namaController = TextEditingController(text: isEdit ? komunitas['nama_komunitas'] ?? komunitas['nama'] : '');
-    String? selectedJenis = isEdit ? (komunitas['jenis_komunitas'] ?? komunitas['tipe']) : null;
+    final namaController = TextEditingController(
+      text: isEdit ? komunitas['nama_komunitas'] ?? komunitas['nama'] : '',
+    );
+    String? selectedJenis = isEdit
+        ? (komunitas['jenis_komunitas'] ?? komunitas['tipe'])
+        : null;
     final formKey = GlobalKey<FormState>();
 
     showDialog(
@@ -97,8 +104,13 @@ class _PetugasKomunitasScreenState extends State<PetugasKomunitasScreen> {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: Text(isEdit ? 'Edit Komunitas' : 'Tambah Komunitas', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Text(
+                isEdit ? 'Edit Komunitas' : 'Tambah Komunitas',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+              ),
               content: Form(
                 key: formKey,
                 child: Column(
@@ -111,14 +123,24 @@ class _PetugasKomunitasScreenState extends State<PetugasKomunitasScreen> {
                         border: OutlineInputBorder(),
                       ),
                       items: const [
-                        DropdownMenuItem(value: 'kelompok_tani', child: Text('Kelompok Tani')),
-                        DropdownMenuItem(value: 'brigade_pangan', child: Text('Brigade Pangan')),
-                        DropdownMenuItem(value: 'gapoktan', child: Text('Gapoktan')),
+                        DropdownMenuItem(
+                          value: 'kelompok_tani',
+                          child: Text('Kelompok Tani'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'brigade_pangan',
+                          child: Text('Brigade Pangan'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'gapoktan',
+                          child: Text('Gapoktan'),
+                        ),
                       ],
                       onChanged: (val) {
                         setModalState(() => selectedJenis = val);
                       },
-                      validator: (value) => value == null ? 'Pilih jenis' : null,
+                      validator: (value) =>
+                          value == null ? 'Pilih jenis' : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -127,7 +149,8 @@ class _PetugasKomunitasScreenState extends State<PetugasKomunitasScreen> {
                         labelText: 'Nama Komunitas',
                         border: OutlineInputBorder(),
                       ),
-                      validator: (value) => value == null || value.isEmpty ? 'Wajib diisi' : null,
+                      validator: (value) =>
+                          value == null || value.isEmpty ? 'Wajib diisi' : null,
                     ),
                   ],
                 ),
@@ -142,36 +165,55 @@ class _PetugasKomunitasScreenState extends State<PetugasKomunitasScreen> {
                     if (!formKey.currentState!.validate()) return;
                     Navigator.pop(context);
                     setState(() => _isLoading = true);
-                    
+
                     final payload = {
                       'jenis_komunitas': selectedJenis,
+                      // Backend web mewajibkan kolom `nama`; kirim alias tampilan
+                      // sekaligus agar data web dan mobile membaca record yang sama.
+                      'nama': namaController.text.trim(),
                       'nama_komunitas': namaController.text,
                     };
 
                     final messenger = ScaffoldMessenger.of(context);
                     try {
                       if (isEdit) {
-                        await _authService.updateKomunitas(komunitas['id'], payload);
+                        await _authService.updateKomunitas(
+                          komunitas['id'],
+                          payload,
+                        );
                       } else {
                         await _authService.createKomunitas(payload);
                       }
                       messenger.showSnackBar(
-                        SnackBar(content: Text('Komunitas berhasil ${isEdit ? 'diedit' : 'ditambah'}'), backgroundColor: Colors.green),
+                        SnackBar(
+                          content: Text(
+                            'Komunitas berhasil ${isEdit ? 'diedit' : 'ditambah'}',
+                          ),
+                          backgroundColor: Colors.green,
+                        ),
                       );
                       _fetchKomunitas();
                     } catch (e) {
                       setState(() => _isLoading = false);
                       messenger.showSnackBar(
-                        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+                        SnackBar(
+                          content: Text(e.toString()),
+                          backgroundColor: Colors.red,
+                        ),
                       );
                     }
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green[800]),
-                  child: Text('Simpan', style: const TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green[800],
+                  ),
+                  child: Text(
+                    'Simpan',
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
               ],
             );
-          }
+          },
         );
       },
     );
@@ -203,7 +245,9 @@ class _PetugasKomunitasScreenState extends State<PetugasKomunitasScreen> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: Colors.green));
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.green),
+      );
     }
 
     if (_errorMessage != null) {
@@ -213,7 +257,11 @@ class _PetugasKomunitasScreenState extends State<PetugasKomunitasScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline_rounded, size: 48, color: Colors.red),
+              const Icon(
+                Icons.error_outline_rounded,
+                size: 48,
+                color: Colors.red,
+              ),
               const SizedBox(height: 16),
               Text(
                 'Gagal memuat data komunitas\n$_errorMessage',
@@ -229,8 +277,13 @@ class _PetugasKomunitasScreenState extends State<PetugasKomunitasScreen> {
                   });
                   _fetchKomunitas();
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.green[800]),
-                child: const Text('Coba Lagi', style: TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green[800],
+                ),
+                child: const Text(
+                  'Coba Lagi',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -260,7 +313,9 @@ class _PetugasKomunitasScreenState extends State<PetugasKomunitasScreen> {
 
           return Card(
             margin: const EdgeInsets.only(bottom: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             elevation: 2,
             shadowColor: Colors.black12,
             child: Padding(
@@ -282,7 +337,10 @@ class _PetugasKomunitasScreenState extends State<PetugasKomunitasScreen> {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.green.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
@@ -306,13 +364,17 @@ class _PetugasKomunitasScreenState extends State<PetugasKomunitasScreen> {
                         onPressed: () => _showFormDialog(komunitas: k),
                         icon: const Icon(Icons.edit, size: 16),
                         label: const Text('Edit'),
-                        style: TextButton.styleFrom(foregroundColor: Colors.blue),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.blue,
+                        ),
                       ),
                       TextButton.icon(
                         onPressed: () => _deleteKomunitas(k['id']),
                         icon: const Icon(Icons.delete, size: 16),
                         label: const Text('Hapus'),
-                        style: TextButton.styleFrom(foregroundColor: Colors.red),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.red,
+                        ),
                       ),
                     ],
                   ),
