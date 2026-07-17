@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../core/constants/app_build.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/farming_provider.dart';
 import '../../models/user.dart';
@@ -218,7 +219,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               onTap: () {
                                 final notifId = item['id'];
                                 if (notifId != null) {
-                                  farmingProvider.deleteNotifikasi(int.tryParse(notifId.toString()) ?? 0);
+                                  farmingProvider.deleteNotifikasi(
+                                    int.tryParse(notifId.toString()) ?? 0,
+                                  );
                                 }
                                 _openNotificationTarget(
                                   context,
@@ -586,7 +589,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const PetugasKomunitasScreen(),
+                            builder: (context) =>
+                                const PetugasKomunitasScreen(),
                           ),
                         );
                       },
@@ -624,6 +628,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       Navigator.pop(context);
                       handleLogout();
                     },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 4, 24, 16),
+                    child: Text(
+                      AppBuild.releaseIdentity,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF94A3B8),
+                      ),
+                    ),
                   ),
                 ],
               ),

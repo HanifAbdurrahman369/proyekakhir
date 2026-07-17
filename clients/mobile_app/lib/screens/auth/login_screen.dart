@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/constants/app_build.dart';
 import '../../providers/auth_provider.dart';
 import 'forgot_password_screen.dart';
 
@@ -1080,13 +1081,27 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 32),
                     // Footer
                     Center(
-                      child: Text(
-                        '2026 - SiPetani',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF497D00),
-                        ),
+                      child: Column(
+                        children: [
+                          Text(
+                            '2026 - SiPetani',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF497D00),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            AppBuild.releaseIdentity,
+                            key: const ValueKey('app-release-identity'),
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 16),

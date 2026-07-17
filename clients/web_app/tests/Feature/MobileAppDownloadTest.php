@@ -26,7 +26,7 @@ class MobileAppDownloadTest extends TestCase
         ])->get('/download-mobile-app/file');
 
         $response->assertOk()
-            ->assertDownload('SiPetani.apk')
+            ->assertDownload('SiPetani-v1.2.2.apk')
             ->assertHeader('Content-Type', 'application/vnd.android.package-archive');
 
         $cacheControl = $response->headers->get('Cache-Control');
@@ -36,7 +36,8 @@ class MobileAppDownloadTest extends TestCase
         $this->assertStringNotContainsString('public', $cacheControl);
         $response->assertHeader('Pragma', 'no-cache')
             ->assertHeader('Expires', '0')
-            ->assertHeader('X-SiPetani-APK-SHA256', hash_file('sha256', $apkPath));
+            ->assertHeader('X-SiPetani-APK-SHA256', hash_file('sha256', $apkPath))
+            ->assertHeader('X-SiPetani-APK-Filename', 'SiPetani-v1.2.2.apk');
         $this->assertNotEmpty($response->headers->get('X-SiPetani-APK-Version'));
     }
 
@@ -49,7 +50,8 @@ class MobileAppDownloadTest extends TestCase
 
         $response->assertOk()
             ->assertSee('Versi APK')
-            ->assertSee('1.2.1')
+            ->assertSee('1.2.2')
+            ->assertSee('SiPetani-v1.2.2.apk')
             ->assertSee(substr(hash_file('sha256', storage_path('app/SiPetani.apk')), 0, 16));
     }
 

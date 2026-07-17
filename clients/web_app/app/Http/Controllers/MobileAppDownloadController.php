@@ -27,6 +27,7 @@ class MobileAppDownloadController extends Controller
 
         return view('mobile-app.download', [
             'apkVersion' => $apk['version'],
+            'apkDownloadName' => $apk['download_name'],
             'apkFingerprint' => $apk['fingerprint'],
             'apkUpdatedAt' => $apk['updated_at'],
             'apkSizeMb' => $apk['size_mb'],
@@ -52,14 +53,17 @@ class MobileAppDownloadController extends Controller
         clearstatcache(true, $apkPath);
         $sha256 = hash_file('sha256', $apkPath);
         $metadata = $this->readMetadata();
+        $version = preg_replace('/[^0-9A-Za-z._-]/', '-', (string) ($metadata['version'] ?? 'terbaru'));
+        $downloadName = 'SiPetani-v' . $version . '.apk';
 
-        return response()->download($apkPath, self::APK_FILENAME, [
+        return response()->download($apkPath, $downloadName, [
             'Content-Type' => 'application/vnd.android.package-archive',
             'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
             'Pragma' => 'no-cache',
             'Expires' => '0',
             'X-SiPetani-APK-SHA256' => $sha256,
             'X-SiPetani-APK-Version' => (string) ($metadata['version'] ?? 'unknown'),
+            'X-SiPetani-APK-Filename' => $downloadName,
         ])->setPrivate();
     }
 
@@ -73,6 +77,7 @@ class MobileAppDownloadController extends Controller
         if (!is_file($path)) {
             return [
                 'version' => 'belum tersedia',
+                'download_name' => 'SiPetani-belum-tersedia.apk',
                 'fingerprint' => 'missing',
                 'updated_at' => '-',
                 'size_mb' => '0,00',
@@ -82,9 +87,11 @@ class MobileAppDownloadController extends Controller
         clearstatcache(true, $path);
         $metadata = $this->readMetadata();
         $sha256 = hash_file('sha256', $path);
+        $version = preg_replace('/[^0-9A-Za-z._-]/', '-', (string) ($metadata['version'] ?? 'terbaru'));
 
         return [
             'version' => (string) ($metadata['version'] ?? 'terbaru'),
+            'download_name' => 'SiPetani-v' . $version . '.apk',
             'fingerprint' => substr($sha256, 0, 16),
             'updated_at' => date('d-m-Y H:i', filemtime($path)),
             'size_mb' => number_format(filesize($path) / 1048576, 2, ',', '.'),

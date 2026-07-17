@@ -43,6 +43,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Masuk'), findsOneWidget);
+    expect(find.text('Versi 1.2.2 • Build 8'), findsOneWidget);
   });
 
   testWidgets('login berhasil tidak mem-pop route utama menjadi layar hitam', (
